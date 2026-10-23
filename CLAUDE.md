@@ -2,8 +2,8 @@
 
 Painel Vue 3 do Groone Avant. Leia o README antes de mudar algo.
 
-- Tela nova segue o `DESIGN.md` do protótipo (`/mnt/project-files/avant-prototipo/`): primeiro o
-  protótipo, depois o código.
+- Tela nova segue o `design/DESIGN.md`: primeiro o protótipo (`design/prototype/`), depois o
+  código (skill `avant-nova-tela`).
 - Todo texto em `src/lib/i18n.ts` com PT, EN e ES. Nada de string solta no template.
 - Regra de negócio fica na API. A tela usa `session.can()` só para esconder o que não serve.
 - Formatos da API em `src/lib/types.ts`, iguais aos `schemas.py` do avant-api.
@@ -13,3 +13,9 @@ Painel Vue 3 do Groone Avant. Leia o README antes de mudar algo.
 - Antes de abrir PR: `pnpm lint && pnpm typecheck && pnpm test && pnpm build`.
 - Nada de segredos no repositório. Comentários em português.
 - PRs vão para `develop`.
+
+## Contexto, issues e skills
+
+- Comece por `docs/contexto.md`: produto, decisões, estado dos cinco repositórios e onde está cada coisa. Decisões antigas em `docs/decisoes/`.
+- Todo trabalho parte de uma issue com milestone neste repositório (`gh issue list --milestone ...`). Pedido sem issue vira issue antes.
+- Skills em `docs/skills/` (índice em `docs/skills/README.md`); `.claude/skills` aponta para lá. Comece pela `avant-fluxo-de-trabalho`.
