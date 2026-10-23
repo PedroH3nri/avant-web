@@ -34,6 +34,8 @@ tests/          Vitest
 
 ## Desenvolvimento
 
+Para subir o Avant inteiro na máquina (banco, API, worker e painel), siga o [guia de desenvolvimento](https://github.com/PedroH3nri/avant-infra/blob/develop/docs/desenvolvimento.md) do avant-infra.
+
 ```bash
 pnpm install
 AVANT_API_URL=http://localhost:8000 pnpm dev   # o Vite repassa /api para o avant-api
