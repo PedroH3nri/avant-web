@@ -264,7 +264,8 @@ const tab = (on: boolean) =>
                   <Avatar :name="m.user.name" />
                   <div class="min-w-0">
                     <div class="font-medium">
-                      {{ m.user.name }}<span v-if="isMe(m)" class="font-normal text-muted-foreground"> ({{ t('team.you') }})</span>
+                      <RouterLink :to="`/equipe/${m.id}`" class="hover:underline focus-visible:underline focus-visible:outline-none">{{ m.user.name }}</RouterLink
+                      ><span v-if="isMe(m)" class="font-normal text-muted-foreground"> ({{ t('team.you') }})</span>
                     </div>
                     <div class="truncate text-[13px] text-muted-foreground">{{ m.user.email }}</div>
                   </div>

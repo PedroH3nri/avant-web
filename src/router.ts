@@ -16,6 +16,7 @@ const routes: RouteRecordRaw[] = [
     children: [
       { path: '', component: () => import('@/views/HomeView.vue') },
       { path: 'equipe', component: () => import('@/views/TeamView.vue'), meta: { permission: 'team.view' } },
+      { path: 'equipe/:id', component: () => import('@/views/MemberView.vue'), meta: { permission: 'team.view' } },
       { path: 'configuracoes', component: () => import('@/views/SettingsView.vue') },
     ],
   },
