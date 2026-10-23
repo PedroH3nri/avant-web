@@ -65,6 +65,7 @@ watch(() => session.me?.active_company_id, load)
           <span class="font-medium">{{ t('home.lost', { name: n.display_name ?? n.network_code }) }}</span>
           {{ ' ' }}<span class="text-muted-foreground">{{ t('home.lostSub') }}</span>
         </p>
+        <RouterLink to="/networks" class="ml-auto shrink-0 text-[14px] text-link hover:underline">{{ t('home.reconnect') }}</RouterLink>
       </div>
 
       <div class="grid gap-6 lg:grid-cols-[1fr_320px]">

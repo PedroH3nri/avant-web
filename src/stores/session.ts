@@ -3,6 +3,7 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { api, ApiError } from '@/lib/api'
+import { reconnectEvents } from '@/lib/events'
 import { lang, langChosen } from '@/lib/i18n'
 import { applyAccent } from '@/lib/theme'
 import type { LoginResult, Me } from '@/lib/types'
@@ -62,6 +63,7 @@ export const useSession = defineStore('session', () => {
 
   async function switchCompany(companyId: string) {
     set(await api.post<Me>('/auth/me/active-company', { company_id: companyId }))
+    reconnectEvents()
   }
 
   return { me, loaded, company, can, set, load, login, verifyMfa, logout, switchCompany }

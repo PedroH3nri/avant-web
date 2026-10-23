@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { DropdownMenuRoot, DropdownMenuTrigger } from 'reka-ui'
-import { ChevronsUpDown, Home, Lock, LogOut, Settings, Users } from 'lucide-vue-next'
+import { ChevronsUpDown, Home, Lock, LogOut, Network, Settings, Users } from 'lucide-vue-next'
 import Avatar from '@/components/ui/Avatar.vue'
 import Mark from '@/components/ui/Mark.vue'
 import MenuContent from '@/components/ui/MenuContent.vue'
@@ -21,12 +21,13 @@ const items = computed(() =>
     [
       { to: '/', key: 'nav.home', icon: Home, show: true },
       { to: '/equipe', key: 'nav.team', icon: Users, show: session.can('team.view') },
+      { to: '/networks', key: 'nav.networks', icon: Network, show: session.can('network.view') },
       { to: '/configuracoes', key: 'nav.settings', icon: Settings, show: true },
     ] as const
   ).filter((i) => i.show && session.company),
 )
-// Networks e sites entram com as próximas telas.
-const soon: Key[] = ['nav.networks', 'nav.sites', 'nav.metrics', 'nav.dashboards']
+// Sites entram com a próxima tela.
+const soon: Key[] = ['nav.sites', 'nav.metrics', 'nav.dashboards']
 
 function active(to: string) {
   return to === '/' ? route.path === '/' : route.path.startsWith(to)
