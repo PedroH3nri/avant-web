@@ -5,5 +5,6 @@ declare module 'vue-router' {
     public?: boolean
     guestOnly?: boolean
     permission?: string
+    internal?: boolean // painel interno da Groone
   }
 }

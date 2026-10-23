@@ -1,0 +1,274 @@
+<script setup lang="ts">
+/** Painel interno: clientes, novo cliente (convite de dono) e convites de dono pendentes. */
+import { computed, onMounted, ref, watch } from 'vue'
+import { toast } from 'vue-sonner'
+import { Search } from 'lucide-vue-next'
+import ConfirmDialog from '@/components/ConfirmDialog.vue'
+import LoadError from '@/components/LoadError.vue'
+import PageBody from '@/components/PageBody.vue'
+import PageHeader from '@/components/PageHeader.vue'
+import Avatar from '@/components/ui/Avatar.vue'
+import Button from '@/components/ui/Button.vue'
+import Card from '@/components/ui/Card.vue'
+import DataTable from '@/components/ui/DataTable.vue'
+import Field from '@/components/ui/Field.vue'
+import Input from '@/components/ui/Input.vue'
+import NativeSelect from '@/components/ui/NativeSelect.vue'
+import SeatBar from '@/components/ui/SeatBar.vue'
+import Status from '@/components/ui/Status.vue'
+import { api, ApiError } from '@/lib/api'
+import { errorText, formatAgo, t } from '@/lib/i18n'
+import { td, th } from '@/lib/table'
+import type { Client, CompanyPlan, Items, OwnerInvitation } from '@/lib/types'
+import { cn } from '@/lib/utils'
+import { useSession } from '@/stores/session'
+
+type Tab = 'all' | CompanyPlan | 'suspended'
+
+const session = useSession()
+const canManage = computed(() => session.can('internal.clients.manage'))
+const clients = ref<Client[] | null>(null)
+const invites = ref<OwnerInvitation[]>([])
+const loadError = ref<string | null>(null)
+const q = ref('')
+const tab = ref<Tab>('all')
+
+const adding = ref(false)
+const email = ref('')
+const seats = ref('5')
+const plan = ref<CompanyPlan>('groone_network')
+const creating = ref(false)
+const emailOk = computed(() => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.value.trim()))
+const seatsOk = computed(() => Number.isInteger(Number(seats.value)) && Number(seats.value) >= 1 && Number(seats.value) <= 10000)
+
+const canceling = ref<OwnerInvitation | null>(null)
+const cancelOpen = computed({
+  get: () => canceling.value !== null,
+  set: (v) => {
+    if (!v) canceling.value = null
+  },
+})
+const busy = ref(false)
+
+const fail = (e: unknown) => toast.error(errorText(e instanceof ApiError ? e.code : 'unknown'))
+
+async function load() {
+  loadError.value = null
+  try {
+    const [c, i] = await Promise.all([
+      api.get<Items<Client>>('/internal/clients', { q: q.value.trim() || undefined }),
+      api.get<Items<OwnerInvitation>>('/internal/owner-invitations'),
+    ])
+    clients.value = c.items
+    invites.value = i.items.filter((x) => x.status === 'pending')
+  } catch (e) {
+    loadError.value = errorText(e instanceof ApiError ? e.code : 'unknown')
+  }
+}
+onMounted(load)
+
+// A busca é no servidor; espera a pessoa parar de digitar.
+let timer: ReturnType<typeof setTimeout> | undefined
+watch(q, () => {
+  clearTimeout(timer)
+  timer = setTimeout(load, 300)
+})
+
+const counts = computed(() => {
+  const list = clients.value ?? []
+  return {
+    all: list.length,
+    groone_network: list.filter((c) => c.plan === 'groone_network').length,
+    external: list.filter((c) => c.plan === 'external').length,
+    suspended: list.filter((c) => c.status === 'suspended').length,
+  }
+})
+const shown = computed(() =>
+  (clients.value ?? []).filter((c) => tab.value === 'all' || (tab.value === 'suspended' ? c.status === 'suspended' : c.plan === tab.value)),
+)
+const tabs: Tab[] = ['all', 'groone_network', 'external', 'suspended']
+const tabLabel = (x: Tab) => (x === 'all' ? t('int.tab.all') : x === 'suspended' ? t('int.tab.suspended') : t(`int.plan.${x}`))
+const tabClass = (on: boolean) =>
+  cn(
+    'h-8 rounded-[4px] px-3 text-[13px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+    on ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground',
+  )
+const planOptions = computed(() => (['groone_network', 'external'] as const).map((p) => ({ value: p, label: t(`int.plan.${p}`) })))
+
+async function create() {
+  if (!emailOk.value || !seatsOk.value) return
+  creating.value = true
+  try {
+    const inv = await api.post<OwnerInvitation>('/internal/clients', { email: email.value.trim(), seat_limit: Number(seats.value), plan: plan.value })
+    invites.value = [inv, ...invites.value]
+    toast.success(t('int.created', { email: inv.email }))
+    email.value = ''
+    seats.value = '5'
+    adding.value = false
+  } catch (e) {
+    fail(e)
+  } finally {
+    creating.value = false
+  }
+}
+
+async function resend(inv: OwnerInvitation) {
+  try {
+    const fresh = await api.post<OwnerInvitation>(`/internal/owner-invitations/${inv.id}/resend`)
+    invites.value = invites.value.map((x) => (x.id === inv.id ? fresh : x))
+    toast.success(t('int.resent'))
+  } catch (e) {
+    fail(e)
+  }
+}
+
+async function cancelInvite() {
+  const inv = canceling.value
+  if (!inv) return
+  busy.value = true
+  try {
+    await api.delete(`/internal/owner-invitations/${inv.id}`)
+    invites.value = invites.value.filter((x) => x.id !== inv.id)
+    canceling.value = null
+    toast.success(t('int.canceled'))
+  } catch (e) {
+    fail(e)
+  } finally {
+    busy.value = false
+  }
+}
+
+function clearFilters() {
+  q.value = ''
+  tab.value = 'all'
+}
+
+const expired = (iso: string) => new Date(iso).getTime() <= Date.now()
+</script>
+
+<template>
+  <PageHeader :title="t('int.clients')" :sub="t('int.sub')">
+    <template v-if="canManage" #actions>
+      <Button :variant="adding ? 'outline' : 'default'" :aria-expanded="adding" @click="adding = !adding">
+        {{ adding ? t('common.cancel') : t('int.new') }}
+      </Button>
+    </template>
+  </PageHeader>
+  <PageBody>
+    <Card v-if="adding" :title="t('int.new')" :desc="t('int.newDesc')">
+      <form id="new-client" class="grid gap-4 md:grid-cols-[1.4fr_110px_200px]" @submit.prevent="create">
+        <Field id="nc-email" :label="t('int.ownerEmail')">
+          <Input id="nc-email" v-model="email" type="email" autocomplete="off" placeholder="dono@site.com" />
+        </Field>
+        <Field id="nc-seats" :label="t('int.seats')">
+          <Input id="nc-seats" v-model="seats" type="number" min="1" max="10000" class="tnum" :invalid="!seatsOk" />
+        </Field>
+        <Field id="nc-plan" :label="t('int.plan')">
+          <NativeSelect id="nc-plan" v-model="plan" :options="planOptions" />
+        </Field>
+      </form>
+      <template #footer>
+        <Button type="submit" form="new-client" :loading="creating" :disabled="!emailOk || !seatsOk">{{ t('int.create') }}</Button>
+      </template>
+    </Card>
+
+    <LoadError v-if="loadError" :message="loadError" @retry="load" />
+
+    <Card v-if="invites.length" :title="t('int.pendingOwners')" :desc="t('int.pendingOwnersDesc')">
+      <ul class="-my-3 divide-y">
+        <li v-for="i in invites" :key="i.id" class="flex flex-wrap items-center gap-x-4 gap-y-2 py-3">
+          <div class="min-w-0 flex-1">
+            <div class="truncate text-[14px] font-medium">{{ i.email }}</div>
+            <div class="mt-0.5 text-[13px] text-muted-foreground">
+              <template v-if="i.plan">{{ t(`int.plan.${i.plan}`) }} · </template>
+              <template v-if="i.seat_limit">{{ i.seat_limit }} {{ t('int.seats').toLowerCase() }} · </template>
+              <span :class="expired(i.expires_at) && 'text-ochre'">{{
+                expired(i.expires_at) ? t('int.expired') : t('int.expires', { when: formatAgo(i.expires_at) })
+              }}</span>
+            </div>
+          </div>
+          <div v-if="canManage" class="flex gap-2">
+            <Button variant="outline" size="sm" @click="resend(i)">{{ t('int.resend') }}</Button>
+            <Button variant="destructive" size="sm" @click="canceling = i">{{ t('int.cancelInvite') }}</Button>
+          </div>
+        </li>
+      </ul>
+    </Card>
+
+    <template v-if="clients">
+      <div class="flex flex-wrap items-center gap-3">
+        <div class="flex flex-wrap rounded-md border bg-card p-0.5" role="tablist" :aria-label="t('int.clients')">
+          <button v-for="x in tabs" :key="x" type="button" role="tab" :aria-selected="tab === x" :class="tabClass(tab === x)" @click="tab = x">
+            {{ tabLabel(x) }} <span class="tnum text-muted-foreground">{{ counts[x] }}</span>
+          </button>
+        </div>
+        <div class="relative ml-auto w-full sm:w-80">
+          <Search class="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+          <Input v-model="q" :aria-label="t('int.searchLabel')" class="h-9 bg-card pl-9" :placeholder="t('int.search')" />
+        </div>
+      </div>
+
+      <Card v-if="!shown.length">
+        <div class="font-medium">{{ t('int.none') }}</div>
+        <p class="mt-1 text-[14px] text-muted-foreground">{{ t('int.noneSub') }}</p>
+        <Button variant="outline" size="sm" class="mt-4" @click="clearFilters">{{ t('int.clear') }}</Button>
+      </Card>
+      <DataTable v-else :min="760">
+        <thead>
+          <tr>
+            <th :class="th">{{ t('int.client') }}</th>
+            <th :class="th">{{ t('int.plan') }}</th>
+            <th :class="th">{{ t('int.employees') }}</th>
+            <th :class="th">{{ t('team.status') }}</th>
+            <th :class="[th, 'w-16']"><span class="sr-only">{{ t('int.open') }}</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="c in shown" :key="c.id" class="hover:bg-muted">
+            <td :class="td">
+              <div class="flex items-center gap-3">
+                <Avatar :name="c.name" :size="28" />
+                <div class="min-w-0">
+                  <RouterLink :to="`/interno/clientes/${c.id}`" class="font-medium hover:underline">{{ c.name }}</RouterLink>
+                  <div class="truncate text-[13px] text-muted-foreground">{{ c.owner.email }}</div>
+                </div>
+              </div>
+            </td>
+            <td :class="[td, 'text-muted-foreground']">{{ t(`int.plan.${c.plan}`) }}</td>
+            <td :class="td">
+              <div class="flex items-center gap-3">
+                <SeatBar
+                  class="w-28"
+                  :used="c.seats_used"
+                  :pending="0"
+                  :limit="c.seat_limit"
+                  :label="t('int.seatsLabel', { used: c.seats_used, limit: c.seat_limit })"
+                />
+                <span class="tnum text-[13px] text-muted-foreground">{{ c.seats_used }}/{{ c.seat_limit }}</span>
+              </div>
+            </td>
+            <td :class="td">
+              <Status :tone="c.status === 'active' ? 'ok' : 'bad'">{{ t(`int.status.${c.status}`) }}</Status>
+            </td>
+            <td :class="td">
+              <RouterLink
+                :to="`/interno/clientes/${c.id}`"
+                class="inline-flex h-8 items-center rounded-md px-3 text-[13px] font-medium hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                :aria-label="`${t('int.open')} ${c.name}`"
+                >{{ t('int.open') }}</RouterLink
+              >
+            </td>
+          </tr>
+        </tbody>
+      </DataTable>
+    </template>
+  </PageBody>
+  <ConfirmDialog
+    v-model:open="cancelOpen"
+    :title="t('int.cancelInviteTitle', { email: canceling?.email ?? '' })"
+    :desc="t('int.cancelInviteDesc')"
+    :action="t('int.cancelInvite')"
+    :busy="busy"
+    @confirm="cancelInvite"
+  />
+</template>

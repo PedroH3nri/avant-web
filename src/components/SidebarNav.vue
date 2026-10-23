@@ -2,12 +2,14 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { DropdownMenuRoot, DropdownMenuTrigger } from 'reka-ui'
-import { ChevronsUpDown, Globe, Home, Lock, LogOut, Network, Settings, UserRound, Users } from 'lucide-vue-next'
+import { ArrowLeft, Building2, ChevronsUpDown, Globe, Home, Lock, LogOut, Network, Settings, ShieldCheck, UserRound, Users, UserSearch } from 'lucide-vue-next'
+import { toast } from 'vue-sonner'
 import Avatar from '@/components/ui/Avatar.vue'
 import Mark from '@/components/ui/Mark.vue'
 import MenuContent from '@/components/ui/MenuContent.vue'
 import MenuItem from '@/components/ui/MenuItem.vue'
-import { t, type Key } from '@/lib/i18n'
+import { ApiError } from '@/lib/api'
+import { errorText, t, type Key } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 import { useSession } from '@/stores/session'
 
@@ -16,7 +18,9 @@ const session = useSession()
 const route = useRoute()
 const router = useRouter()
 
-const items = computed(() =>
+const internal = computed(() => route.meta.internal === true)
+
+const clientItems = computed(() =>
   (
     [
       { to: '/', key: 'nav.home', icon: Home, show: true },
@@ -27,11 +31,24 @@ const items = computed(() =>
     ] as const
   ).filter((i) => i.show && session.company && !session.me?.mfa_setup_required),
 )
+const internalItems = computed(() =>
+  (
+    [
+      { to: '/interno', key: 'int.clients', icon: Building2, show: session.can('internal.clients.view') },
+      { to: '/interno/pessoas', key: 'int.people', icon: UserSearch, show: session.can('internal.users.manage') },
+      { to: '/interno/equipe', key: 'int.staff', icon: Users, show: session.can('internal.staff.manage') },
+      { to: '/interno/networks', key: 'int.mcm', icon: Network, show: session.can('internal.networks.assign') },
+    ] as const
+  ).filter((i) => i.show),
+)
+const items = computed(() => (internal.value ? internalItems.value : clientItems.value))
 // Entram na próxima fase do Avant.
 const soon: Key[] = ['nav.metrics', 'nav.dashboards']
 
 function active(to: string) {
   if (to === '/') return route.path === '/'
+  // A lista de clientes é /interno; as outras telas internas têm o próprio item.
+  if (to === '/interno') return route.path === '/interno' || route.path.startsWith('/interno/clientes/')
   // Minha conta fica embaixo de /configuracoes, mas não é a tela de Configurações.
   if (route.path.startsWith('/configuracoes/conta')) return false
   return route.path === to || route.path.startsWith(`${to}/`)
@@ -41,6 +58,24 @@ const item = (on: boolean) =>
     'flex h-9 w-full items-center gap-2.5 rounded-md px-2.5 text-left text-[14px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-4',
     on ? 'bg-secondary font-medium text-foreground' : 'text-muted-foreground hover:bg-accent hover:text-foreground',
   )
+
+/** Volta à primeira Empresa cliente da pessoa (a Company Groone não tem painel de cliente). */
+async function backToClient() {
+  const first = session.clientCompanies[0]
+  if (!first) return
+  emit('navigate')
+  try {
+    await session.switchCompany(first.id)
+    await router.push('/')
+  } catch (e) {
+    toast.error(errorText(e instanceof ApiError ? e.code : 'unknown'))
+  }
+}
+
+function toInternal() {
+  emit('navigate')
+  void router.push('/interno')
+}
 
 function account() {
   emit('navigate')
@@ -75,12 +110,18 @@ async function logout() {
       >
         <component :is="i.icon" />{{ t(i.key) }}
       </RouterLink>
-      <template v-if="items.length">
+      <template v-if="items.length && !internal">
         <div class="px-2.5 pb-1 pt-5 text-[12px] font-medium text-muted-foreground">{{ t('nav.soon') }}</div>
         <span v-for="k in soon" :key="k" class="flex h-9 items-center gap-2.5 px-2.5 text-[14px] text-muted-foreground/70"><Lock class="size-4" />{{ t(k) }}</span>
       </template>
     </nav>
     <div class="mt-auto grid gap-3 border-t p-3">
+      <button v-if="internal && session.clientCompanies.length" type="button" :class="item(false)" @click="backToClient">
+        <ArrowLeft />{{ t('nav.back') }}
+      </button>
+      <button v-else-if="!internal && session.internalCompany && !session.me?.mfa_setup_required" type="button" :class="item(false)" @click="toInternal">
+        <ShieldCheck />{{ t('nav.internal') }}
+      </button>
       <DropdownMenuRoot>
         <DropdownMenuTrigger
           class="flex items-center gap-2.5 rounded-md p-1.5 text-left hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"

@@ -778,12 +778,178 @@ const dict = {
   'common.copy': ['Copiar', 'Copy', 'Copiar'],
   'common.copied': ['Copiado', 'Copied', 'Copiado'],
   'common.copyManual': ['Selecionado. Copie com Ctrl+C.', 'Selected. Copy with Ctrl+C.', 'Seleccionado. Copia con Ctrl+C.'],
+
+  // Painel interno
+  'int.clients': ['Clientes', 'Clients', 'Clientes'],
+  'int.people': ['Pessoas', 'People', 'Personas'],
+  'int.staff': ['Equipe Groone', 'Groone team', 'Equipo Groone'],
+  'int.mcm': ['MCM sem dono', 'Unclaimed MCM', 'MCM sin dueño'],
+  'int.sub': [
+    'Todos os clientes, da rede Groone e de fora dela. Só a equipe Groone vê esta área.',
+    'All clients, inside and outside the Groone network. Only the Groone team sees this area.',
+    'Todos los clientes, de la red Groone y de fuera. Solo el equipo Groone ve esta área.',
+  ],
+  'int.new': ['Novo cliente', 'New client', 'Nuevo cliente'],
+  'int.newDesc': [
+    'O dono recebe o convite por e-mail, válido por 1 dia, e cria a Empresa no aceite.',
+    'The owner gets an email invite, valid for 1 day, and creates the company when accepting.',
+    'El dueño recibe la invitación por correo, válida por 1 día, y crea la empresa al aceptar.',
+  ],
+  'int.ownerEmail': ['E-mail do dono', 'Owner email', 'Correo del dueño'],
+  'int.seats': ['Vagas', 'Seats', 'Plazas'],
+  'int.plan': ['Rede', 'Network', 'Red'],
+  'int.plan.groone_network': ['Rede Groone', 'Groone network', 'Red Groone'],
+  'int.plan.external': ['Fora da rede', 'Outside the network', 'Fuera de la red'],
+  'int.create': ['Criar e enviar convite', 'Create and send invite', 'Crear y enviar invitación'],
+  'int.created': ['Convite enviado para {email}.', 'Invite sent to {email}.', 'Invitación enviada a {email}.'],
+  'int.tab.all': ['Todos', 'All', 'Todos'],
+  'int.tab.suspended': ['Suspensos', 'Suspended', 'Suspendidos'],
+  'int.search': ['Nome, slug ou e-mail do dono', 'Name, slug or owner email', 'Nombre, slug o correo del dueño'],
+  'int.searchLabel': ['Buscar clientes', 'Search clients', 'Buscar clientes'],
+  'int.client': ['Cliente', 'Client', 'Cliente'],
+  'int.employees': ['Funcionários', 'Employees', 'Empleados'],
+  'int.seatsLabel': ['{used} de {limit} vagas usadas', '{used} of {limit} seats used', '{used} de {limit} plazas usadas'],
+  'int.status.active': ['Ativo', 'Active', 'Activo'],
+  'int.status.suspended': ['Suspenso', 'Suspended', 'Suspendido'],
+  'int.open': ['Abrir', 'Open', 'Abrir'],
+  'int.none': ['Nenhum cliente encontrado', 'No clients found', 'No se encontraron clientes'],
+  'int.noneSub': [
+    'Busque pelo nome, pelo slug ou pelo e-mail do dono.',
+    'Search by name, slug or owner email.',
+    'Busca por nombre, slug o correo del dueño.',
+  ],
+  'int.clear': ['Limpar filtros', 'Clear filters', 'Limpiar filtros'],
+  'int.pendingOwners': ['Convites de dono pendentes', 'Pending owner invites', 'Invitaciones de dueño pendientes'],
+  'int.pendingOwnersDesc': [
+    'O cliente só aparece na lista depois que o dono aceita.',
+    'The client shows up in the list only after the owner accepts.',
+    'El cliente aparece en la lista solo cuando el dueño acepta.',
+  ],
+  'int.expires': ['Vence {when}', 'Expires {when}', 'Vence {when}'],
+  'int.expired': ['Vencido', 'Expired', 'Vencida'],
+  'int.resend': ['Reenviar', 'Resend', 'Reenviar'],
+  'int.resent': ['Convite reenviado.', 'Invite resent.', 'Invitación reenviada.'],
+  'int.cancelInvite': ['Cancelar convite', 'Cancel invite', 'Cancelar invitación'],
+  'int.cancelInviteTitle': ['Cancelar o convite de {email}?', 'Cancel the invite for {email}?', '¿Cancelar la invitación de {email}?'],
+  'int.cancelInviteDesc': [
+    'O link do e-mail para de funcionar. Dá para convidar de novo depois.',
+    'The email link stops working. You can invite again later.',
+    'El enlace del correo deja de funcionar. Puedes invitar de nuevo después.',
+  ],
+  'int.canceled': ['Convite cancelado.', 'Invite canceled.', 'Invitación cancelada.'],
+  'int.back': ['Clientes', 'Clients', 'Clientes'],
+  'int.planSeats': ['Rede e vagas', 'Network and seats', 'Red y plazas'],
+  'int.planSeatsDesc': [
+    'Rede Groone não paga. As vagas contam pessoas e convites pendentes, com o dono.',
+    'Groone network clients do not pay. Seats count people and pending invites, including the owner.',
+    'Los clientes de la red Groone no pagan. Las plazas cuentan personas e invitaciones pendientes, con el dueño.',
+  ],
+  'int.seatsMin': ['Não dá para ficar abaixo das {n} vagas em uso.', 'Cannot go below the {n} seats in use.', 'No puede quedar por debajo de las {n} plazas en uso.'],
+  'int.access': ['Acesso', 'Access', 'Acceso'],
+  'int.suspendDesc': [
+    'Suspenso, ninguém da Empresa entra no painel nem usa a API. Nada é apagado.',
+    'While suspended, nobody in the company can use the panel or the API. Nothing is deleted.',
+    'Suspendida, nadie de la empresa entra al panel ni usa la API. No se borra nada.',
+  ],
+  'int.suspend': ['Suspender cliente', 'Suspend client', 'Suspender cliente'],
+  'int.suspendTitle': ['Suspender {name}?', 'Suspend {name}?', '¿Suspender {name}?'],
+  'int.reactivate': ['Reativar cliente', 'Reactivate client', 'Reactivar cliente'],
+  'int.suspendedNow': ['Cliente suspenso.', 'Client suspended.', 'Cliente suspendido.'],
+  'int.reactivatedNow': ['Cliente reativado.', 'Client reactivated.', 'Cliente reactivado.'],
+  'int.owner': ['Dono', 'Owner', 'Dueño'],
+  'int.ownerDesc': [
+    'Só a Groone troca o dono. O novo dono precisa ser membro ativo; o antigo vira Administrador.',
+    'Only Groone changes the owner. The new owner must be an active member; the old one becomes Admin.',
+    'Solo Groone cambia el dueño. El nuevo debe ser miembro activo; el anterior pasa a Administrador.',
+  ],
+  'int.changeOwner': ['Trocar dono', 'Change owner', 'Cambiar dueño'],
+  'int.ownerChanged': ['Dono trocado.', 'Owner changed.', 'Dueño cambiado.'],
+  'int.noOtherMembers': [
+    'Não há outro membro ativo para virar dono.',
+    'There is no other active member to become owner.',
+    'No hay otro miembro activo que pueda ser dueño.',
+  ],
+  'int.members': ['Membros', 'Members', 'Miembros'],
+  'int.invites': ['Convites pendentes', 'Pending invites', 'Invitaciones pendientes'],
+  'int.audit': ['Atividade', 'Activity', 'Actividad'],
+  'int.auditDesc': ['O que mudou na Empresa, de quem é da equipe dela e da Groone.', 'What changed in the company, by its team and by Groone.', 'Qué cambió en la empresa, por su equipo y por Groone.'],
+  'int.auditEmpty': ['Nada registrado ainda.', 'Nothing recorded yet.', 'Nada registrado aún.'],
+  'int.more': ['Carregar mais', 'Load more', 'Cargar más'],
+  'int.by.member': ['membro', 'member', 'miembro'],
+  'int.by.staff': ['Groone', 'Groone', 'Groone'],
+  'int.by.api_key': ['chave de API', 'API key', 'clave de API'],
+  'int.by.system': ['sistema', 'system', 'sistema'],
+  'int.peopleSub': [
+    'Busque qualquer pessoa do Avant para desativar a conta ou zerar o 2FA quando ela perdeu o celular.',
+    'Find anyone on Avant to disable the account or reset 2FA when they lost their phone.',
+    'Busca a cualquier persona de Avant para desactivar la cuenta o reiniciar el 2FA si perdió el móvil.',
+  ],
+  'int.peopleSearch': ['Nome ou e-mail (3 letras ou mais)', 'Name or email (3+ characters)', 'Nombre o correo (3+ caracteres)'],
+  'int.peopleNone': ['Ninguém encontrado.', 'No one found.', 'No se encontró a nadie.'],
+  'int.peopleHint': ['Digite ao menos 3 letras.', 'Type at least 3 characters.', 'Escribe al menos 3 caracteres.'],
+  'int.person': ['Pessoa', 'Person', 'Persona'],
+  'int.companies': ['Empresas', 'Companies', 'Empresas'],
+  'int.lastLogin': ['Último login', 'Last sign-in', 'Último inicio'],
+  'int.mfaOn': ['2FA ativo', '2FA on', '2FA activo'],
+  'int.mfaOff': ['Sem 2FA', 'No 2FA', 'Sin 2FA'],
+  'int.user.active': ['Ativa', 'Active', 'Activa'],
+  'int.user.disabled': ['Desativada', 'Disabled', 'Desactivada'],
+  'int.disable': ['Desativar conta', 'Disable account', 'Desactivar cuenta'],
+  'int.disableTitle': ['Desativar a conta de {name}?', 'Disable {name}’s account?', '¿Desactivar la cuenta de {name}?'],
+  'int.disableDesc': [
+    'As sessões e chaves dela param na hora, em todas as Empresas. Dá para reativar.',
+    'Their sessions and keys stop right away, in every company. You can re-enable it.',
+    'Sus sesiones y claves se detienen al instante, en todas las empresas. Se puede reactivar.',
+  ],
+  'int.enable': ['Reativar conta', 'Re-enable account', 'Reactivar cuenta'],
+  'int.disabledNow': ['Conta desativada.', 'Account disabled.', 'Cuenta desactivada.'],
+  'int.enabledNow': ['Conta reativada.', 'Account re-enabled.', 'Cuenta reactivada.'],
+  'int.resetMfa': ['Zerar 2FA', 'Reset 2FA', 'Reiniciar 2FA'],
+  'int.resetMfaTitle': ['Zerar o 2FA de {name}?', 'Reset {name}’s 2FA?', '¿Reiniciar el 2FA de {name}?'],
+  'int.resetMfaDesc': [
+    'Confirme a identidade antes. O login volta a pedir só a senha e a pessoa recebe um e-mail avisando.',
+    'Confirm their identity first. Sign-in will ask only for the password and they get an email about it.',
+    'Confirma su identidad antes. El inicio pedirá solo la contraseña y la persona recibe un correo.',
+  ],
+  'int.mfaReset': ['2FA zerado.', '2FA reset.', '2FA reiniciado.'],
+  'int.actionsFor': ['Ações para {name}', 'Actions for {name}', 'Acciones para {name}'],
+  'int.staffSub': [
+    'Quem da Groone usa o painel interno. O 2FA é obrigatório para todos.',
+    'Who at Groone uses the internal panel. 2FA is required for everyone.',
+    'Quién de Groone usa el panel interno. El 2FA es obligatorio para todos.',
+  ],
+  'int.staffInvite': ['Convidar para a equipe Groone', 'Invite to the Groone team', 'Invitar al equipo Groone'],
+  'int.staffInviteDesc': ['Convite por e-mail, válido por 1 dia.', 'Email invite, valid for 1 day.', 'Invitación por correo, válida por 1 día.'],
+  'int.staffInvited': ['Convite enviado para {email}.', 'Invite sent to {email}.', 'Invitación enviada a {email}.'],
+  'int.mcmSub': [
+    'Networks que aceitaram o MCM da Groone, mas cujo e-mail não é dono de nenhuma Empresa. Ligue cada uma ao cliente certo.',
+    'Networks that accepted Groone’s MCM but whose email does not own any company. Link each one to the right client.',
+    'Networks que aceptaron el MCM de Groone pero cuyo correo no es dueño de ninguna empresa. Vincula cada una al cliente correcto.',
+  ],
+  'int.mcmEmpty': ['Nenhuma network esperando dono.', 'No networks waiting for an owner.', 'Ninguna network esperando dueño.'],
+  'int.mcmEmail': ['E-mail no GAM', 'Email in GAM', 'Correo en GAM'],
+  'int.mcmSeen': ['Vista em', 'First seen', 'Vista el'],
+  'int.delegation': ['Delegação', 'Delegation', 'Delegación'],
+  'int.assign': ['Ligar a um cliente', 'Link to a client', 'Vincular a un cliente'],
+  'int.assignTitle': ['Ligar a network {code}', 'Link network {code}', 'Vincular la network {code}'],
+  'int.assignDesc': [
+    'A network passa a ser do cliente escolhido e a importação de sites e ad units começa.',
+    'The network goes to the chosen client and the site and ad unit import starts.',
+    'La network pasa al cliente elegido y empieza la importación de sitios y ad units.',
+  ],
+  'int.assignClient': ['Cliente', 'Client', 'Cliente'],
+  'int.assigned': ['Network ligada a {name}.', 'Network linked to {name}.', 'Network vinculada a {name}.'],
 } as const satisfies Record<string, readonly [string, string, string]>
 
 export type Key = keyof typeof dict
 
 /** Mensagens por ``code`` do erro da API. */
 const errors: Record<string, readonly [string, string, string]> = {
+  seat_limit_below_usage: [
+    'O limite não pode ficar abaixo das vagas em uso.',
+    'The limit cannot be below the seats in use.',
+    'El límite no puede quedar por debajo de las plazas en uso.',
+  ],
   mfa_already_enabled: ['O 2FA já está ativo.', '2FA is already on.', 'El 2FA ya está activo.'],
   mfa_not_enabled: ['O 2FA não está ativo. Comece pela configuração.', '2FA is not on. Start with the setup.', 'El 2FA no está activo. Empieza por la configuración.'],
   api_key_limit_reached: [
@@ -895,6 +1061,39 @@ const errors: Record<string, readonly [string, string, string]> = {
   gam_error: ['O Ad Manager devolveu um erro. A Groone tenta de novo sozinha.', 'Ad Manager returned an error. Groone retries on its own.', 'Ad Manager devolvió un error. Groone reintenta sola.'],
   validation_error: ['Confira os campos.', 'Check the fields.', 'Revisa los campos.'],
 }
+/** Ações do registro de atividade (audit_logs); as desconhecidas aparecem como vêm. */
+const auditActions: Record<string, readonly [string, string, string]> = {
+  'company.created': ['Empresa criada', 'Company created', 'Empresa creada'],
+  'company.updated': ['Empresa editada', 'Company edited', 'Empresa editada'],
+  'company.suspended': ['Cliente suspenso', 'Client suspended', 'Cliente suspendido'],
+  'company.reactivated': ['Cliente reativado', 'Client reactivated', 'Cliente reactivado'],
+  'company.owner_changed': ['Dono trocado', 'Owner changed', 'Dueño cambiado'],
+  'invitation.created': ['Convite enviado', 'Invite sent', 'Invitación enviada'],
+  'invitation.resent': ['Convite reenviado', 'Invite resent', 'Invitación reenviada'],
+  'invitation.canceled': ['Convite cancelado', 'Invite canceled', 'Invitación cancelada'],
+  'invitation.accepted': ['Convite aceito', 'Invite accepted', 'Invitación aceptada'],
+  'member.updated': ['Membro alterado', 'Member changed', 'Miembro modificado'],
+  'member.removed': ['Membro removido', 'Member removed', 'Miembro quitado'],
+  'member.left': ['Membro saiu', 'Member left', 'Miembro salió'],
+  'member.permissions_set': ['Permissões diretas alteradas', 'Direct permissions changed', 'Permisos directos modificados'],
+  'role.created': ['Papel criado', 'Role created', 'Rol creado'],
+  'role.updated': ['Papel editado', 'Role edited', 'Rol editado'],
+  'role.deleted': ['Papel apagado', 'Role deleted', 'Rol borrado'],
+  'site.assigned': ['Site atribuído', 'Site assigned', 'Sitio asignado'],
+  'site.unassigned': ['Site desatribuído', 'Site unassigned', 'Sitio desasignado'],
+  'ad_unit.linked': ['Ad unit ligado à mão', 'Ad unit linked by hand', 'Ad unit vinculado a mano'],
+  'ad_unit.unlinked': ['Ad unit desligado', 'Ad unit unlinked', 'Ad unit desvinculado'],
+  'api_key.created': ['Chave de API criada', 'API key created', 'Clave de API creada'],
+  'api_key.revoked': ['Chave de API revogada', 'API key revoked', 'Clave de API revocada'],
+  'network.connected': ['Network conectada', 'Network connected', 'Network conectada'],
+  'network.assigned': ['Network ligada pela Groone', 'Network linked by Groone', 'Network vinculada por Groone'],
+  'network.disconnected': ['Network desconectada', 'Network disconnected', 'Network desconectada'],
+  'network.reconnected': ['Network reconectada', 'Network reconnected', 'Network reconectada'],
+  'network.error': ['Network sem acesso', 'Network lost access', 'Network sin acceso'],
+  'network.recovered': ['Network voltou', 'Network recovered', 'Network recuperada'],
+  'network.sync_requested': ['Importação pedida', 'Import requested', 'Importación pedida'],
+}
+
 const fallbackError = ['Algo deu errado. Tente de novo.', 'Something went wrong. Try again.', 'Algo salió mal. Inténtalo de nuevo.'] as const
 
 const index = { pt: 0, en: 1, es: 2 } as const satisfies Record<Lang, 0 | 1 | 2>
@@ -953,6 +1152,11 @@ export function t(key: Key, params?: Record<string, string | number>): string {
 export function pick(name: Localized | null | undefined): string {
   if (!name) return ''
   return name[lang.value] ?? name.pt ?? Object.values(name)[0] ?? ''
+}
+
+export function auditText(action: string): string {
+  const text = auditActions[action]
+  return text ? text[index[lang.value]] : action
 }
 
 export function errorText(code: string, params?: Record<string, string | number>): string {

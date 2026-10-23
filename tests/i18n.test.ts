@@ -1,6 +1,6 @@
 import { nextTick } from 'vue'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { chooseLang, errorText, formatAgo, pick, t } from '@/lib/i18n'
+import { auditText, chooseLang, errorText, formatAgo, pick, t } from '@/lib/i18n'
 import { safeNext } from '@/lib/nav'
 
 beforeEach(() => chooseLang('pt'))
@@ -42,5 +42,12 @@ describe('safeNext', () => {
     expect(safeNext('/\\evil.com')).toBe('/')
     expect(safeNext('https://evil.com')).toBe('/')
     expect(safeNext(['/a'])).toBe('/')
+  })
+})
+
+describe('auditText', () => {
+  it('traduz as ações conhecidas e mostra as outras como vêm', () => {
+    expect(auditText('company.suspended')).toBe('Cliente suspenso')
+    expect(auditText('algo.novo')).toBe('algo.novo')
   })
 })
