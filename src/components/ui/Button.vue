@@ -13,6 +13,7 @@ const button = cva(
         outline: 'border bg-background hover:bg-accent',
         ghost: 'hover:bg-accent',
         destructive: 'text-bad hover:bg-bad-soft',
+        danger: 'bg-bad text-white hover:bg-bad/90',
         link: 'h-auto px-0 text-link underline-offset-[3px] hover:underline',
       },
       size: {
