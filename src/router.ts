@@ -25,6 +25,20 @@ const routes: RouteRecordRaw[] = [
       { path: 'sites/:id', component: () => import('@/views/SiteDetailView.vue'), meta: { permission: 'sites.view' } },
       { path: 'configuracoes', component: () => import('@/views/SettingsView.vue') },
       { path: 'configuracoes/conta', component: () => import('@/views/AccountView.vue') },
+      // Painel interno: só a equipe Groone, com a Company Groone ativa (o guarda troca).
+      { path: 'interno', component: () => import('@/views/internal/ClientsView.vue'), meta: { internal: true, permission: 'internal.clients.view' } },
+      {
+        path: 'interno/clientes/:id',
+        component: () => import('@/views/internal/ClientView.vue'),
+        meta: { internal: true, permission: 'internal.clients.view' },
+      },
+      { path: 'interno/pessoas', component: () => import('@/views/internal/PeopleView.vue'), meta: { internal: true, permission: 'internal.users.manage' } },
+      { path: 'interno/equipe', component: () => import('@/views/internal/StaffView.vue'), meta: { internal: true, permission: 'internal.staff.manage' } },
+      {
+        path: 'interno/networks',
+        component: () => import('@/views/internal/McmView.vue'),
+        meta: { internal: true, permission: 'internal.networks.assign' },
+      },
     ],
   },
   { path: '/:rest(.*)*', component: () => import('@/views/NotFoundView.vue'), meta: { public: true } },
@@ -46,6 +60,21 @@ router.beforeEach(async (to) => {
   if (!session.me) return { path: '/entrar', query: to.fullPath === '/' ? {} : { next: to.fullPath } }
   // Equipe Groone sem 2FA: a API só libera a configuração, então o painel também.
   if (session.me.mfa_setup_required && to.path !== ACCOUNT) return ACCOUNT
+  const groone = session.internalCompany
+  if (to.meta.internal) {
+    if (!groone) return '/'
+    // As permissões internas só valem com a Company Groone ativa.
+    if (session.company?.id !== groone.id) {
+      try {
+        await session.switchCompany(groone.id)
+      } catch {
+        return '/'
+      }
+    }
+  } else if (to.path === '/' && session.company?.is_internal && session.can('internal.clients.view')) {
+    // A Company Groone não tem painel de cliente: o início dela é o painel interno.
+    return '/interno'
+  }
   // Sem a permissão da tela, volta ao início (a API recusaria tudo mesmo).
   if (to.meta.permission && !session.can(to.meta.permission)) return '/'
   return true

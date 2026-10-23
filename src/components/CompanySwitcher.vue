@@ -28,7 +28,7 @@ async function pick(id: string) {
 </script>
 
 <template>
-  <span v-if="route.path.startsWith('/interno')" class="flex min-w-0 items-center gap-2 text-[14px] font-medium">
+  <span v-if="route.meta.internal" class="flex min-w-0 items-center gap-2 text-[14px] font-medium">
     Groone<Badge>{{ t('nav.internal') }}</Badge>
   </span>
   <DropdownMenuRoot v-else-if="session.company">
@@ -41,7 +41,8 @@ async function pick(id: string) {
     </DropdownMenuTrigger>
     <MenuContent class="w-64">
       <DropdownMenuLabel class="px-2 py-1.5 text-[12px] text-muted-foreground">{{ t('top.companies') }}</DropdownMenuLabel>
-      <MenuItem v-for="c in session.me?.companies ?? []" :key="c.id" @select="pick(c.id)">
+      <!-- A Company Groone entra pelo painel interno, no menu lateral. -->
+      <MenuItem v-for="c in session.clientCompanies" :key="c.id" @select="pick(c.id)">
         <Avatar :name="c.name" :size="20" />
         <span class="min-w-0 truncate">{{ c.name }}</span>
         <Check v-if="c.id === session.company.id" class="ml-auto" />

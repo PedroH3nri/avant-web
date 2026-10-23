@@ -6,7 +6,7 @@ import type { Me } from '@/lib/types'
 function me(permissions: string[], accent: string | null = null): Me {
   return {
     user: { id: 'u', email: 'ana@a.com', name: 'Ana Lima', locale: 'pt' },
-    companies: [{ id: 'c', name: 'A', slug: 'a', accent_color: accent, is_owner: false }],
+    companies: [{ id: 'c', name: 'A', slug: 'a', accent_color: accent, is_owner: false, is_internal: false }],
     active_company_id: 'c',
     permissions,
     site_scope: 'assigned',

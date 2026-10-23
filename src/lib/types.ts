@@ -22,6 +22,7 @@ export interface CompanyRef {
   slug: string
   accent_color: string | null
   is_owner: boolean
+  is_internal: boolean // a Company Groone
 }
 
 export interface Me {
@@ -50,13 +51,16 @@ export interface InvitationPreview {
   account_exists: boolean
 }
 
+export type CompanyPlan = 'groone_network' | 'external'
+export type CompanyStatus = 'active' | 'suspended'
+
 export interface CompanyDetail {
   id: string
   name: string
   slug: string
   accent_color: string | null
-  plan: 'groone_network' | 'external'
-  status: 'active' | 'suspended'
+  plan: CompanyPlan
+  status: CompanyStatus
   seat_limit: number
   seats_used: number
   settings: Record<string, unknown>
@@ -216,4 +220,62 @@ export interface ApiKey {
 
 export interface ApiKeyCreated extends ApiKey {
   token: string
+}
+
+// Painel interno (/api/v1/internal)
+
+export interface Client {
+  id: string
+  name: string
+  slug: string
+  plan: CompanyPlan
+  status: CompanyStatus
+  seat_limit: number
+  seats_used: number // pessoas mais convites pendentes
+  owner: UserRef
+}
+
+export interface ClientDetail extends Client {
+  members: Member[]
+  invitations: Invitation[]
+}
+
+export interface OwnerInvitation {
+  id: string
+  email: string
+  status: Invitation['status']
+  seat_limit: number | null
+  plan: CompanyPlan | null
+  expires_at: string
+  invited_by: string
+}
+
+export interface AuditEntry {
+  id: string
+  action: string
+  actor_kind: string
+  actor_user_id: string | null
+  target_type: string | null
+  target_id: string | null
+  data: Record<string, unknown>
+  created_at: string
+}
+
+export interface Person {
+  user: UserRef
+  status: 'active' | 'disabled'
+  mfa_enabled: boolean
+  last_login_at: string | null
+  companies: { id: string; name: string; slug: string; is_internal: boolean }[]
+}
+
+export interface McmCandidate {
+  id: string
+  network_code: string
+  display_name: string | null
+  email: string
+  delegation: string | null
+  account_status: string
+  first_seen_at: string
+  last_seen_at: string
 }

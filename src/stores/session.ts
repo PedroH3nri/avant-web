@@ -13,6 +13,9 @@ export const useSession = defineStore('session', () => {
   const loaded = ref(false)
 
   const company = computed(() => me.value?.companies.find((c) => c.id === me.value?.active_company_id) ?? null)
+  /** A Company Groone, para quem é da equipe. */
+  const internalCompany = computed(() => me.value?.companies.find((c) => c.is_internal) ?? null)
+  const clientCompanies = computed(() => me.value?.companies.filter((c) => !c.is_internal) ?? [])
   const permissions = computed(() => new Set(me.value?.permissions ?? []))
 
   /** Mesma regra do avant-core: ``*`` cobre tudo e ``team.*`` cobre ``team.invite``. */
@@ -66,5 +69,5 @@ export const useSession = defineStore('session', () => {
     reconnectEvents()
   }
 
-  return { me, loaded, company, can, set, load, login, verifyMfa, logout, switchCompany }
+  return { me, loaded, company, internalCompany, clientCompanies, can, set, load, login, verifyMfa, logout, switchCompany }
 })
