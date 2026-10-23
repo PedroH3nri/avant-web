@@ -102,5 +102,6 @@ export const api = {
   post: <T>(path: string, body?: unknown) => request<T>('POST', path, { body: body ?? {} }),
   put: <T>(path: string, body: unknown) => request<T>('PUT', path, { body }),
   patch: <T>(path: string, body: unknown) => request<T>('PATCH', path, { body }),
-  delete: <T = void>(path: string) => request<T>('DELETE', path),
+  // Desligar o 2FA manda o código no corpo do DELETE.
+  delete: <T = void>(path: string, body?: unknown) => request<T>('DELETE', path, { body }),
 }

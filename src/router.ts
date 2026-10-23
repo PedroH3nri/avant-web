@@ -4,6 +4,8 @@ import { useSession } from '@/stores/session'
 
 // Os caminhos de /entrar, /entrar/2fa, /convite/{token}, /redefinir-senha/{token} e
 // /configuracoes/conta são usados pela API nos e-mails e redirecionamentos: não mudar.
+const ACCOUNT = '/configuracoes/conta'
+
 const routes: RouteRecordRaw[] = [
   { path: '/entrar', component: () => import('@/views/LoginView.vue'), meta: { public: true, guestOnly: true } },
   { path: '/entrar/2fa', component: () => import('@/views/MfaView.vue'), meta: { public: true } },
@@ -22,6 +24,7 @@ const routes: RouteRecordRaw[] = [
       { path: 'sites', component: () => import('@/views/SitesView.vue'), meta: { permission: 'sites.view' } },
       { path: 'sites/:id', component: () => import('@/views/SiteDetailView.vue'), meta: { permission: 'sites.view' } },
       { path: 'configuracoes', component: () => import('@/views/SettingsView.vue') },
+      { path: 'configuracoes/conta', component: () => import('@/views/AccountView.vue') },
     ],
   },
   { path: '/:rest(.*)*', component: () => import('@/views/NotFoundView.vue'), meta: { public: true } },
@@ -41,6 +44,8 @@ router.beforeEach(async (to) => {
     return true
   }
   if (!session.me) return { path: '/entrar', query: to.fullPath === '/' ? {} : { next: to.fullPath } }
+  // Equipe Groone sem 2FA: a API só libera a configuração, então o painel também.
+  if (session.me.mfa_setup_required && to.path !== ACCOUNT) return ACCOUNT
   // Sem a permissão da tela, volta ao início (a API recusaria tudo mesmo).
   if (to.meta.permission && !session.can(to.meta.permission)) return '/'
   return true

@@ -177,3 +177,43 @@ export interface SiteDetail extends Site {
 export interface SiteMember extends Member {
   via: 'assigned' | 'all'
 }
+
+export interface AuthSession {
+  id: string
+  created_at: string
+  last_seen_at: string
+  expires_at: string
+  user_agent: string | null
+  ip: string | null
+  current: boolean
+}
+
+export interface GoogleStatus {
+  available: boolean
+  linked: boolean
+}
+
+export interface MfaSetup {
+  secret: string
+  uri: string
+}
+
+export interface RecoveryCodes {
+  recovery_codes: string[]
+}
+
+export interface ApiKey {
+  id: string
+  name: string
+  prefix: string
+  permissions: string[]
+  owner: UserRef
+  created_at: string
+  expires_at: string
+  last_used_at: string | null
+  revoked_at: string | null
+}
+
+export interface ApiKeyCreated extends ApiKey {
+  token: string
+}

@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { DropdownMenuRoot, DropdownMenuTrigger } from 'reka-ui'
-import { ChevronsUpDown, Globe, Home, Lock, LogOut, Network, Settings, Users } from 'lucide-vue-next'
+import { ChevronsUpDown, Globe, Home, Lock, LogOut, Network, Settings, UserRound, Users } from 'lucide-vue-next'
 import Avatar from '@/components/ui/Avatar.vue'
 import Mark from '@/components/ui/Mark.vue'
 import MenuContent from '@/components/ui/MenuContent.vue'
@@ -25,19 +25,27 @@ const items = computed(() =>
       { to: '/sites', key: 'nav.sites', icon: Globe, show: session.can('sites.view') },
       { to: '/configuracoes', key: 'nav.settings', icon: Settings, show: true },
     ] as const
-  ).filter((i) => i.show && session.company),
+  ).filter((i) => i.show && session.company && !session.me?.mfa_setup_required),
 )
 // Entram na próxima fase do Avant.
 const soon: Key[] = ['nav.metrics', 'nav.dashboards']
 
 function active(to: string) {
-  return to === '/' ? route.path === '/' : route.path.startsWith(to)
+  if (to === '/') return route.path === '/'
+  // Minha conta fica embaixo de /configuracoes, mas não é a tela de Configurações.
+  if (route.path.startsWith('/configuracoes/conta')) return false
+  return route.path === to || route.path.startsWith(`${to}/`)
 }
 const item = (on: boolean) =>
   cn(
     'flex h-9 w-full items-center gap-2.5 rounded-md px-2.5 text-left text-[14px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-4',
     on ? 'bg-secondary font-medium text-foreground' : 'text-muted-foreground hover:bg-accent hover:text-foreground',
   )
+
+function account() {
+  emit('navigate')
+  void router.push('/configuracoes/conta')
+}
 
 async function logout() {
   await session.logout()
@@ -67,8 +75,10 @@ async function logout() {
       >
         <component :is="i.icon" />{{ t(i.key) }}
       </RouterLink>
-      <div class="px-2.5 pb-1 pt-5 text-[12px] font-medium text-muted-foreground">{{ t('nav.soon') }}</div>
-      <span v-for="k in soon" :key="k" class="flex h-9 items-center gap-2.5 px-2.5 text-[14px] text-muted-foreground/70"><Lock class="size-4" />{{ t(k) }}</span>
+      <template v-if="items.length">
+        <div class="px-2.5 pb-1 pt-5 text-[12px] font-medium text-muted-foreground">{{ t('nav.soon') }}</div>
+        <span v-for="k in soon" :key="k" class="flex h-9 items-center gap-2.5 px-2.5 text-[14px] text-muted-foreground/70"><Lock class="size-4" />{{ t(k) }}</span>
+      </template>
     </nav>
     <div class="mt-auto grid gap-3 border-t p-3">
       <DropdownMenuRoot>
@@ -83,6 +93,7 @@ async function logout() {
           <ChevronsUpDown class="size-4 shrink-0 text-muted-foreground" />
         </DropdownMenuTrigger>
         <MenuContent side="top" class="w-56">
+          <MenuItem @select="account">{{ t('nav.account') }}<UserRound class="ml-auto" /></MenuItem>
           <MenuItem @select="logout">{{ t('top.logout') }}<LogOut class="ml-auto" /></MenuItem>
         </MenuContent>
       </DropdownMenuRoot>
