@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-22T23:10:00Z",
+  "title": "Design System: Avant",
+  "extensions": {
+    "colorMeta": {
+      "ink": { "role": "primary", "displayName": "Ink", "canonical": "hsl(0 0% 9%)" },
+      "surface": { "role": "neutral", "displayName": "Surface", "canonical": "hsl(0 0% 100%)" },
+      "band": { "role": "neutral", "displayName": "Band", "canonical": "hsl(0 0% 98%)" },
+      "link": { "role": "accent", "displayName": "Link blue", "canonical": "hsl(212 100% 42%)" },
+      "pending": { "role": "state", "displayName": "Pending amber", "canonical": "hsl(35 92% 40%)" }
+    },
+    "typographyMeta": {
+      "page-title": { "displayName": "Page title", "purpose": "One per screen, in the page-header band." },
+      "data-mono": { "displayName": "Data mono", "purpose": "Network codes, service-account email, IDs." }
+    },
+    "motion": [ { "name": "state", "value": "150-250ms ease-out", "purpose": "Colour and state changes only." } ],
+    "breakpoints": [ { "name": "sm", "value": "640px" }, { "name": "md", "value": "768px" }, { "name": "lg", "value": "1024px" } ]
+  },
+  "components": [
+    { "name": "Primary Button", "kind": "button", "refersTo": "button-primary", "description": "The one main action of a card or page.", "html": "<button class=\"ds-btn\">Enviar convite</button>", "css": ".ds-btn{height:36px;padding:0 16px;border-radius:6px;background:#171717;color:#fff;font:500 14px Geist,system-ui,sans-serif;border:0}.ds-btn:hover{background:#383838}" },
+    { "name": "Card with footer", "kind": "card", "refersTo": "card-footer", "description": "Settings and invite cards: body plus muted footer with note and action.", "html": "<section class=\"ds-card\"><div class=\"b\"><h2>Nome da Empresa</h2><p>Aparece nos convites.</p></div><div class=\"f\"><span>Use até 48 caracteres.</span><button>Salvar</button></div></section>", "css": ".ds-card{border:1px solid #EBEBEB;border-radius:8px;overflow:hidden;font-family:Geist,system-ui,sans-serif;background:#fff}.ds-card .b{padding:24px}.ds-card h2{margin:0;font-size:20px;letter-spacing:-.025em}.ds-card p{color:#666;margin:8px 0 0}.ds-card .f{display:flex;justify-content:space-between;align-items:center;padding:12px 24px;background:#FAFAFA;border-top:1px solid #EBEBEB;color:#666;font-size:13px}.ds-card .f button{height:32px;padding:0 12px;border-radius:6px;background:#171717;color:#fff;border:0}" },
+    { "name": "Seat usage bar", "kind": "custom", "description": "One segment per seat of the staff limit.", "html": "<div class=\"ds-seats\"><i class=\"u\"></i><i class=\"u\"></i><i class=\"p\"></i><i></i><i></i></div>", "css": ".ds-seats{display:flex;gap:3px;height:8px;width:240px}.ds-seats i{flex:1;border-radius:2px;background:#EBEBEB}.ds-seats .u{background:#171717}.ds-seats .p{background:#C47A08}" }
+  ],
+  "narrative": {
+    "northStar": "Category standard at Vercel's craft level",
+    "overview": "Near-monochrome dashboard with hairline borders, Geist type and status as dot plus word.",
+    "keyCharacteristics": ["Ink primary", "Blue only for links and focus", "Cards with muted footers", "Underline tab navigation"],
+    "rules": [ { "name": "Blue is for links", "body": "Blue never fills a surface or a button.", "section": "colors" } ],
+    "dos": ["Show the fix next to the problem"],
+    "donts": ["No coloured sidebars or soft-shadowed cards"]
+  }
+}
