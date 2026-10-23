@@ -19,6 +19,8 @@ const routes: RouteRecordRaw[] = [
       { path: 'equipe/:id', component: () => import('@/views/MemberView.vue'), meta: { permission: 'team.view' } },
       { path: 'networks', component: () => import('@/views/NetworksView.vue'), meta: { permission: 'network.view' } },
       { path: 'networks/conectar', component: () => import('@/views/ConnectView.vue'), meta: { permission: 'network.connect' } },
+      { path: 'sites', component: () => import('@/views/SitesView.vue'), meta: { permission: 'sites.view' } },
+      { path: 'sites/:id', component: () => import('@/views/SiteDetailView.vue'), meta: { permission: 'sites.view' } },
       { path: 'configuracoes', component: () => import('@/views/SettingsView.vue') },
     ],
   },

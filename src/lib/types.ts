@@ -156,3 +156,24 @@ export interface Site {
 export interface SiteListItem extends Site {
   ad_units: number
 }
+
+export interface AdUnit {
+  id: string
+  network_id: string
+  parent_id: string | null
+  site_id: string | null
+  site_manual: boolean
+  name: string
+  code: string | null
+  status: 'active' | 'archived'
+  synced_at: string
+}
+
+export interface SiteDetail extends Site {
+  ad_units: AdUnit[]
+  assigned_to: string[] | null
+}
+
+export interface SiteMember extends Member {
+  via: 'assigned' | 'all'
+}
