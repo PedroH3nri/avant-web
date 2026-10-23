@@ -15,6 +15,7 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/layouts/AppShell.vue'),
     children: [
       { path: '', component: () => import('@/views/HomeView.vue') },
+      { path: 'equipe', component: () => import('@/views/TeamView.vue'), meta: { permission: 'team.view' } },
       { path: 'configuracoes', component: () => import('@/views/SettingsView.vue') },
     ],
   },
@@ -35,6 +36,8 @@ router.beforeEach(async (to) => {
     return true
   }
   if (!session.me) return { path: '/entrar', query: to.fullPath === '/' ? {} : { next: to.fullPath } }
+  // Sem a permissão da tela, volta ao início (a API recusaria tudo mesmo).
+  if (to.meta.permission && !session.can(to.meta.permission)) return '/'
   return true
 })
 
