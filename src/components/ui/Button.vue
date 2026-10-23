@@ -24,6 +24,8 @@ const button = cva(
         icon: 'h-9 w-9',
       },
     },
+    // Link é texto: sem a altura e o recuo dos tamanhos.
+    compoundVariants: [{ variant: 'link', class: 'h-auto px-0' }],
     defaultVariants: { variant: 'default', size: 'default' },
   },
 )

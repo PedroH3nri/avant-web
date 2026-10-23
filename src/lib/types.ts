@@ -133,3 +133,26 @@ export interface Permission {
   group: string
   name: Localized
 }
+
+export interface DirectPermission {
+  permission: string
+  effect: 'allow' | 'deny'
+  expires_at: string | null
+}
+
+export interface MemberDetail extends Member {
+  permissions: DirectPermission[]
+}
+
+export interface Site {
+  id: string
+  network_id: string
+  domain: string
+  approval_status: string | null
+  status: 'active' | 'archived'
+  synced_at: string
+}
+
+export interface SiteListItem extends Site {
+  ad_units: number
+}
