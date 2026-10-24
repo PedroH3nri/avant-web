@@ -18,6 +18,7 @@ import MenuContent from '@/components/ui/MenuContent.vue'
 import MenuItem from '@/components/ui/MenuItem.vue'
 import NativeSelect from '@/components/ui/NativeSelect.vue'
 import Status from '@/components/ui/Status.vue'
+import TableState from '@/components/ui/TableState.vue'
 import { api, ApiError } from '@/lib/api'
 import { errorText, formatDate, t } from '@/lib/i18n'
 import { approval, tree } from '@/lib/sites'
@@ -103,8 +104,7 @@ async function move() {
           <h2 class="text-[16px] font-semibold tracking-tight">{{ t('site.units') }}</h2>
           <p class="mt-1 max-w-[70ch] text-[14px] text-muted-foreground">{{ t('site.unitsDesc') }}</p>
         </div>
-        <Card v-if="rows.length === 0" :desc="t('site.noUnits')" />
-        <DataTable v-else :min="640">
+        <DataTable :min="640">
           <thead>
             <tr>
               <th :class="th">{{ t('site.units') }}</th>
@@ -114,6 +114,7 @@ async function move() {
             </tr>
           </thead>
           <tbody>
+            <TableState :cols="4" :empty="rows.length === 0" :desc="t('site.noUnits')" />
             <tr v-for="{ unit: u, depth } in rows" :key="u.id">
               <td :class="td">
                 <span class="inline-flex items-center gap-2" :style="{ paddingLeft: `${depth * 20}px` }">

@@ -10,12 +10,12 @@ import PageBody from '@/components/PageBody.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import Badge from '@/components/ui/Badge.vue'
 import Button from '@/components/ui/Button.vue'
-import Card from '@/components/ui/Card.vue'
 import DataTable from '@/components/ui/DataTable.vue'
 import Input from '@/components/ui/Input.vue'
 import MenuContent from '@/components/ui/MenuContent.vue'
 import MenuItem from '@/components/ui/MenuItem.vue'
 import Status from '@/components/ui/Status.vue'
+import TableState from '@/components/ui/TableState.vue'
 import { api, ApiError } from '@/lib/api'
 import { errorText, formatAgo, formatDate, t } from '@/lib/i18n'
 import { td, th } from '@/lib/table'
@@ -104,8 +104,6 @@ const isMe = (p: Person) => p.user.id === session.me?.user.id
       <Input v-model="q" type="search" :aria-label="t('int.peopleSearch')" class="h-10 bg-card pl-9" :placeholder="t('int.peopleSearch')" autofocus />
     </div>
     <LoadError v-if="loadError" :message="loadError" @retry="search" />
-    <p v-else-if="people === null" class="text-[14px] text-muted-foreground">{{ t('int.peopleHint') }}</p>
-    <Card v-else-if="!people.length"><p class="text-[14px] text-muted-foreground">{{ t('int.peopleNone') }}</p></Card>
     <DataTable v-else :min="820">
       <thead>
         <tr>
@@ -118,7 +116,8 @@ const isMe = (p: Person) => p.user.id === session.me?.user.id
         </tr>
       </thead>
       <tbody>
-        <tr v-for="p in people" :key="p.user.id">
+        <TableState :cols="6" :empty="!people?.length" :icon="Search" :desc="people === null ? t('int.peopleHint') : t('int.peopleNone')" />
+        <tr v-for="p in people ?? []" :key="p.user.id">
           <td :class="td">
             <div class="font-medium">{{ p.user.name }}</div>
             <div class="text-[13px] text-muted-foreground">{{ p.user.email }}</div>

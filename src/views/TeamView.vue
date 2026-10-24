@@ -21,6 +21,7 @@ import MenuItem from '@/components/ui/MenuItem.vue'
 import NativeSelect from '@/components/ui/NativeSelect.vue'
 import SeatBar from '@/components/ui/SeatBar.vue'
 import Status from '@/components/ui/Status.vue'
+import TableState from '@/components/ui/TableState.vue'
 import { api, ApiError } from '@/lib/api'
 import { errorText, formatAgo, formatDate, pick, t } from '@/lib/i18n'
 import { td, th } from '@/lib/table'
@@ -242,12 +243,7 @@ const tab = (on: boolean) =>
       </div>
 
       <template v-if="view === 'members'">
-        <Card v-if="shown.length === 0">
-          <template #desc
-            >{{ t('team.noMatch', { q: filter }) }} <Button variant="link" @click="filter = ''">{{ t('team.clearFilter') }}</Button></template
-          >
-        </Card>
-        <DataTable v-else :min="720">
+        <DataTable :min="720">
           <thead>
             <tr>
               <th :class="th">{{ t('team.person') }}</th>
@@ -258,6 +254,9 @@ const tab = (on: boolean) =>
             </tr>
           </thead>
           <tbody>
+            <TableState :cols="5" :empty="shown.length === 0" :desc="t('team.noMatch', { q: filter })">
+              <Button size="sm" variant="outline" @click="filter = ''">{{ t('team.clearFilter') }}</Button>
+            </TableState>
             <tr v-for="m in shown" :key="m.id" class="hover:bg-muted">
               <td :class="td">
                 <div class="flex items-center gap-3">
@@ -302,16 +301,7 @@ const tab = (on: boolean) =>
       </template>
 
       <template v-else-if="view === 'pending'">
-        <Card v-if="invites.length === 0">
-          <div class="flex items-center gap-4">
-            <span class="flex size-10 shrink-0 items-center justify-center rounded-full border text-muted-foreground"><Mail class="size-4" /></span>
-            <div>
-              <div class="font-medium">{{ t('team.noInvites') }}</div>
-              <p class="text-[14px] text-muted-foreground">{{ t('team.noInvitesSub') }}</p>
-            </div>
-          </div>
-        </Card>
-        <DataTable v-else :min="640">
+        <DataTable :min="640">
           <thead>
             <tr>
               <th :class="th">{{ t('login.email') }}</th>
@@ -321,6 +311,7 @@ const tab = (on: boolean) =>
             </tr>
           </thead>
           <tbody>
+            <TableState :cols="4" :empty="invites.length === 0" :icon="Mail" :title="t('team.noInvites')" :desc="t('team.noInvitesSub')" />
             <tr v-for="i in invites" :key="i.id">
               <td :class="td">
                 <div class="flex items-center gap-3">

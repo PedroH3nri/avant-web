@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { AlertTriangle } from 'lucide-vue-next'
+import Button from '@/components/ui/Button.vue'
 import Card from '@/components/ui/Card.vue'
 import DataTable from '@/components/ui/DataTable.vue'
 import SeatBar from '@/components/ui/SeatBar.vue'
 import Status from '@/components/ui/Status.vue'
+import TableState from '@/components/ui/TableState.vue'
 import LoadError from '@/components/LoadError.vue'
 import PageBody from '@/components/PageBody.vue'
 import PageHeader from '@/components/PageHeader.vue'
@@ -15,6 +18,7 @@ import type { CompanyDetail, Items, Network, NetworkStatus } from '@/lib/types'
 import { useSession } from '@/stores/session'
 
 const session = useSession()
+const router = useRouter()
 const company = ref<CompanyDetail | null>(null)
 const networks = ref<Network[] | null>(null)
 const error = ref<string | null>(null)
@@ -71,8 +75,7 @@ watch(() => session.me?.active_company_id, load)
       <div class="grid gap-6 lg:grid-cols-[1fr_320px]">
         <section v-if="networks" class="grid content-start gap-3">
           <h2 class="text-[16px] font-semibold tracking-tight">{{ t('net.title') }}</h2>
-          <p v-if="networks.length === 0" class="rounded-lg border bg-card p-6 text-[14px] text-muted-foreground">{{ t('home.noNetworks') }}</p>
-          <DataTable v-else :min="560">
+          <DataTable :min="560">
             <thead>
               <tr>
                 <th :class="th">{{ t('net.col.network') }}</th>
@@ -82,6 +85,9 @@ watch(() => session.me?.active_company_id, load)
               </tr>
             </thead>
             <tbody>
+              <TableState :cols="4" :empty="networks.length === 0" :desc="t('home.noNetworks')">
+                <Button v-if="session.can('network.connect')" size="sm" @click="router.push('/networks/conectar')">{{ t('net.connect') }}</Button>
+              </TableState>
               <tr v-for="n in networks" :key="n.id">
                 <td :class="td">
                   <span class="block font-medium">{{ n.display_name ?? n.network_code }}</span>
