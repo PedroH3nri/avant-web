@@ -1,4 +1,5 @@
 <script setup lang="ts">
+/** Tela de aceite de convite, com conta nova ou logada. */
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import Button from '@/components/ui/Button.vue'
@@ -36,18 +37,20 @@ const formOk = computed(
 )
 const loginLink = computed(() => ({ path: '/entrar', query: { next: route.fullPath } }))
 
+/** Carrega o convite pelo token. */
 async function load() {
   loadError.value = null
   try {
     invite.value = await api.get<InvitationPreview>(`/auth/invitations/${encodeURIComponent(token)}`)
     gone.value = invite.value.status !== 'pending'
-  } catch (e) {
-    if (e instanceof ApiError && ['not_found', 'invalid_token', 'invitation_expired'].includes(e.code)) gone.value = true
-    else loadError.value = e instanceof ApiError ? errorText(e.code) : errorText('unknown')
+  } catch (error) {
+    if (error instanceof ApiError && ['not_found', 'invalid_token', 'invitation_expired'].includes(error.code)) gone.value = true
+    else loadError.value = error instanceof ApiError ? errorText(error.code) : errorText('unknown')
   }
 }
 onMounted(load)
 
+/** Aceita o convite e entra no painel. */
 async function accept() {
   busy.value = true
   error.value = null
@@ -57,8 +60,8 @@ async function accept() {
   try {
     session.set(await api.post<Me>(`/auth/invitations/${encodeURIComponent(token)}/accept`, body))
     await router.push('/')
-  } catch (e) {
-    const code = e instanceof ApiError ? e.code : 'unknown'
+  } catch (failure) {
+    const code = failure instanceof ApiError ? failure.code : 'unknown'
     if (code === 'invitation_expired' || code === 'invitation_not_pending' || code === 'invalid_token') gone.value = true
     else error.value = errorText(code)
   } finally {
@@ -66,6 +69,7 @@ async function accept() {
   }
 }
 
+/** Sai da conta logada para aceitar com outra. */
 async function switchAccount() {
   await session.logout()
 }

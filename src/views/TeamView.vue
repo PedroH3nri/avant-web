@@ -1,4 +1,5 @@
 <script setup lang="ts">
+/** Equipe: membros, convites pendentes e convite novo. */
 import { computed, onMounted, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
 import { DropdownMenuRoot, DropdownMenuSeparator, DropdownMenuTrigger } from 'reka-ui'
@@ -42,22 +43,23 @@ const canInvite = computed(() => session.can('team.invite'))
 const canManage = computed(() => session.can('team.manage'))
 const canRoles = computed(() => session.can('roles.view'))
 
+/** Carrega Empresa, membros, convites e papéis. */
 async function load() {
   loadError.value = null
   try {
-    const [c, m, i, r] = await Promise.all([
+    const [companyDetail, memberPage, invitationPage, rolePage] = await Promise.all([
       api.get<CompanyDetail>('/company'),
       api.get<Items<Member>>('/members'),
       api.get<Items<Invitation>>('/invitations'),
       canRoles.value ? api.get<Items<Role>>('/roles') : Promise.resolve({ items: [] as Role[], next_cursor: null }),
     ])
-    company.value = c
-    members.value = m.items.filter((x) => x.status !== 'removed')
-    invites.value = i.items.filter((x) => x.status === 'pending')
-    roles.value = r.items
+    company.value = companyDetail
+    members.value = memberPage.items.filter((member) => member.status !== 'removed')
+    invites.value = invitationPage.items.filter((invitation) => invitation.status === 'pending')
+    roles.value = rolePage.items
     loaded.value = true
-  } catch (e) {
-    loadError.value = errorText(e instanceof ApiError ? e.code : 'unknown')
+  } catch (error) {
+    loadError.value = errorText(error instanceof ApiError ? error.code : 'unknown')
   }
 }
 onMounted(load)
@@ -67,39 +69,43 @@ watch(() => session.me?.active_company_id, load)
 const limit = computed(() => company.value?.seat_limit ?? null)
 const used = computed(() => members.value.length + invites.value.length)
 const full = computed(() => limit.value !== null && used.value >= limit.value)
-const roleName = (id: string | null) => pick(roles.value.find((r) => r.id === id)?.name)
+/** Nome do papel pelo id. */
+const roleName = (id: string | null) => pick(roles.value.find((role) => role.id === id)?.name)
 const shown = computed(() => {
-  const q = filter.value.trim().toLowerCase()
-  if (!q) return members.value
-  return members.value.filter((m) => `${m.user.name} ${m.user.email} ${pick(m.role?.name)}`.toLowerCase().includes(q))
+  const needle = filter.value.trim().toLowerCase()
+  if (!needle) return members.value
+  return members.value.filter((member) => `${member.user.name} ${member.user.email} ${pick(member.role?.name)}`.toLowerCase().includes(needle))
 })
-const isMe = (m: Member) => m.user.id === session.me?.user.id
-const errorToast = (e: unknown) => toast.error(errorText(e instanceof ApiError ? e.code : 'unknown'))
+/** Diz se o membro é a própria pessoa. */
+const isMe = (member: Member) => member.user.id === session.me?.user.id
+/** Mostra o erro num aviso. */
+const errorToast = (error: unknown) => toast.error(errorText(error instanceof ApiError ? error.code : 'unknown'))
 
 // Convite
 const email = ref('')
 const inviteRole = ref('')
 const sending = ref(false)
-const roleOptions = computed(() => roles.value.map((r) => ({ value: r.id, label: pick(r.name) })))
-watch(roleOptions, (opts) => {
-  if (!opts.some((o) => o.value === inviteRole.value)) inviteRole.value = opts[0]?.value ?? ''
+const roleOptions = computed(() => roles.value.map((role) => ({ value: role.id, label: pick(role.name) })))
+watch(roleOptions, (options) => {
+  if (!options.some((opt) => opt.value === inviteRole.value)) inviteRole.value = options[0]?.value ?? ''
 })
 const emailOk = computed(() => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.value.trim()))
 const dupe = computed(() => {
-  const e = email.value.trim().toLowerCase()
-  return members.value.some((m) => m.user.email.toLowerCase() === e) || invites.value.some((i) => i.email.toLowerCase() === e)
+  const typed = email.value.trim().toLowerCase()
+  return members.value.some((member) => member.user.email.toLowerCase() === typed) || invites.value.some((invite) => invite.email.toLowerCase() === typed)
 })
 
+/** Envia o convite para o email com o papel escolhido. */
 async function sendInvite() {
   if (!emailOk.value || dupe.value || full.value || !inviteRole.value) return
   sending.value = true
   try {
-    const inv = await api.post<Invitation>('/invitations', { email: email.value.trim(), role_id: inviteRole.value })
-    invites.value = [inv, ...invites.value]
-    toast.success(t('team.sent', { email: inv.email }), { description: t('team.sentSub') })
+    const invitation = await api.post<Invitation>('/invitations', { email: email.value.trim(), role_id: inviteRole.value })
+    invites.value = [invitation, ...invites.value]
+    toast.success(t('team.sent', { email: invitation.email }), { description: t('team.sentSub') })
     email.value = ''
-  } catch (e) {
-    errorToast(e)
+  } catch (error) {
+    errorToast(error)
   } finally {
     sending.value = false
   }
@@ -110,64 +116,68 @@ const roleTarget = ref<Member | null>(null)
 const newRole = ref('')
 const removeTarget = ref<Member | null>(null)
 const busy = ref(false)
-const roleOpen = computed({ get: () => roleTarget.value !== null, set: (v) => !v && (roleTarget.value = null) })
-const removeOpen = computed({ get: () => removeTarget.value !== null, set: (v) => !v && (removeTarget.value = null) })
+const roleOpen = computed({ get: () => roleTarget.value !== null, set: (value) => !value && (roleTarget.value = null) })
+const removeOpen = computed({ get: () => removeTarget.value !== null, set: (value) => !value && (removeTarget.value = null) })
 
-function openRole(m: Member) {
-  roleTarget.value = m
-  newRole.value = m.role?.id ?? roleOptions.value[0]?.value ?? ''
+/** Abre o diálogo para trocar o papel do membro. */
+function openRole(member: Member) {
+  roleTarget.value = member
+  newRole.value = member.role?.id ?? roleOptions.value[0]?.value ?? ''
 }
 
-async function patchMember(m: Member, body: { role_id?: string; status?: 'active' | 'suspended' }) {
+/** Muda o papel ou o status do membro. */
+async function patchMember(member: Member, body: { role_id?: string; status?: 'active' | 'suspended' }) {
   busy.value = true
   try {
-    const updated = await api.patch<Member>(`/members/${m.id}`, body)
-    members.value = members.value.map((x) => (x.id === m.id ? { ...x, ...updated } : x))
+    const updated = await api.patch<Member>(`/members/${member.id}`, body)
+    members.value = members.value.map((existing) => (existing.id === member.id ? { ...existing, ...updated } : existing))
     toast.success(t('team.updated'))
     roleTarget.value = null
     // Contagem de pessoas por papel.
     if (body.role_id && canRoles.value) roles.value = (await api.get<Items<Role>>('/roles')).items
-  } catch (e) {
-    errorToast(e)
+  } catch (error) {
+    errorToast(error)
   } finally {
     busy.value = false
   }
 }
 
+/** Remove o membro escolhido. */
 async function removeMember() {
-  const m = removeTarget.value
-  if (!m) return
+  const current = removeTarget.value
+  if (!current) return
   busy.value = true
   try {
-    await api.delete(`/members/${m.id}`)
-    members.value = members.value.filter((x) => x.id !== m.id)
-    toast(t('team.removed', { name: m.user.name }), { description: t('team.removedSub') })
+    await api.delete(`/members/${current.id}`)
+    members.value = members.value.filter((member) => member.id !== current.id)
+    toast(t('team.removed', { name: current.user.name }), { description: t('team.removedSub') })
     removeTarget.value = null
-  } catch (e) {
-    errorToast(e)
+  } catch (error) {
+    errorToast(error)
   } finally {
     busy.value = false
   }
 }
 
 // Convites pendentes
-async function resend(i: Invitation) {
+async function resend(invitation: Invitation) {
   try {
-    const inv = await api.post<Invitation>(`/invitations/${i.id}/resend`)
-    invites.value = invites.value.map((x) => (x.id === i.id ? inv : x))
-    toast.success(t('team.resent', { email: i.email }), { description: t('team.sentSub') })
-  } catch (e) {
-    errorToast(e)
+    const resent = await api.post<Invitation>(`/invitations/${invitation.id}/resend`)
+    invites.value = invites.value.map((invite) => (invite.id === invitation.id ? resent : invite))
+    toast.success(t('team.resent', { email: invitation.email }), { description: t('team.sentSub') })
+  } catch (error) {
+    errorToast(error)
   }
 }
 
-async function cancel(i: Invitation) {
+/** Cancela um convite pendente. */
+async function cancel(invitation: Invitation) {
   try {
-    await api.delete(`/invitations/${i.id}`)
-    invites.value = invites.value.filter((x) => x.id !== i.id)
-    toast(t('team.canceled', { email: i.email }))
-  } catch (e) {
-    errorToast(e)
+    await api.delete(`/invitations/${invitation.id}`)
+    invites.value = invites.value.filter((invite) => invite.id !== invitation.id)
+    toast(t('team.canceled', { email: invitation.email }))
+  } catch (error) {
+    errorToast(error)
   }
 }
 
@@ -175,8 +185,9 @@ const tabs = computed(() =>
   [
     { id: 'members' as const, label: t('team.members'), n: members.value.length, show: true },
     { id: 'pending' as const, label: t('team.pending'), n: invites.value.length, show: true },
-  ].filter((x) => x.show),
+  ].filter((tab) => tab.show),
 )
+/** Classes da aba, ativa ou não. */
 const tab = (on: boolean) =>
   cn(
     'h-8 rounded-[4px] px-3 text-[13px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
@@ -228,8 +239,8 @@ const tab = (on: boolean) =>
 
       <div class="flex flex-wrap items-center gap-3">
         <div class="flex rounded-md border bg-card p-0.5" role="tablist" :aria-label="t('team.title')">
-          <button v-for="x in tabs" :key="x.id" type="button" role="tab" :aria-selected="view === x.id" :class="tab(view === x.id)" @click="view = x.id">
-            {{ x.label }} <span class="text-muted-foreground tnum">{{ x.n }}</span>
+          <button v-for="tabOption in tabs" :key="tabOption.id" type="button" role="tab" :aria-selected="view === tabOption.id" :class="tab(view === tabOption.id)" @click="view = tabOption.id">
+            {{ tabOption.label }} <span class="text-muted-foreground tnum">{{ tabOption.n }}</span>
           </button>
         </div>
         <div v-if="view === 'members'" class="relative ml-auto w-full sm:w-64">
@@ -253,41 +264,41 @@ const tab = (on: boolean) =>
             <TableState :cols="5" :empty="shown.length === 0" :desc="t('team.noMatch', { q: filter })">
               <Button size="sm" variant="outline" @click="filter = ''">{{ t('team.clearFilter') }}</Button>
             </TableState>
-            <tr v-for="m in shown" :key="m.id" class="hover:bg-muted">
+            <tr v-for="member in shown" :key="member.id" class="hover:bg-muted">
               <td :class="td">
                 <div class="flex items-center gap-3">
-                  <Avatar :name="m.user.name" />
+                  <Avatar :name="member.user.name" />
                   <div class="min-w-0">
                     <div class="font-medium">
-                      <RouterLink :to="`/equipe/${m.id}`" class="hover:underline focus-visible:underline focus-visible:outline-none">{{ m.user.name }}</RouterLink
-                      ><span v-if="isMe(m)" class="font-normal text-muted-foreground"> ({{ t('team.you') }})</span>
+                      <RouterLink :to="`/equipe/${member.id}`" class="hover:underline focus-visible:underline focus-visible:outline-none">{{ member.user.name }}</RouterLink
+                      ><span v-if="isMe(member)" class="font-normal text-muted-foreground"> ({{ t('team.you') }})</span>
                     </div>
-                    <div class="truncate text-[13px] text-muted-foreground">{{ m.user.email }}</div>
+                    <div class="truncate text-[13px] text-muted-foreground">{{ member.user.email }}</div>
                   </div>
                 </div>
               </td>
               <td :class="td">
-                <Badge v-if="m.is_owner">{{ t('team.owner') }}</Badge><template v-else>{{ pick(m.role?.name) }}</template>
+                <Badge v-if="member.is_owner">{{ t('team.owner') }}</Badge><template v-else>{{ pick(member.role?.name) }}</template>
               </td>
               <td :class="td">
-                <Status :tone="m.status === 'active' ? 'ok' : 'neutral'">{{ t(m.status === 'active' ? 'team.active' : 'team.suspended') }}</Status>
+                <Status :tone="member.status === 'active' ? 'ok' : 'neutral'">{{ t(member.status === 'active' ? 'team.active' : 'team.suspended') }}</Status>
               </td>
-              <td :class="[td, 'text-muted-foreground tnum']">{{ formatDate(m.joined_at, false) }}</td>
+              <td :class="[td, 'text-muted-foreground tnum']">{{ formatDate(member.joined_at, false) }}</td>
               <td :class="td">
-                <span v-if="m.is_owner" class="flex size-8 items-center justify-center text-muted-foreground" :title="t('team.ownerLock')">
+                <span v-if="member.is_owner" class="flex size-8 items-center justify-center text-muted-foreground" :title="t('team.ownerLock')">
                   <Lock class="size-4" aria-hidden="true" /><span class="sr-only">{{ t('team.ownerLock') }}</span>
                 </span>
-                <DropdownMenuRoot v-else-if="canManage && !isMe(m)">
+                <DropdownMenuRoot v-else-if="canManage && !isMe(member)">
                   <DropdownMenuTrigger as-child>
-                    <Button variant="ghost" size="icon" class="size-8" :aria-label="t('team.actionsFor', { name: m.user.name })"><MoreHorizontal /></Button>
+                    <Button variant="ghost" size="icon" class="size-8" :aria-label="t('team.actionsFor', { name: member.user.name })"><MoreHorizontal /></Button>
                   </DropdownMenuTrigger>
                   <MenuContent align="end" class="w-52">
-                    <MenuItem v-if="roleOptions.length" @select="openRole(m)">{{ t('team.changeRole') }}</MenuItem>
-                    <MenuItem @select="patchMember(m, { status: m.status === 'active' ? 'suspended' : 'active' })">
-                      {{ t(m.status === 'active' ? 'team.suspend' : 'team.reactivate') }}
+                    <MenuItem v-if="roleOptions.length" @select="openRole(member)">{{ t('team.changeRole') }}</MenuItem>
+                    <MenuItem @select="patchMember(member, { status: member.status === 'active' ? 'suspended' : 'active' })">
+                      {{ t(member.status === 'active' ? 'team.suspend' : 'team.reactivate') }}
                     </MenuItem>
                     <DropdownMenuSeparator class="-mx-1 my-1 h-px bg-border" />
-                    <MenuItem danger @select="removeTarget = m">{{ t('team.remove') }}</MenuItem>
+                    <MenuItem danger @select="removeTarget = member">{{ t('team.remove') }}</MenuItem>
                   </MenuContent>
                 </DropdownMenuRoot>
               </td>
@@ -308,19 +319,19 @@ const tab = (on: boolean) =>
           </thead>
           <tbody>
             <TableState :cols="4" :empty="invites.length === 0" :icon="Mail" :title="t('team.noInvites')" :desc="t('team.noInvitesSub')" />
-            <tr v-for="i in invites" :key="i.id">
+            <tr v-for="invite in invites" :key="invite.id">
               <td :class="td">
                 <div class="flex items-center gap-3">
                   <span class="flex size-8 shrink-0 items-center justify-center rounded-full border border-dashed text-muted-foreground"><Mail class="size-3.5" /></span>
-                  <span class="font-medium">{{ i.email }}</span>
+                  <span class="font-medium">{{ invite.email }}</span>
                 </div>
               </td>
-              <td :class="td">{{ roleName(i.role_id) }}</td>
-              <td :class="td"><Status tone="ochre">{{ t('team.expiresIn', { when: formatAgo(i.expires_at) }) }}</Status></td>
+              <td :class="td">{{ roleName(invite.role_id) }}</td>
+              <td :class="td"><Status tone="ochre">{{ t('team.expiresIn', { when: formatAgo(invite.expires_at) }) }}</Status></td>
               <td :class="[td, 'whitespace-nowrap text-right']">
                 <template v-if="canInvite">
-                  <Button variant="ghost" size="sm" @click="resend(i)"><RefreshCw />{{ t('team.resend') }}</Button>
-                  <Button variant="destructive" size="sm" @click="cancel(i)">{{ t('team.cancelInvite') }}</Button>
+                  <Button variant="ghost" size="sm" @click="resend(invite)"><RefreshCw />{{ t('team.resend') }}</Button>
+                  <Button variant="destructive" size="sm" @click="cancel(invite)">{{ t('team.cancelInvite') }}</Button>
                 </template>
               </td>
             </tr>

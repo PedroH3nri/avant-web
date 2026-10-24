@@ -1159,6 +1159,7 @@ const fallbackError = ['Algo deu errado. Tente de novo.', 'Something went wrong.
 const index = { pt: 0, en: 1, es: 2 } as const satisfies Record<Lang, 0 | 1 | 2>
 const STORAGE = 'avant.lang'
 
+/** Idioma inicial: o salvo, senão o do navegador, senão português. */
 function initial(): Lang {
   try {
     const saved = localStorage.getItem(STORAGE)
@@ -1183,27 +1184,29 @@ export const lang = ref<Lang>(initial())
 
 watch(
   lang,
-  (l) => {
-    if (typeof document !== 'undefined') document.documentElement.lang = l === 'pt' ? 'pt-BR' : l
+  (value) => {
+    if (typeof document !== 'undefined') document.documentElement.lang = value === 'pt' ? 'pt-BR' : value
   },
   { immediate: true },
 )
 
 /** Troca pelo seletor: fica lembrado neste navegador. */
-export function chooseLang(l: Lang) {
-  lang.value = l
+export function chooseLang(chosen: Lang) {
+  lang.value = chosen
   try {
-    localStorage.setItem(STORAGE, l)
+    localStorage.setItem(STORAGE, chosen)
   } catch {
     // segue sem lembrar
   }
 }
 
+/** Troca os ``{nome}`` do texto pelos valores. */
 function fill(text: string, params?: Record<string, string | number>): string {
   if (!params) return text
-  return text.replace(/\{(\w+)\}/g, (m, k: string) => (k in params ? String(params[k]) : m))
+  return text.replace(/\{(\w+)\}/g, (item, entry: string) => (entry in params ? String(params[entry]) : item))
 }
 
+/** Texto da chave no idioma atual. */
 export function t(key: Key, params?: Record<string, string | number>): string {
   return fill(dict[key][index[lang.value]], params)
 }
@@ -1214,24 +1217,27 @@ export function pick(name: Localized | null | undefined): string {
   return name[lang.value] ?? name.pt ?? Object.values(name)[0] ?? ''
 }
 
+/** Texto de uma ação da auditoria no idioma atual. */
 export function auditText(action: string): string {
   const text = auditActions[action]
   return text ? text[index[lang.value]] : action
 }
 
+/** Mensagem de erro da API no idioma atual. */
 export function errorText(code: string, params?: Record<string, string | number>): string {
   return fill((errors[code] ?? fallbackError)[index[lang.value]], params)
 }
 
 export const locale = computed(() => (lang.value === 'pt' ? 'pt-BR' : lang.value === 'es' ? 'es' : 'en'))
 
+/** Data (e hora) no formato do idioma atual. */
 export function formatDate(iso: string | null, withTime = true): string {
   if (!iso) return t('common.never')
-  const d = new Date(iso)
+  const date = new Date(iso)
   return new Intl.DateTimeFormat(locale.value, {
     dateStyle: 'short',
     ...(withTime ? { timeStyle: 'short' } : {}),
-  }).format(d)
+  }).format(date)
 }
 
 /** "há 5 min", "há 2 h"... para checagens e atividade. */

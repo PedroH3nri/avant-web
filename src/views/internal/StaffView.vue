@@ -31,38 +31,41 @@ const roleId = ref('')
 const busy = ref(false)
 const emailOk = computed(() => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.value.trim()))
 
+/** Carrega a equipe Groone, os papéis internos e os convites. */
 async function load() {
   loadError.value = null
   try {
-    const [s, r, i] = await Promise.all([
+    const [staffPage, rolePage, invitationPage] = await Promise.all([
       api.get<Items<Member>>('/internal/staff'),
       session.can('roles.view') ? api.get<Items<Role>>('/roles') : Promise.resolve({ items: [] as Role[], next_cursor: null }),
       session.can('team.view') ? api.get<Items<Invitation>>('/invitations') : Promise.resolve({ items: [] as Invitation[], next_cursor: null }),
     ])
-    staff.value = s.items.filter((m) => m.status !== 'removed')
+    staff.value = staffPage.items.filter((member) => member.status !== 'removed')
     // Os papéis da Company Groone; os predefinidos são dos clientes.
-    roles.value = r.items.filter((x) => !x.is_system)
+    roles.value = rolePage.items.filter((role) => !role.is_system)
     roleId.value ||= roles.value[0]?.id ?? ''
-    invites.value = i.items.filter((x) => x.status === 'pending')
-  } catch (e) {
-    loadError.value = errorText(e instanceof ApiError ? e.code : 'unknown')
+    invites.value = invitationPage.items.filter((invitation) => invitation.status === 'pending')
+  } catch (error) {
+    loadError.value = errorText(error instanceof ApiError ? error.code : 'unknown')
   }
 }
 onMounted(load)
 
-const roleOptions = computed(() => roles.value.map((r) => ({ value: r.id, label: pick(r.name) })))
-const roleName = (id: string | null) => pick(roles.value.find((r) => r.id === id)?.name)
+const roleOptions = computed(() => roles.value.map((role) => ({ value: role.id, label: pick(role.name) })))
+/** Nome do papel pelo id. */
+const roleName = (id: string | null) => pick(roles.value.find((role) => role.id === id)?.name)
 
+/** Convida alguém para a equipe Groone. */
 async function invite() {
   if (!emailOk.value || !roleId.value) return
   busy.value = true
   try {
-    const inv = await api.post<Invitation>('/internal/staff/invitations', { email: email.value.trim(), role_id: roleId.value })
-    invites.value = [inv, ...invites.value]
-    toast.success(t('int.staffInvited', { email: inv.email }))
+    const invitation = await api.post<Invitation>('/internal/staff/invitations', { email: email.value.trim(), role_id: roleId.value })
+    invites.value = [invitation, ...invites.value]
+    toast.success(t('int.staffInvited', { email: invitation.email }))
     email.value = ''
-  } catch (e) {
-    toast.error(errorText(e instanceof ApiError ? e.code : 'unknown'))
+  } catch (error) {
+    toast.error(errorText(error instanceof ApiError ? error.code : 'unknown'))
   } finally {
     busy.value = false
   }
@@ -89,12 +92,12 @@ async function invite() {
 
     <Card v-if="invites.length" :title="t('int.invites')">
       <ul class="-my-3 divide-y">
-        <li v-for="i in invites" :key="i.id" class="flex flex-wrap items-center justify-between gap-2 py-3 text-[14px]">
+        <li v-for="invitation in invites" :key="invitation.id" class="flex flex-wrap items-center justify-between gap-2 py-3 text-[14px]">
           <span>
-            <span class="font-medium">{{ i.email }}</span>
-            <span v-if="i.role_id" class="text-muted-foreground"> · {{ roleName(i.role_id) }}</span>
+            <span class="font-medium">{{ invitation.email }}</span>
+            <span v-if="invitation.role_id" class="text-muted-foreground"> · {{ roleName(invitation.role_id) }}</span>
           </span>
-          <span class="text-[13px] text-muted-foreground">{{ t('int.expires', { when: formatAgo(i.expires_at) }) }}</span>
+          <span class="text-[13px] text-muted-foreground">{{ t('int.expires', { when: formatAgo(invitation.expires_at) }) }}</span>
         </li>
       </ul>
     </Card>
@@ -110,24 +113,24 @@ async function invite() {
       </thead>
       <tbody>
         <TableState :cols="4" :loading="!staff" />
-        <tr v-for="m in staff ?? []" :key="m.id">
+        <tr v-for="member in staff ?? []" :key="member.id">
           <td :class="td">
             <div class="flex items-center gap-3">
-              <Avatar :name="m.user.name" :size="28" />
+              <Avatar :name="member.user.name" :size="28" />
               <div class="min-w-0">
-                <div class="font-medium">{{ m.user.name }}</div>
-                <div class="truncate text-[13px] text-muted-foreground">{{ m.user.email }}</div>
+                <div class="font-medium">{{ member.user.name }}</div>
+                <div class="truncate text-[13px] text-muted-foreground">{{ member.user.email }}</div>
               </div>
             </div>
           </td>
           <td :class="td">
-            <Badge v-if="m.is_owner">{{ t('int.owner') }}</Badge>
-            <template v-else>{{ pick(m.role?.name) }}</template>
+            <Badge v-if="member.is_owner">{{ t('int.owner') }}</Badge>
+            <template v-else>{{ pick(member.role?.name) }}</template>
           </td>
           <td :class="td">
-            <Status :tone="m.status === 'active' ? 'ok' : 'neutral'">{{ m.status === 'active' ? t('team.active') : t('team.suspended') }}</Status>
+            <Status :tone="member.status === 'active' ? 'ok' : 'neutral'">{{ member.status === 'active' ? t('team.active') : t('team.suspended') }}</Status>
           </td>
-          <td :class="[td, 'text-muted-foreground']">{{ formatDate(m.joined_at, false) }}</td>
+          <td :class="[td, 'text-muted-foreground']">{{ formatDate(member.joined_at, false) }}</td>
         </tr>
       </tbody>
     </DataTable>

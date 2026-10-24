@@ -26,47 +26,50 @@ const clientId = ref('')
 const busy = ref(false)
 const open = computed({
   get: () => target.value !== null,
-  set: (v) => {
-    if (!v) target.value = null
+  set: (value) => {
+    if (!value) target.value = null
   },
 })
 
+/** Carrega as networks do MCM sem Empresa e os clientes ativos. */
 async function load() {
   loadError.value = null
   try {
-    const [c, cl] = await Promise.all([
+    const [candidatePage, clientPage] = await Promise.all([
       api.get<Items<McmCandidate>>('/internal/networks/unassigned'),
       session.can('internal.clients.view') ? api.get<Items<Client>>('/internal/clients') : Promise.resolve({ items: [] as Client[], next_cursor: null }),
     ])
-    candidates.value = c.items
-    clients.value = cl.items.filter((x) => x.status === 'active')
-  } catch (e) {
-    loadError.value = errorText(e instanceof ApiError ? e.code : 'unknown')
+    candidates.value = candidatePage.items
+    clients.value = clientPage.items.filter((client) => client.status === 'active')
+  } catch (error) {
+    loadError.value = errorText(error instanceof ApiError ? error.code : 'unknown')
   }
 }
 onMounted(load)
 
-const options = computed(() => clients.value.map((c) => ({ value: c.id, label: `${c.name} (${c.owner.email})` })))
+const options = computed(() => clients.value.map((client) => ({ value: client.id, label: `${client.name} (${client.owner.email})` })))
 
-function start(c: McmCandidate) {
+/** Abre o diálogo de atribuição, sugerindo o cliente do mesmo domínio. */
+function start(mcmCandidate: McmCandidate) {
   // Sugere o cliente cujo dono tem o mesmo domínio de e-mail.
-  const domain = c.email.split('@')[1]
-  clientId.value = clients.value.find((x) => x.owner.email.endsWith(`@${domain}`))?.id ?? clients.value[0]?.id ?? ''
-  target.value = c
+  const domain = mcmCandidate.email.split('@')[1]
+  clientId.value = clients.value.find((client) => client.owner.email.endsWith(`@${domain}`))?.id ?? clients.value[0]?.id ?? ''
+  target.value = mcmCandidate
 }
 
+/** Liga a network ao cliente escolhido. */
 async function assign() {
-  const c = target.value
-  if (!c || !clientId.value) return
+  const current = target.value
+  if (!current || !clientId.value) return
   busy.value = true
   try {
-    await api.post(`/internal/networks/${c.id}/assign`, { company_id: clientId.value })
-    const name = clients.value.find((x) => x.id === clientId.value)?.name ?? ''
-    candidates.value = candidates.value?.filter((x) => x.id !== c.id) ?? null
+    await api.post(`/internal/networks/${current.id}/assign`, { company_id: clientId.value })
+    const name = clients.value.find((client) => client.id === clientId.value)?.name ?? ''
+    candidates.value = candidates.value?.filter((candidate) => candidate.id !== current.id) ?? null
     target.value = null
     toast.success(t('int.assigned', { name }))
-  } catch (e) {
-    toast.error(errorText(e instanceof ApiError ? e.code : 'unknown'))
+  } catch (error) {
+    toast.error(errorText(error instanceof ApiError ? error.code : 'unknown'))
   } finally {
     busy.value = false
   }
@@ -89,16 +92,16 @@ async function assign() {
       </thead>
       <tbody>
         <TableState :cols="5" :loading="!candidates" :empty="candidates?.length === 0" :desc="t('int.mcmEmpty')" />
-        <tr v-for="c in candidates ?? []" :key="c.id">
+        <tr v-for="candidate in candidates ?? []" :key="candidate.id">
           <td :class="td">
-            <div class="font-medium">{{ c.display_name ?? c.network_code }}</div>
-            <code class="font-mono text-[13px] text-muted-foreground">{{ c.network_code }}</code>
+            <div class="font-medium">{{ candidate.display_name ?? candidate.network_code }}</div>
+            <code class="font-mono text-[13px] text-muted-foreground">{{ candidate.network_code }}</code>
           </td>
-          <td :class="td">{{ c.email }}</td>
-          <td :class="[td, 'text-[13px] text-muted-foreground']">{{ c.delegation ?? '–' }}</td>
-          <td :class="[td, 'whitespace-nowrap text-[13px] text-muted-foreground']">{{ formatDate(c.first_seen_at, false) }}</td>
+          <td :class="td">{{ candidate.email }}</td>
+          <td :class="[td, 'text-[13px] text-muted-foreground']">{{ candidate.delegation ?? '–' }}</td>
+          <td :class="[td, 'whitespace-nowrap text-[13px] text-muted-foreground']">{{ formatDate(candidate.first_seen_at, false) }}</td>
           <td :class="[td, 'text-right']">
-            <Button variant="outline" size="sm" :disabled="!clients.length" @click="start(c)">{{ t('int.assign') }}</Button>
+            <Button variant="outline" size="sm" :disabled="!clients.length" @click="start(candidate)">{{ t('int.assign') }}</Button>
           </td>
         </tr>
       </tbody>

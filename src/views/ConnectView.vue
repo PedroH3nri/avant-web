@@ -1,4 +1,5 @@
 <script setup lang="ts">
+/** Assistente para conectar uma network do GAM, com o progresso ao vivo. */
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { ArrowLeft, Check, Copy, Loader2, X } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
@@ -44,10 +45,10 @@ const test = computed(() => network.value?.last_runs.test)
 
 // O teste e as importações rodam no worker; a tela acompanha pelos eventos e, de reserva, a cada 5 s.
 const checks = computed<Check[] | null>(() => {
-  const n = network.value
-  if (!n) return null
+  const current = network.value
+  if (!current) return null
   const run: SyncRun | undefined = test.value
-  const c1: Check = { label: t('wiz.c1', { code: n.network_code }), state: 'run' }
+  const c1: Check = { label: t('wiz.c1', { code: current.network_code }), state: 'run' }
   const c2: Check = { label: t('wiz.c2'), state: 'wait' }
   const c3: Check = { label: t('wiz.c3'), state: 'wait' }
   if (run?.status === 'failed') {
@@ -58,25 +59,27 @@ const checks = computed<Check[] | null>(() => {
       c1.state = 'ok'
       Object.assign(c2, { state: 'fail', detail })
     }
-  } else if (run?.status === 'ok' || n.status === 'connected') {
+  } else if (run?.status === 'ok' || current.status === 'connected') {
     c1.state = 'ok'
     c2.state = 'ok'
-    const sites = n.last_runs.sites
-    const units = n.last_runs.ad_units
+    const sites = current.last_runs.sites
+    const units = current.last_runs.ad_units
     if (sites?.status === 'failed' || units?.status === 'failed') {
       const failed = sites?.status === 'failed' ? sites : units
       Object.assign(c3, { state: 'fail', detail: failed?.error_code ? errorText(failed.error_code) : undefined })
     } else if (sites?.status === 'ok' && units?.status === 'ok') {
-      const count = (r: SyncRun) => (r.counts.created ?? 0) + (r.counts.updated ?? 0)
-      Object.assign(c3, { state: 'ok', detail: t('wiz.c3Done', { sites: n.sites, units: count(units) }) })
+      /** Soma o que a etapa criou e atualizou. */
+      const count = (syncRun: SyncRun) => (syncRun.counts.created ?? 0) + (syncRun.counts.updated ?? 0)
+      Object.assign(c3, { state: 'ok', detail: t('wiz.c3Done', { sites: current.sites, units: count(units) }) })
     } else c3.state = 'run'
   }
   return [c1, c2, c3]
 })
-const failed = computed(() => checks.value?.some((c) => c.state === 'fail') ?? false)
-const done = computed(() => checks.value?.every((c) => c.state === 'ok') ?? false)
+const failed = computed(() => checks.value?.some((check) => check.state === 'fail') ?? false)
+const done = computed(() => checks.value?.every((check) => check.state === 'ok') ?? false)
 const running = computed(() => busy.value || (!!checks.value && !failed.value && !done.value))
 
+/** Para de acompanhar o progresso. */
 function stopWatching() {
   if (poll) clearInterval(poll)
   if (slowTimer) clearTimeout(slowTimer)
@@ -84,6 +87,7 @@ function stopWatching() {
 }
 onBeforeUnmount(stopWatching)
 
+/** Recarrega a network para atualizar o progresso. */
 async function refresh() {
   if (!network.value) return
   try {
@@ -97,6 +101,7 @@ onEvent('network.updated', ({ network_id }) => {
   if (network_id === network.value?.id) void refresh()
 })
 
+/** Recarrega a network a cada 5 segundos e marca como lenta depois de 2 minutos. */
 function watchProgress() {
   stopWatching()
   slow.value = false
@@ -104,6 +109,7 @@ function watchProgress() {
   slowTimer = setTimeout(() => (slow.value = true), 120_000)
 }
 
+/** Conecta a network digitada e começa a acompanhar. */
 async function start() {
   if (!valid.value || running.value) return
   busy.value = true
@@ -115,13 +121,14 @@ async function start() {
         ? await api.post<Network>(`/networks/${network.value.id}/sync`)
         : await api.post<Network>('/networks', { network_code: code.value })
     watchProgress()
-  } catch (e) {
-    submitError.value = errorText(e instanceof ApiError ? e.code : 'unknown', { s: e instanceof ApiError ? (e.retryAfter ?? 600) : 600 })
+  } catch (error) {
+    submitError.value = errorText(error instanceof ApiError ? error.code : 'unknown', { s: error instanceof ApiError ? (error.retryAfter ?? 600) : 600 })
   } finally {
     busy.value = false
   }
 }
 
+/** Copia o email da conta de serviço. */
 async function copy() {
   if (!email.value) return
   try {
@@ -129,10 +136,10 @@ async function copy() {
     copied.value = true
     setTimeout(() => (copied.value = false), 1600)
   } catch {
-    const el = document.getElementById('sa-email')
-    if (el) {
+    const element = document.getElementById('sa-email')
+    if (element) {
       const range = document.createRange()
-      range.selectNodeContents(el)
+      range.selectNodeContents(element)
       const sel = window.getSelection()
       sel?.removeAllRanges()
       sel?.addRange(range)
@@ -141,13 +148,14 @@ async function copy() {
   }
 }
 
-const dot = (s: State) =>
+/** Classes do indicador de cada etapa. */
+const dot = (state: State) =>
   cn(
     'mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full',
-    s === 'ok' && 'bg-ok text-white',
-    s === 'fail' && 'bg-bad text-white',
-    s === 'run' && 'text-muted-foreground',
-    s === 'wait' && 'border text-muted-foreground',
+    state === 'ok' && 'bg-ok text-white',
+    state === 'fail' && 'bg-bad text-white',
+    state === 'run' && 'text-muted-foreground',
+    state === 'wait' && 'border text-muted-foreground',
   )
 </script>
 
@@ -198,7 +206,7 @@ const dot = (s: State) =>
                   maxlength="20"
                   :invalid="code.length > 0 && !valid"
                   :disabled="running"
-                  @update:model-value="(v: string) => (code = v.replace(/\D/g, ''))"
+                  @update:model-value="(value: string) => (code = value.replace(/\D/g, ''))"
                 />
                 <p v-if="code.length > 0 && !valid" class="text-[13px] text-bad">{{ t('wiz.codeError') }}</p>
                 <p v-else-if="submitError" class="text-[13px] text-bad" role="alert">{{ submitError }}</p>
@@ -213,16 +221,16 @@ const dot = (s: State) =>
       <h2 class="text-[14px] font-medium">{{ t('wiz.result') }}</h2>
       <p v-if="!checks" class="mt-2 text-[14px] text-muted-foreground">{{ t('wiz.resultEmpty') }}</p>
       <ul v-else class="mt-4 grid gap-3" aria-live="polite">
-        <li v-for="c in checks" :key="c.label" class="flex gap-3 text-[14px]">
-          <span :class="dot(c.state)">
-            <Check v-if="c.state === 'ok'" class="size-3" /><X v-else-if="c.state === 'fail'" class="size-3" /><Loader2
-              v-else-if="c.state === 'run'"
+        <li v-for="check in checks" :key="check.label" class="flex gap-3 text-[14px]">
+          <span :class="dot(check.state)">
+            <Check v-if="check.state === 'ok'" class="size-3" /><X v-else-if="check.state === 'fail'" class="size-3" /><Loader2
+              v-else-if="check.state === 'run'"
               class="size-4 animate-spin"
             />
           </span>
           <div class="min-w-0">
-            <div :class="c.state === 'wait' ? 'text-muted-foreground' : ''">{{ c.label }}</div>
-            <p v-if="c.detail" :class="['mt-0.5 break-words text-[13px]', c.state === 'fail' ? 'text-bad' : 'text-muted-foreground']">{{ c.detail }}</p>
+            <div :class="check.state === 'wait' ? 'text-muted-foreground' : ''">{{ check.label }}</div>
+            <p v-if="check.detail" :class="['mt-0.5 break-words text-[13px]', check.state === 'fail' ? 'text-bad' : 'text-muted-foreground']">{{ check.detail }}</p>
           </div>
         </li>
       </ul>

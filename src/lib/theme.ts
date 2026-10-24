@@ -9,7 +9,8 @@ export type Theme = 'light' | 'dark' | 'system'
 
 export interface Accent {
   id: 'default' | 'blue' | 'green' | 'purple' | 'orange'
-  hex: string // o que vai para a API; a Empresa sem cor (null) usa o padrão
+  /** O que vai para a API; a Empresa sem cor (null) usa o padrão. */
+  hex: string
   light: string
   dark: string
 }
@@ -22,34 +23,38 @@ export const ACCENTS: Accent[] = [
   { id: 'orange', hex: '#d9530b', light: '22 92% 44%', dark: '26 95% 60%' },
 ]
 
+/** Cor de destaque cadastrada para o hex, ou a padrão. */
 export function accentFor(hex: string | null | undefined): Accent {
-  const found = ACCENTS.find((a) => a.hex.toLowerCase() === hex?.toLowerCase())
+  const found = ACCENTS.find((accent) => accent.hex.toLowerCase() === hex?.toLowerCase())
   return found ?? ACCENTS[0]!
 }
 
-export function accentCss(a: Accent): string {
-  if (a.id === 'default') return ''
-  const light = `--primary:${a.light};--primary-foreground:0 0% 100%;`
-  const dark = `--primary:${a.dark};--primary-foreground:0 0% 4%;`
+/** CSS que troca a cor primária nos temas claro e escuro. */
+export function accentCss(accent: Accent): string {
+  if (accent.id === 'default') return ''
+  const light = `--primary:${accent.light};--primary-foreground:0 0% 100%;`
+  const dark = `--primary:${accent.dark};--primary-foreground:0 0% 4%;`
   return `:root{${light}}@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){${dark}}}:root[data-theme="dark"]{${dark}}`
 }
 
+/** Aplica a cor de destaque da Empresa na página. */
 export function applyAccent(hex: string | null | undefined) {
-  let el = document.getElementById('avant-accent') as HTMLStyleElement | null
-  if (!el) {
-    el = document.createElement('style')
-    el.id = 'avant-accent'
-    document.head.appendChild(el)
+  let element = document.getElementById('avant-accent') as HTMLStyleElement | null
+  if (!element) {
+    element = document.createElement('style')
+    element.id = 'avant-accent'
+    document.head.appendChild(element)
   }
-  el.textContent = accentCss(accentFor(hex))
+  element.textContent = accentCss(accentFor(hex))
 }
 
 const STORAGE = 'avant.theme'
 
+/** Tema salvo no navegador, ou o do sistema. */
 function savedTheme(): Theme {
   try {
-    const v = localStorage.getItem(STORAGE)
-    if (v === 'light' || v === 'dark' || v === 'system') return v
+    const stored = localStorage.getItem(STORAGE)
+    if (stored === 'light' || stored === 'dark' || stored === 'system') return stored
   } catch {
     // sem localStorage
   }
@@ -60,15 +65,15 @@ export const theme = ref<Theme>(savedTheme())
 
 watch(
   theme,
-  (v) => {
+  (value) => {
     try {
-      localStorage.setItem(STORAGE, v)
+      localStorage.setItem(STORAGE, value)
     } catch {
       // segue sem lembrar
     }
     const root = document.documentElement
-    if (v === 'system') root.removeAttribute('data-theme')
-    else root.setAttribute('data-theme', v)
+    if (value === 'system') root.removeAttribute('data-theme')
+    else root.setAttribute('data-theme', value)
   },
   { immediate: true },
 )

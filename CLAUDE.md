@@ -10,7 +10,10 @@ Painel Vue 3 do Groone Avant. Leia o README antes de mudar algo.
 - Rotas do painel em português; a API continua em inglês.
 - Não mudar os caminhos que a API usa: `/entrar`, `/entrar/2fa`, `/convite/{token}`,
   `/redefinir-senha/{token}`, `/configuracoes/conta`.
-- Antes de abrir PR: `pnpm lint && pnpm typecheck && pnpm test && pnpm build`.
+- Clean code obrigatório (skill `avant-clean-code`): nomes claros, nada de nome de uma letra
+  (nem em callback ou `v-for`), toda função e todo componente com um comentário de 1 ou 2
+  linhas sobre o que faz, nada de comentário ao lado do código. Conferido por `pnpm clean-code`.
+- Antes de abrir PR: `pnpm lint && pnpm clean-code && pnpm typecheck && pnpm test && pnpm build`.
 - Nada de segredos no repositório. Comentários em português.
 - PRs vão para `develop`.
 

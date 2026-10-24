@@ -1,4 +1,5 @@
 <script setup lang="ts">
+/** Lista de sites e de ad units sem site, com cadastro manual. */
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
@@ -34,12 +35,13 @@ const networks = ref<Network[]>([])
 const unlinked = ref<AdUnit[] | null>(null)
 const loadError = ref<string | null>(null)
 const view = ref<'sites' | 'unlinked'>('sites')
-const q = ref('')
+const searchText = ref('')
 const networkId = ref('')
 const archived = ref(false)
 const canAssign = computed(() => session.can('sites.assign'))
 const assignedOnly = computed(() => session.me?.site_scope === 'assigned' && !session.can('sites.assign'))
 
+/** Carrega os sites. */
 async function loadSites() {
   loadError.value = null
   try {
@@ -49,16 +51,17 @@ async function loadSites() {
         include_archived: archived.value || undefined,
       })
     ).items
-  } catch (e) {
-    loadError.value = errorText(e instanceof ApiError ? e.code : 'unknown')
+  } catch (error) {
+    loadError.value = errorText(error instanceof ApiError ? error.code : 'unknown')
   }
 }
 
+/** Carrega os ad units ativos sem site. */
 async function loadUnlinked() {
   try {
     unlinked.value = (await api.get<Items<AdUnit>>('/ad-units', { unlinked: true, status: 'active' })).items
-  } catch (e) {
-    toast.error(errorText(e instanceof ApiError ? e.code : 'unknown'))
+  } catch (error) {
+    toast.error(errorText(error instanceof ApiError ? error.code : 'unknown'))
   }
 }
 
@@ -71,9 +74,10 @@ onMounted(async () => {
 })
 watch([networkId, archived], loadSites)
 
+/** Nome da network pelo id. */
 const netName = (id: string | null) => {
-  const n = networks.value.find((x) => x.id === id)
-  return n ? networkName(n) : ''
+  const found = networks.value.find((network) => network.id === id)
+  return found ? networkName(found) : ''
 }
 
 // Cadastro manual: o site fica aguardando o GAM
@@ -81,45 +85,49 @@ const adding = ref(false)
 const domain = ref('')
 const saving = ref(false)
 const domainOk = computed(() => /^[^\s.]+(\.[^\s.]+)+$/.test(domain.value.trim().replace(/^[a-z]+:\/\//i, '').split('/')[0] ?? ''))
+/** Cadastra um site pelo domínio. */
 async function addSite() {
   if (!domainOk.value) return
   saving.value = true
   try {
     const site = await api.post<SiteListItem>('/sites', { domain: domain.value.trim() })
-    sites.value = [...(sites.value ?? []), site].sort((a, b) => a.domain.localeCompare(b.domain))
+    sites.value = [...(sites.value ?? []), site].sort((first, second) => first.domain.localeCompare(second.domain))
     toast.success(t('sites.added', { domain: site.domain }))
     domain.value = ''
     adding.value = false
-  } catch (e) {
-    toast.error(errorText(e instanceof ApiError ? e.code : 'unknown'))
+  } catch (error) {
+    toast.error(errorText(error instanceof ApiError ? error.code : 'unknown'))
   } finally {
     saving.value = false
   }
 }
-const networkOptions = computed(() => [{ value: '', label: t('sites.allNetworks') }, ...networks.value.map((n) => ({ value: n.id, label: networkName(n) }))])
+const networkOptions = computed(() => [{ value: '', label: t('sites.allNetworks') }, ...networks.value.map((network) => ({ value: network.id, label: networkName(network) }))])
 const shown = computed(() => {
-  const term = q.value.trim().toLowerCase()
-  return (sites.value ?? []).filter((s) => !term || s.domain.toLowerCase().includes(term))
+  const term = searchText.value.trim().toLowerCase()
+  return (sites.value ?? []).filter((site) => !term || site.domain.toLowerCase().includes(term))
 })
 
 // Ligar ad unit sem site
 const choice = ref<Record<string, string>>({})
-const siteOptionsFor = (u: AdUnit) => [
+/** Sites da mesma network que podem receber o ad unit. */
+const siteOptionsFor = (adUnit: AdUnit) => [
   { value: '', label: t('sites.choose') },
-  ...(sites.value ?? []).filter((s) => s.network_id === u.network_id && s.status === 'active').map((s) => ({ value: s.id, label: s.domain })),
+  ...(sites.value ?? []).filter((site) => site.network_id === adUnit.network_id && site.status === 'active').map((site) => ({ value: site.id, label: site.domain })),
 ]
-async function link(u: AdUnit) {
-  const siteId = choice.value[u.id]
+/** Liga o ad unit ao site escolhido. */
+async function link(adUnit: AdUnit) {
+  const siteId = choice.value[adUnit.id]
   if (!siteId) return
   try {
-    await api.patch<AdUnit>(`/ad-units/${u.id}`, { site_id: siteId })
-    toast.success(t('sites.linked', { unit: u.name, site: sites.value?.find((s) => s.id === siteId)?.domain ?? '' }))
+    await api.patch<AdUnit>(`/ad-units/${adUnit.id}`, { site_id: siteId })
+    toast.success(t('sites.linked', { unit: adUnit.name, site: sites.value?.find((site) => site.id === siteId)?.domain ?? '' }))
     await Promise.all([loadUnlinked(), loadSites()])
-  } catch (e) {
-    toast.error(errorText(e instanceof ApiError ? e.code : 'unknown'))
+  } catch (error) {
+    toast.error(errorText(error instanceof ApiError ? error.code : 'unknown'))
   }
 }
 
+/** Classes da aba, ativa ou não. */
 const tab = (on: boolean) =>
   cn(
     'h-8 rounded-[4px] px-3 text-[13px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
@@ -163,7 +171,7 @@ const tab = (on: boolean) =>
         <Checkbox id="sites-archived" v-model="archived" :label="t('sites.archived')" />
         <div class="relative w-full sm:ml-auto sm:w-64">
           <Search class="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
-          <Input v-model="q" :aria-label="t('sites.searchLabel')" class="h-9 bg-card pl-9" :placeholder="t('sites.search')" />
+          <Input v-model="searchText" :aria-label="t('sites.searchLabel')" class="h-9 bg-card pl-9" :placeholder="t('sites.search')" />
         </div>
       </template>
     </div>
@@ -193,18 +201,18 @@ const tab = (on: boolean) =>
               <Button v-if="canManage && !adding" size="sm" variant="outline" @click="adding = true">{{ t('sites.add') }}</Button>
             </template>
           </TableState>
-          <tr v-for="s in shown" :key="s.id" class="hover:bg-muted">
+          <tr v-for="site in shown" :key="site.id" class="hover:bg-muted">
             <td :class="td">
-              <RouterLink :to="`/sites/${s.id}`" class="font-medium hover:underline focus-visible:underline focus-visible:outline-none">{{ s.domain }}</RouterLink>
-              <Badge v-if="s.status === 'archived'" class="ml-2">{{ t('sites.archivedBadge') }}</Badge>
+              <RouterLink :to="`/sites/${site.id}`" class="font-medium hover:underline focus-visible:underline focus-visible:outline-none">{{ site.domain }}</RouterLink>
+              <Badge v-if="site.status === 'archived'" class="ml-2">{{ t('sites.archivedBadge') }}</Badge>
             </td>
-            <td v-if="networks.length" :class="[td, 'text-muted-foreground']">{{ netName(s.network_id) }}</td>
+            <td v-if="networks.length" :class="[td, 'text-muted-foreground']">{{ netName(site.network_id) }}</td>
             <td :class="td">
-              <Status :tone="approval(s).tone">{{ approval(s).label }}</Status>
+              <Status :tone="approval(site).tone">{{ approval(site).label }}</Status>
             </td>
-            <td :class="[td, 'text-right tnum']">{{ s.ad_units }}</td>
-            <td :class="[td, 'text-muted-foreground']" :title="s.synced_at ? formatDate(s.synced_at) : undefined">
-              {{ s.synced_at ? formatAgo(s.synced_at) : '' }}
+            <td :class="[td, 'text-right tnum']">{{ site.ad_units }}</td>
+            <td :class="[td, 'text-muted-foreground']" :title="site.synced_at ? formatDate(site.synced_at) : undefined">
+              {{ site.synced_at ? formatAgo(site.synced_at) : '' }}
             </td>
           </tr>
         </tbody>
@@ -224,17 +232,17 @@ const tab = (on: boolean) =>
         </thead>
         <tbody>
           <TableState :cols="networks.length ? 4 : 3" :loading="!unlinked" :empty="unlinked?.length === 0" :desc="t('sites.unlinkedEmpty')" />
-          <tr v-for="u in unlinked ?? []" :key="u.id">
-            <td :class="[td, 'font-medium']">{{ u.name }}</td>
-            <td :class="[td, 'font-mono text-[13px] text-muted-foreground']">{{ u.code ?? '' }}</td>
-            <td v-if="networks.length" :class="[td, 'text-muted-foreground']">{{ netName(u.network_id) }}</td>
+          <tr v-for="unit in unlinked ?? []" :key="unit.id">
+            <td :class="[td, 'font-medium']">{{ unit.name }}</td>
+            <td :class="[td, 'font-mono text-[13px] text-muted-foreground']">{{ unit.code ?? '' }}</td>
+            <td v-if="networks.length" :class="[td, 'text-muted-foreground']">{{ netName(unit.network_id) }}</td>
             <td :class="td">
               <NativeSelect
-                :model-value="choice[u.id] ?? ''"
-                :options="siteOptionsFor(u)"
+                :model-value="choice[unit.id] ?? ''"
+                :options="siteOptionsFor(unit)"
                 class="w-full max-w-[260px]"
-                :aria-label="`${t('sites.linkTo')}: ${u.name}`"
-                @update:model-value="(v: string) => ((choice[u.id] = v), link(u))"
+                :aria-label="`${t('sites.linkTo')}: ${unit.name}`"
+                @update:model-value="(value: string) => ((choice[unit.id] = value), link(unit))"
               />
             </td>
           </tr>

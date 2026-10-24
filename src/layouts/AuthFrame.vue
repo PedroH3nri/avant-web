@@ -1,4 +1,5 @@
 <script setup lang="ts">
+/** Moldura das telas sem login: marca, idioma e o cartão no centro. */
 import Mark from '@/components/ui/Mark.vue'
 import LangSwitch from '@/components/LangSwitch.vue'
 </script>

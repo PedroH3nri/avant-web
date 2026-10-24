@@ -1,4 +1,5 @@
 <script setup lang="ts">
+/** Tela de login com email e senha (ou Google). */
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import GoogleG from '@/components/GoogleG.vue'
@@ -20,6 +21,7 @@ const busy = ref(false)
 const error = ref<string | null>(typeof route.query.erro === 'string' ? errorText(route.query.erro) : null)
 const next = computed(() => safeNext(route.query.next))
 
+/** Entra com email e senha; com 2FA segue para o código. */
 async function submit() {
   if (!email.value.trim() || !password.value) return
   busy.value = true
@@ -27,8 +29,8 @@ async function submit() {
   try {
     const result = await session.login(email.value.trim(), password.value)
     await router.push(result.mfa_required ? { path: '/entrar/2fa', query: { next: next.value } } : next.value)
-  } catch (e) {
-    error.value = e instanceof ApiError ? errorText(e.code, { s: e.retryAfter ?? 60 }) : errorText('unknown')
+  } catch (failure) {
+    error.value = failure instanceof ApiError ? errorText(failure.code, { s: failure.retryAfter ?? 60 }) : errorText('unknown')
   } finally {
     busy.value = false
   }

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+/** Moldura das telas logadas: sidebar, menu no celular e conteúdo. */
 import { ref } from 'vue'
 import { DialogContent, DialogOverlay, DialogPortal, DialogRoot, DialogTitle } from 'reka-ui'
 import { Menu } from 'lucide-vue-next'

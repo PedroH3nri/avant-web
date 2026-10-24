@@ -16,46 +16,51 @@ const loadError = ref<string | null>(null)
 const ending = ref<string | null>(null)
 const endingOthers = ref(false)
 
+/** Carrega as sessões abertas da pessoa. */
 async function load() {
   loadError.value = null
   try {
     sessions.value = await api.get<AuthSession[]>('/auth/sessions')
-  } catch (e) {
-    loadError.value = errorText(e instanceof ApiError ? e.code : 'unknown')
+  } catch (error) {
+    loadError.value = errorText(error instanceof ApiError ? error.code : 'unknown')
   }
 }
 onMounted(load)
 defineExpose({ load })
 
-function label(s: AuthSession) {
-  const d = device(s.user_agent)
-  if (d.browser && d.os) return t('ses.on', { browser: d.browser, os: d.os })
-  return d.browser ?? d.os ?? t('ses.unknown')
+/** Nome legível do aparelho da sessão. */
+function label(session: AuthSession) {
+  const deviceInfo = device(session.user_agent)
+  if (deviceInfo.browser && deviceInfo.os) return t('ses.on', { browser: deviceInfo.browser, os: deviceInfo.os })
+  return deviceInfo.browser ?? deviceInfo.os ?? t('ses.unknown')
 }
 
-const fail = (e: unknown) => toast.error(errorText(e instanceof ApiError ? e.code : 'unknown'))
+/** Mostra o erro num aviso. */
+const fail = (error: unknown) => toast.error(errorText(error instanceof ApiError ? error.code : 'unknown'))
 
-async function end(s: AuthSession) {
-  ending.value = s.id
+/** Encerra uma sessão. */
+async function end(session: AuthSession) {
+  ending.value = session.id
   try {
-    await api.delete(`/auth/sessions/${s.id}`)
-    sessions.value = sessions.value?.filter((x) => x.id !== s.id) ?? null
+    await api.delete(`/auth/sessions/${session.id}`)
+    sessions.value = sessions.value?.filter((other) => other.id !== session.id) ?? null
     toast.success(t('ses.ended'))
-  } catch (e) {
-    fail(e)
+  } catch (error) {
+    fail(error)
   } finally {
     ending.value = null
   }
 }
 
+/** Encerra todas as sessões menos a atual. */
 async function endOthers() {
   endingOthers.value = true
   try {
     const { revoked } = await api.post<{ revoked: number }>('/auth/sessions/revoke-others')
-    sessions.value = sessions.value?.filter((x) => x.current) ?? null
+    sessions.value = sessions.value?.filter((session) => session.current) ?? null
     toast.success(t('ses.endedN', { n: revoked }))
-  } catch (e) {
-    fail(e)
+  } catch (error) {
+    fail(error)
   } finally {
     endingOthers.value = false
   }
@@ -66,26 +71,26 @@ async function endOthers() {
   <Card :title="t('ses.title')" :desc="t('ses.desc')">
     <LoadError v-if="loadError" :message="loadError" @retry="load" />
     <ul v-else-if="sessions" class="-my-3 divide-y">
-      <li v-for="s in sessions" :key="s.id" class="flex flex-wrap items-center gap-x-4 gap-y-1 py-3">
+      <li v-for="session in sessions" :key="session.id" class="flex flex-wrap items-center gap-x-4 gap-y-1 py-3">
         <div class="min-w-0 flex-1">
           <div class="flex flex-wrap items-center gap-2 text-[14px] font-medium">
-            {{ label(s) }}<Badge v-if="s.current">{{ t('ses.current') }}</Badge>
+            {{ label(session) }}<Badge v-if="session.current">{{ t('ses.current') }}</Badge>
           </div>
           <div class="mt-0.5 text-[13px] text-muted-foreground">
-            <span v-if="s.ip" class="font-mono">{{ s.ip }}</span
-            ><span v-if="s.ip"> · </span>{{ t('ses.lastSeen') }}
-            <time :datetime="s.last_seen_at" :title="formatDate(s.last_seen_at)">{{ formatAgo(s.last_seen_at) }}</time>
+            <span v-if="session.ip" class="font-mono">{{ session.ip }}</span
+            ><span v-if="session.ip"> · </span>{{ t('ses.lastSeen') }}
+            <time :datetime="session.last_seen_at" :title="formatDate(session.last_seen_at)">{{ formatAgo(session.last_seen_at) }}</time>
             · {{ t('ses.started') }}
-            {{ formatDate(s.created_at) }}
+            {{ formatDate(session.created_at) }}
           </div>
         </div>
         <Button
-          v-if="!s.current"
+          v-if="!session.current"
           variant="outline"
           size="sm"
-          :loading="ending === s.id"
-          :aria-label="t('ses.endLabel', { device: label(s) })"
-          @click="end(s)"
+          :loading="ending === session.id"
+          :aria-label="t('ses.endLabel', { device: label(session) })"
+          @click="end(session)"
           >{{ t('ses.end') }}</Button
         >
       </li>

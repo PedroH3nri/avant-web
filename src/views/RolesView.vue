@@ -1,4 +1,5 @@
 <script setup lang="ts">
+/** Papéis e permissões: quem tem cada papel e os papéis da Empresa. */
 import { computed, onMounted, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
 import LoadError from '@/components/LoadError.vue'
@@ -29,40 +30,44 @@ const saving = ref<string | null>(null)
 const canTeam = computed(() => session.can('team.view'))
 const canManage = computed(() => session.can('team.manage'))
 
+/** Carrega papéis, permissões e membros. */
 async function load() {
   loadError.value = null
   try {
-    const [r, p, m] = await Promise.all([
+    const [rolePage, permissionPage, memberPage] = await Promise.all([
       api.get<Items<Role>>('/roles'),
       api.get<Items<Permission>>('/permissions'),
       canTeam.value ? api.get<Items<Member>>('/members') : Promise.resolve({ items: [] as Member[], next_cursor: null }),
     ])
-    roles.value = r.items
-    permissions.value = p.items
-    members.value = m.items.filter((x) => x.status !== 'removed')
+    roles.value = rolePage.items
+    permissions.value = permissionPage.items
+    members.value = memberPage.items.filter((member) => member.status !== 'removed')
     loaded.value = true
-  } catch (e) {
-    loadError.value = errorText(e instanceof ApiError ? e.code : 'unknown')
+  } catch (error) {
+    loadError.value = errorText(error instanceof ApiError ? error.code : 'unknown')
   }
 }
 onMounted(load)
 watch(() => session.me?.active_company_id, load)
 
-const roleOptions = computed(() => roles.value.map((r) => ({ value: r.id, label: pick(r.name) })))
-const isMe = (m: Member) => m.user.id === session.me?.user.id
-const editable = (m: Member) => canManage.value && !m.is_owner && !isMe(m)
+const roleOptions = computed(() => roles.value.map((role) => ({ value: role.id, label: pick(role.name) })))
+/** Diz se o membro é a própria pessoa. */
+const isMe = (member: Member) => member.user.id === session.me?.user.id
+/** Diz se o papel do membro pode ser trocado por quem está vendo. */
+const editable = (member: Member) => canManage.value && !member.is_owner && !isMe(member)
 
-async function assign(m: Member, roleId: string) {
-  if (roleId === m.role?.id) return
-  saving.value = m.id
+/** Troca o papel do membro. */
+async function assign(member: Member, roleId: string) {
+  if (roleId === member.role?.id) return
+  saving.value = member.id
   try {
-    const updated = await api.patch<Member>(`/members/${m.id}`, { role_id: roleId })
-    members.value = members.value.map((x) => (x.id === m.id ? { ...x, ...updated } : x))
+    const updated = await api.patch<Member>(`/members/${member.id}`, { role_id: roleId })
+    members.value = members.value.map((existing) => (existing.id === member.id ? { ...existing, ...updated } : existing))
     // Contagem de pessoas por papel.
     roles.value = (await api.get<Items<Role>>('/roles')).items
-    toast.success(t('roles.assigned', { name: m.user.name }))
-  } catch (e) {
-    toast.error(errorText(e instanceof ApiError ? e.code : 'unknown'))
+    toast.success(t('roles.assigned', { name: member.user.name }))
+  } catch (error) {
+    toast.error(errorText(error instanceof ApiError ? error.code : 'unknown'))
   } finally {
     saving.value = null
   }
@@ -90,34 +95,34 @@ async function assign(m: Member, roleId: string) {
           </thead>
           <tbody>
             <TableState :cols="3" :empty="members.length === 0" :desc="t('roles.noMembers')" />
-            <tr v-for="m in members" :key="m.id" class="hover:bg-muted">
+            <tr v-for="member in members" :key="member.id" class="hover:bg-muted">
               <td :class="td">
                 <div class="flex items-center gap-3">
-                  <Avatar :name="m.user.name" />
+                  <Avatar :name="member.user.name" />
                   <div class="min-w-0">
                     <div class="font-medium">
-                      {{ m.user.name }}<span v-if="isMe(m)" class="font-normal text-muted-foreground"> ({{ t('team.you') }})</span>
+                      {{ member.user.name }}<span v-if="isMe(member)" class="font-normal text-muted-foreground"> ({{ t('team.you') }})</span>
                     </div>
-                    <div class="truncate text-[13px] text-muted-foreground">{{ m.user.email }}</div>
+                    <div class="truncate text-[13px] text-muted-foreground">{{ member.user.email }}</div>
                   </div>
                 </div>
               </td>
               <td :class="td">
-                <Badge v-if="m.is_owner">{{ t('team.owner') }}</Badge>
+                <Badge v-if="member.is_owner">{{ t('team.owner') }}</Badge>
                 <NativeSelect
-                  v-else-if="editable(m)"
-                  :model-value="m.role?.id ?? ''"
+                  v-else-if="editable(member)"
+                  :model-value="member.role?.id ?? ''"
                   :options="roleOptions"
-                  :disabled="saving === m.id"
-                  :aria-label="t('roles.roleFor', { name: m.user.name })"
+                  :disabled="saving === member.id"
+                  :aria-label="t('roles.roleFor', { name: member.user.name })"
                   class="h-9"
-                  @update:model-value="assign(m, $event)"
+                  @update:model-value="assign(member, $event)"
                 />
-                <template v-else>{{ pick(m.role?.name) }}</template>
+                <template v-else>{{ pick(member.role?.name) }}</template>
               </td>
               <td :class="td">
-                <span v-if="m.is_owner" class="text-[14px] text-muted-foreground">{{ t('role.allPerms') }}</span>
-                <RouterLink v-else :to="`/equipe/${m.id}`" class="text-[14px] text-link hover:underline focus-visible:underline focus-visible:outline-none">
+                <span v-if="member.is_owner" class="text-[14px] text-muted-foreground">{{ t('role.allPerms') }}</span>
+                <RouterLink v-else :to="`/equipe/${member.id}`" class="text-[14px] text-link hover:underline focus-visible:underline focus-visible:outline-none">
                   {{ t('roles.direct') }}
                 </RouterLink>
               </td>

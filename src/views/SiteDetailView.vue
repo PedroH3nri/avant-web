@@ -1,4 +1,5 @@
 <script setup lang="ts">
+/** Página de um site: ad units, quem vê o site e remoção. */
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
@@ -39,18 +40,19 @@ const canAssign = computed(() => session.can('sites.assign'))
 const canManage = computed(() => session.can('sites.manage'))
 const router = useRouter()
 
+/** Carrega o site e, para quem atribui, as pessoas e os outros sites. */
 async function load() {
   loadError.value = null
   try {
     site.value = await api.get<SiteDetail>(`/sites/${id}`)
     if (canAssign.value) {
-      const [p, s] = await Promise.all([api.get<Items<SiteMember>>(`/sites/${id}/members`), api.get<Items<SiteListItem>>('/sites')])
-      people.value = p.items
-      others.value = s.items.filter((x) => x.id !== id && x.network_id === site.value?.network_id && x.status === 'active')
+      const [memberPage, sitePage] = await Promise.all([api.get<Items<SiteMember>>(`/sites/${id}/members`), api.get<Items<SiteListItem>>('/sites')])
+      people.value = memberPage.items
+      others.value = sitePage.items.filter((other) => other.id !== id && other.network_id === site.value?.network_id && other.status === 'active')
     }
-  } catch (e) {
-    if (e instanceof ApiError && e.status === 404) notFound.value = true
-    else loadError.value = errorText(e instanceof ApiError ? e.code : 'unknown')
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) notFound.value = true
+    else loadError.value = errorText(error instanceof ApiError ? error.code : 'unknown')
   }
 }
 onMounted(load)
@@ -58,50 +60,55 @@ onMounted(load)
 // Site cadastrado à mão sai enquanto aguarda o GAM
 const removing = ref(false)
 const busy = ref(false)
+/** Remove o site cadastrado à mão. */
 async function removeSite() {
-  const s = site.value
-  if (!s) return
+  const current = site.value
+  if (!current) return
   busy.value = true
   try {
-    await api.delete(`/sites/${s.id}`)
-    toast.success(t('site.removed', { domain: s.domain }))
+    await api.delete(`/sites/${current.id}`)
+    toast.success(t('site.removed', { domain: current.domain }))
     removing.value = false
     await router.push('/sites')
-  } catch (e) {
-    errorToast(e)
+  } catch (error) {
+    errorToast(error)
   } finally {
     busy.value = false
   }
 }
 
-const rows = computed(() => tree(site.value?.ad_units.filter((u) => u.status === 'active') ?? []))
-const errorToast = (e: unknown) => toast.error(errorText(e instanceof ApiError ? e.code : 'unknown'))
+const rows = computed(() => tree(site.value?.ad_units.filter((ad_unit) => ad_unit.status === 'active') ?? []))
+/** Mostra o erro num aviso. */
+const errorToast = (error: unknown) => toast.error(errorText(error instanceof ApiError ? error.code : 'unknown'))
 
-async function patch(u: AdUnit, body: { site_id: string | null; automatic?: boolean }, message: string) {
+/** Muda a ligação de um ad unit e recarrega o site. */
+async function patch(adUnit: AdUnit, body: { site_id: string | null; automatic?: boolean }, message: string) {
   try {
-    await api.patch<AdUnit>(`/ad-units/${u.id}`, body)
+    await api.patch<AdUnit>(`/ad-units/${adUnit.id}`, body)
     toast.success(message)
     await load()
-  } catch (e) {
-    errorToast(e)
+  } catch (error) {
+    errorToast(error)
   }
 }
 
 // Ligar a outro site
 const moving = ref<AdUnit | null>(null)
 const target = ref('')
-const moveOpen = computed({ get: () => moving.value !== null, set: (v) => !v && (moving.value = null) })
-const targetOptions = computed(() => others.value.map((s) => ({ value: s.id, label: s.domain })))
-function openMove(u: AdUnit) {
-  moving.value = u
+const moveOpen = computed({ get: () => moving.value !== null, set: (value) => !value && (moving.value = null) })
+const targetOptions = computed(() => others.value.map((other) => ({ value: other.id, label: other.domain })))
+/** Abre o diálogo para mover o ad unit para outro site. */
+function openMove(adUnit: AdUnit) {
+  moving.value = adUnit
   target.value = targetOptions.value[0]?.value ?? ''
 }
+/** Move o ad unit para o site escolhido. */
 async function move() {
-  const u = moving.value
-  if (!u || !target.value) return
-  const domain = others.value.find((s) => s.id === target.value)?.domain ?? ''
+  const current = moving.value
+  if (!current || !target.value) return
+  const domain = others.value.find((other) => other.id === target.value)?.domain ?? ''
   moving.value = null
-  await patch(u, { site_id: target.value }, t('sites.linked', { unit: u.name, site: domain }))
+  await patch(current, { site_id: target.value }, t('sites.linked', { unit: current.name, site: domain }))
 }
 </script>
 
@@ -170,10 +177,10 @@ async function move() {
 
       <Card v-if="canAssign" :title="t('site.people')" :desc="t('site.peopleDesc')">
         <ul class="grid gap-3">
-          <li v-for="p in people" :key="p.id" class="flex items-center gap-3 text-[14px]">
-            <Avatar :name="p.user.name" :size="28" />
-            <RouterLink :to="`/equipe/${p.id}`" class="min-w-0 flex-1 truncate font-medium hover:underline">{{ p.user.name }}</RouterLink>
-            <span class="text-[13px] text-muted-foreground">{{ p.is_owner ? t('team.owner') : t(`site.via.${p.via}`) }}</span>
+          <li v-for="person in people" :key="person.id" class="flex items-center gap-3 text-[14px]">
+            <Avatar :name="person.user.name" :size="28" />
+            <RouterLink :to="`/equipe/${person.id}`" class="min-w-0 flex-1 truncate font-medium hover:underline">{{ person.user.name }}</RouterLink>
+            <span class="text-[13px] text-muted-foreground">{{ person.is_owner ? t('team.owner') : t(`site.via.${person.via}`) }}</span>
           </li>
         </ul>
       </Card>

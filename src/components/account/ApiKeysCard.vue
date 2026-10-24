@@ -29,31 +29,34 @@ const revoking = ref<ApiKey | null>(null)
 const busy = ref(false)
 const revokeOpen = computed({
   get: () => revoking.value !== null,
-  set: (v) => {
-    if (!v) revoking.value = null
+  set: (value) => {
+    if (!value) revoking.value = null
   },
 })
-const showOwner = computed(() => canManage.value && (keys.value ?? []).some((k) => k.owner.id !== session.me?.user.id))
+const showOwner = computed(() => canManage.value && (keys.value ?? []).some((key) => key.owner.id !== session.me?.user.id))
 const tones: Record<KeyState, 'neutral' | 'ochre' | 'bad'> = {
   active: 'neutral',
   expired: 'ochre',
   revoked: 'bad',
 }
 
+/** Carrega as chaves de API, as ativas primeiro. */
 async function load() {
   loadError.value = null
   try {
     keys.value = sortKeys((await api.get<Items<ApiKey>>('/api-keys')).items)
-  } catch (e) {
-    loadError.value = errorText(e instanceof ApiError ? e.code : 'unknown')
+  } catch (error) {
+    loadError.value = errorText(error instanceof ApiError ? error.code : 'unknown')
   }
 }
 onMounted(load)
 
+/** Põe a chave recém-criada na lista. */
 function created(key: ApiKey) {
   keys.value = sortKeys([key, ...(keys.value ?? [])])
 }
 
+/** Revoga a chave escolhida. */
 async function revoke() {
   const key = revoking.value
   if (!key) return
@@ -63,14 +66,15 @@ async function revoke() {
     revoking.value = null
     toast.success(t('key.revoked'))
     await load()
-  } catch (e) {
-    toast.error(errorText(e instanceof ApiError ? e.code : 'unknown'))
+  } catch (error) {
+    toast.error(errorText(error instanceof ApiError ? error.code : 'unknown'))
   } finally {
     busy.value = false
   }
 }
 
-const permsText = (n: number) => (n === 1 ? t('key.perm1') : t('key.permsN', { n }))
+/** Texto com a quantidade de permissões da chave. */
+const permsText = (count: number) => (count === 1 ? t('key.perm1') : t('key.permsN', { n: count }))
 </script>
 
 <template>
@@ -98,35 +102,35 @@ const permsText = (n: number) => (n === 1 ? t('key.perm1') : t('key.permsN', { n
         </tr>
       </thead>
       <tbody>
-        <tr v-for="k in keys" :key="k.id" :class="keyState(k) !== 'active' && 'text-muted-foreground'">
+        <tr v-for="key in keys" :key="key.id" :class="keyState(key) !== 'active' && 'text-muted-foreground'">
           <td :class="td">
             <div class="flex flex-wrap items-center gap-2 font-medium">
-              {{ k.name }}<Badge v-if="keyState(k) !== 'active'" :tone="tones[keyState(k)]">{{ t(`key.state.${keyState(k)}`) }}</Badge>
+              {{ key.name }}<Badge v-if="keyState(key) !== 'active'" :tone="tones[keyState(key)]">{{ t(`key.state.${keyState(key)}`) }}</Badge>
             </div>
           </td>
           <td :class="td">
-            <code class="font-mono text-[13px]">avk_{{ k.prefix }}…</code>
+            <code class="font-mono text-[13px]">avk_{{ key.prefix }}…</code>
           </td>
           <td v-if="showOwner" :class="[td, 'whitespace-nowrap']">
-            {{ k.owner.name }}
+            {{ key.owner.name }}
           </td>
-          <td :class="[td, 'whitespace-nowrap']" :title="k.permissions.join(', ')">
-            {{ permsText(k.permissions.length) }}
+          <td :class="[td, 'whitespace-nowrap']" :title="key.permissions.join(', ')">
+            {{ permsText(key.permissions.length) }}
           </td>
           <td :class="[td, 'whitespace-nowrap']">
-            <time v-if="k.last_used_at" :datetime="k.last_used_at" :title="formatDate(k.last_used_at)">{{ formatAgo(k.last_used_at) }}</time
+            <time v-if="key.last_used_at" :datetime="key.last_used_at" :title="formatDate(key.last_used_at)">{{ formatAgo(key.last_used_at) }}</time
             ><template v-else>{{ t('common.never') }}</template>
           </td>
           <td :class="[td, 'whitespace-nowrap']">
-            {{ formatDate(k.expires_at, false) }}
+            {{ formatDate(key.expires_at, false) }}
           </td>
           <td :class="[td, 'text-right']">
             <Button
-              v-if="keyState(k) === 'active' && (canManage || k.owner.id === session.me?.user.id)"
+              v-if="keyState(key) === 'active' && (canManage || key.owner.id === session.me?.user.id)"
               variant="destructive"
               size="sm"
-              :aria-label="t('key.revokeLabel', { name: k.name })"
-              @click="revoking = k"
+              :aria-label="t('key.revokeLabel', { name: key.name })"
+              @click="revoking = key"
               >{{ t('key.revoke') }}</Button
             >
           </td>

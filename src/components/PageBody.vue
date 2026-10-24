@@ -1,4 +1,5 @@
 <script setup lang="ts">
+/** Área de conteúdo das telas, com a largura e o espaçamento padrão. */
 import { cn } from '@/lib/utils'
 
 defineProps<{ class?: string }>()

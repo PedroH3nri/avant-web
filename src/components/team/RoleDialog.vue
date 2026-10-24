@@ -22,8 +22,8 @@ const scope = ref<SiteScope>('assigned')
 const chosen = ref<Set<string>>(new Set())
 const busy = ref(false)
 
-watch(open, (v) => {
-  if (!v) return
+watch(open, (value) => {
+  if (!value) return
   name.value = props.role ? pick(props.role.name) : ''
   scope.value = props.role?.site_scope ?? 'assigned'
   chosen.value = new Set(props.role?.permissions ?? [])
@@ -31,11 +31,13 @@ watch(open, (v) => {
 
 const groups = computed(() => {
   const by = new Map<string, Permission[]>()
-  for (const p of props.permissions) by.set(p.group, [...(by.get(p.group) ?? []), p])
+  for (const permission of props.permissions) by.set(permission.group, [...(by.get(permission.group) ?? []), permission])
   return [...by.entries()]
 })
-const groupLabel = (g: string) => t(`perm.group.${g}` as Key)
+/** Nome do grupo de permissões no idioma atual. */
+const groupLabel = (group: string) => t(`perm.group.${group}` as Key)
 
+/** Marca ou desmarca uma permissão do papel. */
 function toggle(key: string, on: boolean) {
   const next = new Set(chosen.value)
   if (on) next.add(key)
@@ -43,6 +45,7 @@ function toggle(key: string, on: boolean) {
   chosen.value = next
 }
 
+/** Cria ou atualiza o papel. */
 async function save() {
   busy.value = true
   const body = { name: name.value.trim(), permissions: [...chosen.value].sort(), site_scope: scope.value }
@@ -51,8 +54,8 @@ async function save() {
     emit('saved', saved)
     toast.success(t('role.saved'))
     open.value = false
-  } catch (e) {
-    toast.error(errorText(e instanceof ApiError ? e.code : 'unknown'))
+  } catch (error) {
+    toast.error(errorText(error instanceof ApiError ? error.code : 'unknown'))
   } finally {
     busy.value = false
   }
@@ -67,9 +70,9 @@ async function save() {
       </Field>
       <fieldset class="grid gap-2">
         <legend class="mb-2 text-[13px] font-medium text-muted-foreground">{{ t('role.scopeTitle') }}</legend>
-        <label v-for="s in ['assigned', 'all'] as const" :key="s" class="flex cursor-pointer items-center gap-2.5 text-[14px]">
-          <input v-model="scope" type="radio" name="role-scope" :value="s" class="size-4 accent-[hsl(var(--foreground))]" />
-          {{ t(`role.scope.${s}`) }}
+        <label v-for="scopeOption in ['assigned', 'all'] as const" :key="scopeOption" class="flex cursor-pointer items-center gap-2.5 text-[14px]">
+          <input v-model="scope" type="radio" name="role-scope" :value="scopeOption" class="size-4 accent-[hsl(var(--foreground))]" />
+          {{ t(`role.scope.${scopeOption}`) }}
         </label>
         <p v-if="scope === 'assigned'" class="text-[13px] text-muted-foreground">{{ t('role.scopeAssignedHint') }}</p>
       </fieldset>
@@ -79,13 +82,13 @@ async function save() {
         <div v-for="[g, perms] in groups" :key="g" class="grid gap-2">
           <h3 class="text-[13px] font-medium">{{ groupLabel(g) }}</h3>
           <Checkbox
-            v-for="p in perms"
-            :id="`perm-${p.key}`"
-            :key="p.key"
-            :label="pick(p.name)"
-            :model-value="chosen.has(p.key)"
-            :disabled="!session.can(p.key)"
-            @update:model-value="(v: boolean) => toggle(p.key, v)"
+            v-for="perm in perms"
+            :id="`perm-${perm.key}`"
+            :key="perm.key"
+            :label="pick(perm.name)"
+            :model-value="chosen.has(perm.key)"
+            :disabled="!session.can(perm.key)"
+            @update:model-value="(value: boolean) => toggle(perm.key, value)"
           />
         </div>
       </fieldset>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+/** Menu para trocar a Empresa ativa da sessão. */
 import { useRoute, useRouter } from 'vue-router'
 import { DropdownMenuLabel, DropdownMenuRoot, DropdownMenuTrigger } from 'reka-ui'
 import { Check, ChevronsUpDown } from 'lucide-vue-next'
@@ -15,14 +16,15 @@ const session = useSession()
 const route = useRoute()
 const router = useRouter()
 
+/** Troca a Empresa ativa e volta ao início se a tela atual não servir. */
 async function pick(id: string) {
   if (id === session.company?.id) return
   try {
     await session.switchCompany(id)
     // Dados da outra Empresa: volta ao início para nada da anterior ficar na tela.
     if (route.path !== '/') await router.push('/')
-  } catch (e) {
-    toast.error(errorText(e instanceof ApiError ? e.code : 'unknown'))
+  } catch (error) {
+    toast.error(errorText(error instanceof ApiError ? error.code : 'unknown'))
   }
 }
 </script>
@@ -42,10 +44,10 @@ async function pick(id: string) {
     <MenuContent class="w-64">
       <DropdownMenuLabel class="px-2 py-1.5 text-[12px] text-muted-foreground">{{ t('top.companies') }}</DropdownMenuLabel>
       <!-- A Company Groone entra pelo painel interno, no menu lateral. -->
-      <MenuItem v-for="c in session.clientCompanies" :key="c.id" @select="pick(c.id)">
-        <Avatar :name="c.name" :size="20" />
-        <span class="min-w-0 truncate">{{ c.name }}</span>
-        <Check v-if="c.id === session.company.id" class="ml-auto" />
+      <MenuItem v-for="clientCompany in session.clientCompanies" :key="clientCompany.id" @select="pick(clientCompany.id)">
+        <Avatar :name="clientCompany.name" :size="20" />
+        <span class="min-w-0 truncate">{{ clientCompany.name }}</span>
+        <Check v-if="clientCompany.id === session.company.id" class="ml-auto" />
       </MenuItem>
     </MenuContent>
   </DropdownMenuRoot>

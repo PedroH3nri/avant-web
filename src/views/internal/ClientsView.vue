@@ -31,7 +31,7 @@ const canManage = computed(() => session.can('internal.clients.manage'))
 const clients = ref<Client[] | null>(null)
 const invites = ref<OwnerInvitation[]>([])
 const loadError = ref<string | null>(null)
-const q = ref('')
+const searchText = ref('')
 const tab = ref<Tab>('all')
 
 const adding = ref(false)
@@ -45,32 +45,34 @@ const seatsOk = computed(() => Number.isInteger(Number(seats.value)) && Number(s
 const canceling = ref<OwnerInvitation | null>(null)
 const cancelOpen = computed({
   get: () => canceling.value !== null,
-  set: (v) => {
-    if (!v) canceling.value = null
+  set: (value) => {
+    if (!value) canceling.value = null
   },
 })
 const busy = ref(false)
 
-const fail = (e: unknown) => toast.error(errorText(e instanceof ApiError ? e.code : 'unknown'))
+/** Mostra o erro num aviso. */
+const fail = (error: unknown) => toast.error(errorText(error instanceof ApiError ? error.code : 'unknown'))
 
+/** Carrega os clientes e os convites de dono. */
 async function load() {
   loadError.value = null
   try {
-    const [c, i] = await Promise.all([
-      api.get<Items<Client>>('/internal/clients', { q: q.value.trim() || undefined }),
+    const [clientPage, invitationPage] = await Promise.all([
+      api.get<Items<Client>>('/internal/clients', { q: searchText.value.trim() || undefined }),
       api.get<Items<OwnerInvitation>>('/internal/owner-invitations'),
     ])
-    clients.value = c.items
-    invites.value = i.items.filter((x) => x.status === 'pending')
-  } catch (e) {
-    loadError.value = errorText(e instanceof ApiError ? e.code : 'unknown')
+    clients.value = clientPage.items
+    invites.value = invitationPage.items.filter((invitation) => invitation.status === 'pending')
+  } catch (error) {
+    loadError.value = errorText(error instanceof ApiError ? error.code : 'unknown')
   }
 }
 onMounted(load)
 
 // A busca é no servidor; espera a pessoa parar de digitar.
 let timer: ReturnType<typeof setTimeout> | undefined
-watch(q, () => {
+watch(searchText, () => {
   clearTimeout(timer)
   timer = setTimeout(load, 300)
 })
@@ -79,71 +81,78 @@ const counts = computed(() => {
   const list = clients.value ?? []
   return {
     all: list.length,
-    groone_network: list.filter((c) => c.plan === 'groone_network').length,
-    external: list.filter((c) => c.plan === 'external').length,
-    suspended: list.filter((c) => c.status === 'suspended').length,
+    groone_network: list.filter((client) => client.plan === 'groone_network').length,
+    external: list.filter((client) => client.plan === 'external').length,
+    suspended: list.filter((client) => client.status === 'suspended').length,
   }
 })
 const shown = computed(() =>
-  (clients.value ?? []).filter((c) => tab.value === 'all' || (tab.value === 'suspended' ? c.status === 'suspended' : c.plan === tab.value)),
+  (clients.value ?? []).filter((client) => tab.value === 'all' || (tab.value === 'suspended' ? client.status === 'suspended' : client.plan === tab.value)),
 )
 const tabs: Tab[] = ['all', 'groone_network', 'external', 'suspended']
-const tabLabel = (x: Tab) => (x === 'all' ? t('int.tab.all') : x === 'suspended' ? t('int.tab.suspended') : t(`int.plan.${x}`))
+/** Nome da aba no idioma atual. */
+const tabLabel = (tab: Tab) => (tab === 'all' ? t('int.tab.all') : tab === 'suspended' ? t('int.tab.suspended') : t(`int.plan.${tab}`))
+/** Classes da aba, ativa ou não. */
 const tabClass = (on: boolean) =>
   cn(
     'h-8 rounded-[4px] px-3 text-[13px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
     on ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground',
   )
-const planOptions = computed(() => (['groone_network', 'external'] as const).map((p) => ({ value: p, label: t(`int.plan.${p}`) })))
+const planOptions = computed(() => (['groone_network', 'external'] as const).map((plan) => ({ value: plan, label: t(`int.plan.${plan}`) })))
 
+/** Convida o dono de um cliente novo. */
 async function create() {
   if (!emailOk.value || !seatsOk.value) return
   creating.value = true
   try {
-    const inv = await api.post<OwnerInvitation>('/internal/clients', { email: email.value.trim(), seat_limit: Number(seats.value), plan: plan.value })
-    invites.value = [inv, ...invites.value]
-    toast.success(t('int.created', { email: inv.email }))
+    const invitation = await api.post<OwnerInvitation>('/internal/clients', { email: email.value.trim(), seat_limit: Number(seats.value), plan: plan.value })
+    invites.value = [invitation, ...invites.value]
+    toast.success(t('int.created', { email: invitation.email }))
     email.value = ''
     seats.value = '5'
     adding.value = false
-  } catch (e) {
-    fail(e)
+  } catch (error) {
+    fail(error)
   } finally {
     creating.value = false
   }
 }
 
-async function resend(inv: OwnerInvitation) {
+/** Reenvia um convite de dono. */
+async function resend(invitation: OwnerInvitation) {
   try {
-    const fresh = await api.post<OwnerInvitation>(`/internal/owner-invitations/${inv.id}/resend`)
-    invites.value = invites.value.map((x) => (x.id === inv.id ? fresh : x))
+    const fresh = await api.post<OwnerInvitation>(`/internal/owner-invitations/${invitation.id}/resend`)
+    invites.value = invites.value.map((invite) => (invite.id === invitation.id ? fresh : invite))
     toast.success(t('int.resent'))
-  } catch (e) {
-    fail(e)
+  } catch (error) {
+    fail(error)
   }
 }
 
+/** Cancela o convite de dono escolhido. */
 async function cancelInvite() {
-  const inv = canceling.value
-  if (!inv) return
+  const invitation = canceling.value
+  if (!invitation) return
   busy.value = true
   try {
-    await api.delete(`/internal/owner-invitations/${inv.id}`)
-    invites.value = invites.value.filter((x) => x.id !== inv.id)
+    await api.delete(`/internal/owner-invitations/${invitation.id}`)
+    invites.value = invites.value.filter((invite) => invite.id !== invitation.id)
     canceling.value = null
     toast.success(t('int.canceled'))
-  } catch (e) {
-    fail(e)
+  } catch (error) {
+    fail(error)
   } finally {
     busy.value = false
   }
 }
 
+/** Limpa a busca e volta para todos os clientes. */
 function clearFilters() {
-  q.value = ''
+  searchText.value = ''
   tab.value = 'all'
 }
 
+/** Diz se a data já passou. */
 const expired = (iso: string) => new Date(iso).getTime() <= Date.now()
 </script>
 
@@ -177,20 +186,20 @@ const expired = (iso: string) => new Date(iso).getTime() <= Date.now()
 
     <Card v-if="invites.length" :title="t('int.pendingOwners')" :desc="t('int.pendingOwnersDesc')">
       <ul class="-my-3 divide-y">
-        <li v-for="i in invites" :key="i.id" class="flex flex-wrap items-center gap-x-4 gap-y-2 py-3">
+        <li v-for="invite in invites" :key="invite.id" class="flex flex-wrap items-center gap-x-4 gap-y-2 py-3">
           <div class="min-w-0 flex-1">
-            <div class="truncate text-[14px] font-medium">{{ i.email }}</div>
+            <div class="truncate text-[14px] font-medium">{{ invite.email }}</div>
             <div class="mt-0.5 text-[13px] text-muted-foreground">
-              <template v-if="i.plan">{{ t(`int.plan.${i.plan}`) }} · </template>
-              <template v-if="i.seat_limit">{{ i.seat_limit }} {{ t('int.seats').toLowerCase() }} · </template>
-              <span :class="expired(i.expires_at) && 'text-ochre'">{{
-                expired(i.expires_at) ? t('int.expired') : t('int.expires', { when: formatAgo(i.expires_at) })
+              <template v-if="invite.plan">{{ t(`int.plan.${invite.plan}`) }} · </template>
+              <template v-if="invite.seat_limit">{{ invite.seat_limit }} {{ t('int.seats').toLowerCase() }} · </template>
+              <span :class="expired(invite.expires_at) && 'text-ochre'">{{
+                expired(invite.expires_at) ? t('int.expired') : t('int.expires', { when: formatAgo(invite.expires_at) })
               }}</span>
             </div>
           </div>
           <div v-if="canManage" class="flex gap-2">
-            <Button variant="outline" size="sm" @click="resend(i)">{{ t('int.resend') }}</Button>
-            <Button variant="destructive" size="sm" @click="canceling = i">{{ t('int.cancelInvite') }}</Button>
+            <Button variant="outline" size="sm" @click="resend(invite)">{{ t('int.resend') }}</Button>
+            <Button variant="destructive" size="sm" @click="canceling = invite">{{ t('int.cancelInvite') }}</Button>
           </div>
         </li>
       </ul>
@@ -199,13 +208,13 @@ const expired = (iso: string) => new Date(iso).getTime() <= Date.now()
     <template v-if="clients">
       <div class="flex flex-wrap items-center gap-3">
         <div class="flex flex-wrap rounded-md border bg-card p-0.5" role="tablist" :aria-label="t('int.clients')">
-          <button v-for="x in tabs" :key="x" type="button" role="tab" :aria-selected="tab === x" :class="tabClass(tab === x)" @click="tab = x">
-            {{ tabLabel(x) }} <span class="tnum text-muted-foreground">{{ counts[x] }}</span>
+          <button v-for="tabOption in tabs" :key="tabOption" type="button" role="tab" :aria-selected="tab === tabOption" :class="tabClass(tab === tabOption)" @click="tab = tabOption">
+            {{ tabLabel(tabOption) }} <span class="tnum text-muted-foreground">{{ counts[tabOption] }}</span>
           </button>
         </div>
         <div class="relative ml-auto w-full sm:w-80">
           <Search class="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
-          <Input v-model="q" :aria-label="t('int.searchLabel')" class="h-9 bg-card pl-9" :placeholder="t('int.search')" />
+          <Input v-model="searchText" :aria-label="t('int.searchLabel')" class="h-9 bg-card pl-9" :placeholder="t('int.search')" />
         </div>
       </div>
 
@@ -230,37 +239,37 @@ const expired = (iso: string) => new Date(iso).getTime() <= Date.now()
             <Button v-if="clients.length" variant="outline" size="sm" @click="clearFilters">{{ t('int.clear') }}</Button>
             <Button v-else-if="canManage && !adding" size="sm" @click="adding = true">{{ t('int.new') }}</Button>
           </TableState>
-          <tr v-for="c in shown" :key="c.id" class="hover:bg-muted">
+          <tr v-for="client in shown" :key="client.id" class="hover:bg-muted">
             <td :class="td">
               <div class="flex items-center gap-3">
-                <Avatar :name="c.name" :size="28" />
+                <Avatar :name="client.name" :size="28" />
                 <div class="min-w-0">
-                  <RouterLink :to="`/interno/clientes/${c.id}`" class="font-medium hover:underline">{{ c.name }}</RouterLink>
-                  <div class="truncate text-[13px] text-muted-foreground">{{ c.owner.email }}</div>
+                  <RouterLink :to="`/interno/clientes/${client.id}`" class="font-medium hover:underline">{{ client.name }}</RouterLink>
+                  <div class="truncate text-[13px] text-muted-foreground">{{ client.owner.email }}</div>
                 </div>
               </div>
             </td>
-            <td :class="[td, 'text-muted-foreground']">{{ t(`int.plan.${c.plan}`) }}</td>
+            <td :class="[td, 'text-muted-foreground']">{{ t(`int.plan.${client.plan}`) }}</td>
             <td :class="td">
               <div class="flex items-center gap-3">
                 <SeatBar
                   class="w-28"
-                  :used="c.seats_used"
+                  :used="client.seats_used"
                   :pending="0"
-                  :limit="c.seat_limit"
-                  :label="t('int.seatsLabel', { used: c.seats_used, limit: c.seat_limit })"
+                  :limit="client.seat_limit"
+                  :label="t('int.seatsLabel', { used: client.seats_used, limit: client.seat_limit })"
                 />
-                <span class="tnum text-[13px] text-muted-foreground">{{ c.seats_used }}/{{ c.seat_limit }}</span>
+                <span class="tnum text-[13px] text-muted-foreground">{{ client.seats_used }}/{{ client.seat_limit }}</span>
               </div>
             </td>
             <td :class="td">
-              <Status :tone="c.status === 'active' ? 'ok' : 'bad'">{{ t(`int.status.${c.status}`) }}</Status>
+              <Status :tone="client.status === 'active' ? 'ok' : 'bad'">{{ t(`int.status.${client.status}`) }}</Status>
             </td>
             <td :class="td">
               <RouterLink
-                :to="`/interno/clientes/${c.id}`"
+                :to="`/interno/clientes/${client.id}`"
                 class="inline-flex h-8 items-center rounded-md px-3 text-[13px] font-medium hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                :aria-label="`${t('int.open')} ${c.name}`"
+                :aria-label="`${t('int.open')} ${client.name}`"
                 >{{ t('int.open') }}</RouterLink
               >
             </td>
