@@ -7,7 +7,6 @@ import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import LoadError from '@/components/LoadError.vue'
 import PageBody from '@/components/PageBody.vue'
 import PageHeader from '@/components/PageHeader.vue'
-import RolesPanel from '@/components/team/RolesPanel.vue'
 import Avatar from '@/components/ui/Avatar.vue'
 import Badge from '@/components/ui/Badge.vue'
 import Button from '@/components/ui/Button.vue'
@@ -25,7 +24,7 @@ import TableState from '@/components/ui/TableState.vue'
 import { api, ApiError } from '@/lib/api'
 import { errorText, formatAgo, formatDate, pick, t } from '@/lib/i18n'
 import { td, th } from '@/lib/table'
-import type { CompanyDetail, Invitation, Items, Member, Permission, Role } from '@/lib/types'
+import type { CompanyDetail, Invitation, Items, Member, Role } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import { useSession } from '@/stores/session'
 
@@ -34,10 +33,9 @@ const company = ref<CompanyDetail | null>(null)
 const members = ref<Member[]>([])
 const invites = ref<Invitation[]>([])
 const roles = ref<Role[]>([])
-const permissions = ref<Permission[]>([])
 const loaded = ref(false)
 const loadError = ref<string | null>(null)
-const view = ref<'members' | 'pending' | 'roles'>('members')
+const view = ref<'members' | 'pending'>('members')
 const filter = ref('')
 
 const canInvite = computed(() => session.can('team.invite'))
@@ -47,18 +45,16 @@ const canRoles = computed(() => session.can('roles.view'))
 async function load() {
   loadError.value = null
   try {
-    const [c, m, i, r, p] = await Promise.all([
+    const [c, m, i, r] = await Promise.all([
       api.get<CompanyDetail>('/company'),
       api.get<Items<Member>>('/members'),
       api.get<Items<Invitation>>('/invitations'),
       canRoles.value ? api.get<Items<Role>>('/roles') : Promise.resolve({ items: [] as Role[], next_cursor: null }),
-      canRoles.value ? api.get<Items<Permission>>('/permissions') : Promise.resolve({ items: [] as Permission[], next_cursor: null }),
     ])
     company.value = c
     members.value = m.items.filter((x) => x.status !== 'removed')
     invites.value = i.items.filter((x) => x.status === 'pending')
     roles.value = r.items
-    permissions.value = p.items
     loaded.value = true
   } catch (e) {
     loadError.value = errorText(e instanceof ApiError ? e.code : 'unknown')
@@ -178,7 +174,6 @@ const tabs = computed(() =>
   [
     { id: 'members' as const, label: t('team.members'), n: members.value.length, show: true },
     { id: 'pending' as const, label: t('team.pending'), n: invites.value.length, show: true },
-    { id: 'roles' as const, label: t('team.roles'), n: roles.value.length, show: canRoles.value },
   ].filter((x) => x.show),
 )
 const tab = (on: boolean) =>
@@ -332,7 +327,6 @@ const tab = (on: boolean) =>
         </DataTable>
       </template>
 
-      <RolesPanel v-else v-model:roles="roles" :permissions="permissions" />
     </template>
 
     <Dialog v-model:open="roleOpen" :title="t('team.changeRole')" :desc="roleTarget ? t('team.changeRoleDesc', { name: roleTarget.user.name }) : ''">

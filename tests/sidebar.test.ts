@@ -67,7 +67,7 @@ describe('SidebarNav', () => {
     await r.push('/interno')
     const w = mount(SidebarNav, { global: { plugins: [r] } })
     const before = labels(w)
-    expect(before).toEqual(['Início', 'Equipe', 'Networks do GAM', 'Sites', 'Configurações', 'Clientes', 'Pessoas', 'Equipe Groone', 'MCM sem dono'])
+    expect(before).toEqual(['Início', 'Equipe', 'Papéis e permissões', 'Networks do GAM', 'Sites', 'Clientes', 'Pessoas', 'Equipe Groone', 'MCM sem dono'])
     expect(w.text()).toContain('Empresa (interna)')
 
     session.set(me('c', ['sites.view']))
@@ -77,6 +77,16 @@ describe('SidebarNav', () => {
     expect(w.find('nav [aria-current="page"]').text()).toBe('Início')
   })
 
+  it('Configurações fica no rodapé, fora da navegação', async () => {
+    const session = useSession()
+    session.set(me('c', ['*']))
+    const r = router()
+    await r.push('/')
+    const w = mount(SidebarNav, { global: { plugins: [r] } })
+    expect(labels(w)).not.toContain('Configurações')
+    expect(w.findAll('a').map((a) => a.text())).toContain('Configurações')
+  })
+
   it('quem não é da equipe Groone não vê o grupo interno', async () => {
     const session = useSession()
     const m = me('c', ['*'])
@@ -84,7 +94,7 @@ describe('SidebarNav', () => {
     const r = router()
     await r.push('/')
     const w = mount(SidebarNav, { global: { plugins: [r] } })
-    expect(labels(w)).toEqual(['Início', 'Equipe', 'Networks do GAM', 'Sites', 'Configurações'])
+    expect(labels(w)).toEqual(['Início', 'Equipe', 'Papéis e permissões', 'Networks do GAM', 'Sites'])
     expect(w.text()).not.toContain('Empresa (interna)')
   })
 })
