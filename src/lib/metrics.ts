@@ -4,6 +4,7 @@
  * só se mostra o que ela devolveu.
  */
 
+import type { BarItem } from '@/components/charts/BarChart.vue'
 import type { MetricFormat, MetricKind, MetricValues, ReportRange, ReportRow, RelativePeriod } from './types'
 
 /** Moeda dos relatórios do GAM (``REPORT_CURRENCY`` do avant-core). */
@@ -91,4 +92,26 @@ export function niceTicks(maxValue: number, count = 4): number[] {
   const last = ticks[ticks.length - 1] ?? 0
   if (last < maxValue) ticks.push(Number((last + step).toPrecision(12)))
   return ticks
+}
+
+/** Hora do dia como no relógio: ``9`` vira ``09h``. */
+export function hourLabel(hour: number): string {
+  return `${String(hour).padStart(2, '0')}h`
+}
+
+/** As 24 horas do dia com as visitas de cada uma; hora sem linha vale zero. */
+export function hourlyItems(rows: ReportRow[], metric: string): BarItem[] {
+  if (rows.length === 0) return []
+  const byHour = new Map(rows.map((row) => [Number(row.dimensions.hour), toNumber(row.metrics[metric]) ?? 0]))
+  return Array.from({ length: 24 }, (_, hour) => ({ key: String(hour), label: hourLabel(hour), value: byHour.get(hour) ?? 0 }))
+}
+
+/** A hora com mais visitas; sem visitas, nenhuma. */
+export function peakHour(rows: ReportRow[], metric: string): number | null {
+  let best: { hour: number; value: number } | null = null
+  for (const row of rows) {
+    const value = toNumber(row.metrics[metric]) ?? 0
+    if (value > 0 && (best === null || value > best.value)) best = { hour: Number(row.dimensions.hour), value }
+  }
+  return best?.hour ?? null
 }

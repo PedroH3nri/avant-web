@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Toaster, toast } from 'sonner'
-import { Check, ChevronsUpDown, Copy, Loader2, LogOut, Plus, RefreshCw, Search, X, AlertTriangle, ArrowLeft, MoreHorizontal, Lock, Mail, ExternalLink, Home, Users, Network, Settings, ShieldCheck, Menu, BarChart3 } from 'lucide-react'
+import { Check, ChevronsUpDown, Copy, Loader2, LogOut, Plus, RefreshCw, Search, X, AlertTriangle, ArrowLeft, MoreHorizontal, Lock, Mail, ExternalLink, Home, Users, Network, Settings, ShieldCheck, Menu, BarChart3, Eye } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -22,6 +22,7 @@ const SCREENS = [
   ['empresa', 'Criar Empresa'],
   ['inicio', 'Início'],
   ['desempenho', 'Desempenho'],
+  ['visitas', 'Page Views'],
   ['equipe', 'Equipe'],
   ['networks', 'Networks do GAM'],
   ['conectar', 'Conectar network'],
@@ -268,6 +269,7 @@ function CreateCompany({ t, go }: { t: T; go: (s: Screen) => void }) {
 const NAV: { id: Screen; key: Key; icon: typeof Home }[] = [
   { id: 'inicio', key: 'nav.home', icon: Home },
   { id: 'desempenho', key: 'nav.performance', icon: BarChart3 },
+  { id: 'visitas', key: 'nav.pageViews', icon: Eye },
   { id: 'equipe', key: 'nav.team', icon: Users },
   { id: 'networks', key: 'nav.networks', icon: Network },
   { id: 'configuracoes', key: 'nav.settings', icon: Settings },
@@ -610,6 +612,91 @@ function PerformanceScreen() {
                   <td className={cn(td, 'font-medium whitespace-nowrap')}>{s.domain}</td>
                   {PERF_METRICS.map((m) => <td key={m.key} className={cn(td, 'text-right tnum whitespace-nowrap')}>{fmt(m.kind, st[m.key])}</td>)}
                   <td className={cn(td, 'text-right whitespace-nowrap')}>{compare ? <Delta now={st.revenue} before={sb.revenue} /> : '–'}</td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </Table>
+      </Body>
+    </>
+  )
+}
+
+/* ---------- Page Views ---------- */
+
+const PV_HOURS = Array.from({ length: 24 }, (_, h) => Math.round(120000 + 70000 * Math.cos(((h - 6) / 24) * 2 * Math.PI)))
+const PV_COUNTRIES = [['Brasil', 2032211], ['Portugal', 365906], ['Estados Unidos', 244283], ['Angola', 101881], ['Sem país', 40730]] as const
+
+function Bars({ items }: { items: readonly (readonly [string, number])[] }) {
+  const max = Math.max(...items.map(([, v]) => v)) || 1
+  return (
+    <ul className="grid gap-2">
+      {items.map(([label, v]) => (
+        <li key={label} className="grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)_auto] items-center gap-3 text-[13px]">
+          <span className="truncate">{label}</span>
+          <span className="h-2 rounded-full bg-muted"><span className="block h-2 rounded-full bg-foreground" style={{ width: `${(v / max) * 100}%` }} /></span>
+          <span className="tnum text-right">{int.format(v)}</span>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+function PageViewsScreen() {
+  const [period, setPeriod] = useState<PeriodKey>('last_30_days')
+  const [compare, setCompare] = useState(true)
+  const days = PERIODS.find(([k]) => k === period)![2]
+  const current = useMemo(() => series(days, 2, 0.52), [days])
+  const previous = useMemo(() => series(days, 5, 0.5), [days])
+  const metric = { key: 'impressions' as const, label: 'Page views', kind: 'int' as const }
+  const now = totals(current).impressions
+  const before = compare ? totals(previous).impressions : null
+  const peak = PV_HOURS.indexOf(Math.max(...PV_HOURS))
+  return (
+    <>
+      <PageHeader title="Page Views" sub="Visitas dos seus sites contadas pela tag da Groone, de hora em hora."
+        actions={
+          <>
+            <Select value={period} onValueChange={(v) => setPeriod(v as PeriodKey)}>
+              <SelectTrigger className="h-9 w-[180px]" aria-label="Período"><SelectValue /></SelectTrigger>
+              <SelectContent>{PERIODS.map(([k, l]) => <SelectItem key={k} value={k}>{l}</SelectItem>)}</SelectContent>
+            </Select>
+            <Button variant="outline" aria-pressed={compare} onClick={() => setCompare(!compare)} className="h-9">
+              {compare && <Check className="h-4 w-4" />}Comparar com o anterior
+            </Button>
+          </>
+        } />
+      <Body>
+        <div className="grid grid-cols-1 gap-px overflow-hidden rounded-lg border bg-border sm:grid-cols-3">
+          <div className="bg-card p-4"><div className="text-[13px] font-medium text-muted-foreground">Page views</div><div className="mt-1 text-[24px] font-semibold tracking-tight">{int.format(now)}</div><div className="mt-1"><Delta now={now} before={before} /></div></div>
+          <div className="bg-card p-4"><div className="text-[13px] font-medium text-muted-foreground">Sites com visitas</div><div className="mt-1 text-[24px] font-semibold tracking-tight">{PERF_SITES.length}</div></div>
+          <div className="bg-card p-4"><div className="text-[13px] font-medium text-muted-foreground">Hora de pico</div><div className="mt-1 text-[24px] font-semibold tracking-tight">{String(peak).padStart(2, '0')}h</div></div>
+        </div>
+        <Card pad footerNote="Datas e horas no horário de Brasília. A hora atual é parcial e muda a cada sincronização.">
+          <h2 className="text-[16px] font-semibold tracking-tight">Page views por dia</h2>
+          <div className="mt-4"><LineChart current={current} previous={compare ? previous : null} metric={metric} /></div>
+        </Card>
+        <div className="grid gap-6 lg:grid-cols-2">
+          <section className="grid content-start gap-3">
+            <h2 className="text-[16px] font-semibold tracking-tight">Por hora do dia</h2>
+            <Card pad><Bars items={PV_HOURS.map((v, h) => [`${String(h).padStart(2, '0')}h`, v] as const)} /></Card>
+          </section>
+          <section className="grid content-start gap-3">
+            <h2 className="text-[16px] font-semibold tracking-tight">Por país</h2>
+            <Card pad><Bars items={PV_COUNTRIES} /></Card>
+          </section>
+        </div>
+        <Table min={520}>
+          <thead><tr><th className={th}>Site</th><th className={cn(th, 'text-right')}>Page views</th>{compare && <th className={cn(th, 'text-right')}>Variação</th>}</tr></thead>
+          <tbody>
+            {PERF_SITES.map((s) => {
+              const st = totals(series(days, s.seed, s.share * 0.52)).impressions
+              const sb = totals(series(days, s.seed + 4, s.share * 0.5)).impressions
+              return (
+                <tr key={s.domain} className="hover:bg-muted">
+                  <td className={cn(td, 'font-medium whitespace-nowrap')}>{s.domain}</td>
+                  <td className={cn(td, 'text-right tnum whitespace-nowrap')}>{int.format(st)}</td>
+                  {compare && <td className={cn(td, 'text-right whitespace-nowrap')}><Delta now={st} before={sb} /></td>}
                 </tr>
               )
             })}
@@ -1272,6 +1359,7 @@ export default function App() {
       case 'empresa': return <CreateCompany t={t} go={go} />
       case 'inicio': return <HomeScreen t={t} go={go} members={members} />
       case 'desempenho': return <PerformanceScreen />
+      case 'visitas': return <PageViewsScreen />
       case 'equipe': return <TeamScreen t={t} members={members} setMembers={setMembers} />
       case 'networks': return <NetworksScreen t={t} go={go} />
       case 'conectar': return <ConnectScreen t={t} go={go} />

@@ -331,7 +331,7 @@ export interface ContractNetwork {
 
 export type MetricKind = 'sum' | 'ratio'
 export type MetricFormat = 'number' | 'currency' | 'percent'
-export type MetricSource = 'gam' | 'gam_key_values'
+export type MetricSource = 'gam' | 'gam_key_values' | 'page_views'
 export type RelativePeriod = 'today' | 'yesterday' | 'last_7_days' | 'last_30_days' | 'this_month' | 'last_month'
 export type FilterOperator = 'eq' | 'neq' | 'in' | 'not_in' | 'contains' | 'gt' | 'gte' | 'lt' | 'lte'
 
@@ -340,6 +340,7 @@ export interface MetricDef {
   label: Record<Lang, string>
   kind: MetricKind
   format: MetricFormat
+  sources: MetricSource[]
 }
 
 export interface DimensionDef {

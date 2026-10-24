@@ -3,7 +3,7 @@
 import { computed, type Component } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { DropdownMenuRoot, DropdownMenuTrigger } from 'reka-ui'
-import { Building2, ChartLine, ChevronsUpDown, FileSignature, Globe, LayoutDashboard, LogOut, Network, Settings, ShieldCheck, UserRound, Users, UsersRound } from 'lucide-vue-next'
+import { Building2, ChartLine, ChevronsUpDown, Eye, FileSignature, Globe, LayoutDashboard, LogOut, Network, Settings, ShieldCheck, UserRound, Users, UsersRound } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 import Avatar from '@/components/ui/Avatar.vue'
 import Mark from '@/components/ui/Mark.vue'
@@ -38,7 +38,13 @@ const GROUPS: Group[] = [
       { to: '/sites', key: 'nav.sites', icon: Globe },
     ],
   },
-  { key: 'nav.groupReports', items: [{ to: '/desempenho', key: 'nav.adManager', icon: ChartLine }] },
+  {
+    key: 'nav.groupReports',
+    items: [
+      { to: '/desempenho', key: 'nav.adManager', icon: ChartLine },
+      { to: '/visitas', key: 'nav.pageViews', icon: Eye },
+    ],
+  },
   {
     key: 'nav.groupCompany',
     items: [

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { change, countryName, dailySeries, daysOf, formatMetric, niceTicks, toNumber } from '@/lib/metrics'
+import { change, countryName, dailySeries, daysOf, formatMetric, hourLabel, hourlyItems, niceTicks, peakHour, toNumber } from '@/lib/metrics'
 import type { ReportRow } from '@/lib/types'
 
 /** Linha do resultado com a data e a receita. */
@@ -45,5 +45,20 @@ describe('metrics', () => {
   it('mostra o país pelo nome', () => {
     expect(countryName('BR', 'pt-BR')).toBe('Brasil')
     expect(countryName(null, 'en')).toBeNull()
+  })
+
+  it('preenche as 24 horas e acha a hora de pico', () => {
+    const rows: ReportRow[] = [
+      { dimensions: { hour: '9' }, metrics: { page_views: '120' }, previous: null },
+      { dimensions: { hour: '21' }, metrics: { page_views: '300' }, previous: null },
+    ]
+    const items = hourlyItems(rows, 'page_views')
+    expect(items).toHaveLength(24)
+    expect(items[9]).toEqual({ key: '9', label: '09h', value: 120 })
+    expect(items[0]?.value).toBe(0)
+    expect(hourlyItems([], 'page_views')).toEqual([])
+    expect(peakHour(rows, 'page_views')).toBe(21)
+    expect(peakHour([], 'page_views')).toBeNull()
+    expect(hourLabel(23)).toBe('23h')
   })
 })
