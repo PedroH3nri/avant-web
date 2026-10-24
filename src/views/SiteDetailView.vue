@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
 import { DropdownMenuRoot, DropdownMenuTrigger } from 'reka-ui'
 import { ArrowLeft, MoreHorizontal } from 'lucide-vue-next'
+import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import LoadError from '@/components/LoadError.vue'
 import PageBody from '@/components/PageBody.vue'
 import PageHeader from '@/components/PageHeader.vue'
@@ -35,6 +36,8 @@ const others = ref<SiteListItem[]>([])
 const notFound = ref(false)
 const loadError = ref<string | null>(null)
 const canAssign = computed(() => session.can('sites.assign'))
+const canManage = computed(() => session.can('sites.manage'))
+const router = useRouter()
 
 async function load() {
   loadError.value = null
@@ -51,6 +54,25 @@ async function load() {
   }
 }
 onMounted(load)
+
+// Site cadastrado à mão sai enquanto aguarda o GAM
+const removing = ref(false)
+const busy = ref(false)
+async function removeSite() {
+  const s = site.value
+  if (!s) return
+  busy.value = true
+  try {
+    await api.delete(`/sites/${s.id}`)
+    toast.success(t('site.removed', { domain: s.domain }))
+    removing.value = false
+    await router.push('/sites')
+  } catch (e) {
+    errorToast(e)
+  } finally {
+    busy.value = false
+  }
+}
 
 const rows = computed(() => tree(site.value?.ad_units.filter((u) => u.status === 'active') ?? []))
 const errorToast = (e: unknown) => toast.error(errorText(e instanceof ApiError ? e.code : 'unknown'))
@@ -91,7 +113,8 @@ async function move() {
       </RouterLink>
     </template>
     <template v-if="site" #actions>
-      <Status :tone="approval(site.approval_status).tone">{{ approval(site.approval_status).label }}</Status>
+      <Status :tone="approval(site).tone">{{ approval(site).label }}</Status>
+      <Button v-if="site.awaiting_gam && canManage" variant="destructive" size="sm" @click="removing = true">{{ t('site.remove') }}</Button>
     </template>
   </PageHeader>
   <PageBody>
@@ -99,7 +122,8 @@ async function move() {
     <Card v-else-if="notFound" :desc="t('site.notFound')" />
     <p v-else-if="!site" class="text-[14px] text-muted-foreground" role="status">{{ t('common.loading') }}</p>
     <template v-else>
-      <section class="grid gap-3">
+      <Card v-if="site.awaiting_gam" :title="t('sites.awaiting')" :desc="t('site.awaitingDesc')" />
+      <section v-if="!site.awaiting_gam" class="grid gap-3">
         <div>
           <h2 class="text-[16px] font-semibold tracking-tight">{{ t('site.units') }}</h2>
           <p class="mt-1 max-w-[70ch] text-[14px] text-muted-foreground">{{ t('site.unitsDesc') }}</p>
@@ -155,6 +179,14 @@ async function move() {
       </Card>
     </template>
 
+    <ConfirmDialog
+      v-model:open="removing"
+      :title="t('site.removeTitle', { domain: site?.domain ?? '' })"
+      :desc="t('site.removeDesc')"
+      :action="t('site.remove')"
+      :busy="busy"
+      @confirm="removeSite"
+    />
     <Dialog v-model:open="moveOpen" :title="t('site.move')" :desc="moving ? `${moving.name} · ${t('site.childrenNote')}` : ''">
       <Field id="move-site" :label="t('sites.col.site')">
         <NativeSelect id="move-site" v-model="target" :options="targetOptions" />

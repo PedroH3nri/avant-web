@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { t } from '@/lib/i18n'
 import { approval, tree } from '@/lib/sites'
 import type { AdUnit } from '@/lib/types'
 
@@ -21,9 +22,16 @@ describe('sites', () => {
   })
 
   it('traduz a aprovação do GAM', () => {
-    expect(approval('APPROVED').tone).toBe('ok')
-    expect(approval('disapproved').tone).toBe('bad')
-    expect(approval('UNCHECKED').tone).toBe('warn')
-    expect(approval(null).tone).toBe('neutral')
+    const gam = (approval_status: string | null) => approval({ approval_status, awaiting_gam: false })
+    expect(gam('APPROVED').tone).toBe('ok')
+    expect(gam('disapproved').tone).toBe('bad')
+    expect(gam('UNCHECKED').tone).toBe('warn')
+    expect(gam(null).tone).toBe('neutral')
+  })
+
+  it('site cadastrado à mão aguarda o GAM', () => {
+    const a = approval({ approval_status: null, awaiting_gam: true })
+    expect(a.tone).toBe('ochre')
+    expect(a.label).toBe(t('sites.awaiting'))
   })
 })
