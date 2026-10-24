@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Toaster, toast } from 'sonner'
-import { Check, ChevronsUpDown, Copy, Loader2, LogOut, Plus, RefreshCw, Search, X, AlertTriangle, ArrowLeft, MoreHorizontal, Lock, Mail, ExternalLink, Home, Users, Network, Settings, ShieldCheck, Menu } from 'lucide-react'
+import { Check, ChevronsUpDown, Copy, Loader2, LogOut, Plus, RefreshCw, Search, X, AlertTriangle, ArrowLeft, MoreHorizontal, Lock, Mail, ExternalLink, Home, Users, Network, Settings, ShieldCheck, Menu, BarChart3 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -19,6 +19,7 @@ const SCREENS = [
   ['convite', 'Aceite de convite'],
   ['empresa', 'Criar Empresa'],
   ['inicio', 'Início'],
+  ['desempenho', 'Desempenho'],
   ['equipe', 'Equipe'],
   ['networks', 'Networks do GAM'],
   ['conectar', 'Conectar network'],
@@ -262,6 +263,7 @@ function CreateCompany({ t, go }: { t: T; go: (s: Screen) => void }) {
 
 const NAV: { id: Screen; key: Key; icon: typeof Home }[] = [
   { id: 'inicio', key: 'nav.home', icon: Home },
+  { id: 'desempenho', key: 'nav.performance', icon: BarChart3 },
   { id: 'equipe', key: 'nav.team', icon: Users },
   { id: 'networks', key: 'nav.networks', icon: Network },
   { id: 'configuracoes', key: 'nav.settings', icon: Settings },
@@ -300,7 +302,7 @@ function SidebarContent({ t, screen, go }: { t: T; screen: Screen; go: (s: Scree
         {!internal && (
           <>
             <div className="px-2.5 pb-1 pt-5 text-[12px] font-medium text-muted-foreground">{t('nav.soon')}</div>
-            {(['nav.metrics', 'nav.dashboards'] as Key[]).map((k) => (
+            {(['nav.dashboards'] as Key[]).map((k) => (
               <span key={k} className="flex h-9 items-center gap-2.5 px-2.5 text-[14px] text-muted-foreground/70"><Lock className="h-4 w-4" />{t(k)}</span>
             ))}
           </>
@@ -448,6 +450,167 @@ function HomeScreen({ t, go, members }: { t: T; go: (s: Screen) => void; members
             </ol>
           </Card>
         </div>
+      </Body>
+    </>
+  )
+}
+
+/* ---------- Desempenho ---------- */
+
+type PerfMetric = 'revenue' | 'impressions' | 'ecpm' | 'ctr' | 'active_view'
+const PERF_METRICS: { key: PerfMetric; label: string; kind: 'money' | 'int' | 'pct' }[] = [
+  { key: 'revenue', label: 'Receita', kind: 'money' },
+  { key: 'impressions', label: 'Impressões', kind: 'int' },
+  { key: 'ecpm', label: 'eCPM', kind: 'money' },
+  { key: 'ctr', label: 'CTR', kind: 'pct' },
+  { key: 'active_view', label: 'Visibilidade', kind: 'pct' },
+]
+const PERIODS = [['yesterday', 'Ontem', 1], ['last_7_days', 'Últimos 7 dias', 7], ['last_30_days', 'Últimos 30 dias', 30], ['this_month', 'Este mês', 24], ['last_month', 'Mês passado', 30]] as const
+type PeriodKey = (typeof PERIODS)[number][0]
+type DayPoint = { day: string; revenue: number; impressions: number; clicks: number; viewable: number; measurable: number }
+
+function wave(seed: number, i: number) { return Math.sin(i * 0.9 + seed) * 0.08 + Math.sin(i * 0.31 + seed * 2) * 0.05 + (i % 7 === 5 || i % 7 === 6 ? -0.12 : 0) }
+function series(days: number, seed: number, scale: number): DayPoint[] {
+  return Array.from({ length: days }, (_, i) => {
+    const f = 1 + wave(seed, i)
+    const impressions = Math.round(182000 * scale * f)
+    return { day: `${String(((i + 1) % 30) + 1).padStart(2, '0')}/10`, revenue: impressions / 1000 * 3.42 * (1 + wave(seed + 1, i) / 2), impressions, clicks: Math.round(impressions * 0.0061 * (1 + wave(seed + 3, i))), viewable: Math.round(impressions * 0.68), measurable: impressions }
+  })
+}
+function totals(points: DayPoint[]) {
+  const s = points.reduce((a, p) => ({ revenue: a.revenue + p.revenue, impressions: a.impressions + p.impressions, clicks: a.clicks + p.clicks, viewable: a.viewable + p.viewable, measurable: a.measurable + p.measurable }), { revenue: 0, impressions: 0, clicks: 0, viewable: 0, measurable: 0 })
+  return { revenue: s.revenue, impressions: s.impressions, ecpm: s.impressions ? (s.revenue / s.impressions) * 1000 : 0, ctr: s.impressions ? (s.clicks / s.impressions) * 100 : 0, active_view: s.measurable ? (s.viewable / s.measurable) * 100 : 0 }
+}
+function pointValue(p: DayPoint, m: PerfMetric) { return totals([p])[m] }
+const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
+const int = new Intl.NumberFormat('pt-BR')
+const pct = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+function fmt(kind: 'money' | 'int' | 'pct', v: number) { return kind === 'money' ? brl.format(v) : kind === 'int' ? int.format(Math.round(v)) : `${pct.format(v)}%` }
+function compact(kind: 'money' | 'int' | 'pct', v: number) { return kind === 'pct' ? `${pct.format(v)}%` : new Intl.NumberFormat('pt-BR', { notation: 'compact', maximumFractionDigits: 1, ...(kind === 'money' ? { style: 'currency', currency: 'BRL' } : {}) }).format(v) }
+
+function Delta({ now, before }: { now: number; before: number | null }) {
+  if (before === null || before === 0) return <span className="text-[13px] text-muted-foreground">sem período anterior</span>
+  const change = ((now - before) / before) * 100
+  const up = change >= 0
+  return (
+    <span className={cn('inline-flex items-center gap-1 text-[13px] tnum', up ? 'text-ok' : 'text-bad')}>
+      <span aria-hidden="true">{up ? '↑' : '↓'}</span>{pct.format(Math.abs(change))}%<span className="text-muted-foreground">{up ? 'acima' : 'abaixo'} do anterior</span>
+    </span>
+  )
+}
+
+function LineChart({ current, previous, metric }: { current: DayPoint[]; previous: DayPoint[] | null; metric: (typeof PERF_METRICS)[number] }) {
+  const [hover, setHover] = useState<number | null>(null)
+  const W = 960, H = 260, L = 64, R = 16, T = 16, B = 28
+  const now = current.map((p) => pointValue(p, metric.key))
+  const before = previous?.map((p) => pointValue(p, metric.key)) ?? []
+  const max = Math.max(...now, ...before) * 1.1 || 1
+  const x = (i: number) => L + (current.length === 1 ? (W - L - R) / 2 : (i * (W - L - R)) / (current.length - 1))
+  const y = (v: number) => T + (H - T - B) * (1 - v / max)
+  const path = (vals: number[]) => vals.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join('')
+  const ticks = [0, 0.25, 0.5, 0.75, 1].map((f) => max * f)
+  const step = Math.max(1, Math.ceil(current.length / 8))
+  return (
+    <div className="relative">
+      <svg viewBox={`0 0 ${W} ${H}`} className="h-[260px] w-full" role="img" aria-label={`${metric.label} por dia`}
+        onMouseLeave={() => setHover(null)}
+        onMouseMove={(e) => { const r = e.currentTarget.getBoundingClientRect(); const px = ((e.clientX - r.left) / r.width) * W; const i = Math.round(((px - L) / (W - L - R)) * (current.length - 1)); setHover(Math.min(current.length - 1, Math.max(0, i))) }}>
+        {ticks.map((v) => (
+          <g key={v}>
+            <line x1={L} x2={W - R} y1={y(v)} y2={y(v)} className="stroke-border" strokeWidth={1} />
+            <text x={L - 8} y={y(v) + 4} textAnchor="end" className="fill-muted-foreground text-[11px] tnum">{compact(metric.kind, v)}</text>
+          </g>
+        ))}
+        {current.map((p, i) => i % step === 0 && <text key={p.day} x={x(i)} y={H - 8} textAnchor="middle" className="fill-muted-foreground text-[11px] tnum">{p.day}</text>)}
+        {previous && <path d={path(before)} fill="none" className="stroke-muted-foreground/60" strokeWidth={2} strokeDasharray="4 4" strokeLinejoin="round" />}
+        <path d={`${path(now)}L${x(now.length - 1)},${y(0)}L${x(0)},${y(0)}Z`} className="fill-foreground/[0.04]" />
+        <path d={path(now)} fill="none" className="stroke-foreground" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+        {hover !== null && (
+          <g>
+            <line x1={x(hover)} x2={x(hover)} y1={T} y2={H - B} className="stroke-muted-foreground/50" strokeWidth={1} />
+            {previous && <circle cx={x(hover)} cy={y(before[hover])} r={4} className="fill-muted-foreground stroke-card" strokeWidth={2} />}
+            <circle cx={x(hover)} cy={y(now[hover])} r={4} className="fill-foreground stroke-card" strokeWidth={2} />
+          </g>
+        )}
+      </svg>
+      {hover !== null && (
+        <div className="pointer-events-none absolute top-2 rounded-md border bg-popover px-3 py-2 text-[13px] shadow-md" style={{ left: `clamp(0px, calc(${(x(hover) / W) * 100}% - 90px), calc(100% - 180px))`, width: 180 }}>
+          <div className="font-medium">{current[hover].day}</div>
+          <div className="mt-1 flex items-center justify-between gap-3"><span className="flex items-center gap-1.5 text-muted-foreground"><span className="h-0.5 w-3 bg-foreground" />Atual</span><span className="tnum">{fmt(metric.kind, now[hover])}</span></div>
+          {previous && <div className="flex items-center justify-between gap-3"><span className="flex items-center gap-1.5 text-muted-foreground"><span className="h-0 w-3 border-t-2 border-dashed border-muted-foreground/60" />Anterior</span><span className="tnum">{fmt(metric.kind, before[hover])}</span></div>}
+        </div>
+      )}
+    </div>
+  )
+}
+
+const PERF_SITES = [
+  { domain: 'blogexemplo.com', share: 0.58, seed: 1 },
+  { domain: 'receitas.blogexemplo.com', share: 0.31, seed: 2 },
+  { domain: 'viagens.blogexemplo.com', share: 0.11, seed: 3 },
+]
+
+function PerformanceScreen() {
+  const [period, setPeriod] = useState<PeriodKey>('last_30_days')
+  const [compare, setCompare] = useState(true)
+  const [metricKey, setMetricKey] = useState<PerfMetric>('revenue')
+  const days = PERIODS.find(([k]) => k === period)![2]
+  const current = useMemo(() => series(days, 1, 1), [days])
+  const previous = useMemo(() => series(days, 4, 0.92), [days])
+  const now = totals(current)
+  const before = compare ? totals(previous) : null
+  const metric = PERF_METRICS.find((m) => m.key === metricKey)!
+  return (
+    <>
+      <PageHeader title="Desempenho" sub="Receita e entrega do Google Ad Manager. A receita já vem sem a parte da Groone."
+        actions={
+          <>
+            <Select value={period} onValueChange={(v) => setPeriod(v as PeriodKey)}>
+              <SelectTrigger className="h-9 w-[180px]" aria-label="Período"><SelectValue /></SelectTrigger>
+              <SelectContent>{PERIODS.map(([k, l]) => <SelectItem key={k} value={k}>{l}</SelectItem>)}</SelectContent>
+            </Select>
+            <Button variant="outline" aria-pressed={compare} onClick={() => setCompare(!compare)} className="h-9">
+              {compare && <Check className="h-4 w-4" />}Comparar com o anterior
+            </Button>
+          </>
+        } />
+      <Body>
+        <div className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border bg-border md:grid-cols-3 lg:grid-cols-5">
+          {PERF_METRICS.map((m) => (
+            <button key={m.key} onClick={() => setMetricKey(m.key)} aria-pressed={m.key === metricKey}
+              className={cn('relative bg-card p-4 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring', m.key === metricKey && 'after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:bg-primary')}>
+              <div className="text-[13px] font-medium text-muted-foreground">{m.label}</div>
+              <div className="mt-1 text-[24px] font-semibold tracking-tight">{fmt(m.kind, now[m.key])}</div>
+              <div className="mt-1"><Delta now={now[m.key]} before={before ? before[m.key] : null} /></div>
+            </button>
+          ))}
+        </div>
+        <Card pad footerNote="Atualizado hoje às 14:35. O dia de hoje é parcial e muda a cada hora.">
+          <div className="flex flex-wrap items-baseline justify-between gap-3">
+            <h2 className="text-[16px] font-semibold tracking-tight">{metric.label} por dia</h2>
+            <div className="flex items-center gap-4 text-[13px] text-muted-foreground">
+              <span className="flex items-center gap-1.5"><span className="h-0.5 w-4 bg-foreground" />Período atual</span>
+              {compare && <span className="flex items-center gap-1.5"><span className="w-4 border-t-2 border-dashed border-muted-foreground/60" />Período anterior</span>}
+            </div>
+          </div>
+          <div className="mt-4"><LineChart current={current} previous={compare ? previous : null} metric={metric} /></div>
+        </Card>
+        <Table min={760}>
+          <thead><tr><th className={th}>Site</th>{PERF_METRICS.map((m) => <th key={m.key} className={cn(th, 'text-right')}>{m.label}</th>)}<th className={cn(th, 'text-right')}>Receita vs anterior</th></tr></thead>
+          <tbody>
+            {PERF_SITES.map((s) => {
+              const st = totals(series(days, s.seed, s.share))
+              const sb = totals(series(days, s.seed + 4, s.share * 0.92))
+              return (
+                <tr key={s.domain} className="hover:bg-muted">
+                  <td className={cn(td, 'font-medium whitespace-nowrap')}>{s.domain}</td>
+                  {PERF_METRICS.map((m) => <td key={m.key} className={cn(td, 'text-right tnum whitespace-nowrap')}>{fmt(m.kind, st[m.key])}</td>)}
+                  <td className={cn(td, 'text-right whitespace-nowrap')}>{compare ? <Delta now={st.revenue} before={sb.revenue} /> : '–'}</td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </Table>
       </Body>
     </>
   )
@@ -958,6 +1121,7 @@ export default function App() {
       case 'convite': return <Invite t={t} go={go} />
       case 'empresa': return <CreateCompany t={t} go={go} />
       case 'inicio': return <HomeScreen t={t} go={go} members={members} />
+      case 'desempenho': return <PerformanceScreen />
       case 'equipe': return <TeamScreen t={t} members={members} setMembers={setMembers} />
       case 'networks': return <NetworksScreen t={t} go={go} />
       case 'conectar': return <ConnectScreen t={t} go={go} />

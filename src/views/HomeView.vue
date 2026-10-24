@@ -108,7 +108,9 @@ watch(() => session.me?.active_company_id, load)
             <p class="text-[14px] tnum">{{ t('home.seatsOf', { used: company.seats_used, limit: company.seat_limit }) }}</p>
             <SeatBar class="mt-3" :used="company.seats_used" :pending="0" :limit="company.seat_limit" :label="t('home.seatsOf', { used: company.seats_used, limit: company.seat_limit })" />
           </Card>
-          <Card :desc="t('home.metricsSoon')" />
+          <Card v-if="session.can('reports.view')" :title="t('perf.title')" :desc="t('home.metrics')">
+            <Button variant="outline" size="sm" @click="router.push('/desempenho')">{{ t('home.seePerformance') }}</Button>
+          </Card>
         </div>
       </div>
     </template>

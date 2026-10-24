@@ -3,7 +3,7 @@
 import { computed, type Component } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { DropdownMenuRoot, DropdownMenuTrigger } from 'reka-ui'
-import { Building2, ChevronsUpDown, Globe, Home, LogOut, Network, Settings, ShieldCheck, UserRound, Users, UserSearch } from 'lucide-vue-next'
+import { Building2, ChartLine, ChevronsUpDown, Globe, Home, LogOut, Network, Settings, ShieldCheck, UserRound, Users, UserSearch } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 import Avatar from '@/components/ui/Avatar.vue'
 import Mark from '@/components/ui/Mark.vue'
@@ -27,6 +27,7 @@ type Item = { to: string; key: Key; icon: Component }
 // para a Company Groone).
 const CLIENT: Item[] = [
   { to: '/', key: 'nav.home', icon: Home },
+  { to: '/desempenho', key: 'nav.performance', icon: ChartLine },
   { to: '/equipe', key: 'nav.team', icon: Users },
   { to: '/papeis', key: 'nav.roles', icon: ShieldCheck },
   { to: '/networks', key: 'nav.networks', icon: Network },

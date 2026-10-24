@@ -2,6 +2,7 @@ export type Lang = 'pt' | 'en' | 'es'
 
 const dict = {
   'nav.home': ['Início', 'Home', 'Inicio'],
+  'nav.performance': ['Desempenho', 'Performance', 'Rendimiento'],
   'nav.team': ['Equipe', 'Team', 'Equipo'],
   'nav.networks': ['Networks do GAM', 'GAM networks', 'Networks de GAM'],
   'nav.settings': ['Configurações', 'Settings', 'Configuración'],
