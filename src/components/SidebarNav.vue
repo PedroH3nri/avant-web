@@ -60,14 +60,17 @@ function active(to: string, internalItem: boolean) {
   return route.path === to || route.path.startsWith(`${to}/`)
 }
 const group = 'px-2.5 pb-1 pt-5 text-[12px] font-medium text-muted-foreground first:pt-0'
-const idle = 'flex h-9 items-center gap-2.5 px-2.5 text-[14px] text-muted-foreground/70 [&_svg]:size-4'
 const item = (on: boolean) =>
   cn(
     'flex h-9 w-full items-center gap-2.5 rounded-md px-2.5 text-left text-[14px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-4',
     on ? 'bg-secondary font-medium text-foreground' : 'text-muted-foreground hover:bg-accent hover:text-foreground',
   )
 
-/** Item da Empresa com a Company Groone ativa: troca para a Empresa cliente antes de abrir. */
+/**
+ * Item de Clientes com a Company Groone ativa: troca para a Empresa cliente antes de abrir.
+ * Sem Empresa cliente, abre a mesma tela na Company Groone (a equipe também tem Equipe,
+ * Papéis, Networks e Configurações).
+ */
 async function goClient(event: MouseEvent, to: string) {
   emit('navigate')
   const id = clientId.value
@@ -105,20 +108,16 @@ async function logout() {
     </div>
     <nav v-if="ready" class="grid gap-0.5 overflow-y-auto p-3" :aria-label="t('nav.main')">
       <div :class="group">{{ t('nav.groupClients') }}</div>
-      <template v-if="clientId">
-        <RouterLink
-          v-for="i in CLIENT"
-          :key="i.to"
-          :to="i.to"
-          :aria-current="active(i.to, false) ? 'page' : undefined"
-          :class="item(active(i.to, false))"
-          @click="goClient($event, i.to)"
-        >
-          <component :is="i.icon" />{{ t(i.key) }}
-        </RouterLink>
-      </template>
-      <!-- Equipe Groone que ainda não está em nenhuma Empresa cliente: os itens ficam, inativos. -->
-      <span v-for="i in clientId ? [] : CLIENT" :key="i.to" :class="idle" :title="t('nav.noClient')"><component :is="i.icon" />{{ t(i.key) }}</span>
+      <RouterLink
+        v-for="i in CLIENT"
+        :key="i.to"
+        :to="i.to"
+        :aria-current="active(i.to, false) ? 'page' : undefined"
+        :class="item(active(i.to, false))"
+        @click="goClient($event, i.to)"
+      >
+        <component :is="i.icon" />{{ t(i.key) }}
+      </RouterLink>
       <template v-if="staff">
         <div :class="group">{{ t('nav.groupInternal') }}</div>
         <RouterLink
@@ -136,7 +135,6 @@ async function logout() {
     <div class="mt-auto grid gap-1 border-t p-3">
       <template v-if="ready">
         <RouterLink
-          v-if="clientId"
           :to="SETTINGS.to"
           :aria-current="active(SETTINGS.to, false) ? 'page' : undefined"
           :class="item(active(SETTINGS.to, false))"
@@ -144,7 +142,6 @@ async function logout() {
         >
           <component :is="SETTINGS.icon" />{{ t(SETTINGS.key) }}
         </RouterLink>
-        <span v-else :class="idle" :title="t('nav.noClient')"><component :is="SETTINGS.icon" />{{ t(SETTINGS.key) }}</span>
       </template>
       <DropdownMenuRoot>
         <DropdownMenuTrigger

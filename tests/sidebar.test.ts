@@ -87,6 +87,19 @@ describe('SidebarNav', () => {
     expect(w.findAll('a').map((a) => a.text())).toContain('Configurações')
   })
 
+  it('equipe Groone sem Empresa cliente tem os mesmos links, todos clicáveis', async () => {
+    const session = useSession()
+    const m = me('g', ['*'])
+    session.set({ ...m, companies: m.companies.filter((c) => c.is_internal) })
+    const r = router()
+    await r.push('/interno')
+    const w = mount(SidebarNav, { global: { plugins: [r] } })
+    expect(labels(w)).toEqual(['Início', 'Equipe', 'Papéis e permissões', 'Networks do GAM', 'Sites', 'Clientes', 'Pessoas', 'Equipe Groone', 'MCM sem dono'])
+    await w.findAll('nav a').find((a) => a.text() === 'Equipe')!.trigger('click')
+    await flushPromises()
+    expect(r.currentRoute.value.path).toBe('/equipe')
+  })
+
   it('quem não é da equipe Groone não vê o grupo interno', async () => {
     const session = useSession()
     const m = me('c', ['*'])

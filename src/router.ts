@@ -72,9 +72,6 @@ router.beforeEach(async (to) => {
         return '/'
       }
     }
-  } else if (to.path === '/' && session.company?.is_internal && session.can('internal.clients.view')) {
-    // A Company Groone não tem painel de cliente: o início dela é o painel interno.
-    return '/interno'
   }
   // Sem a permissão da tela, volta ao início (a API recusaria tudo mesmo).
   if (to.meta.permission && !session.can(to.meta.permission)) return '/'
