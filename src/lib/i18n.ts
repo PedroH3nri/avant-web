@@ -17,7 +17,6 @@ const dict = {
   'nav.internal': ['Painel interno Groone', 'Groone internal panel', 'Panel interno Groone'],
   'nav.groupClients': ['Clientes', 'Clients', 'Clientes'],
   'nav.groupInternal': ['Empresa (interna)', 'Company (internal)', 'Empresa (interna)'],
-  'nav.noClient': ['Você ainda não está em nenhuma Empresa cliente', 'You are not in any client company yet', 'Aún no estás en ninguna empresa cliente'],
   'nav.roles': ['Papéis e permissões', 'Roles and permissions', 'Roles y permisos'],
   'nav.menu': ['Abrir menu', 'Open menu', 'Abrir menú'],
   'nav.main': ['Menu principal', 'Main menu', 'Menú principal'],
