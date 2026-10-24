@@ -229,6 +229,11 @@ const dict = {
     'The person gets an email with the invite link. The invite is valid for 1 day and takes a seat until accepted or canceled.',
     'La persona recibe un correo con el enlace. La invitación vale 1 día y ocupa una plaza hasta que se acepte o cancele.',
   ],
+  'team.inviteDescNoLimit': [
+    'A pessoa recebe um e-mail com o link do convite. O convite vale por 1 dia.',
+    'The person gets an email with the invite link. The invite is valid for 1 day.',
+    'La persona recibe un correo con el enlace. La invitación vale 1 día.',
+  ],
   'team.afterInvite': ['Depois deste convite: {n} de {limit} vagas.', 'After this invite: {n} of {limit} seats.', 'Después de esta invitación: {n} de {limit} plazas.'],
   'team.full': [
     'Todas as vagas estão ocupadas. Cancele um convite ou peça mais vagas à Groone.',

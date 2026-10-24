@@ -63,9 +63,10 @@ async function load() {
 onMounted(load)
 watch(() => session.me?.active_company_id, load)
 
-const limit = computed(() => company.value?.seat_limit ?? 0)
+// Sem limite (Company Groone), não há vagas a contar.
+const limit = computed(() => company.value?.seat_limit ?? null)
 const used = computed(() => members.value.length + invites.value.length)
-const full = computed(() => used.value >= limit.value)
+const full = computed(() => limit.value !== null && used.value >= limit.value)
 const roleName = (id: string | null) => pick(roles.value.find((r) => r.id === id)?.name)
 const shown = computed(() => {
   const q = filter.value.trim().toLowerCase()
@@ -189,7 +190,7 @@ const tab = (on: boolean) =>
     <LoadError v-if="loadError" :message="loadError" @retry="load" />
     <p v-else-if="!loaded" class="text-[14px] text-muted-foreground" role="status">{{ t('common.loading') }}</p>
     <template v-else>
-      <Card v-if="canInvite && roleOptions.length" :title="t('team.invite')" :desc="t('team.inviteDesc')">
+      <Card v-if="canInvite && roleOptions.length" :title="t('team.invite')" :desc="t(limit === null ? 'team.inviteDescNoLimit' : 'team.inviteDesc')">
         <form id="invite-form" class="grid gap-4 md:grid-cols-[minmax(0,1fr)_240px]" novalidate @submit.prevent="sendInvite">
           <Field id="inv-email" :label="t('login.email')" :error="dupe && t('team.dupe')">
             <Input id="inv-email" v-model="email" type="email" placeholder="nome@empresa.com" autocomplete="off" :invalid="dupe" />
@@ -200,14 +201,14 @@ const tab = (on: boolean) =>
         </form>
         <template #note>
           <span v-if="full" class="text-bad">{{ t('team.full') }}</span>
-          <span v-else class="tnum">{{ t('team.afterInvite', { n: used + 1, limit }) }}</span>
+          <span v-else-if="limit !== null" class="tnum">{{ t('team.afterInvite', { n: used + 1, limit }) }}</span>
         </template>
         <template #footer>
           <Button form="invite-form" type="submit" :loading="sending" :disabled="!emailOk || dupe || full">{{ t('team.send') }}</Button>
         </template>
       </Card>
 
-      <Card>
+      <Card v-if="limit !== null">
         <div class="flex flex-wrap items-baseline justify-between gap-2">
           <h2 class="text-[14px] font-medium">{{ t('team.seats') }}</h2>
           <span class="text-[14px] tnum"

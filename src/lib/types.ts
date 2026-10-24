@@ -61,7 +61,7 @@ export interface CompanyDetail {
   accent_color: string | null
   plan: CompanyPlan
   status: CompanyStatus
-  seat_limit: number
+  seat_limit: number | null // vazio na Company Groone: limites valem só para clientes
   seats_used: number
   settings: Record<string, unknown>
 }
