@@ -8,6 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
 import { translate, type Key, type Lang } from './i18n'
 import { Mark, SeatBar, SeatDot, SeatStrip, type SeatState } from './tiles'
@@ -25,6 +27,8 @@ const SCREENS = [
   ['conectar', 'Conectar network'],
   ['configuracoes', 'Configurações'],
   ['interno', 'Painel interno · Clientes'],
+  ['contratos', 'Painel interno · Contratos'],
+  ['permissoes', 'Modal de permissões'],
 ] as const
 type Screen = (typeof SCREENS)[number][0]
 const isScreen = (s: string): s is Screen => SCREENS.some(([k]) => k === s)
@@ -1084,6 +1088,152 @@ function InternalScreen({ t }: { t: T }) {
   )
 }
 
+/* ---------- painel interno: contratos ---------- */
+
+type ProtoContract = { id: number; client: string; code: string; name: string; delegation: 'MA' | 'MI'; revshare: string; source: 'gam' | 'manual'; status: 'active' | 'ended'; start: string; end: string | null; notes: string }
+
+const INITIAL_CONTRACTS: ProtoContract[] = [
+  { id: 1, client: 'Portal da Cidade', code: '22101234', name: 'Portal Cidade', delegation: 'MA', revshare: '15,000', source: 'gam', status: 'active', start: '24/10/2026 14:05', end: null, notes: '' },
+  { id: 2, client: 'Portal da Cidade', code: '22101234', name: 'Portal Cidade', delegation: 'MA', revshare: '20,000', source: 'gam', status: 'ended', start: '02/03/2026 10:05', end: '24/10/2026 14:05', notes: '' },
+  { id: 3, client: 'Açaí Notícias', code: '21876543', name: 'Açaí', delegation: 'MI', revshare: '30,000', source: 'manual', status: 'active', start: '10/09/2026 09:12', end: null, notes: 'Contrato assinado em 09/2026' },
+]
+
+function ContractsScreen() {
+  const [contracts, setContracts] = useState(INITIAL_CONTRACTS)
+  const [tab, setTab] = useState<'active' | 'ended' | 'all'>('active')
+  const [creating, setCreating] = useState(false)
+  const [form, setForm] = useState({ network: '21876543', revshare: '', notes: '' })
+  const networks = [
+    { client: 'Portal da Cidade', code: '22101234', name: 'Portal Cidade', delegation: 'MA' as const },
+    { client: 'Açaí Notícias', code: '21876543', name: 'Açaí', delegation: 'MI' as const },
+    { client: 'Blog do Zé', code: '23009876', name: 'Blog do Zé', delegation: 'MI' as const },
+  ]
+  const active = (code: string) => contracts.find((c) => c.code === code && c.status === 'active')
+  const list = contracts.filter((c) => tab === 'all' || c.status === tab)
+  const revOk = /^\d{1,3}([,.]\d{1,3})?$/.test(form.revshare) && Number(form.revshare.replace(',', '.')) <= 100
+
+  const create = () => {
+    const net = networks.find((n) => n.code === form.network)!
+    const now = '24/10/2026 18:30'
+    setContracts([{ id: Date.now(), client: net.client, code: net.code, name: net.name, delegation: 'MI', revshare: Number(form.revshare.replace(',', '.')).toFixed(3).replace('.', ','), source: 'manual', status: 'active', start: now, end: null, notes: form.notes }, ...contracts.map((c) => (c.code === net.code && c.status === 'active' ? { ...c, status: 'ended' as const, end: now } : c))])
+    toast.success('Contrato criado', { description: active(net.code) ? 'O contrato anterior foi encerrado.' : undefined })
+    setCreating(false)
+  }
+
+  return (
+    <>
+      <PageHeader title="Contratos" sub="O revshare da Groone em cada network MCM. No Manage Account ele vem do GAM de hora em hora; no Manage Inventory, a equipe cadastra." actions={<Button onClick={() => setCreating(true)}>Novo contrato</Button>} />
+      <Body>
+        <Card title="Networks MCM" desc="O contrato em vigor de cada network. A receita do cliente sempre usa este revshare, inclusive para dias antigos." pad={false}>
+          <Table min={760}>
+            <thead><tr><th className={th}>Cliente</th><th className={th}>Network</th><th className={th}>MCM</th><th className={th}>Revshare atual</th><th className={th}>Origem</th><th className={cn(th, 'w-40')}><span className="sr-only">Ações</span></th></tr></thead>
+            <tbody>
+              {networks.map((n) => {
+                const c = active(n.code)
+                return (
+                  <tr key={n.code} className="hover:bg-muted">
+                    <td className={td}><div className="font-medium">{n.client}</div></td>
+                    <td className={td}><div>{n.name}</div><Code>{n.code}</Code></td>
+                    <td className={cn(td, 'text-muted-foreground')}>{n.delegation === 'MA' ? 'Manage Account' : 'Manage Inventory'}</td>
+                    <td className={cn(td, 'tnum')}>{c ? `${c.revshare}%` : <Status tone="ochre">Sem contrato</Status>}</td>
+                    <td className={cn(td, 'text-muted-foreground')}>{c ? (c.source === 'gam' ? 'GAM' : 'Manual') : '–'}</td>
+                    <td className={cn(td, 'text-right')}>{n.delegation === 'MI' ? <Button variant="outline" size="sm" onClick={() => { setForm({ network: n.code, revshare: '', notes: '' }); setCreating(true) }}>Novo contrato</Button> : <span className="text-[13px] text-muted-foreground">Vem do GAM</span>}</td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </Table>
+        </Card>
+        <div className="flex flex-wrap rounded-md border bg-card p-0.5 " role="tablist" aria-label="Filtrar contratos">
+          {([['active', 'Ativos'], ['ended', 'Encerrados'], ['all', 'Todos']] as const).map(([k, l]) => (
+            <button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)} className={cn('h-8 rounded-[4px] px-3 text-[13px] font-medium', tab === k ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground')}>{l}</button>
+          ))}
+        </div>
+        <Table min={860}>
+          <thead><tr><th className={th}>Cliente</th><th className={th}>Network</th><th className={th}>Revshare</th><th className={th}>Status</th><th className={th}>Origem</th><th className={th}>Início</th><th className={th}>Fim</th><th className={cn(th, 'w-12')}><span className="sr-only">Ações</span></th></tr></thead>
+          <tbody>
+            {list.map((c) => (
+              <tr key={c.id} className="hover:bg-muted">
+                <td className={td}><div className="font-medium">{c.client}</div>{c.notes && <div className="text-[13px] text-muted-foreground">{c.notes}</div>}</td>
+                <td className={td}><Code>{c.code}</Code></td>
+                <td className={cn(td, 'tnum')}>{c.revshare}%</td>
+                <td className={td}>{c.status === 'active' ? <Status tone="ok">Ativo</Status> : <Status tone="neutral">Encerrado</Status>}</td>
+                <td className={cn(td, 'text-muted-foreground')}>{c.source === 'gam' ? 'GAM' : 'Manual'}</td>
+                <td className={cn(td, 'whitespace-nowrap text-[13px] text-muted-foreground')}>{c.start}</td>
+                <td className={cn(td, 'whitespace-nowrap text-[13px] text-muted-foreground')}>{c.end ?? '–'}</td>
+                <td className={td}>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild><Button variant="ghost" size="sm" aria-label="Ações do contrato"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem>Editar observação</DropdownMenuItem>
+                      {c.source === 'manual' && c.status === 'active' && <DropdownMenuItem>Encerrar</DropdownMenuItem>}
+                      {c.source === 'manual' && <DropdownMenuItem className="text-bad">Excluir</DropdownMenuItem>}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </Table>
+      </Body>
+      <Dialog open={creating} onOpenChange={setCreating}>
+        <DialogContent className="max-w-[480px]">
+          <DialogHeader><DialogTitle>Novo contrato</DialogTitle><DialogDescription>Só networks MCM Manage Inventory. O revshare não muda depois de criado: para mudar, crie outro contrato e o atual é encerrado.</DialogDescription></DialogHeader>
+          <div className="grid gap-4">
+            <Field id="ct-network" label="Network">
+              <Select value={form.network} onValueChange={(v) => setForm({ ...form, network: v })}><SelectTrigger id="ct-network" className="h-10"><SelectValue /></SelectTrigger>
+                <SelectContent>{networks.filter((n) => n.delegation === 'MI').map((n) => <SelectItem key={n.code} value={n.code}>{n.client} · {n.code}</SelectItem>)}</SelectContent>
+              </Select>
+            </Field>
+            <Field id="ct-rev" label="Revshare da Groone (%)" hint={active(form.network) ? `Contrato atual: ${active(form.network)!.revshare}%` : 'Sem contrato ativo'}><Input id="ct-rev" className="h-10 tnum" inputMode="decimal" value={form.revshare} onChange={(e) => setForm({ ...form, revshare: e.target.value })} placeholder="30" /></Field>
+            <Field id="ct-notes" label="Observação (opcional)"><Textarea id="ct-notes" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></Field>
+          </div>
+          <DialogFooter><Button variant="outline" onClick={() => setCreating(false)}>Cancelar</Button><Button disabled={!revOk} onClick={create}>Criar contrato</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  )
+}
+
+/* ---------- modal de permissões com filtro por categoria ---------- */
+
+const PROTO_PERMS: [string, string[]][] = [
+  ['Empresa', ['Editar a Empresa']],
+  ['Equipe', ['Ver a equipe', 'Convidar pessoas', 'Gerenciar membros']],
+  ['Papéis e permissões', ['Ver papéis', 'Gerenciar papéis', 'Dar permissões diretas']],
+  ['Networks do GAM', ['Ver networks', 'Conectar networks', 'Sincronizar networks', 'Desconectar networks']],
+  ['Sites', ['Ver sites e ad units', 'Atribuir sites', 'Cadastrar sites']],
+  ['Relatórios', ['Ver relatórios']],
+  ['Histórico', ['Ver o histórico']],
+  ['API', ['Gerenciar chaves de API']],
+]
+
+function PermissionsScreen() {
+  const [group, setGroup] = useState<string | null>(null)
+  const shown = PROTO_PERMS.filter(([g]) => group === null || g === group)
+  return (
+    <Dialog open onOpenChange={() => undefined}>
+      <DialogContent className="max-w-[600px]">
+        <DialogHeader><DialogTitle>Editar papel</DialogTitle></DialogHeader>
+        <div className="grid gap-3">
+          <div className="text-[13px] font-medium text-muted-foreground">Permissões</div>
+          <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filtrar por categoria">
+            {[null, ...PROTO_PERMS.map(([g]) => g)].map((g) => (
+              <button key={g ?? 'all'} aria-pressed={group === g} onClick={() => setGroup(g)} className={cn('h-7 rounded-full border px-3 text-[12px] font-medium', group === g ? 'border-foreground bg-foreground text-background' : 'text-muted-foreground hover:text-foreground')}>{g ?? 'Todas'}</button>
+            ))}
+          </div>
+          <div className="scroll-thin grid max-h-[min(44dvh,380px)] gap-4 overflow-y-auto rounded-md border p-4">
+            {shown.map(([g, perms]) => (
+              <div key={g} className="grid gap-2"><h3 className="text-[13px] font-medium">{g}</h3>{perms.map((p) => <label key={p} className="flex items-center gap-2.5 text-[14px]"><input type="checkbox" className="size-4 accent-[hsl(var(--foreground))]" />{p}</label>)}</div>
+            ))}
+          </div>
+        </div>
+        <DialogFooter><Button variant="outline">Cancelar</Button><Button>Salvar</Button></DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 /* ---------- app ---------- */
 
 export default function App() {
@@ -1127,6 +1277,8 @@ export default function App() {
       case 'conectar': return <ConnectScreen t={t} go={go} />
       case 'configuracoes': return <SettingsScreen t={t} accent={accent} setAccent={setAccent} theme={theme} setTheme={setTheme} />
       case 'interno': return <InternalScreen t={t} />
+      case 'contratos': return <ContractsScreen />
+      case 'permissoes': return <PermissionsScreen />
     }
   })()
 

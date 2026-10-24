@@ -10,6 +10,7 @@ import Input from '@/components/ui/Input.vue'
 import { api, ApiError } from '@/lib/api'
 import { errorText, pick, t, type Key } from '@/lib/i18n'
 import type { Permission, Role, SiteScope } from '@/lib/types'
+import { cn } from '@/lib/utils'
 import { useSession } from '@/stores/session'
 
 const open = defineModel<boolean>('open', { default: false })
@@ -20,6 +21,7 @@ const session = useSession()
 const name = ref('')
 const scope = ref<SiteScope>('assigned')
 const chosen = ref<Set<string>>(new Set())
+const category = ref<string | null>(null)
 const busy = ref(false)
 
 watch(open, (value) => {
@@ -27,6 +29,7 @@ watch(open, (value) => {
   name.value = props.role ? pick(props.role.name) : ''
   scope.value = props.role?.site_scope ?? 'assigned'
   chosen.value = new Set(props.role?.permissions ?? [])
+  category.value = null
 })
 
 const groups = computed(() => {
@@ -34,6 +37,14 @@ const groups = computed(() => {
   for (const permission of props.permissions) by.set(permission.group, [...(by.get(permission.group) ?? []), permission])
   return [...by.entries()]
 })
+/** Os grupos que aparecem: todos, ou só a categoria escolhida no filtro. */
+const shownGroups = computed(() => groups.value.filter(([group]) => category.value === null || group === category.value))
+/** Classe do botão de categoria, ligado ou não. */
+const chipClass = (on: boolean) =>
+  cn(
+    'h-7 rounded-full border px-3 text-[12px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+    on ? 'border-foreground bg-foreground text-background' : 'text-muted-foreground hover:text-foreground',
+  )
 /** Nome do grupo de permissões no idioma atual. */
 const groupLabel = (group: string) => t(`perm.group.${group}` as Key)
 
@@ -79,17 +90,32 @@ async function save() {
       <fieldset class="grid gap-4">
         <legend class="mb-1 text-[13px] font-medium text-muted-foreground">{{ t('role.permsTitle') }}</legend>
         <p class="-mt-2 text-[13px] text-muted-foreground">{{ t('role.permsHint') }}</p>
-        <div v-for="[g, perms] in groups" :key="g" class="grid gap-2">
-          <h3 class="text-[13px] font-medium">{{ groupLabel(g) }}</h3>
-          <Checkbox
-            v-for="perm in perms"
-            :id="`perm-${perm.key}`"
-            :key="perm.key"
-            :label="pick(perm.name)"
-            :model-value="chosen.has(perm.key)"
-            :disabled="!session.can(perm.key)"
-            @update:model-value="(value: boolean) => toggle(perm.key, value)"
-          />
+        <div v-if="groups.length > 1" class="flex flex-wrap gap-1.5" role="group" :aria-label="t('role.filterLabel')">
+          <button type="button" :aria-pressed="category === null" :class="chipClass(category === null)" @click="category = null">{{ t('role.filterAll') }}</button>
+          <button
+            v-for="[groupKey] in groups"
+            :key="groupKey"
+            type="button"
+            :aria-pressed="category === groupKey"
+            :class="chipClass(category === groupKey)"
+            @click="category = groupKey"
+          >
+            {{ groupLabel(groupKey) }}
+          </button>
+        </div>
+        <div class="scroll-thin grid max-h-[min(44dvh,380px)] gap-4 overflow-y-auto rounded-md border p-4">
+          <div v-for="[groupKey, perms] in shownGroups" :key="groupKey" class="grid gap-2">
+            <h3 class="text-[13px] font-medium">{{ groupLabel(groupKey) }}</h3>
+            <Checkbox
+              v-for="perm in perms"
+              :id="`perm-${perm.key}`"
+              :key="perm.key"
+              :label="pick(perm.name)"
+              :model-value="chosen.has(perm.key)"
+              :disabled="!session.can(perm.key)"
+              @update:model-value="(value: boolean) => toggle(perm.key, value)"
+            />
+          </div>
         </div>
       </fieldset>
     </form>

@@ -67,7 +67,7 @@ describe('SidebarNav', () => {
     await r.push('/interno')
     const w = mount(SidebarNav, { global: { plugins: [r] } })
     const before = labels(w)
-    expect(before).toEqual(['Início', 'Desempenho', 'Equipe', 'Papéis e permissões', 'Networks do GAM', 'Sites', 'Clientes', 'Pessoas', 'Equipe Groone', 'MCM sem dono'])
+    expect(before).toEqual(['Início', 'Desempenho', 'Equipe', 'Papéis e permissões', 'Networks do GAM', 'Sites', 'Clientes', 'Pessoas', 'Equipe Groone', 'MCM sem dono', 'Contratos'])
     expect(w.text()).toContain('Empresa (interna)')
 
     session.set(me('c', ['sites.view']))
@@ -94,7 +94,7 @@ describe('SidebarNav', () => {
     const r = router()
     await r.push('/interno')
     const w = mount(SidebarNav, { global: { plugins: [r] } })
-    expect(labels(w)).toEqual(['Início', 'Desempenho', 'Equipe', 'Papéis e permissões', 'Networks do GAM', 'Sites', 'Clientes', 'Pessoas', 'Equipe Groone', 'MCM sem dono'])
+    expect(labels(w)).toEqual(['Início', 'Desempenho', 'Equipe', 'Papéis e permissões', 'Networks do GAM', 'Sites', 'Clientes', 'Pessoas', 'Equipe Groone', 'MCM sem dono', 'Contratos'])
     await w.findAll('nav a').find((a) => a.text() === 'Equipe')!.trigger('click')
     await flushPromises()
     expect(r.currentRoute.value.path).toBe('/equipe')
