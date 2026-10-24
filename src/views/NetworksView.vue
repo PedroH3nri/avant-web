@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
 import { DropdownMenuRoot, DropdownMenuSeparator, DropdownMenuTrigger } from 'reka-ui'
 import { AlertTriangle, MoreHorizontal, Network as NetworkIcon } from 'lucide-vue-next'
@@ -8,12 +9,12 @@ import LoadError from '@/components/LoadError.vue'
 import PageBody from '@/components/PageBody.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import Button from '@/components/ui/Button.vue'
-import Card from '@/components/ui/Card.vue'
 import DataTable from '@/components/ui/DataTable.vue'
 import Dialog from '@/components/ui/Dialog.vue'
 import MenuContent from '@/components/ui/MenuContent.vue'
 import MenuItem from '@/components/ui/MenuItem.vue'
 import Status from '@/components/ui/Status.vue'
+import TableState from '@/components/ui/TableState.vue'
 import { api, ApiError } from '@/lib/api'
 import { onEvent } from '@/lib/events'
 import { errorText, formatAgo, formatDate, t } from '@/lib/i18n'
@@ -23,6 +24,7 @@ import type { Items, Network, SyncRun } from '@/lib/types'
 import { useSession } from '@/stores/session'
 
 const session = useSession()
+const router = useRouter()
 const networks = ref<Network[] | null>(null)
 const loadError = ref<string | null>(null)
 const canConnect = computed(() => session.can('network.connect'))
@@ -116,7 +118,6 @@ async function disconnect() {
   </PageHeader>
   <PageBody>
     <LoadError v-if="loadError" :message="loadError" @retry="load" />
-    <p v-else-if="!networks" class="text-[14px] text-muted-foreground" role="status">{{ t('common.loading') }}</p>
     <template v-else>
       <div v-for="n in lost" :key="n.id" class="flex flex-wrap items-start gap-3 rounded-lg border border-bad/25 bg-card p-4" role="alert">
         <AlertTriangle class="mt-0.5 size-4 shrink-0 text-bad" aria-hidden="true" />
@@ -127,16 +128,7 @@ async function disconnect() {
         <Button v-if="canSync" size="sm" variant="outline" @click="sync(n)">{{ t('net.retest') }}</Button>
       </div>
 
-      <Card v-if="networks.length === 0">
-        <div class="flex items-center gap-4">
-          <span class="flex size-10 shrink-0 items-center justify-center rounded-full border text-muted-foreground"><NetworkIcon class="size-4" /></span>
-          <div>
-            <div class="font-medium">{{ t('net.empty') }}</div>
-            <p class="text-[14px] text-muted-foreground">{{ t('net.emptySub') }}</p>
-          </div>
-        </div>
-      </Card>
-      <DataTable v-else :min="820">
+      <DataTable :min="820">
         <thead>
           <tr>
             <th :class="th">{{ t('net.col.network') }}</th>
@@ -149,7 +141,10 @@ async function disconnect() {
           </tr>
         </thead>
         <tbody>
-          <tr v-for="n in networks" :key="n.id">
+          <TableState :cols="7" :loading="!networks" :empty="networks?.length === 0" :icon="NetworkIcon" :title="t('net.empty')" :desc="t('net.emptySub')">
+            <Button v-if="canConnect" size="sm" @click="router.push('/networks/conectar')">{{ t('net.connect') }}</Button>
+          </TableState>
+          <tr v-for="n in networks ?? []" :key="n.id">
             <td :class="[td, 'font-medium']">{{ networkName(n) }}</td>
             <td :class="[td, 'font-mono text-[13px] tnum']">{{ n.network_code }}</td>
             <td :class="[td, 'text-muted-foreground']">{{ t(`net.type.${n.connection_type}`) }}</td>

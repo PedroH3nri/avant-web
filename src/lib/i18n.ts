@@ -792,6 +792,12 @@ const dict = {
     'Todos los clientes, de la red Groone y de fuera. Solo el equipo Groone ve esta área.',
   ],
   'int.new': ['Novo cliente', 'New client', 'Nuevo cliente'],
+  'int.empty': ['Nenhum cliente ainda', 'No clients yet', 'Aún no hay clientes'],
+  'int.emptySub': [
+    'Cadastre o primeiro cliente: o dono recebe um convite por e-mail e cria a Empresa.',
+    'Add the first client: the owner gets an email invite and creates the company.',
+    'Registra el primer cliente: el dueño recibe una invitación por correo y crea la empresa.',
+  ],
   'int.newDesc': [
     'O dono recebe o convite por e-mail, válido por 1 dia, e cria a Empresa no aceite.',
     'The owner gets an email invite, valid for 1 day, and creates the company when accepting.',

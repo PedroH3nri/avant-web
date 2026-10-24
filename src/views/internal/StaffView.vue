@@ -14,6 +14,7 @@ import Field from '@/components/ui/Field.vue'
 import Input from '@/components/ui/Input.vue'
 import NativeSelect from '@/components/ui/NativeSelect.vue'
 import Status from '@/components/ui/Status.vue'
+import TableState from '@/components/ui/TableState.vue'
 import { api, ApiError } from '@/lib/api'
 import { errorText, formatAgo, formatDate, pick, t } from '@/lib/i18n'
 import { td, th } from '@/lib/table'
@@ -98,7 +99,7 @@ async function invite() {
       </ul>
     </Card>
 
-    <DataTable v-if="staff" :min="640">
+    <DataTable v-if="!loadError" :min="640">
       <thead>
         <tr>
           <th :class="th">{{ t('int.person') }}</th>
@@ -108,7 +109,8 @@ async function invite() {
         </tr>
       </thead>
       <tbody>
-        <tr v-for="m in staff" :key="m.id">
+        <TableState :cols="4" :loading="!staff" />
+        <tr v-for="m in staff ?? []" :key="m.id">
           <td :class="td">
             <div class="flex items-center gap-3">
               <Avatar :name="m.user.name" :size="28" />

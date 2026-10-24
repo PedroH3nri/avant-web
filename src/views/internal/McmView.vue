@@ -6,11 +6,11 @@ import LoadError from '@/components/LoadError.vue'
 import PageBody from '@/components/PageBody.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import Button from '@/components/ui/Button.vue'
-import Card from '@/components/ui/Card.vue'
 import DataTable from '@/components/ui/DataTable.vue'
 import Dialog from '@/components/ui/Dialog.vue'
 import Field from '@/components/ui/Field.vue'
 import NativeSelect from '@/components/ui/NativeSelect.vue'
+import TableState from '@/components/ui/TableState.vue'
 import { api, ApiError } from '@/lib/api'
 import { errorText, formatDate, t } from '@/lib/i18n'
 import { td, th } from '@/lib/table'
@@ -77,8 +77,7 @@ async function assign() {
   <PageHeader :title="t('int.mcm')" :sub="t('int.mcmSub')" />
   <PageBody>
     <LoadError v-if="loadError" :message="loadError" @retry="load" />
-    <Card v-else-if="candidates && !candidates.length"><p class="text-[14px] text-muted-foreground">{{ t('int.mcmEmpty') }}</p></Card>
-    <DataTable v-else-if="candidates" :min="760">
+    <DataTable v-else :min="760">
       <thead>
         <tr>
           <th :class="th">Network</th>
@@ -89,7 +88,8 @@ async function assign() {
         </tr>
       </thead>
       <tbody>
-        <tr v-for="c in candidates" :key="c.id">
+        <TableState :cols="5" :loading="!candidates" :empty="candidates?.length === 0" :desc="t('int.mcmEmpty')" />
+        <tr v-for="c in candidates ?? []" :key="c.id">
           <td :class="td">
             <div class="font-medium">{{ c.display_name ?? c.network_code }}</div>
             <code class="font-mono text-[13px] text-muted-foreground">{{ c.network_code }}</code>

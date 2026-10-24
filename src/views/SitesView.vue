@@ -1,17 +1,19 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
 import { Globe, Search } from 'lucide-vue-next'
 import LoadError from '@/components/LoadError.vue'
 import PageBody from '@/components/PageBody.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import Badge from '@/components/ui/Badge.vue'
-import Card from '@/components/ui/Card.vue'
+import Button from '@/components/ui/Button.vue'
 import Checkbox from '@/components/ui/Checkbox.vue'
 import DataTable from '@/components/ui/DataTable.vue'
 import Input from '@/components/ui/Input.vue'
 import NativeSelect from '@/components/ui/NativeSelect.vue'
 import Status from '@/components/ui/Status.vue'
+import TableState from '@/components/ui/TableState.vue'
 import { api, ApiError } from '@/lib/api'
 import { errorText, formatAgo, formatDate, t } from '@/lib/i18n'
 import { networkName } from '@/lib/networks'
@@ -22,6 +24,8 @@ import { cn } from '@/lib/utils'
 import { useSession } from '@/stores/session'
 
 const session = useSession()
+const router = useRouter()
+const canConnect = computed(() => session.can('network.connect'))
 const sites = ref<SiteListItem[] | null>(null)
 const networks = ref<Network[]>([])
 const unlinked = ref<AdUnit[] | null>(null)
@@ -124,18 +128,7 @@ const tab = (on: boolean) =>
     </div>
 
     <template v-if="view === 'sites'">
-      <p v-if="!sites && !loadError" class="text-[14px] text-muted-foreground" role="status">{{ t('common.loading') }}</p>
-      <Card v-else-if="sites && sites.length === 0">
-        <div class="flex items-center gap-4">
-          <span class="flex size-10 shrink-0 items-center justify-center rounded-full border text-muted-foreground"><Globe class="size-4" /></span>
-          <div>
-            <div class="font-medium">{{ t('sites.empty') }}</div>
-            <p class="text-[14px] text-muted-foreground">{{ assignedOnly ? t('sites.emptyAssigned') : t('sites.emptySub') }}</p>
-          </div>
-        </div>
-      </Card>
-      <Card v-else-if="sites && shown.length === 0" :desc="t('sites.noMatch')" />
-      <DataTable v-else-if="sites" :min="760">
+      <DataTable v-if="!loadError" :min="760">
         <thead>
           <tr>
             <th :class="th">{{ t('sites.col.site') }}</th>
@@ -146,6 +139,16 @@ const tab = (on: boolean) =>
           </tr>
         </thead>
         <tbody>
+          <TableState
+            :cols="networks.length ? 5 : 4"
+            :loading="!sites"
+            :empty="!!sites && shown.length === 0"
+            :icon="Globe"
+            :title="sites?.length ? undefined : t('sites.empty')"
+            :desc="sites?.length ? t('sites.noMatch') : assignedOnly ? t('sites.emptyAssigned') : t('sites.emptySub')"
+          >
+            <Button v-if="!sites?.length && canConnect" size="sm" @click="router.push('/networks/conectar')">{{ t('net.connect') }}</Button>
+          </TableState>
           <tr v-for="s in shown" :key="s.id" class="hover:bg-muted">
             <td :class="td">
               <RouterLink :to="`/sites/${s.id}`" class="font-medium hover:underline focus-visible:underline focus-visible:outline-none">{{ s.domain }}</RouterLink>
@@ -164,9 +167,7 @@ const tab = (on: boolean) =>
 
     <template v-else>
       <p class="max-w-[70ch] text-[14px] text-muted-foreground">{{ t('sites.unlinkedSub') }}</p>
-      <p v-if="!unlinked" class="text-[14px] text-muted-foreground" role="status">{{ t('common.loading') }}</p>
-      <Card v-else-if="unlinked.length === 0" :desc="t('sites.unlinkedEmpty')" />
-      <DataTable v-else :min="720">
+      <DataTable :min="720">
         <thead>
           <tr>
             <th :class="th">{{ t('site.units') }}</th>
@@ -176,7 +177,8 @@ const tab = (on: boolean) =>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="u in unlinked" :key="u.id">
+          <TableState :cols="networks.length ? 4 : 3" :loading="!unlinked" :empty="unlinked?.length === 0" :desc="t('sites.unlinkedEmpty')" />
+          <tr v-for="u in unlinked ?? []" :key="u.id">
             <td :class="[td, 'font-medium']">{{ u.name }}</td>
             <td :class="[td, 'font-mono text-[13px] text-muted-foreground']">{{ u.code ?? '' }}</td>
             <td v-if="networks.length" :class="[td, 'text-muted-foreground']">{{ netName(u.network_id) }}</td>

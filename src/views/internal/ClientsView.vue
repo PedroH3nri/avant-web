@@ -2,7 +2,7 @@
 /** Painel interno: clientes, novo cliente (convite de dono) e convites de dono pendentes. */
 import { computed, onMounted, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
-import { Search } from 'lucide-vue-next'
+import { Building2, Search } from 'lucide-vue-next'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import LoadError from '@/components/LoadError.vue'
 import PageBody from '@/components/PageBody.vue'
@@ -16,6 +16,7 @@ import Input from '@/components/ui/Input.vue'
 import NativeSelect from '@/components/ui/NativeSelect.vue'
 import SeatBar from '@/components/ui/SeatBar.vue'
 import Status from '@/components/ui/Status.vue'
+import TableState from '@/components/ui/TableState.vue'
 import { api, ApiError } from '@/lib/api'
 import { errorText, formatAgo, t } from '@/lib/i18n'
 import { td, th } from '@/lib/table'
@@ -208,12 +209,7 @@ const expired = (iso: string) => new Date(iso).getTime() <= Date.now()
         </div>
       </div>
 
-      <Card v-if="!shown.length">
-        <div class="font-medium">{{ t('int.none') }}</div>
-        <p class="mt-1 text-[14px] text-muted-foreground">{{ t('int.noneSub') }}</p>
-        <Button variant="outline" size="sm" class="mt-4" @click="clearFilters">{{ t('int.clear') }}</Button>
-      </Card>
-      <DataTable v-else :min="760">
+      <DataTable :min="760">
         <thead>
           <tr>
             <th :class="th">{{ t('int.client') }}</th>
@@ -224,6 +220,16 @@ const expired = (iso: string) => new Date(iso).getTime() <= Date.now()
           </tr>
         </thead>
         <tbody>
+          <TableState
+            :cols="5"
+            :empty="!shown.length"
+            :icon="Building2"
+            :title="clients.length ? t('int.none') : t('int.empty')"
+            :desc="clients.length ? t('int.noneSub') : t('int.emptySub')"
+          >
+            <Button v-if="clients.length" variant="outline" size="sm" @click="clearFilters">{{ t('int.clear') }}</Button>
+            <Button v-else-if="canManage && !adding" size="sm" @click="adding = true">{{ t('int.new') }}</Button>
+          </TableState>
           <tr v-for="c in shown" :key="c.id" class="hover:bg-muted">
             <td :class="td">
               <div class="flex items-center gap-3">
