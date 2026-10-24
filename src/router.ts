@@ -37,11 +37,6 @@ const routes: RouteRecordRaw[] = [
       { path: 'interno/pessoas', component: () => import('@/views/internal/PeopleView.vue'), meta: { internal: true, permission: 'internal.users.manage' } },
       { path: 'interno/equipe', component: () => import('@/views/internal/StaffView.vue'), meta: { internal: true, permission: 'internal.staff.manage' } },
       {
-        path: 'interno/networks',
-        component: () => import('@/views/internal/McmView.vue'),
-        meta: { internal: true, permission: 'internal.networks.assign' },
-      },
-      {
         path: 'interno/contratos',
         component: () => import('@/views/internal/ContractsView.vue'),
         meta: { internal: true, permission: 'internal.contracts.view' },

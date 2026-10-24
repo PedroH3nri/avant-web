@@ -8,16 +8,18 @@ import type { Lang, Localized } from './types'
 
 const dict = {
   // Navegação e topo
-  'nav.home': ['Início', 'Home', 'Inicio'],
-  'nav.performance': ['Desempenho', 'Performance', 'Rendimiento'],
-  'nav.team': ['Equipe', 'Team', 'Equipo'],
+  'nav.home': ['Dashboard', 'Dashboard', 'Dashboard'],
+  'nav.adManager': ['Ad Manager', 'Ad Manager', 'Ad Manager'],
+  'nav.team': ['Equipes', 'Teams', 'Equipos'],
+  'nav.members': ['Membros', 'Members', 'Miembros'],
   'nav.networks': ['Networks do GAM', 'GAM networks', 'Networks de GAM'],
   'nav.sites': ['Sites', 'Sites', 'Sitios'],
   'nav.settings': ['Configurações', 'Settings', 'Configuración'],
   'nav.account': ['Minha conta', 'My account', 'Mi cuenta'],
   'nav.internal': ['Painel interno Groone', 'Groone internal panel', 'Panel interno Groone'],
   'nav.groupClients': ['Clientes', 'Clients', 'Clientes'],
-  'nav.groupInternal': ['Empresa (interna)', 'Company (internal)', 'Empresa (interna)'],
+  'nav.groupReports': ['Relatórios', 'Reports', 'Informes'],
+  'nav.groupCompany': ['Empresa', 'Company', 'Empresa'],
   'nav.roles': ['Papéis e permissões', 'Roles and permissions', 'Roles y permisos'],
   'nav.menu': ['Abrir menu', 'Open menu', 'Abrir menú'],
   'nav.main': ['Menu principal', 'Main menu', 'Menú principal'],
@@ -152,7 +154,7 @@ const dict = {
   'home.seePerformance': ['Ver desempenho', 'See performance', 'Ver rendimiento'],
 
   // Desempenho
-  'perf.title': ['Desempenho', 'Performance', 'Rendimiento'],
+  'perf.title': ['Ad Manager', 'Ad Manager', 'Ad Manager'],
   'perf.sub': [
     'Receita e entrega do Google Ad Manager. A receita já vem sem a parte da Groone.',
     'Google Ad Manager revenue and delivery. Revenue already excludes the Groone share.',
@@ -261,7 +263,7 @@ const dict = {
   'accent.orange': ['Laranja', 'Orange', 'Naranja'],
 
   // Equipe
-  'team.title': ['Equipe', 'Team', 'Equipo'],
+  'team.title': ['Equipes', 'Teams', 'Equipos'],
   'team.sub': ['Quem acessa a {company} e com qual papel.', 'Who can access {company} and with which role.', 'Quién accede a {company} y con qué rol.'],
   'team.invite': ['Convidar pessoa', 'Invite person', 'Invitar persona'],
   'team.inviteDesc': [
@@ -874,8 +876,8 @@ const dict = {
   // Painel interno
   'int.clients': ['Clientes', 'Clients', 'Clientes'],
   'int.people': ['Pessoas', 'People', 'Personas'],
+  'int.peopleSearchOpen': ['Buscar pessoa', 'Find a person', 'Buscar persona'],
   'int.staff': ['Equipe Groone', 'Groone team', 'Equipo Groone'],
-  'int.mcm': ['MCM sem dono', 'Unclaimed MCM', 'MCM sin dueño'],
   'int.contracts': ['Contratos', 'Contracts', 'Contratos'],
   'ct.sub': [
     'O revshare da Groone em cada network MCM. No Manage Account ele vem do GAM de hora em hora; no Manage Inventory, a equipe cadastra.',
@@ -1095,14 +1097,6 @@ const dict = {
   'int.staffInvite': ['Convidar para a equipe Groone', 'Invite to the Groone team', 'Invitar al equipo Groone'],
   'int.staffInviteDesc': ['Convite por e-mail, válido por 1 dia.', 'Email invite, valid for 1 day.', 'Invitación por correo, válida por 1 día.'],
   'int.staffInvited': ['Convite enviado para {email}.', 'Invite sent to {email}.', 'Invitación enviada a {email}.'],
-  'int.mcmSub': [
-    'Networks que aceitaram o MCM da Groone, mas cujo e-mail não é dono de nenhuma Empresa. Ligue cada uma ao cliente certo.',
-    'Networks that accepted Groone’s MCM but whose email does not own any company. Link each one to the right client.',
-    'Networks que aceptaron el MCM de Groone pero cuyo correo no es dueño de ninguna empresa. Vincula cada una al cliente correcto.',
-  ],
-  'int.mcmEmpty': ['Nenhuma network esperando dono.', 'No networks waiting for an owner.', 'Ninguna network esperando dueño.'],
-  'int.mcmEmail': ['E-mail no GAM', 'Email in GAM', 'Correo en GAM'],
-  'int.mcmSeen': ['Vista em', 'First seen', 'Vista el'],
   'int.delegation': ['Delegação', 'Delegation', 'Delegación'],
   'int.assign': ['Ligar a um cliente', 'Link to a client', 'Vincular a un cliente'],
   'int.assignTitle': ['Ligar a network {code}', 'Link network {code}', 'Vincular la network {code}'],

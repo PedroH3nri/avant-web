@@ -1,9 +1,9 @@
 <script setup lang="ts">
-/** Sidebar fixa: grupos Clientes e Empresa (interna), Configurações e a conta. */
+/** Sidebar fixa: Dashboard, grupos Clientes, Relatórios e Empresa, Configurações e a conta. */
 import { computed, type Component } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { DropdownMenuRoot, DropdownMenuTrigger } from 'reka-ui'
-import { Building2, ChartLine, ChevronsUpDown, FileSignature, Globe, Home, LogOut, Network, Settings, ShieldCheck, UserRound, Users, UserSearch } from 'lucide-vue-next'
+import { Building2, ChartLine, ChevronsUpDown, FileSignature, Globe, LayoutDashboard, LogOut, Network, Settings, ShieldCheck, UserRound, Users, UsersRound } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 import Avatar from '@/components/ui/Avatar.vue'
 import Mark from '@/components/ui/Mark.vue'
@@ -19,29 +19,40 @@ const session = useSession()
 const route = useRoute()
 const router = useRouter()
 
-type Item = { to: string; key: Key; icon: Component }
+type Item = { to: string; key: Key; icon: Component; internal?: boolean }
+type Group = { key: Key | null; items: Item[] }
 
 // O menu é imutável: os mesmos itens em todas as rotas e Empresas, sem filtrar por permissão
-// (o guarda do router e a API decidem o acesso). O grupo Clientes abre a Empresa cliente; o
-// grupo Empresa interna, que só a equipe Groone vê, abre o painel interno (o guarda troca
-// para a Company Groone).
-const CLIENT: Item[] = [
-  { to: '/', key: 'nav.home', icon: Home },
-  { to: '/desempenho', key: 'nav.performance', icon: ChartLine },
-  { to: '/equipe', key: 'nav.team', icon: Users },
-  { to: '/papeis', key: 'nav.roles', icon: ShieldCheck },
-  { to: '/networks', key: 'nav.networks', icon: Network },
-  { to: '/sites', key: 'nav.sites', icon: Globe },
+// (o guarda do router e a API decidem o acesso). Itens com ``internal`` abrem o painel interno
+// (o guarda troca para a Company Groone) e só a equipe Groone os vê; os outros abrem a Empresa
+// cliente.
+const GROUPS: Group[] = [
+  { key: null, items: [{ to: '/', key: 'nav.home', icon: LayoutDashboard }] },
+  {
+    key: 'nav.groupClients',
+    items: [
+      { to: '/interno', key: 'int.clients', icon: Building2, internal: true },
+      { to: '/equipe', key: 'nav.team', icon: Users },
+      { to: '/networks', key: 'nav.networks', icon: Network },
+      { to: '/interno/contratos', key: 'int.contracts', icon: FileSignature, internal: true },
+      { to: '/sites', key: 'nav.sites', icon: Globe },
+    ],
+  },
+  { key: 'nav.groupReports', items: [{ to: '/desempenho', key: 'nav.adManager', icon: ChartLine }] },
+  {
+    key: 'nav.groupCompany',
+    items: [
+      { to: '/interno/equipe', key: 'int.staff', icon: UsersRound, internal: true },
+      { to: '/papeis', key: 'nav.roles', icon: ShieldCheck },
+    ],
+  },
 ]
+// Telas sem item próprio que acendem o item da lista de onde se chega a elas.
+const SIBLINGS: Record<string, string[]> = {
+  '/interno': ['/interno/clientes/', '/interno/pessoas'],
+}
 // Configurações da Empresa cliente: no rodapé, junto da conta.
 const SETTINGS: Item = { to: '/configuracoes', key: 'nav.settings', icon: Settings }
-const INTERNAL: Item[] = [
-  { to: '/interno', key: 'int.clients', icon: Building2 },
-  { to: '/interno/pessoas', key: 'int.people', icon: UserSearch },
-  { to: '/interno/equipe', key: 'int.staff', icon: Users },
-  { to: '/interno/networks', key: 'int.mcm', icon: Network },
-  { to: '/interno/contratos', key: 'int.contracts', icon: FileSignature },
-]
 
 const ready = computed(() => !!session.me && !session.me.mfa_setup_required)
 /** A Empresa cliente do grupo Clientes: a ativa ou a última por onde a pessoa passou. */
@@ -52,16 +63,23 @@ const clientId = computed(() => {
 })
 const staff = computed(() => !!session.internalCompany)
 const onInternal = computed(() => route.meta.internal === true)
+/** Os grupos que a pessoa vê: sem os itens internos para quem não é da equipe Groone. */
+const groups = computed(() =>
+  GROUPS.map((section) => ({ ...section, items: section.items.filter((link) => staff.value || !link.internal) })).filter(
+    (section) => section.items.length > 0,
+  ),
+)
 
-/** Diz se o link está ativo na rota atual, respeitando o grupo dele. */
-function active(to: string, internalItem: boolean) {
-  if (internalItem !== onInternal.value) return false
-  if (to === '/') return route.path === '/'
-  // A lista de clientes é /interno; as outras telas internas têm o próprio item.
-  if (to === '/interno') return route.path === '/interno' || route.path.startsWith('/interno/clientes/')
+/** Diz se o link está ativo na rota atual, respeitando o lado (cliente ou interno) dele. */
+function active(link: Item) {
+  if (!!link.internal !== onInternal.value) return false
+  if (link.to === '/') return route.path === '/'
   // Minha conta fica embaixo de /configuracoes, mas não é a tela de Configurações.
   if (route.path.startsWith('/configuracoes/conta')) return false
-  return route.path === to || route.path.startsWith(`${to}/`)
+  // A lista de clientes é /interno; as outras telas internas têm o próprio item.
+  if (route.path === link.to || (link.to !== '/interno' && route.path.startsWith(`${link.to}/`))) return true
+  // Irmã terminada em barra vale para as telas embaixo dela; as outras, só o caminho exato.
+  return (SIBLINGS[link.to] ?? []).some((path) => (path.endsWith('/') ? route.path.startsWith(path) : route.path === path))
 }
 const group = 'px-2.5 pb-1 pt-5 text-[12px] font-medium text-muted-foreground first:pt-0'
 /** Classes do link da sidebar, ativo ou não. */
@@ -72,11 +90,12 @@ const item = (on: boolean) =>
   )
 
 /**
- * Item de Clientes com a Company Groone ativa: troca para a Empresa cliente antes de abrir.
- * Sem Empresa cliente, abre a mesma tela na Company Groone.
+ * Item da Empresa cliente com a Company Groone ativa: troca para a Empresa cliente antes de
+ * abrir. Item interno segue direto (o guarda troca); sem Empresa cliente, abre na Company Groone.
  */
-async function goClient(event: MouseEvent, to: string) {
+async function openLink(event: MouseEvent, to: string) {
   emit('navigate')
+  if (to.startsWith('/interno')) return
   const id = clientId.value
   if (!session.company?.is_internal || !id) return
   event.preventDefault()
@@ -113,26 +132,15 @@ async function logout() {
       </span>
     </div>
     <nav v-if="ready" class="grid gap-0.5 overflow-y-auto p-3" :aria-label="t('nav.main')">
-      <div :class="group">{{ t('nav.groupClients') }}</div>
-      <RouterLink
-        v-for="link in CLIENT"
-        :key="link.to"
-        :to="link.to"
-        :aria-current="active(link.to, false) ? 'page' : undefined"
-        :class="item(active(link.to, false))"
-        @click="goClient($event, link.to)"
-      >
-        <component :is="link.icon" />{{ t(link.key) }}
-      </RouterLink>
-      <template v-if="staff">
-        <div :class="group">{{ t('nav.groupInternal') }}</div>
+      <template v-for="section in groups" :key="section.key ?? 'top'">
+        <div v-if="section.key" :class="group">{{ t(section.key) }}</div>
         <RouterLink
-          v-for="link in INTERNAL"
+          v-for="link in section.items"
           :key="link.to"
           :to="link.to"
-          :aria-current="active(link.to, true) ? 'page' : undefined"
-          :class="item(active(link.to, true))"
-          @click="emit('navigate')"
+          :aria-current="active(link) ? 'page' : undefined"
+          :class="item(active(link))"
+          @click="openLink($event, link.to)"
         >
           <component :is="link.icon" />{{ t(link.key) }}
         </RouterLink>
@@ -142,9 +150,9 @@ async function logout() {
       <template v-if="ready">
         <RouterLink
           :to="SETTINGS.to"
-          :aria-current="active(SETTINGS.to, false) ? 'page' : undefined"
-          :class="item(active(SETTINGS.to, false))"
-          @click="goClient($event, SETTINGS.to)"
+          :aria-current="active(SETTINGS) ? 'page' : undefined"
+          :class="item(active(SETTINGS))"
+          @click="openLink($event, SETTINGS.to)"
         >
           <component :is="SETTINGS.icon" />{{ t(SETTINGS.key) }}
         </RouterLink>
