@@ -3,7 +3,7 @@
 import { computed, type Component } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { DropdownMenuRoot, DropdownMenuTrigger } from 'reka-ui'
-import { Building2, ChartLine, ChevronsUpDown, Globe, Home, LogOut, Network, Settings, ShieldCheck, UserRound, Users, UserSearch } from 'lucide-vue-next'
+import { Building2, ChartLine, ChevronsUpDown, FileSignature, Globe, Home, LogOut, Network, Settings, ShieldCheck, UserRound, Users, UserSearch } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 import Avatar from '@/components/ui/Avatar.vue'
 import Mark from '@/components/ui/Mark.vue'
@@ -40,6 +40,7 @@ const INTERNAL: Item[] = [
   { to: '/interno/pessoas', key: 'int.people', icon: UserSearch },
   { to: '/interno/equipe', key: 'int.staff', icon: Users },
   { to: '/interno/networks', key: 'int.mcm', icon: Network },
+  { to: '/interno/contratos', key: 'int.contracts', icon: FileSignature },
 ]
 
 const ready = computed(() => !!session.me && !session.me.mfa_setup_required)
