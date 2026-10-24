@@ -1,4 +1,5 @@
 <script setup lang="ts">
+/** Página de um membro: papel, sites atribuídos e permissões diretas. */
 import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { toast } from 'vue-sonner'
@@ -37,57 +38,63 @@ const canSeeSites = computed(() => session.can('sites.view'))
 const roleLabel = computed(() => pick(member.value?.role?.name))
 const scope = computed(() => (member.value?.is_owner ? 'all' : (role.value?.site_scope ?? 'assigned')))
 
+/** Página vazia, para quando a pessoa não pode ver a lista. */
 const empty = <T,>(): Promise<Items<T>> => Promise.resolve({ items: [], next_cursor: null })
 
+/** Carrega o membro, os papéis, os sites e o catálogo de permissões. */
 async function load() {
   loadError.value = null
   try {
-    const m = await api.get<MemberDetail>(`/members/${id}`)
+    const memberDetail = await api.get<MemberDetail>(`/members/${id}`)
     const [roles, perms, sites, mine] = await Promise.all([
       session.can('roles.view') ? api.get<Items<Role>>('/roles') : empty<Role>(),
       session.can('roles.view') ? api.get<Items<Permission>>('/permissions') : empty<Permission>(),
       canSeeSites.value ? api.get<Items<SiteListItem>>('/sites') : empty<SiteListItem>(),
       api.get<Items<Site>>(`/members/${id}/sites`),
     ])
-    member.value = m
-    role.value = roles.items.find((r) => r.id === m.role?.id) ?? null
+    member.value = memberDetail
+    role.value = roles.items.find((candidate) => candidate.id === memberDetail.role?.id) ?? null
     catalog.value = perms.items
     allSites.value = sites.items
-    assigned.value = new Set(mine.items.map((s) => s.id))
+    assigned.value = new Set(mine.items.map((site) => site.id))
     savedAssigned.value = new Set(assigned.value)
-    rows.value = m.permissions.map(toRow)
-  } catch (e) {
-    if (e instanceof ApiError && e.status === 404) notFound.value = true
-    else loadError.value = errorText(e instanceof ApiError ? e.code : 'unknown')
+    rows.value = memberDetail.permissions.map(toRow)
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) notFound.value = true
+    else loadError.value = errorText(error instanceof ApiError ? error.code : 'unknown')
   }
 }
 onMounted(load)
 
-const errorToast = (e: unknown) => toast.error(errorText(e instanceof ApiError ? e.code : 'unknown'))
+/** Mostra o erro num aviso. */
+const errorToast = (error: unknown) => toast.error(errorText(error instanceof ApiError ? error.code : 'unknown'))
 
 // Sites
 const sitesBusy = ref(false)
 const sitesChanged = computed(
-  () => assigned.value.size !== savedAssigned.value.size || [...assigned.value].some((s) => !savedAssigned.value.has(s)),
+  () => assigned.value.size !== savedAssigned.value.size || [...assigned.value].some((siteId) => !savedAssigned.value.has(siteId)),
 )
+/** Marca ou desmarca um site do membro. */
 function toggleSite(siteId: string, on: boolean) {
   const next = new Set(assigned.value)
   if (on) next.add(siteId)
   else next.delete(siteId)
   assigned.value = next
 }
+/** Marca ou desmarca todos os sites. */
 function setAll(on: boolean) {
-  assigned.value = new Set(on ? allSites.value.map((s) => s.id) : [])
+  assigned.value = new Set(on ? allSites.value.map((allSite) => allSite.id) : [])
 }
+/** Salva os sites do membro. */
 async function saveSites() {
   sitesBusy.value = true
   try {
-    const res = await api.put<Items<Site>>(`/members/${id}/sites`, { site_ids: [...assigned.value] })
-    assigned.value = new Set(res.items.map((s) => s.id))
+    const response = await api.put<Items<Site>>(`/members/${id}/sites`, { site_ids: [...assigned.value] })
+    assigned.value = new Set(response.items.map((site) => site.id))
     savedAssigned.value = new Set(assigned.value)
     toast.success(t('member.sitesSaved'))
-  } catch (e) {
-    errorToast(e)
+  } catch (error) {
+    errorToast(error)
   } finally {
     sitesBusy.value = false
   }
@@ -97,54 +104,61 @@ async function saveSites() {
 interface Row {
   permission: string
   effect: DirectPermission['effect']
-  until: string // AAAA-MM-DD ou vazio
+  /** Validade em AAAA-MM-DD, ou vazio quando não vence. */
+  until: string
 }
 const rows = ref<Row[]>([])
 const directBusy = ref(false)
-const pad = (n: number) => String(n).padStart(2, '0')
-function toRow(p: DirectPermission): Row {
-  const d = p.expires_at ? new Date(p.expires_at) : null
-  return { permission: p.permission, effect: p.effect, until: d ? `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}` : '' }
+/** Completa o número com zero à esquerda. */
+const pad = (value: number) => String(value).padStart(2, '0')
+/** Converte uma permissão direta numa linha do formulário. */
+function toRow(directPermission: DirectPermission): Row {
+  const expiresAt = directPermission.expires_at ? new Date(directPermission.expires_at) : null
+  return { permission: directPermission.permission, effect: directPermission.effect, until: expiresAt ? `${expiresAt.getFullYear()}-${pad(expiresAt.getMonth() + 1)}-${pad(expiresAt.getDate())}` : '' }
 }
 const today = computed(() => {
-  const d = new Date()
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+  const date = new Date()
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
 })
-const permOptions = computed(() => catalog.value.map((p) => ({ value: p.key, label: pick(p.name) })))
+const permOptions = computed(() => catalog.value.map((permission) => ({ value: permission.key, label: pick(permission.name) })))
 const effectOptions = computed(() => [
   { value: 'allow', label: t('member.allow') },
   { value: 'deny', label: t('member.deny') },
 ])
-const rowError = (r: Row, i: number) => {
-  if (r.until && r.until < today.value) return t('member.pastDate')
-  if (rows.value.findIndex((x) => x.permission === r.permission) !== i) return t('member.duplicate')
+/** Erro da linha: data no passado ou permissão repetida. */
+const rowError = (row: Row, index: number) => {
+  if (row.until && row.until < today.value) return t('member.pastDate')
+  if (rows.value.findIndex((other) => other.permission === row.permission) !== index) return t('member.duplicate')
   return null
 }
-const rowsOk = computed(() => rows.value.every((r, i) => r.permission && !rowError(r, i)))
+const rowsOk = computed(() => rows.value.every((row, index) => row.permission && !rowError(row, index)))
+/** Adiciona uma linha com a primeira permissão ainda não usada. */
 function addRow() {
-  const used = new Set(rows.value.map((r) => r.permission))
-  const first = permOptions.value.find((o) => !used.has(o.value))
+  const used = new Set(rows.value.map((row) => row.permission))
+  const first = permOptions.value.find((permOption) => !used.has(permOption.value))
   if (first) rows.value = [...rows.value, { permission: first.value, effect: 'allow', until: '' }]
 }
+/** Salva a lista inteira de permissões diretas. */
 async function saveDirect() {
   directBusy.value = true
   try {
-    const permissions = rows.value.map((r) => ({
-      permission: r.permission,
-      effect: r.effect,
-      expires_at: r.until ? new Date(`${r.until}T23:59:59`).toISOString() : null,
+    const permissions = rows.value.map((row) => ({
+      permission: row.permission,
+      effect: row.effect,
+      expires_at: row.until ? new Date(`${row.until}T23:59:59`).toISOString() : null,
     }))
-    const m = await api.put<MemberDetail>(`/members/${id}/permissions`, { permissions })
-    member.value = m
-    rows.value = m.permissions.map(toRow)
+    const memberDetail = await api.put<MemberDetail>(`/members/${id}/permissions`, { permissions })
+    member.value = memberDetail
+    rows.value = memberDetail.permissions.map(toRow)
     toast.success(t('member.directSaved'))
-  } catch (e) {
-    errorToast(e)
+  } catch (error) {
+    errorToast(error)
   } finally {
     directBusy.value = false
   }
 }
-const permName = (key: string) => pick(catalog.value.find((p) => p.key === key)?.name) || key
+/** Nome da permissão no idioma atual. */
+const permName = (key: string) => pick(catalog.value.find((permission) => permission.key === key)?.name) || key
 </script>
 
 <template>
@@ -194,13 +208,13 @@ const permName = (key: string) => pick(catalog.value.find((p) => p.key === key)?
             </div>
             <div class="grid max-h-[360px] gap-2 overflow-y-auto sm:grid-cols-2">
               <Checkbox
-                v-for="s in allSites"
-                :id="`site-${s.id}`"
-                :key="s.id"
-                :label="s.domain"
-                :model-value="assigned.has(s.id)"
+                v-for="allSite in allSites"
+                :id="`site-${allSite.id}`"
+                :key="allSite.id"
+                :label="allSite.domain"
+                :model-value="assigned.has(allSite.id)"
                 :disabled="!canAssign"
-                @update:model-value="(v: boolean) => toggleSite(s.id, v)"
+                @update:model-value="(value: boolean) => toggleSite(allSite.id, value)"
               />
             </div>
           </template>
@@ -217,14 +231,14 @@ const permName = (key: string) => pick(catalog.value.find((p) => p.key === key)?
         <template v-if="canGrant && catalog.length">
           <p v-if="rows.length === 0" class="text-[14px] text-muted-foreground">{{ t('member.noDirect') }}</p>
           <div v-else class="grid gap-3">
-            <div v-for="(r, i) in rows" :key="i" class="grid gap-1">
+            <div v-for="(row, index) in rows" :key="index" class="grid gap-1">
               <div class="grid items-center gap-2 sm:grid-cols-[minmax(0,1fr)_120px_160px_auto]">
-                <NativeSelect v-model="r.permission" :options="permOptions" :aria-label="t('member.permission')" />
-                <NativeSelect v-model="r.effect" :options="effectOptions" :aria-label="t('member.effect')" />
-                <Input v-model="r.until" type="date" :min="today" :aria-label="t('member.until')" :invalid="!!rowError(r, i)" />
-                <Button variant="ghost" size="icon" :aria-label="t('member.removeRow')" @click="rows = rows.filter((_, j) => j !== i)"><X /></Button>
+                <NativeSelect v-model="row.permission" :options="permOptions" :aria-label="t('member.permission')" />
+                <NativeSelect v-model="row.effect" :options="effectOptions" :aria-label="t('member.effect')" />
+                <Input v-model="row.until" type="date" :min="today" :aria-label="t('member.until')" :invalid="!!rowError(row, index)" />
+                <Button variant="ghost" size="icon" :aria-label="t('member.removeRow')" @click="rows = rows.filter((_, rowIndex) => rowIndex !== index)"><X /></Button>
               </div>
-              <p v-if="rowError(r, i)" class="text-[13px] text-bad">{{ rowError(r, i) }}</p>
+              <p v-if="rowError(row, index)" class="text-[13px] text-bad">{{ rowError(row, index) }}</p>
             </div>
           </div>
           <Button variant="outline" size="sm" class="mt-4" :disabled="rows.length >= permOptions.length" @click="addRow"><Plus />{{ t('member.add') }}</Button>
@@ -232,10 +246,10 @@ const permName = (key: string) => pick(catalog.value.find((p) => p.key === key)?
         <template v-else>
           <p v-if="member.permissions.length === 0" class="text-[14px] text-muted-foreground">{{ t('member.noDirect') }}</p>
           <ul v-else class="grid gap-2 text-[14px]">
-            <li v-for="p in member.permissions" :key="p.permission" class="flex flex-wrap items-center gap-2">
-              <Badge :tone="p.effect === 'deny' ? 'bad' : 'neutral'">{{ t(p.effect === 'allow' ? 'member.allow' : 'member.deny') }}</Badge>
-              {{ permName(p.permission) }}
-              <span class="text-muted-foreground">· {{ p.expires_at ? `${t('member.until')} ${formatDate(p.expires_at, false)}` : t('member.forever') }}</span>
+            <li v-for="permission in member.permissions" :key="permission.permission" class="flex flex-wrap items-center gap-2">
+              <Badge :tone="permission.effect === 'deny' ? 'bad' : 'neutral'">{{ t(permission.effect === 'allow' ? 'member.allow' : 'member.deny') }}</Badge>
+              {{ permName(permission.permission) }}
+              <span class="text-muted-foreground">· {{ permission.expires_at ? `${t('member.until')} ${formatDate(permission.expires_at, false)}` : t('member.forever') }}</span>
             </li>
           </ul>
         </template>

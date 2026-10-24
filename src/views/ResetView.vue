@@ -1,4 +1,5 @@
 <script setup lang="ts">
+/** Tela para definir a nova senha pelo link do email. */
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
@@ -21,6 +22,7 @@ const error = ref<string | null>(null)
 const short = computed(() => password.value.length > 0 && password.value.length < 10)
 const mismatch = computed(() => password2.value.length > 0 && password.value !== password2.value)
 
+/** Grava a nova senha. */
 async function submit() {
   busy.value = true
   error.value = null
@@ -33,8 +35,8 @@ async function submit() {
     session.set(null)
     toast.success(t('reset.done'))
     await router.push('/entrar')
-  } catch (e) {
-    error.value = e instanceof ApiError ? errorText(e.code, { s: e.retryAfter ?? 60 }) : errorText('unknown')
+  } catch (failure) {
+    error.value = failure instanceof ApiError ? errorText(failure.code, { s: failure.retryAfter ?? 60 }) : errorText('unknown')
   } finally {
     busy.value = false
   }

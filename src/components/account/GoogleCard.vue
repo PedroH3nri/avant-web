@@ -18,6 +18,7 @@ const confirm = ref(false)
 const busy = ref(false)
 const linkUrl = `${API}/auth/google/start?mode=link`
 
+/** Carrega se o login com Google está disponível e ligado. */
 async function load() {
   try {
     status.value = await api.get<GoogleStatus>('/auth/google')
@@ -28,6 +29,7 @@ async function load() {
 onMounted(load)
 defineExpose({ load })
 
+/** Desliga a conta Google. */
 async function unlink() {
   busy.value = true
   try {
@@ -35,8 +37,8 @@ async function unlink() {
     confirm.value = false
     toast.success(t('g.removed'))
     await load()
-  } catch (e) {
-    toast.error(errorText(e instanceof ApiError ? e.code : 'unknown'))
+  } catch (error) {
+    toast.error(errorText(error instanceof ApiError ? error.code : 'unknown'))
   } finally {
     busy.value = false
   }

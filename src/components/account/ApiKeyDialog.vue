@@ -32,8 +32,8 @@ const token = ref<string | null>(null)
 const copied = ref(false)
 const manual = ref(false)
 
-watch(open, async (v) => {
-  if (!v) return
+watch(open, async (value) => {
+  if (!value) return
   name.value = ''
   days.value = '365'
   chosen.value = new Set()
@@ -42,7 +42,7 @@ watch(open, async (v) => {
   if (catalog.value === null && session.can('roles.view')) {
     catalog.value = await api
       .get<Items<Permission>>('/permissions')
-      .then((r) => r.items)
+      .then((page) => page.items)
       .catch(() => null)
   }
 })
@@ -50,19 +50,21 @@ watch(open, async (v) => {
 /** Com o catálogo, os nomes traduzidos; sem ele (sem roles.view), as chaves das permissões da pessoa. */
 const groups = computed(() => {
   const list: Permission[] = catalog.value
-    ? catalog.value.filter((p) => session.can(p.key))
-    : (session.me?.permissions ?? []).filter((k) => !k.includes('*')).map((key) => ({ key, group: key.split('.')[0]!, name: {} }))
+    ? catalog.value.filter((permission) => session.can(permission.key))
+    : (session.me?.permissions ?? []).filter((permission) => !permission.includes('*')).map((key) => ({ key, group: key.split('.')[0]!, name: {} }))
   const by = new Map<string, Permission[]>()
-  for (const p of list.filter((p) => !NOT_FOR_KEYS.has(p.key))) by.set(p.group, [...(by.get(p.group) ?? []), p])
+  for (const permission of list.filter((permission) => !NOT_FOR_KEYS.has(permission.key))) by.set(permission.group, [...(by.get(permission.group) ?? []), permission])
   return [...by.entries()]
 })
-const groupLabel = (g: string) => t(`perm.group.${g}` as Key)
-const options = DAYS.map((n) => ({
-  value: String(n),
-  label: n === 365 ? t('key.year') : t('key.days', { n }),
+/** Nome do grupo de permissões no idioma atual. */
+const groupLabel = (group: string) => t(`perm.group.${group}` as Key)
+const options = DAYS.map((days) => ({
+  value: String(days),
+  label: days === 365 ? t('key.year') : t('key.days', { n: days }),
 }))
 const ready = computed(() => name.value.trim().length > 0 && chosen.value.size > 0)
 
+/** Marca ou desmarca uma permissão da chave. */
 function toggle(key: string, on: boolean) {
   const next = new Set(chosen.value)
   if (on) next.add(key)
@@ -70,6 +72,7 @@ function toggle(key: string, on: boolean) {
   chosen.value = next
 }
 
+/** Cria a chave e mostra o token, que só aparece agora. */
 async function create() {
   if (!ready.value) return
   busy.value = true
@@ -82,13 +85,14 @@ async function create() {
     token.value = key.token
     const { token: _secret, ...rest } = key
     emit('created', rest)
-  } catch (e) {
-    toast.error(errorText(e instanceof ApiError ? e.code : 'unknown'))
+  } catch (error) {
+    toast.error(errorText(error instanceof ApiError ? error.code : 'unknown'))
   } finally {
     busy.value = false
   }
 }
 
+/** Copia o token para a área de transferência. */
 async function copyToken() {
   if (!token.value) return
   if (await copy(token.value)) {
@@ -96,8 +100,8 @@ async function copyToken() {
     setTimeout(() => (copied.value = false), 1600)
     return
   }
-  const el = document.getElementById('key-token')
-  if (el) window.getSelection()?.selectAllChildren(el)
+  const element = document.getElementById('key-token')
+  if (element) window.getSelection()?.selectAllChildren(element)
   manual.value = true
 }
 </script>
@@ -141,13 +145,13 @@ async function copyToken() {
         <div v-for="[g, perms] in groups" :key="g" class="grid gap-2">
           <h3 class="text-[13px] font-medium">{{ groupLabel(g) }}</h3>
           <Checkbox
-            v-for="p in perms"
-            :id="`key-perm-${p.key}`"
-            :key="p.key"
-            :label="pick(p.name) || p.key"
-            :hint="p.key"
-            :model-value="chosen.has(p.key)"
-            @update:model-value="(on: boolean) => toggle(p.key, on)"
+            v-for="perm in perms"
+            :id="`key-perm-${perm.key}`"
+            :key="perm.key"
+            :label="pick(perm.name) || perm.key"
+            :hint="perm.key"
+            :model-value="chosen.has(perm.key)"
+            @update:model-value="(on: boolean) => toggle(perm.key, on)"
           />
         </div>
       </fieldset>

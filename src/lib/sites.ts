@@ -24,19 +24,20 @@ export function approval(site: Pick<Site, 'approval_status' | 'awaiting_gam'>): 
 
 /** A lista plana da API em ordem de árvore, com a profundidade de cada um. */
 export function tree(units: AdUnit[]): { unit: AdUnit; depth: number }[] {
-  const ids = new Set(units.map((u) => u.id))
+  const ids = new Set(units.map((unit) => unit.id))
   const children = new Map<string | null, AdUnit[]>()
-  for (const u of units) {
+  for (const unit of units) {
     // O pai pode estar em outro site: aqui ele vira raiz.
-    const parent = u.parent_id && ids.has(u.parent_id) ? u.parent_id : null
-    children.set(parent, [...(children.get(parent) ?? []), u])
+    const parent = unit.parent_id && ids.has(unit.parent_id) ? unit.parent_id : null
+    children.set(parent, [...(children.get(parent) ?? []), unit])
   }
   const out: { unit: AdUnit; depth: number }[] = []
+  /** Percorre a árvore a partir de um pai, em ordem alfabética. */
   const walk = (parent: string | null, depth: number) => {
-    const list = [...(children.get(parent) ?? [])].sort((a, b) => a.name.localeCompare(b.name))
-    for (const u of list) {
-      out.push({ unit: u, depth })
-      walk(u.id, depth + 1)
+    const list = [...(children.get(parent) ?? [])].sort((first, second) => first.name.localeCompare(second.name))
+    for (const item of list) {
+      out.push({ unit: item, depth })
+      walk(item.id, depth + 1)
     }
   }
   walk(null, 0)

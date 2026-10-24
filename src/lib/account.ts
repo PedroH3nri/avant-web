@@ -17,16 +17,18 @@ const SYSTEMS: [RegExp, string][] = [
   [/Mac OS X|Macintosh/, 'macOS'],
   [/Linux/, 'Linux'],
 ]
-const first = (ua: string, list: [RegExp, string][]) => list.find(([re]) => re.test(ua))?.[1] ?? null
+/** Primeiro nome da lista cujo padrão casa com o User-Agent. */
+const first = (userAgent: string, list: [RegExp, string][]) => list.find(([pattern]) => pattern.test(userAgent))?.[1] ?? null
 
 /** "Chrome no Windows" a partir do User-Agent, sem biblioteca: basta para reconhecer o aparelho. */
-export function device(ua: string | null): { browser: string | null; os: string | null } {
-  if (!ua) return { browser: null, os: null }
-  return { browser: first(ua, BROWSERS), os: first(ua, SYSTEMS) }
+export function device(userAgent: string | null): { browser: string | null; os: string | null } {
+  if (!userAgent) return { browser: null, os: null }
+  return { browser: first(userAgent, BROWSERS), os: first(userAgent, SYSTEMS) }
 }
 
 export type KeyState = 'active' | 'revoked' | 'expired'
 
+/** Estado da chave de API: ativa, vencida ou revogada. */
 export function keyState(key: Pick<ApiKey, 'revoked_at' | 'expires_at'>, now = Date.now()): KeyState {
   if (key.revoked_at) return 'revoked'
   if (new Date(key.expires_at).getTime() <= now) return 'expired'
@@ -35,8 +37,9 @@ export function keyState(key: Pick<ApiKey, 'revoked_at' | 'expires_at'>, now = D
 
 /** Ativas primeiro, depois as mais novas. */
 export function sortKeys(keys: ApiKey[], now = Date.now()): ApiKey[] {
-  const rank = (k: ApiKey) => (keyState(k, now) === 'active' ? 0 : 1)
-  return [...keys].sort((a, b) => rank(a) - rank(b) || b.created_at.localeCompare(a.created_at))
+  /** Põe as chaves ativas na frente. */
+  const rank = (apiKey: ApiKey) => (keyState(apiKey, now) === 'active' ? 0 : 1)
+  return [...keys].sort((first, second) => rank(first) - rank(second) || second.created_at.localeCompare(first.created_at))
 }
 
 /** Arquivo de texto com os códigos de recuperação, para a pessoa guardar. */

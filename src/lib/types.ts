@@ -22,7 +22,8 @@ export interface CompanyRef {
   slug: string
   accent_color: string | null
   is_owner: boolean
-  is_internal: boolean // a Company Groone
+  /** Diz se é a Company Groone. */
+  is_internal: boolean
 }
 
 export interface Me {
@@ -61,7 +62,8 @@ export interface CompanyDetail {
   accent_color: string | null
   plan: CompanyPlan
   status: CompanyStatus
-  seat_limit: number | null // vazio na Company Groone: limites valem só para clientes
+  /** Vazio na Company Groone: limites valem só para clientes. */
+  seat_limit: number | null
   seats_used: number
   settings: Record<string, unknown>
 }
@@ -105,7 +107,8 @@ export interface RoleRef {
 }
 
 export interface Member {
-  id: string // id da Membership
+  /** O id é o da Membership. */
+  id: string
   user: UserRef
   role: RoleRef | null
   status: MembershipStatus
@@ -150,12 +153,14 @@ export interface MemberDetail extends Member {
 
 export interface Site {
   id: string
-  network_id: string | null // vazio enquanto aguarda o GAM
+  /** Vazio enquanto aguarda o GAM. */
+  network_id: string | null
   domain: string
   approval_status: string | null
   status: 'active' | 'archived'
   synced_at: string | null
-  awaiting_gam: boolean // cadastrado à mão, o GAM ainda não trouxe
+  /** Cadastrado à mão, o GAM ainda não trouxe. */
+  awaiting_gam: boolean
 }
 
 export interface SiteListItem extends Site {
@@ -232,7 +237,8 @@ export interface Client {
   plan: CompanyPlan
   status: CompanyStatus
   seat_limit: number
-  seats_used: number // pessoas mais convites pendentes
+  /** Pessoas mais convites pendentes. */
+  seats_used: number
   owner: UserRef
 }
 

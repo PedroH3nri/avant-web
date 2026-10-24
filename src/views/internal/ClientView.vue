@@ -43,120 +43,129 @@ const audit = ref<AuditEntry[]>([])
 const cursor = ref<string | null>(null)
 const auditBusy = ref(false)
 
-const fail = (e: unknown) => toast.error(errorText(e instanceof ApiError ? e.code : 'unknown'))
+/** Mostra o erro num aviso. */
+const fail = (error: unknown) => toast.error(errorText(error instanceof ApiError ? error.code : 'unknown'))
 
+/** Carrega o cliente e a auditoria. */
 async function load() {
   loadError.value = null
   try {
-    const [c, a] = await Promise.all([
+    const [clientDetail, auditPage] = await Promise.all([
       api.get<ClientDetail>(`/internal/clients/${id.value}`),
       api.get<Items<AuditEntry>>(`/internal/clients/${id.value}/audit`, { limit: 30 }),
     ])
-    client.value = c
-    plan.value = c.plan
-    seats.value = String(c.seat_limit)
-    audit.value = a.items
-    cursor.value = a.next_cursor
-  } catch (e) {
-    loadError.value = errorText(e instanceof ApiError ? e.code : 'unknown')
+    client.value = clientDetail
+    plan.value = clientDetail.plan
+    seats.value = String(clientDetail.seat_limit)
+    audit.value = auditPage.items
+    cursor.value = auditPage.next_cursor
+  } catch (error) {
+    loadError.value = errorText(error instanceof ApiError ? error.code : 'unknown')
   }
 }
 onMounted(load)
 
+/** Carrega mais entradas da auditoria. */
 async function more() {
   if (!cursor.value) return
   auditBusy.value = true
   try {
-    const a = await api.get<Items<AuditEntry>>(`/internal/clients/${id.value}/audit`, { limit: 30, cursor: cursor.value })
-    audit.value = [...audit.value, ...a.items]
-    cursor.value = a.next_cursor
-  } catch (e) {
-    fail(e)
+    const items = await api.get<Items<AuditEntry>>(`/internal/clients/${id.value}/audit`, { limit: 30, cursor: cursor.value })
+    audit.value = [...audit.value, ...items.items]
+    cursor.value = items.next_cursor
+  } catch (error) {
+    fail(error)
   } finally {
     auditBusy.value = false
   }
 }
 
-const planOptions = computed(() => (['groone_network', 'external'] as const).map((p) => ({ value: p, label: t(`int.plan.${p}`) })))
+const planOptions = computed(() => (['groone_network', 'external'] as const).map((plan) => ({ value: plan, label: t(`int.plan.${plan}`) })))
 const seatsNum = computed(() => Number(seats.value))
 const seatsLow = computed(() => !!client.value && seatsNum.value < client.value.seats_used)
 const seatsOk = computed(() => Number.isInteger(seatsNum.value) && seatsNum.value >= 1 && seatsNum.value <= 10000 && !seatsLow.value)
 const changed = computed(() => !!client.value && (plan.value !== client.value.plan || seatsNum.value !== client.value.seat_limit))
 
+/** Salva o limite de vagas e o plano. */
 async function save() {
-  const c = client.value
-  if (!c || !seatsOk.value) return
+  const current = client.value
+  if (!current || !seatsOk.value) return
   saving.value = true
   try {
     const body: Record<string, unknown> = {}
-    if (plan.value !== c.plan) body.plan = plan.value
-    if (seatsNum.value !== c.seat_limit) body.seat_limit = seatsNum.value
-    const fresh = await api.patch<Client>(`/internal/clients/${c.id}`, body)
-    client.value = { ...c, ...fresh }
+    if (plan.value !== current.plan) body.plan = plan.value
+    if (seatsNum.value !== current.seat_limit) body.seat_limit = seatsNum.value
+    const fresh = await api.patch<Client>(`/internal/clients/${current.id}`, body)
+    client.value = { ...current, ...fresh }
     toast.success(t('common.saved'))
     await reloadAudit()
-  } catch (e) {
-    fail(e)
+  } catch (error) {
+    fail(error)
   } finally {
     saving.value = false
   }
 }
 
+/** Recarrega a auditoria do começo. */
 async function reloadAudit() {
-  const a = await api.get<Items<AuditEntry>>(`/internal/clients/${id.value}/audit`, { limit: 30 }).catch(() => null)
-  if (a) {
-    audit.value = a.items
-    cursor.value = a.next_cursor
+  const items = await api.get<Items<AuditEntry>>(`/internal/clients/${id.value}/audit`, { limit: 30 }).catch(() => null)
+  if (items) {
+    audit.value = items.items
+    cursor.value = items.next_cursor
   }
 }
 
+/** Suspende ou reativa o cliente. */
 async function setStatus(suspended: boolean) {
-  const c = client.value
-  if (!c) return
+  const current = client.value
+  if (!current) return
   statusBusy.value = true
   try {
-    await api.post(`/internal/clients/${c.id}/${suspended ? 'suspend' : 'reactivate'}`)
-    client.value = { ...c, status: suspended ? 'suspended' : 'active' }
+    await api.post(`/internal/clients/${current.id}/${suspended ? 'suspend' : 'reactivate'}`)
+    client.value = { ...current, status: suspended ? 'suspended' : 'active' }
     confirmSuspend.value = false
     toast.success(suspended ? t('int.suspendedNow') : t('int.reactivatedNow'))
     await reloadAudit()
-  } catch (e) {
-    fail(e)
+  } catch (error) {
+    fail(error)
   } finally {
     statusBusy.value = false
   }
 }
 
-const candidates = computed(() => (client.value?.members ?? []).filter((m) => m.status === 'active' && !m.is_owner))
-const ownerOptions = computed(() => candidates.value.map((m) => ({ value: m.id, label: `${m.user.name} (${m.user.email})` })))
+const candidates = computed(() => (client.value?.members ?? []).filter((member) => member.status === 'active' && !member.is_owner))
+const ownerOptions = computed(() => candidates.value.map((candidate) => ({ value: candidate.id, label: `${candidate.user.name} (${candidate.user.email})` })))
 
+/** Abre o diálogo para trocar o dono. */
 function openOwner() {
   ownerPick.value = candidates.value[0]?.id ?? ''
   ownerOpen.value = true
 }
 
+/** Passa a posse da Empresa para o membro escolhido. */
 async function changeOwner() {
-  const c = client.value
-  if (!c || !ownerPick.value) return
+  const current = client.value
+  if (!current || !ownerPick.value) return
   ownerBusy.value = true
   try {
-    await api.post(`/internal/clients/${c.id}/owner`, { membership_id: ownerPick.value })
+    await api.post(`/internal/clients/${current.id}/owner`, { membership_id: ownerPick.value })
     ownerOpen.value = false
     toast.success(t('int.ownerChanged'))
     await load()
-  } catch (e) {
-    fail(e)
+  } catch (error) {
+    fail(error)
   } finally {
     ownerBusy.value = false
   }
 }
 
-const members = computed(() => (client.value?.members ?? []).filter((m) => m.status !== 'removed'))
-const pending = computed(() => (client.value?.invitations ?? []).filter((i) => i.status === 'pending'))
-const names = computed(() => new Map((client.value?.members ?? []).map((m) => [m.user.id, m.user.name])))
-function who(e: AuditEntry) {
-  const name = e.actor_user_id ? names.value.get(e.actor_user_id) : undefined
-  return name ?? t(`int.by.${e.actor_kind as 'member' | 'staff' | 'api_key' | 'system'}`)
+const members = computed(() => (client.value?.members ?? []).filter((member) => member.status !== 'removed'))
+const pending = computed(() => (client.value?.invitations ?? []).filter((invitation) => invitation.status === 'pending'))
+const names = computed(() => new Map((client.value?.members ?? []).map((member) => [member.user.id, member.user.name])))
+/** Quem fez a ação: o nome da pessoa ou o tipo de autor. */
+function who(auditEntry: AuditEntry) {
+  const name = auditEntry.actor_user_id ? names.value.get(auditEntry.actor_user_id) : undefined
+  return name ?? t(`int.by.${auditEntry.actor_kind as 'member' | 'staff' | 'api_key' | 'system'}`)
 }
 </script>
 
@@ -214,28 +223,28 @@ function who(e: AuditEntry) {
           </tr>
         </thead>
         <tbody>
-          <tr v-for="m in members" :key="m.id">
+          <tr v-for="member in members" :key="member.id">
             <td :class="td">
-              <div class="font-medium">{{ m.user.name }}</div>
-              <div class="text-[13px] text-muted-foreground">{{ m.user.email }}</div>
+              <div class="font-medium">{{ member.user.name }}</div>
+              <div class="text-[13px] text-muted-foreground">{{ member.user.email }}</div>
             </td>
             <td :class="td">
-              <Badge v-if="m.is_owner">{{ t('int.owner') }}</Badge>
-              <template v-else>{{ pick(m.role?.name) }}</template>
+              <Badge v-if="member.is_owner">{{ t('int.owner') }}</Badge>
+              <template v-else>{{ pick(member.role?.name) }}</template>
             </td>
             <td :class="td">
-              <Status :tone="m.status === 'active' ? 'ok' : 'neutral'">{{ m.status === 'active' ? t('team.active') : t('team.suspended') }}</Status>
+              <Status :tone="member.status === 'active' ? 'ok' : 'neutral'">{{ member.status === 'active' ? t('team.active') : t('team.suspended') }}</Status>
             </td>
-            <td :class="[td, 'text-muted-foreground']">{{ formatDate(m.joined_at, false) }}</td>
+            <td :class="[td, 'text-muted-foreground']">{{ formatDate(member.joined_at, false) }}</td>
           </tr>
         </tbody>
       </DataTable>
 
       <Card v-if="pending.length" :title="t('int.invites')">
         <ul class="-my-3 divide-y">
-          <li v-for="i in pending" :key="i.id" class="flex flex-wrap items-center justify-between gap-2 py-3 text-[14px]">
-            <span class="font-medium">{{ i.email }}</span>
-            <span class="text-[13px] text-muted-foreground">{{ t('int.expires', { when: formatAgo(i.expires_at) }) }}</span>
+          <li v-for="invitation in pending" :key="invitation.id" class="flex flex-wrap items-center justify-between gap-2 py-3 text-[14px]">
+            <span class="font-medium">{{ invitation.email }}</span>
+            <span class="text-[13px] text-muted-foreground">{{ t('int.expires', { when: formatAgo(invitation.expires_at) }) }}</span>
           </li>
         </ul>
       </Card>
@@ -243,12 +252,12 @@ function who(e: AuditEntry) {
       <Card :title="t('int.audit')" :desc="t('int.auditDesc')">
         <p v-if="!audit.length" class="text-[14px] text-muted-foreground">{{ t('int.auditEmpty') }}</p>
         <ol v-else class="-my-3 divide-y">
-          <li v-for="e in audit" :key="e.id" class="flex flex-wrap items-baseline gap-x-4 gap-y-0.5 py-2.5 text-[14px]">
+          <li v-for="entry in audit" :key="entry.id" class="flex flex-wrap items-baseline gap-x-4 gap-y-0.5 py-2.5 text-[14px]">
             <span class="min-w-0 flex-1">
-              <span class="font-medium">{{ auditText(e.action) }}</span>
-              <span class="text-muted-foreground"> · {{ who(e) }}</span>
+              <span class="font-medium">{{ auditText(entry.action) }}</span>
+              <span class="text-muted-foreground"> · {{ who(entry) }}</span>
             </span>
-            <time class="tnum text-[13px] text-muted-foreground" :datetime="e.created_at">{{ formatDate(e.created_at) }}</time>
+            <time class="tnum text-[13px] text-muted-foreground" :datetime="entry.created_at">{{ formatDate(entry.created_at) }}</time>
           </li>
         </ol>
         <template v-if="cursor" #footer>

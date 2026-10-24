@@ -1,4 +1,5 @@
 <script setup lang="ts">
+/** Sidebar fixa: grupos Clientes e Empresa (interna), Configurações e a conta. */
 import { computed, type Component } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { DropdownMenuRoot, DropdownMenuTrigger } from 'reka-ui'
@@ -44,12 +45,13 @@ const ready = computed(() => !!session.me && !session.me.mfa_setup_required)
 /** A Empresa cliente do grupo Clientes: a ativa ou a última por onde a pessoa passou. */
 const clientId = computed(() => {
   if (session.company && !session.company.is_internal) return session.company.id
-  const last = session.clientCompanies.find((c) => c.id === session.lastClientId)
+  const last = session.clientCompanies.find((clientCompany) => clientCompany.id === session.lastClientId)
   return (last ?? session.clientCompanies[0])?.id ?? null
 })
 const staff = computed(() => !!session.internalCompany)
 const onInternal = computed(() => route.meta.internal === true)
 
+/** Diz se o link está ativo na rota atual, respeitando o grupo dele. */
 function active(to: string, internalItem: boolean) {
   if (internalItem !== onInternal.value) return false
   if (to === '/') return route.path === '/'
@@ -60,6 +62,7 @@ function active(to: string, internalItem: boolean) {
   return route.path === to || route.path.startsWith(`${to}/`)
 }
 const group = 'px-2.5 pb-1 pt-5 text-[12px] font-medium text-muted-foreground first:pt-0'
+/** Classes do link da sidebar, ativo ou não. */
 const item = (on: boolean) =>
   cn(
     'flex h-9 w-full items-center gap-2.5 rounded-md px-2.5 text-left text-[14px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-4',
@@ -68,8 +71,7 @@ const item = (on: boolean) =>
 
 /**
  * Item de Clientes com a Company Groone ativa: troca para a Empresa cliente antes de abrir.
- * Sem Empresa cliente, abre a mesma tela na Company Groone (a equipe também tem Equipe,
- * Papéis, Networks e Configurações).
+ * Sem Empresa cliente, abre a mesma tela na Company Groone.
  */
 async function goClient(event: MouseEvent, to: string) {
   emit('navigate')
@@ -79,16 +81,18 @@ async function goClient(event: MouseEvent, to: string) {
   try {
     await session.switchCompany(id)
     await router.push(to)
-  } catch (e) {
-    toast.error(errorText(e instanceof ApiError ? e.code : 'unknown'))
+  } catch (error) {
+    toast.error(errorText(error instanceof ApiError ? error.code : 'unknown'))
   }
 }
 
+/** Abre a página da conta. */
 function account() {
   emit('navigate')
   void router.push('/configuracoes/conta')
 }
 
+/** Sai da sessão e volta para o login. */
 async function logout() {
   await session.logout()
   await router.push('/entrar')
@@ -109,26 +113,26 @@ async function logout() {
     <nav v-if="ready" class="grid gap-0.5 overflow-y-auto p-3" :aria-label="t('nav.main')">
       <div :class="group">{{ t('nav.groupClients') }}</div>
       <RouterLink
-        v-for="i in CLIENT"
-        :key="i.to"
-        :to="i.to"
-        :aria-current="active(i.to, false) ? 'page' : undefined"
-        :class="item(active(i.to, false))"
-        @click="goClient($event, i.to)"
+        v-for="link in CLIENT"
+        :key="link.to"
+        :to="link.to"
+        :aria-current="active(link.to, false) ? 'page' : undefined"
+        :class="item(active(link.to, false))"
+        @click="goClient($event, link.to)"
       >
-        <component :is="i.icon" />{{ t(i.key) }}
+        <component :is="link.icon" />{{ t(link.key) }}
       </RouterLink>
       <template v-if="staff">
         <div :class="group">{{ t('nav.groupInternal') }}</div>
         <RouterLink
-          v-for="i in INTERNAL"
-          :key="i.to"
-          :to="i.to"
-          :aria-current="active(i.to, true) ? 'page' : undefined"
-          :class="item(active(i.to, true))"
+          v-for="link in INTERNAL"
+          :key="link.to"
+          :to="link.to"
+          :aria-current="active(link.to, true) ? 'page' : undefined"
+          :class="item(active(link.to, true))"
           @click="emit('navigate')"
         >
-          <component :is="i.icon" />{{ t(i.key) }}
+          <component :is="link.icon" />{{ t(link.key) }}
         </RouterLink>
       </template>
     </nav>

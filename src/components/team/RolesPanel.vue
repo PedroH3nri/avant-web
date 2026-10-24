@@ -1,4 +1,5 @@
 <script setup lang="ts">
+/** Lista de papéis com criar, editar e apagar. */
 import { computed, ref } from 'vue'
 import { toast } from 'vue-sonner'
 import { Pencil, Plus, Trash2 } from 'lucide-vue-next'
@@ -22,36 +23,40 @@ const editing = ref<Role | null>(null)
 const dialog = ref(false)
 const deleting = ref<Role | null>(null)
 const busy = ref(false)
-const deleteOpen = computed({ get: () => deleting.value !== null, set: (v) => !v && (deleting.value = null) })
+const deleteOpen = computed({ get: () => deleting.value !== null, set: (value) => !value && (deleting.value = null) })
 
-const names = computed(() => new Map(props.permissions.map((p) => [p.key, pick(p.name)])))
-function summary(r: Role): string {
-  if (r.permissions.includes('*')) return t('role.allPerms')
-  const list = r.permissions.map((k) => names.value.get(k) ?? k)
+const names = computed(() => new Map(props.permissions.map((permission) => [permission.key, pick(permission.name)])))
+/** Resumo das permissões do papel, com no máximo três nomes. */
+function summary(role: Role): string {
+  if (role.permissions.includes('*')) return t('role.allPerms')
+  const list = role.permissions.map((permission) => names.value.get(permission) ?? permission)
   return list.length > 3 ? `${list.slice(0, 3).join(', ')} +${list.length - 3}` : list.join(', ')
 }
 
-function edit(r: Role | null) {
-  editing.value = r
+/** Abre o diálogo para criar (null) ou editar um papel. */
+function edit(target: Role | null) {
+  editing.value = target
   dialog.value = true
 }
 
-function saved(r: Role) {
-  const exists = roles.value.some((x) => x.id === r.id)
-  roles.value = exists ? roles.value.map((x) => (x.id === r.id ? r : x)) : [...roles.value, r]
+/** Põe na lista o papel criado ou atualizado. */
+function saved(role: Role) {
+  const exists = roles.value.some((existing) => existing.id === role.id)
+  roles.value = exists ? roles.value.map((existing) => (existing.id === role.id ? role : existing)) : [...roles.value, role]
 }
 
+/** Apaga o papel escolhido. */
 async function remove() {
-  const r = deleting.value
-  if (!r) return
+  const current = deleting.value
+  if (!current) return
   busy.value = true
   try {
-    await api.delete(`/roles/${r.id}`)
-    roles.value = roles.value.filter((x) => x.id !== r.id)
+    await api.delete(`/roles/${current.id}`)
+    roles.value = roles.value.filter((role) => role.id !== current.id)
     toast(t('role.deleted'))
     deleting.value = null
-  } catch (e) {
-    toast.error(errorText(e instanceof ApiError ? e.code : 'unknown'))
+  } catch (error) {
+    toast.error(errorText(error instanceof ApiError ? error.code : 'unknown'))
   } finally {
     busy.value = false
   }
@@ -71,27 +76,27 @@ async function remove() {
       </tr>
     </thead>
     <tbody>
-      <tr v-for="r in roles" :key="r.id">
-        <td :class="[td, 'font-medium']">{{ pick(r.name) }}</td>
+      <tr v-for="role in roles" :key="role.id">
+        <td :class="[td, 'font-medium']">{{ pick(role.name) }}</td>
         <td :class="td">
-          <Badge v-if="r.is_system">{{ t('role.system') }}</Badge><Badge v-else tone="ochre">{{ t('role.custom') }}</Badge>
+          <Badge v-if="role.is_system">{{ t('role.system') }}</Badge><Badge v-else tone="ochre">{{ t('role.custom') }}</Badge>
         </td>
         <td :class="[td, 'max-w-[320px] text-muted-foreground']">
-          <span :title="r.permissions.map((k) => names.get(k) ?? k).join(', ')">{{ summary(r) }}</span>
+          <span :title="role.permissions.map((permission) => names.get(permission) ?? permission).join(', ')">{{ summary(role) }}</span>
         </td>
-        <td :class="[td, 'text-muted-foreground']">{{ t(`role.scope.${r.site_scope}`) }}</td>
-        <td :class="[td, 'text-right tnum']">{{ r.member_count }}</td>
+        <td :class="[td, 'text-muted-foreground']">{{ t(`role.scope.${role.site_scope}`) }}</td>
+        <td :class="[td, 'text-right tnum']">{{ role.member_count }}</td>
         <td :class="[td, 'whitespace-nowrap text-right']">
-          <template v-if="canManage && !r.is_system">
-            <Button variant="ghost" size="icon" class="size-8" :aria-label="`${t('common.edit')}: ${pick(r.name)}`" @click="edit(r)"><Pencil /></Button>
+          <template v-if="canManage && !role.is_system">
+            <Button variant="ghost" size="icon" class="size-8" :aria-label="`${t('common.edit')}: ${pick(role.name)}`" @click="edit(role)"><Pencil /></Button>
             <Button
               variant="ghost"
               size="icon"
               class="size-8 text-bad"
-              :aria-label="`${t('common.delete')}: ${pick(r.name)}`"
-              :disabled="r.member_count > 0"
-              :title="r.member_count > 0 ? errorText('role_in_use') : undefined"
-              @click="deleting = r"
+              :aria-label="`${t('common.delete')}: ${pick(role.name)}`"
+              :disabled="role.member_count > 0"
+              :title="role.member_count > 0 ? errorText('role_in_use') : undefined"
+              @click="deleting = role"
               ><Trash2
             /></Button>
           </template>

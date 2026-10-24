@@ -11,25 +11,28 @@ const props = defineProps<{ codes: string[] }>()
 const session = useSession()
 const copied = ref(false)
 const manual = ref(false)
+/** Texto do arquivo com os códigos de recuperação. */
 const text = () => recoveryFile(props.codes, t('rec.fileTitle', { email: session.me?.user.email ?? '' }))
 
+/** Baixa os códigos de recuperação num arquivo .txt. */
 function download() {
   const url = URL.createObjectURL(new Blob([text()], { type: 'text/plain' }))
-  const a = document.createElement('a')
-  a.href = url
-  a.download = 'avant-codigos-de-recuperacao.txt'
-  a.click()
+  const link = document.createElement('a')
+  link.href = url
+  link.download = 'avant-codigos-de-recuperacao.txt'
+  link.click()
   URL.revokeObjectURL(url)
 }
 
+/** Copia todos os códigos de recuperação. */
 async function copyAll() {
   if (await copy(props.codes.join('\n'))) {
     copied.value = true
     setTimeout(() => (copied.value = false), 1600)
     return
   }
-  const el = document.getElementById('rec-codes')
-  if (el) window.getSelection()?.selectAllChildren(el)
+  const element = document.getElementById('rec-codes')
+  if (element) window.getSelection()?.selectAllChildren(element)
   manual.value = true
 }
 </script>
@@ -37,7 +40,7 @@ async function copyAll() {
 <template>
   <div class="grid gap-3">
     <ol id="rec-codes" class="grid grid-cols-2 gap-x-6 gap-y-1.5 rounded-md border bg-muted p-4 font-mono text-[14px] tabular-nums">
-      <li v-for="c in codes" :key="c">{{ c }}</li>
+      <li v-for="code in codes" :key="code">{{ code }}</li>
     </ol>
     <div class="flex flex-wrap gap-2">
       <Button variant="outline" size="sm" @click="download"><Download />{{ t('rec.download') }}</Button>

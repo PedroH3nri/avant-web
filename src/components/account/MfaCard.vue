@@ -40,19 +40,21 @@ const desc = computed(() =>
 // Na ativação o app dá 6 dígitos; nos outros casos também vale um código de recuperação.
 const codeOk = computed(() => (mode.value === 'setup' ? /^\d{6}$/.test(code.value.trim()) : code.value.trim().length >= 6))
 
-function fail(e: unknown) {
-  const c = e instanceof ApiError ? e.code : 'unknown'
-  if (c === 'invalid_mfa_code') codeError.value = errorText(c)
-  else toast.error(errorText(c))
+/** Mostra o erro do código no campo ou num aviso. */
+function fail(error: unknown) {
+  const code = error instanceof ApiError ? error.code : 'unknown'
+  if (code === 'invalid_mfa_code') codeError.value = errorText(code)
+  else toast.error(errorText(code))
 }
 
-async function start(m: Mode) {
-  mode.value = m
+/** Abre o passo escolhido: ativar, desligar ou gerar novos códigos. */
+async function start(chosenMode: Mode) {
+  mode.value = chosenMode
   code.value = ''
   codeError.value = null
   codes.value = null
   setup.value = null
-  if (m === 'setup') {
+  if (chosenMode === 'setup') {
     busy.value = true
     try {
       setup.value = await api.post<MfaSetup>('/auth/mfa/setup')
@@ -60,8 +62,8 @@ async function start(m: Mode) {
         margin: 1,
         width: 176,
       })
-    } catch (e) {
-      fail(e)
+    } catch (error) {
+      fail(error)
       return
     } finally {
       busy.value = false
@@ -70,6 +72,7 @@ async function start(m: Mode) {
   open.value = true
 }
 
+/** Envia o código do passo aberto. */
 async function submit() {
   if (!codeOk.value) return
   busy.value = true
@@ -88,8 +91,8 @@ async function submit() {
       toast.success(t('mfa2.disabled'))
       await session.load()
     }
-  } catch (e) {
-    fail(e)
+  } catch (error) {
+    fail(error)
   } finally {
     busy.value = false
   }

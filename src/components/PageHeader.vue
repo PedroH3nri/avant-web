@@ -1,4 +1,5 @@
 <script setup lang="ts">
+/** Cabeçalho das telas: título e subtítulo opcional. */
 defineProps<{ title: string; sub?: string }>()
 </script>
 

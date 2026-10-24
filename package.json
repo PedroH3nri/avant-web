@@ -9,6 +9,7 @@
     "build": "vue-tsc -b && vite build",
     "typecheck": "vue-tsc -b",
     "lint": "oxlint src",
+    "clean-code": "node scripts/clean-code.mjs",
     "test": "vitest run",
     "preview": "vite preview"
   },

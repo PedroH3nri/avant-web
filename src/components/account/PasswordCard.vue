@@ -19,6 +19,7 @@ const short = computed(() => password.value.length > 0 && password.value.length 
 const mismatch = computed(() => password2.value.length > 0 && password.value !== password2.value)
 const ready = computed(() => current.value && password.value && !short.value && password.value === password2.value)
 
+/** Troca a senha depois de conferir a atual. */
 async function submit() {
   if (!ready.value) return
   busy.value = true
@@ -31,8 +32,8 @@ async function submit() {
     current.value = password.value = password2.value = ''
     toast.success(t('pw.done'))
     emit('changed')
-  } catch (e) {
-    const code = e instanceof ApiError ? e.code : 'unknown'
+  } catch (error) {
+    const code = error instanceof ApiError ? error.code : 'unknown'
     if (code === 'invalid_credentials') wrong.value = true
     else toast.error(errorText(code))
   } finally {

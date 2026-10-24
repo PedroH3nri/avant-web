@@ -24,14 +24,15 @@ export class ApiError extends Error {
   /** Campos que a validação recusou: {"body.email": "..."} */
   get fields(): Record<string, string> {
     const list = (this.details.fields ?? []) as { loc: (string | number)[]; msg: string }[]
-    return Object.fromEntries(list.map((f) => [f.loc.slice(1).join('.'), f.msg]))
+    return Object.fromEntries(list.map((fieldError) => [fieldError.loc.slice(1).join('.'), fieldError.msg]))
   }
 }
 
+/** Lê um cookie pelo nome. */
 export function readCookie(name: string, source = document.cookie): string | null {
   for (const part of source.split(';')) {
-    const [k, ...v] = part.trim().split('=')
-    if (k === name) return decodeURIComponent(v.join('='))
+    const [key, ...valueParts] = part.trim().split('=')
+    if (key === name) return decodeURIComponent(valueParts.join('='))
   }
   return null
 }
@@ -44,54 +45,57 @@ export interface RequestOptions {
   signal?: AbortSignal
 }
 
+/** Monta a URL da API com a query string, sem os valores vazios. */
 function url(path: string, query?: Query): string {
   const params = new URLSearchParams()
-  for (const [k, v] of Object.entries(query ?? {})) {
-    if (v !== undefined && v !== null && v !== '') params.set(k, String(v))
+  for (const [key, value] of Object.entries(query ?? {})) {
+    if (value !== undefined && value !== null && value !== '') params.set(key, String(value))
   }
-  const qs = params.toString()
-  return `${API}${path}${qs ? `?${qs}` : ''}`
+  const queryString = params.toString()
+  return `${API}${path}${queryString ? `?${queryString}` : ''}`
 }
 
 /** Quem quer saber quando a sessão caiu (o store da sessão manda para o login). */
 let onUnauthorized: (() => void) | null = null
-export function setUnauthorizedHandler(fn: () => void) {
-  onUnauthorized = fn
+/** Define o que fazer quando a API responde 401. */
+export function setUnauthorizedHandler(handler: () => void) {
+  onUnauthorized = handler
 }
 
-export async function request<T>(method: string, path: string, opts: RequestOptions = {}): Promise<T> {
+/** Chama a API com cookie e CSRF e converte erros em ApiError. */
+export async function request<T>(method: string, path: string, options: RequestOptions = {}): Promise<T> {
   const headers: Record<string, string> = { Accept: 'application/json' }
-  if (opts.body !== undefined) headers['Content-Type'] = 'application/json'
+  if (options.body !== undefined) headers['Content-Type'] = 'application/json'
   if (!SAFE.has(method)) {
     const csrf = readCookie(CSRF_COOKIE)
     if (csrf) headers['X-CSRF-Token'] = csrf
   }
-  let res: Response
+  let response: Response
   try {
-    res = await fetch(url(path, opts.query), {
+    response = await fetch(url(path, options.query), {
       method,
       headers,
       credentials: 'same-origin',
-      body: opts.body === undefined ? undefined : JSON.stringify(opts.body),
-      signal: opts.signal,
+      body: options.body === undefined ? undefined : JSON.stringify(options.body),
+      signal: options.signal,
     })
-  } catch (e) {
-    if (e instanceof DOMException && e.name === 'AbortError') throw e
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') throw error
     throw new ApiError(0, 'network_error', 'sem conexão com o servidor')
   }
-  if (res.status === 204) return undefined as T
-  const data = await res.json().catch(() => null)
-  if (!res.ok) {
-    const err = (data?.error ?? {}) as { code?: string; message?: string; details?: Record<string, unknown> }
-    const retry = res.headers.get('Retry-After')
+  if (response.status === 204) return undefined as T
+  const data = await response.json().catch(() => null)
+  if (!response.ok) {
+    const apiError = (data?.error ?? {}) as { code?: string; message?: string; details?: Record<string, unknown> }
+    const retry = response.headers.get('Retry-After')
     const error = new ApiError(
-      res.status,
-      err.code ?? 'http_error',
-      err.message ?? res.statusText,
-      err.details ?? {},
+      response.status,
+      apiError.code ?? 'http_error',
+      apiError.message ?? response.statusText,
+      apiError.details ?? {},
       retry ? Number(retry) : null,
     )
-    if (res.status === 401 && onUnauthorized && !path.startsWith('/auth/')) onUnauthorized()
+    if (response.status === 401 && onUnauthorized && !path.startsWith('/auth/')) onUnauthorized()
     throw error
   }
   return data as T

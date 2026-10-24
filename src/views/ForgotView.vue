@@ -1,4 +1,5 @@
 <script setup lang="ts">
+/** Tela para pedir o link de nova senha. */
 import { ref } from 'vue'
 import Button from '@/components/ui/Button.vue'
 import Field from '@/components/ui/Field.vue'
@@ -12,14 +13,15 @@ const busy = ref(false)
 const sent = ref<string | null>(null)
 const error = ref<string | null>(null)
 
+/** Pede o link de nova senha para o email. */
 async function submit() {
   busy.value = true
   error.value = null
   try {
     await api.post('/auth/password/forgot', { email: email.value.trim() })
     sent.value = email.value.trim()
-  } catch (e) {
-    error.value = e instanceof ApiError ? errorText(e.code, { s: e.retryAfter ?? 60 }) : errorText('unknown')
+  } catch (failure) {
+    error.value = failure instanceof ApiError ? errorText(failure.code, { s: failure.retryAfter ?? 60 }) : errorText('unknown')
   } finally {
     busy.value = false
   }

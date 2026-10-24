@@ -1,4 +1,5 @@
 <script setup lang="ts">
+/** Raiz do painel: as rotas e os avisos (toasts) no tema escolhido. */
 import { computed } from 'vue'
 import { Toaster } from 'vue-sonner'
 import 'vue-sonner/style.css'

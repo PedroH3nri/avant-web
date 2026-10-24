@@ -1,4 +1,5 @@
 <script setup lang="ts">
+/** Tela de página não encontrada. */
 import AuthFrame from '@/layouts/AuthFrame.vue'
 import { t } from '@/lib/i18n'
 </script>

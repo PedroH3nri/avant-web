@@ -25,75 +25,81 @@ import { useSession } from '@/stores/session'
 type Action = 'disable' | 'reset-mfa'
 
 const session = useSession()
-const q = ref('')
+const searchText = ref('')
 const people = ref<Person[] | null>(null)
 const loadError = ref<string | null>(null)
 const target = ref<{ person: Person; action: Action } | null>(null)
 const busy = ref(false)
 const open = computed({
   get: () => target.value !== null,
-  set: (v) => {
-    if (!v) target.value = null
+  set: (value) => {
+    if (!value) target.value = null
   },
 })
 
-const fail = (e: unknown) => toast.error(errorText(e instanceof ApiError ? e.code : 'unknown'))
+/** Mostra o erro num aviso. */
+const fail = (error: unknown) => toast.error(errorText(error instanceof ApiError ? error.code : 'unknown'))
 
+/** Busca pessoas a partir de 3 caracteres. */
 async function search() {
   loadError.value = null
-  const term = q.value.trim()
+  const term = searchText.value.trim()
   if (term.length < 3) {
     people.value = null
     return
   }
   try {
     people.value = (await api.get<Items<Person>>('/internal/users', { q: term })).items
-  } catch (e) {
-    loadError.value = errorText(e instanceof ApiError ? e.code : 'unknown')
+  } catch (error) {
+    loadError.value = errorText(error instanceof ApiError ? error.code : 'unknown')
   }
 }
 let timer: ReturnType<typeof setTimeout> | undefined
-watch(q, () => {
+watch(searchText, () => {
   clearTimeout(timer)
   timer = setTimeout(search, 300)
 })
 
+/** Atualiza uma pessoa na lista. */
 function update(userId: string, patch: Partial<Person>) {
-  people.value = people.value?.map((p) => (p.user.id === userId ? { ...p, ...patch } : p)) ?? null
+  people.value = people.value?.map((person) => (person.user.id === userId ? { ...person, ...patch } : person)) ?? null
 }
 
-async function enable(p: Person) {
+/** Reativa a conta da pessoa. */
+async function enable(person: Person) {
   try {
-    await api.post(`/internal/users/${p.user.id}/enable`)
-    update(p.user.id, { status: 'active' })
+    await api.post(`/internal/users/${person.user.id}/enable`)
+    update(person.user.id, { status: 'active' })
     toast.success(t('int.enabledNow'))
-  } catch (e) {
-    fail(e)
+  } catch (error) {
+    fail(error)
   }
 }
 
+/** Executa a ação confirmada: desativar a conta ou desligar o 2FA. */
 async function confirm() {
-  const x = target.value
-  if (!x) return
+  const current = target.value
+  if (!current) return
   busy.value = true
   try {
-    await api.post(`/internal/users/${x.person.user.id}/${x.action}`)
-    if (x.action === 'disable') {
-      update(x.person.user.id, { status: 'disabled' })
+    await api.post(`/internal/users/${current.person.user.id}/${current.action}`)
+    if (current.action === 'disable') {
+      update(current.person.user.id, { status: 'disabled' })
       toast.success(t('int.disabledNow'))
     } else {
-      update(x.person.user.id, { mfa_enabled: false })
+      update(current.person.user.id, { mfa_enabled: false })
       toast.success(t('int.mfaReset'))
     }
     target.value = null
-  } catch (e) {
-    fail(e)
+  } catch (error) {
+    fail(error)
   } finally {
     busy.value = false
   }
 }
 
-const isMe = (p: Person) => p.user.id === session.me?.user.id
+/** Diz se a pessoa é quem está vendo. */
+const isMe = (person: Person) => person.user.id === session.me?.user.id
 </script>
 
 <template>
@@ -101,7 +107,7 @@ const isMe = (p: Person) => p.user.id === session.me?.user.id
   <PageBody>
     <div class="relative w-full sm:w-96">
       <Search class="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
-      <Input v-model="q" type="search" :aria-label="t('int.peopleSearch')" class="h-10 bg-card pl-9" :placeholder="t('int.peopleSearch')" autofocus />
+      <Input v-model="searchText" type="search" :aria-label="t('int.peopleSearch')" class="h-10 bg-card pl-9" :placeholder="t('int.peopleSearch')" autofocus />
     </div>
     <LoadError v-if="loadError" :message="loadError" @retry="search" />
     <DataTable v-else :min="820">
@@ -117,37 +123,37 @@ const isMe = (p: Person) => p.user.id === session.me?.user.id
       </thead>
       <tbody>
         <TableState :cols="6" :empty="!people?.length" :icon="Search" :desc="people === null ? t('int.peopleHint') : t('int.peopleNone')" />
-        <tr v-for="p in people ?? []" :key="p.user.id">
+        <tr v-for="person in people ?? []" :key="person.user.id">
           <td :class="td">
-            <div class="font-medium">{{ p.user.name }}</div>
-            <div class="text-[13px] text-muted-foreground">{{ p.user.email }}</div>
+            <div class="font-medium">{{ person.user.name }}</div>
+            <div class="text-[13px] text-muted-foreground">{{ person.user.email }}</div>
           </td>
           <td :class="td">
             <div class="flex flex-wrap gap-1.5">
-              <template v-for="c in p.companies" :key="c.id">
-                <Badge v-if="c.is_internal">Groone</Badge>
-                <RouterLink v-else :to="`/interno/clientes/${c.id}`" class="text-[13px] text-link hover:underline">{{ c.name }}</RouterLink>
+              <template v-for="company in person.companies" :key="company.id">
+                <Badge v-if="company.is_internal">Groone</Badge>
+                <RouterLink v-else :to="`/interno/clientes/${company.id}`" class="text-[13px] text-link hover:underline">{{ company.name }}</RouterLink>
               </template>
-              <span v-if="!p.companies.length" class="text-muted-foreground">–</span>
+              <span v-if="!person.companies.length" class="text-muted-foreground">–</span>
             </div>
           </td>
-          <td :class="[td, 'whitespace-nowrap text-[13px]']">{{ p.mfa_enabled ? t('int.mfaOn') : t('int.mfaOff') }}</td>
+          <td :class="[td, 'whitespace-nowrap text-[13px]']">{{ person.mfa_enabled ? t('int.mfaOn') : t('int.mfaOff') }}</td>
           <td :class="[td, 'whitespace-nowrap text-[13px] text-muted-foreground']">
-            <time v-if="p.last_login_at" :datetime="p.last_login_at" :title="formatDate(p.last_login_at)">{{ formatAgo(p.last_login_at) }}</time>
+            <time v-if="person.last_login_at" :datetime="person.last_login_at" :title="formatDate(person.last_login_at)">{{ formatAgo(person.last_login_at) }}</time>
             <template v-else>{{ t('common.never') }}</template>
           </td>
           <td :class="td">
-            <Status :tone="p.status === 'active' ? 'ok' : 'bad'">{{ t(`int.user.${p.status}`) }}</Status>
+            <Status :tone="person.status === 'active' ? 'ok' : 'bad'">{{ t(`int.user.${person.status}`) }}</Status>
           </td>
           <td :class="td">
-            <DropdownMenuRoot v-if="!isMe(p)">
+            <DropdownMenuRoot v-if="!isMe(person)">
               <DropdownMenuTrigger as-child>
-                <Button variant="ghost" size="icon" class="size-8" :aria-label="t('int.actionsFor', { name: p.user.name })"><MoreHorizontal /></Button>
+                <Button variant="ghost" size="icon" class="size-8" :aria-label="t('int.actionsFor', { name: person.user.name })"><MoreHorizontal /></Button>
               </DropdownMenuTrigger>
               <MenuContent align="end" class="w-52">
-                <MenuItem v-if="p.mfa_enabled" @select="target = { person: p, action: 'reset-mfa' }">{{ t('int.resetMfa') }}</MenuItem>
-                <MenuItem v-if="p.status === 'disabled'" @select="enable(p)">{{ t('int.enable') }}</MenuItem>
-                <MenuItem v-else danger @select="target = { person: p, action: 'disable' }">{{ t('int.disable') }}</MenuItem>
+                <MenuItem v-if="person.mfa_enabled" @select="target = { person: person, action: 'reset-mfa' }">{{ t('int.resetMfa') }}</MenuItem>
+                <MenuItem v-if="person.status === 'disabled'" @select="enable(person)">{{ t('int.enable') }}</MenuItem>
+                <MenuItem v-else danger @select="target = { person: person, action: 'disable' }">{{ t('int.disable') }}</MenuItem>
               </MenuContent>
             </DropdownMenuRoot>
           </td>

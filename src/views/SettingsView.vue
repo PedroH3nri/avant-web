@@ -1,4 +1,5 @@
 <script setup lang="ts">
+/** Configurações da Empresa: nome, cor de destaque e tema. */
 import { computed, onMounted, ref } from 'vue'
 import { toast } from 'vue-sonner'
 import { RadioGroupIndicator, RadioGroupItem, RadioGroupRoot } from 'reka-ui'
@@ -27,6 +28,7 @@ const canEdit = computed(() => session.can('company.edit'))
 const nameInvalid = computed(() => name.value.trim().length < 2)
 const themes: Theme[] = ['light', 'dark', 'system']
 
+/** Carrega a Empresa. */
 async function load() {
   loadError.value = null
   if (!session.company) return
@@ -34,12 +36,13 @@ async function load() {
     company.value = await api.get<CompanyDetail>('/company')
     name.value = company.value.name
     accent.value = accentFor(company.value.accent_color).id
-  } catch (e) {
-    loadError.value = e instanceof ApiError ? errorText(e.code) : errorText('unknown')
+  } catch (error) {
+    loadError.value = error instanceof ApiError ? errorText(error.code) : errorText('unknown')
   }
 }
 onMounted(load)
 
+/** Salva uma mudança da Empresa, marcando o botão como ocupado. */
 async function save(body: Record<string, unknown>, busy: typeof savingName) {
   busy.value = true
   try {
@@ -47,17 +50,19 @@ async function save(body: Record<string, unknown>, busy: typeof savingName) {
     // O seletor de Empresas e a cor vêm do /auth/me.
     await session.load()
     toast.success(t('common.saved'))
-  } catch (e) {
-    toast.error(e instanceof ApiError ? errorText(e.code) : errorText('unknown'))
+  } catch (error) {
+    toast.error(error instanceof ApiError ? errorText(error.code) : errorText('unknown'))
   } finally {
     busy.value = false
   }
 }
 
+/** Salva o nome da Empresa. */
 const saveName = () => save({ name: name.value.trim() }, savingName)
-const saveAccent = () => save({ accent_color: ACCENTS.find((a) => a.id === accent.value)!.hex }, savingAccent)
+/** Salva a cor de destaque da Empresa. */
+const saveAccent = () => save({ accent_color: ACCENTS.find((option) => option.id === accent.value)!.hex }, savingAccent)
 // Prévia na hora; se não salvar, a cor da Empresa volta ao recarregar.
-const preview = (id: string) => applyAccent(ACCENTS.find((a) => a.id === id)!.hex)
+const preview = (id: string) => applyAccent(ACCENTS.find((option) => option.id === id)!.hex)
 </script>
 
 <template>
@@ -84,22 +89,22 @@ const preview = (id: string) => applyAccent(ACCENTS.find((a) => a.id === id)!.he
         :disabled="!canEdit"
         class="flex flex-wrap gap-2"
         :aria-label="t('set.accent')"
-        @update:model-value="(v) => preview(String(v))"
+        @update:model-value="(value) => preview(String(value))"
       >
         <RadioGroupItem
-          v-for="a in ACCENTS"
-          :key="a.id"
-          :value="a.id"
+          v-for="accentOption in ACCENTS"
+          :key="accentOption.id"
+          :value="accentOption.id"
           :class="
             cn(
               'flex h-10 items-center gap-2 rounded-md border bg-background px-3 text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 data-[state=checked]:border-foreground',
             )
           "
         >
-          <span class="relative grid h-4 w-4 place-items-center rounded-full" :style="{ background: a.id === 'default' ? 'hsl(var(--foreground))' : a.hex }">
+          <span class="relative grid h-4 w-4 place-items-center rounded-full" :style="{ background: accentOption.id === 'default' ? 'hsl(var(--foreground))' : accentOption.hex }">
             <RadioGroupIndicator class="h-1.5 w-1.5 rounded-full bg-background" />
           </span>
-          {{ t(`accent.${a.id}`) }}
+          {{ t(`accent.${accentOption.id}`) }}
         </RadioGroupItem>
       </RadioGroupRoot>
       <template #note>{{ canEdit ? t('set.accentNote') : t('set.accentReadonly') }}</template>
@@ -111,19 +116,19 @@ const preview = (id: string) => applyAccent(ACCENTS.find((a) => a.id === id)!.he
     <Card :title="t('set.theme')" :desc="t('set.themeDesc')">
       <div class="flex max-w-[360px] rounded-md border bg-background p-0.5" role="group" :aria-label="t('set.theme')">
         <button
-          v-for="m in themes"
-          :key="m"
+          v-for="themeOption in themes"
+          :key="themeOption"
           type="button"
-          :aria-pressed="theme === m"
+          :aria-pressed="theme === themeOption"
           :class="
             cn(
               'h-8 flex-1 rounded-[4px] text-[13px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-              theme === m ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground',
+              theme === themeOption ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground',
             )
           "
-          @click="theme = m"
+          @click="theme = themeOption"
         >
-          {{ t(`set.theme.${m}`) }}
+          {{ t(`set.theme.${themeOption}`) }}
         </button>
       </div>
     </Card>

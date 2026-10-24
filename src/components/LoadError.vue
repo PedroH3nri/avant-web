@@ -1,4 +1,5 @@
 <script setup lang="ts">
+/** Aviso de falha ao carregar, com botão para tentar de novo. */
 import { AlertTriangle } from 'lucide-vue-next'
 import Button from '@/components/ui/Button.vue'
 import { t } from '@/lib/i18n'
