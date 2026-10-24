@@ -17,20 +17,43 @@ export const useSession = defineStore('session', () => {
   const internalCompany = computed(() => me.value?.companies.find((c) => c.is_internal) ?? null)
   const clientCompanies = computed(() => me.value?.companies.filter((c) => !c.is_internal) ?? [])
   const permissions = computed(() => new Set(me.value?.permissions ?? []))
+  // A API só devolve as permissões da Empresa ativa. Guardamos as de cada Empresa por onde a
+  // pessoa passou, para o menu lateral não mudar quando ela troca de Empresa.
+  const knownPermissions = ref<Record<string, string[]>>({})
+  /** A última Empresa cliente ativa: o menu volta para ela a partir do painel interno. */
+  const lastClientId = ref<string | null>(null)
 
   /** Mesma regra do avant-core: ``*`` cobre tudo e ``team.*`` cobre ``team.invite``. */
-  function can(wanted: string): boolean {
-    for (const p of permissions.value) {
+  function grants(granted: Iterable<string>, wanted: string): boolean {
+    for (const p of granted) {
       if (p === '*' || p === wanted) return true
       if (p.endsWith('.*') && wanted.startsWith(p.slice(0, -1))) return true
     }
     return false
   }
 
+  function can(wanted: string): boolean {
+    return grants(permissions.value, wanted)
+  }
+
+  /** Permissão numa Empresa que pode não ser a ativa. Sem saber ainda, mostra: a API decide. */
+  function canIn(companyId: string, wanted: string): boolean {
+    if (companyId === me.value?.active_company_id) return can(wanted)
+    const known = knownPermissions.value[companyId]
+    return known ? grants(known, wanted) : true
+  }
+
   function set(value: Me | null) {
     const first = me.value === null && value !== null
     me.value = value
     loaded.value = true
+    if (value === null) {
+      knownPermissions.value = {}
+      lastClientId.value = null
+    } else if (value.active_company_id) {
+      knownPermissions.value = { ...knownPermissions.value, [value.active_company_id]: value.permissions }
+      if (!company.value?.is_internal) lastClientId.value = value.active_company_id
+    }
     applyAccent(company.value?.accent_color)
     // Na primeira carga, o idioma da conta vale se a pessoa ainda não escolheu outro aqui.
     if (first && value && !langChosen()) lang.value = value.user.locale
@@ -69,5 +92,5 @@ export const useSession = defineStore('session', () => {
     reconnectEvents()
   }
 
-  return { me, loaded, company, internalCompany, clientCompanies, can, set, load, login, verifyMfa, logout, switchCompany }
+  return { me, loaded, company, internalCompany, clientCompanies, lastClientId, can, canIn, set, load, login, verifyMfa, logout, switchCompany }
 })
