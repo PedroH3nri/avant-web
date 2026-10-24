@@ -2,7 +2,7 @@
 import { computed, type Component } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { DropdownMenuRoot, DropdownMenuTrigger } from 'reka-ui'
-import { Building2, ChevronsUpDown, Globe, Home, Lock, LogOut, Network, Settings, UserRound, Users, UserSearch } from 'lucide-vue-next'
+import { Building2, ChevronsUpDown, Globe, Home, LogOut, Network, Settings, ShieldCheck, UserRound, Users, UserSearch } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 import Avatar from '@/components/ui/Avatar.vue'
 import Mark from '@/components/ui/Mark.vue'
@@ -27,10 +27,12 @@ type Item = { to: string; key: Key; icon: Component }
 const CLIENT: Item[] = [
   { to: '/', key: 'nav.home', icon: Home },
   { to: '/equipe', key: 'nav.team', icon: Users },
+  { to: '/papeis', key: 'nav.roles', icon: ShieldCheck },
   { to: '/networks', key: 'nav.networks', icon: Network },
   { to: '/sites', key: 'nav.sites', icon: Globe },
-  { to: '/configuracoes', key: 'nav.settings', icon: Settings },
 ]
+// Configurações da Empresa cliente: no rodapé, junto da conta.
+const SETTINGS: Item = { to: '/configuracoes', key: 'nav.settings', icon: Settings }
 const INTERNAL: Item[] = [
   { to: '/interno', key: 'int.clients', icon: Building2 },
   { to: '/interno/pessoas', key: 'int.people', icon: UserSearch },
@@ -47,8 +49,6 @@ const clientId = computed(() => {
 })
 const staff = computed(() => !!session.internalCompany)
 const onInternal = computed(() => route.meta.internal === true)
-// Entram na próxima fase do Avant.
-const soon: Key[] = ['nav.metrics', 'nav.dashboards']
 
 function active(to: string, internalItem: boolean) {
   if (internalItem !== onInternal.value) return false
@@ -119,7 +119,6 @@ async function logout() {
       </template>
       <!-- Equipe Groone que ainda não está em nenhuma Empresa cliente: os itens ficam, inativos. -->
       <span v-for="i in clientId ? [] : CLIENT" :key="i.to" :class="idle" :title="t('nav.noClient')"><component :is="i.icon" />{{ t(i.key) }}</span>
-      <span v-for="k in soon" :key="k" :class="idle"><Lock />{{ t(k) }}<span class="ml-auto text-[12px]">{{ t('nav.soon') }}</span></span>
       <template v-if="staff">
         <div :class="group">{{ t('nav.groupInternal') }}</div>
         <RouterLink
@@ -134,7 +133,19 @@ async function logout() {
         </RouterLink>
       </template>
     </nav>
-    <div class="mt-auto grid gap-3 border-t p-3">
+    <div class="mt-auto grid gap-1 border-t p-3">
+      <template v-if="ready">
+        <RouterLink
+          v-if="clientId"
+          :to="SETTINGS.to"
+          :aria-current="active(SETTINGS.to, false) ? 'page' : undefined"
+          :class="item(active(SETTINGS.to, false))"
+          @click="goClient($event, SETTINGS.to)"
+        >
+          <component :is="SETTINGS.icon" />{{ t(SETTINGS.key) }}
+        </RouterLink>
+        <span v-else :class="idle" :title="t('nav.noClient')"><component :is="SETTINGS.icon" />{{ t(SETTINGS.key) }}</span>
+      </template>
       <DropdownMenuRoot>
         <DropdownMenuTrigger
           class="flex items-center gap-2.5 rounded-md p-1.5 text-left hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
