@@ -2,7 +2,8 @@
 /** Painel interno: clientes, novo cliente (convite de dono) e convites de dono pendentes. */
 import { computed, onMounted, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
-import { Building2, Search } from 'lucide-vue-next'
+import { useRouter } from 'vue-router'
+import { Building2, Search, UserSearch } from 'lucide-vue-next'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import LoadError from '@/components/LoadError.vue'
 import PageBody from '@/components/PageBody.vue'
@@ -28,6 +29,8 @@ type Tab = 'all' | CompanyPlan | 'suspended'
 
 const session = useSession()
 const canManage = computed(() => session.can('internal.clients.manage'))
+const canSearchPeople = computed(() => session.can('internal.users.manage'))
+const router = useRouter()
 const clients = ref<Client[] | null>(null)
 const invites = ref<OwnerInvitation[]>([])
 const loadError = ref<string | null>(null)
@@ -158,8 +161,9 @@ const expired = (iso: string) => new Date(iso).getTime() <= Date.now()
 
 <template>
   <PageHeader :title="t('int.clients')" :sub="t('int.sub')">
-    <template v-if="canManage" #actions>
-      <Button :variant="adding ? 'outline' : 'default'" :aria-expanded="adding" @click="adding = !adding">
+    <template #actions>
+      <Button v-if="canSearchPeople" variant="outline" @click="router.push('/interno/pessoas')"><UserSearch />{{ t('int.peopleSearchOpen') }}</Button>
+      <Button v-if="canManage" :variant="adding ? 'outline' : 'default'" :aria-expanded="adding" @click="adding = !adding">
         {{ adding ? t('common.cancel') : t('int.new') }}
       </Button>
     </template>

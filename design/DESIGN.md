@@ -139,7 +139,7 @@ Geist for everything; Geist Mono only for network codes, the service-account ema
 
 ## Layout
 
-Left sidebar (248px, #FAFAFA, hairline right border): mark and "Avant by Groone" wordmark at the top, navigation with icons, a "Em breve" group for locked areas, and at the bottom the internal-panel link and the account. A 56px white navbar over the main column holds the company switcher (left) and the PT/EN/ES switch (right); its bottom border lines up with the sidebar header. Below 1024px the sidebar becomes a drawer opened from a menu button in that same navbar. The main column starts with a white page-header band with the title; then the work area on the #FAFAFA band, max width 1200px, 24px gaps. Settings use a 200px section list beside the cards. Tables scroll inside their own container on phones.
+Left sidebar (248px, #FAFAFA, hairline right border): mark and "Avant by Groone" wordmark at the top, navigation with icons in a fixed order (Dashboard; group Clientes: Clientes, Equipes, Networks, Contratos, Sites; group Relatórios: Ad Manager, Page Views; group Empresa: Equipe Groone, Papéis e permissões; items of the Groone team only are hidden for clients), and at the bottom Configurações and the account. A 56px white navbar over the main column holds the company switcher (left) and the PT/EN/ES switch (right); its bottom border lines up with the sidebar header. Below 1024px the sidebar becomes a drawer opened from a menu button in that same navbar. The main column starts with a white page-header band with the title; then the work area on the #FAFAFA band, max width 1200px, 24px gaps. Settings use a 200px section list beside the cards. Tables scroll inside their own container on phones.
 
 ## Elevation & Depth
 
@@ -161,7 +161,7 @@ A card has a body (24px padding, 20px title, muted description) and, when it sav
 40px, label above in 13px muted, hint or error below in 13px. Errors say what is wrong and how to fix it.
 
 ### Navigation
-Sidebar items are 36px rows with a 16px icon; the active item gets the chip fill and medium weight, inactive items are gray and get a soft fill on hover. A red dot on an item flags a problem inside it (a network without access). Locked future areas (Métricas, Dashboards) sit under "Em breve" with a lock.
+Sidebar items are 36px rows with a 16px icon; the active item gets the chip fill and medium weight, inactive items are gray and get a soft fill on hover. A red dot on an item flags a problem inside it (a network without access). Every item opens a working screen: no locked or "Em breve" items.
 
 ### Seat usage bar
 One segment per seat of the Groone staff limit: ink for people, amber for pending invites, gray for free seats, with a legend underneath. The same strip, smaller, sits in the internal clients table.

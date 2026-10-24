@@ -3,7 +3,7 @@
 import { computed, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
 import { DropdownMenuRoot, DropdownMenuTrigger } from 'reka-ui'
-import { MoreHorizontal, Search } from 'lucide-vue-next'
+import { ArrowLeft, MoreHorizontal, Search } from 'lucide-vue-next'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import LoadError from '@/components/LoadError.vue'
 import PageBody from '@/components/PageBody.vue'
@@ -103,7 +103,13 @@ const isMe = (person: Person) => person.user.id === session.me?.user.id
 </script>
 
 <template>
-  <PageHeader :title="t('int.people')" :sub="t('int.peopleSub')" />
+  <PageHeader :title="t('int.people')" :sub="t('int.peopleSub')">
+    <template #back>
+      <RouterLink to="/interno" class="mb-3 inline-flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-foreground">
+        <ArrowLeft class="size-4" />{{ t('int.back') }}
+      </RouterLink>
+    </template>
+  </PageHeader>
   <PageBody>
     <div class="relative w-full sm:w-96">
       <Search class="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
