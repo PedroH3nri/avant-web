@@ -18,43 +18,34 @@ const session = useSession()
 const route = useRoute()
 const router = useRouter()
 
-type Item = { to: string; key: Key; icon: Component; permission?: string }
+type Item = { to: string; key: Key; icon: Component }
 
-// O menu é sempre o mesmo, seja qual for a rota: muda só com as Empresas e as permissões
-// da pessoa. O grupo da Empresa leva para a Empresa cliente; o grupo Groone, para o painel
-// interno (o guarda do router troca para a Company Groone).
+// O menu é imutável: os mesmos itens em todas as rotas e Empresas, sem filtrar por permissão
+// (o guarda do router e a API decidem o acesso). O grupo Clientes abre a Empresa cliente; o
+// grupo Empresa interna, que só a equipe Groone vê, abre o painel interno (o guarda troca
+// para a Company Groone).
 const CLIENT: Item[] = [
   { to: '/', key: 'nav.home', icon: Home },
-  { to: '/equipe', key: 'nav.team', icon: Users, permission: 'team.view' },
-  { to: '/networks', key: 'nav.networks', icon: Network, permission: 'network.view' },
-  { to: '/sites', key: 'nav.sites', icon: Globe, permission: 'sites.view' },
+  { to: '/equipe', key: 'nav.team', icon: Users },
+  { to: '/networks', key: 'nav.networks', icon: Network },
+  { to: '/sites', key: 'nav.sites', icon: Globe },
   { to: '/configuracoes', key: 'nav.settings', icon: Settings },
 ]
 const INTERNAL: Item[] = [
-  { to: '/interno', key: 'int.clients', icon: Building2, permission: 'internal.clients.view' },
-  { to: '/interno/pessoas', key: 'int.people', icon: UserSearch, permission: 'internal.users.manage' },
-  { to: '/interno/equipe', key: 'int.staff', icon: Users, permission: 'internal.staff.manage' },
-  { to: '/interno/networks', key: 'int.mcm', icon: Network, permission: 'internal.networks.assign' },
+  { to: '/interno', key: 'int.clients', icon: Building2 },
+  { to: '/interno/pessoas', key: 'int.people', icon: UserSearch },
+  { to: '/interno/equipe', key: 'int.staff', icon: Users },
+  { to: '/interno/networks', key: 'int.mcm', icon: Network },
 ]
 
 const ready = computed(() => !!session.me && !session.me.mfa_setup_required)
-/** A Empresa cliente do grupo da Empresa: a ativa ou a última por onde a pessoa passou. */
+/** A Empresa cliente do grupo Clientes: a ativa ou a última por onde a pessoa passou. */
 const clientId = computed(() => {
   if (session.company && !session.company.is_internal) return session.company.id
   const last = session.clientCompanies.find((c) => c.id === session.lastClientId)
   return (last ?? session.clientCompanies[0])?.id ?? null
 })
-const clientItems = computed(() => {
-  const id = clientId.value
-  if (!ready.value || !id) return []
-  return CLIENT.filter((i) => !i.permission || session.canIn(id, i.permission))
-})
-const internalItems = computed(() => {
-  const groone = session.internalCompany
-  if (!ready.value || !groone) return []
-  return INTERNAL.filter((i) => !i.permission || session.canIn(groone.id, i.permission))
-})
-const both = computed(() => clientItems.value.length > 0 && internalItems.value.length > 0)
+const staff = computed(() => !!session.internalCompany)
 const onInternal = computed(() => route.meta.internal === true)
 // Entram na próxima fase do Avant.
 const soon: Key[] = ['nav.metrics', 'nav.dashboards']
@@ -69,6 +60,7 @@ function active(to: string, internalItem: boolean) {
   return route.path === to || route.path.startsWith(`${to}/`)
 }
 const group = 'px-2.5 pb-1 pt-5 text-[12px] font-medium text-muted-foreground first:pt-0'
+const idle = 'flex h-9 items-center gap-2.5 px-2.5 text-[14px] text-muted-foreground/70 [&_svg]:size-4'
 const item = (on: boolean) =>
   cn(
     'flex h-9 w-full items-center gap-2.5 rounded-md px-2.5 text-left text-[14px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-4',
@@ -111,11 +103,11 @@ async function logout() {
         <span class="block text-[12px] text-muted-foreground">by Groone</span>
       </span>
     </div>
-    <nav class="grid gap-0.5 overflow-y-auto p-3" :aria-label="t('nav.main')">
-      <template v-if="clientItems.length">
-        <div v-if="both" :class="group">{{ t('nav.groupCompany') }}</div>
+    <nav v-if="ready" class="grid gap-0.5 overflow-y-auto p-3" :aria-label="t('nav.main')">
+      <div :class="group">{{ t('nav.groupClients') }}</div>
+      <template v-if="clientId">
         <RouterLink
-          v-for="i in clientItems"
+          v-for="i in CLIENT"
           :key="i.to"
           :to="i.to"
           :aria-current="active(i.to, false) ? 'page' : undefined"
@@ -124,13 +116,14 @@ async function logout() {
         >
           <component :is="i.icon" />{{ t(i.key) }}
         </RouterLink>
-        <div :class="group">{{ t('nav.soon') }}</div>
-        <span v-for="k in soon" :key="k" class="flex h-9 items-center gap-2.5 px-2.5 text-[14px] text-muted-foreground/70"><Lock class="size-4" />{{ t(k) }}</span>
       </template>
-      <template v-if="internalItems.length">
-        <div v-if="both" :class="group">{{ t('nav.groupGroone') }}</div>
+      <!-- Equipe Groone que ainda não está em nenhuma Empresa cliente: os itens ficam, inativos. -->
+      <span v-for="i in clientId ? [] : CLIENT" :key="i.to" :class="idle" :title="t('nav.noClient')"><component :is="i.icon" />{{ t(i.key) }}</span>
+      <span v-for="k in soon" :key="k" :class="idle"><Lock />{{ t(k) }}<span class="ml-auto text-[12px]">{{ t('nav.soon') }}</span></span>
+      <template v-if="staff">
+        <div :class="group">{{ t('nav.groupInternal') }}</div>
         <RouterLink
-          v-for="i in internalItems"
+          v-for="i in INTERNAL"
           :key="i.to"
           :to="i.to"
           :aria-current="active(i.to, true) ? 'page' : undefined"

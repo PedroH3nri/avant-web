@@ -60,17 +60,31 @@ describe('SidebarNav', () => {
     expect(w.find('[aria-current="page"]').text()).toBe('Pessoas')
   })
 
-  it('segue as permissões da Empresa cliente mesmo com a Groone ativa', async () => {
+  it('não esconde itens por permissão nem troca os grupos ao clicar em Início', async () => {
     const session = useSession()
-    session.set(me('c', ['sites.view']))
     session.set(me('g', ['internal.clients.view']))
     const r = router()
     await r.push('/interno')
     const w = mount(SidebarNav, { global: { plugins: [r] } })
-    const shown = labels(w)
-    expect(shown).toContain('Sites')
-    expect(shown).not.toContain('Equipe')
-    expect(shown).toContain('Clientes')
-    expect(shown).not.toContain('Pessoas')
+    const before = labels(w)
+    expect(before).toEqual(['Início', 'Equipe', 'Networks do GAM', 'Sites', 'Configurações', 'Clientes', 'Pessoas', 'Equipe Groone', 'MCM sem dono'])
+    expect(w.text()).toContain('Empresa (interna)')
+
+    session.set(me('c', ['sites.view']))
+    await r.push('/')
+    await flushPromises()
+    expect(labels(w)).toEqual(before)
+    expect(w.find('nav [aria-current="page"]').text()).toBe('Início')
+  })
+
+  it('quem não é da equipe Groone não vê o grupo interno', async () => {
+    const session = useSession()
+    const m = me('c', ['*'])
+    session.set({ ...m, companies: m.companies.filter((c) => !c.is_internal), is_staff: false })
+    const r = router()
+    await r.push('/')
+    const w = mount(SidebarNav, { global: { plugins: [r] } })
+    expect(labels(w)).toEqual(['Início', 'Equipe', 'Networks do GAM', 'Sites', 'Configurações'])
+    expect(w.text()).not.toContain('Empresa (interna)')
   })
 })
