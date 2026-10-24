@@ -8,8 +8,10 @@ import PageBody from '@/components/PageBody.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import Badge from '@/components/ui/Badge.vue'
 import Button from '@/components/ui/Button.vue'
+import Card from '@/components/ui/Card.vue'
 import Checkbox from '@/components/ui/Checkbox.vue'
 import DataTable from '@/components/ui/DataTable.vue'
+import Field from '@/components/ui/Field.vue'
 import Input from '@/components/ui/Input.vue'
 import NativeSelect from '@/components/ui/NativeSelect.vue'
 import Status from '@/components/ui/Status.vue'
@@ -26,6 +28,7 @@ import { useSession } from '@/stores/session'
 const session = useSession()
 const router = useRouter()
 const canConnect = computed(() => session.can('network.connect'))
+const canManage = computed(() => session.can('sites.manage'))
 const sites = ref<SiteListItem[] | null>(null)
 const networks = ref<Network[]>([])
 const unlinked = ref<AdUnit[] | null>(null)
@@ -68,9 +71,30 @@ onMounted(async () => {
 })
 watch([networkId, archived], loadSites)
 
-const netName = (id: string) => {
+const netName = (id: string | null) => {
   const n = networks.value.find((x) => x.id === id)
   return n ? networkName(n) : ''
+}
+
+// Cadastro manual: o site fica aguardando o GAM
+const adding = ref(false)
+const domain = ref('')
+const saving = ref(false)
+const domainOk = computed(() => /^[^\s.]+(\.[^\s.]+)+$/.test(domain.value.trim().replace(/^[a-z]+:\/\//i, '').split('/')[0] ?? ''))
+async function addSite() {
+  if (!domainOk.value) return
+  saving.value = true
+  try {
+    const site = await api.post<SiteListItem>('/sites', { domain: domain.value.trim() })
+    sites.value = [...(sites.value ?? []), site].sort((a, b) => a.domain.localeCompare(b.domain))
+    toast.success(t('sites.added', { domain: site.domain }))
+    domain.value = ''
+    adding.value = false
+  } catch (e) {
+    toast.error(errorText(e instanceof ApiError ? e.code : 'unknown'))
+  } finally {
+    saving.value = false
+  }
 }
 const networkOptions = computed(() => [{ value: '', label: t('sites.allNetworks') }, ...networks.value.map((n) => ({ value: n.id, label: networkName(n) }))])
 const shown = computed(() => {
@@ -104,8 +128,25 @@ const tab = (on: boolean) =>
 </script>
 
 <template>
-  <PageHeader :title="t('sites.title')" :sub="t('sites.sub')" />
+  <PageHeader :title="t('sites.title')" :sub="t('sites.sub')">
+    <template v-if="canManage" #actions>
+      <Button :variant="adding ? 'outline' : 'default'" :aria-expanded="adding" @click="adding = !adding">
+        {{ adding ? t('common.cancel') : t('sites.add') }}
+      </Button>
+    </template>
+  </PageHeader>
   <PageBody>
+    <Card v-if="adding" :title="t('sites.add')" :desc="t('sites.addDesc')">
+      <form id="new-site" class="max-w-md" @submit.prevent="addSite">
+        <Field id="ns-domain" :label="t('sites.domain')">
+          <Input id="ns-domain" v-model="domain" autocomplete="off" placeholder="meusite.com.br" />
+        </Field>
+      </form>
+      <template #footer>
+        <Button type="submit" form="new-site" :loading="saving" :disabled="!domainOk">{{ t('sites.add') }}</Button>
+      </template>
+    </Card>
+
     <LoadError v-if="loadError" :message="loadError" @retry="loadSites" />
 
     <div class="flex flex-wrap items-center gap-3">
@@ -147,7 +188,10 @@ const tab = (on: boolean) =>
             :title="sites?.length ? undefined : t('sites.empty')"
             :desc="sites?.length ? t('sites.noMatch') : assignedOnly ? t('sites.emptyAssigned') : t('sites.emptySub')"
           >
-            <Button v-if="!sites?.length && canConnect" size="sm" @click="router.push('/networks/conectar')">{{ t('net.connect') }}</Button>
+            <template v-if="!sites?.length">
+              <Button v-if="canConnect" size="sm" @click="router.push('/networks/conectar')">{{ t('net.connect') }}</Button>
+              <Button v-if="canManage && !adding" size="sm" variant="outline" @click="adding = true">{{ t('sites.add') }}</Button>
+            </template>
           </TableState>
           <tr v-for="s in shown" :key="s.id" class="hover:bg-muted">
             <td :class="td">
@@ -156,10 +200,12 @@ const tab = (on: boolean) =>
             </td>
             <td v-if="networks.length" :class="[td, 'text-muted-foreground']">{{ netName(s.network_id) }}</td>
             <td :class="td">
-              <Status :tone="approval(s.approval_status).tone">{{ approval(s.approval_status).label }}</Status>
+              <Status :tone="approval(s).tone">{{ approval(s).label }}</Status>
             </td>
             <td :class="[td, 'text-right tnum']">{{ s.ad_units }}</td>
-            <td :class="[td, 'text-muted-foreground']" :title="formatDate(s.synced_at)">{{ formatAgo(s.synced_at) }}</td>
+            <td :class="[td, 'text-muted-foreground']" :title="s.synced_at ? formatDate(s.synced_at) : undefined">
+              {{ s.synced_at ? formatAgo(s.synced_at) : '' }}
+            </td>
           </tr>
         </tbody>
       </DataTable>

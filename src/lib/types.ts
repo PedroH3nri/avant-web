@@ -150,11 +150,12 @@ export interface MemberDetail extends Member {
 
 export interface Site {
   id: string
-  network_id: string
+  network_id: string | null // vazio enquanto aguarda o GAM
   domain: string
   approval_status: string | null
   status: 'active' | 'archived'
-  synced_at: string
+  synced_at: string | null
+  awaiting_gam: boolean // cadastrado à mão, o GAM ainda não trouxe
 }
 
 export interface SiteListItem extends Site {

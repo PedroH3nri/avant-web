@@ -1,11 +1,13 @@
 import { t } from './i18n'
-import type { AdUnit } from './types'
+import type { AdUnit, Site } from './types'
 
-type Tone = 'ok' | 'warn' | 'bad' | 'neutral'
+type Tone = 'ok' | 'warn' | 'bad' | 'ochre' | 'neutral'
 
-/** Aprovação do site no Ad Manager, como vem do GAM (APPROVED, DRAFT...). */
-export function approval(status: string | null): { tone: Tone; label: string } {
-  switch (status?.toUpperCase()) {
+/** Aprovação do site no Ad Manager, como vem do GAM (APPROVED, DRAFT...). O site cadastrado
+ * à mão ainda não tem: fica "aguardando GAM". */
+export function approval(site: Pick<Site, 'approval_status' | 'awaiting_gam'>): { tone: Tone; label: string } {
+  if (site.awaiting_gam) return { tone: 'ochre', label: t('sites.awaiting') }
+  switch (site.approval_status?.toUpperCase()) {
     case undefined:
     case '':
       return { tone: 'neutral', label: t('sites.approval.none') }

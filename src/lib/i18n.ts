@@ -509,9 +509,9 @@ const dict = {
   // Sites
   'sites.title': ['Sites', 'Sites', 'Sitios'],
   'sites.sub': [
-    'Os sites e ad units que chegam das networks do GAM. A importação roda sozinha a cada 6 horas.',
-    'The sites and ad units that come from GAM networks. Import runs on its own every 6 hours.',
-    'Los sitios y ad units que llegan de las networks de GAM. La importación corre sola cada 6 horas.',
+    'Os sites e ad units que chegam das networks do GAM, mais os cadastrados à mão. A importação roda sozinha a cada 6 horas.',
+    'The sites and ad units that come from GAM networks, plus the ones added by hand. Import runs on its own every 6 hours.',
+    'Los sitios y ad units que llegan de las networks de GAM, más los registrados a mano. La importación corre sola cada 6 horas.',
   ],
   'sites.tab.sites': ['Sites', 'Sites', 'Sitios'],
   'sites.tab.unlinked': ['Ad units sem site', 'Ad units without a site', 'Ad units sin sitio'],
@@ -541,6 +541,28 @@ const dict = {
     'No site has been assigned to you. Ask your team manager.',
     'No se te asignó ningún sitio. Pídelo a quien gestiona el equipo.',
   ],
+  'sites.add': ['Adicionar site', 'Add site', 'Agregar sitio'],
+  'sites.addDesc': [
+    'Cadastre pelo domínio. O site fica aguardando o GAM e se junta sozinho ao site com o mesmo domínio na próxima importação.',
+    'Add it by domain. The site waits for GAM and merges on its own with the site of the same domain on the next import.',
+    'Regístralo por el dominio. El sitio queda esperando a GAM y se une solo al sitio con el mismo dominio en la próxima importación.',
+  ],
+  'sites.domain': ['Domínio', 'Domain', 'Dominio'],
+  'sites.added': ['{domain} cadastrado, aguardando o GAM', '{domain} added, waiting for GAM', '{domain} registrado, esperando a GAM'],
+  'sites.awaiting': ['Aguardando GAM', 'Waiting for GAM', 'Esperando a GAM'],
+  'site.awaitingDesc': [
+    'Este site foi cadastrado à mão. Quando a importação do GAM trouxer um site com o mesmo domínio, os dois viram um só e os ad units aparecem aqui.',
+    'This site was added by hand. When the GAM import brings a site with the same domain, they become one and the ad units show up here.',
+    'Este sitio se registró a mano. Cuando la importación de GAM traiga un sitio con el mismo dominio, se vuelven uno y los ad units aparecen aquí.',
+  ],
+  'site.remove': ['Remover site', 'Remove site', 'Quitar sitio'],
+  'site.removeTitle': ['Remover {domain}?', 'Remove {domain}?', '¿Quitar {domain}?'],
+  'site.removeDesc': [
+    'O cadastro sai do Avant, junto com as atribuições. Você pode cadastrar de novo depois.',
+    'The entry leaves Avant, along with its assignments. You can add it again later.',
+    'El registro sale de Avant, junto con las asignaciones. Puedes registrarlo de nuevo después.',
+  ],
+  'site.removed': ['{domain} removido', '{domain} removed', '{domain} quitado'],
   'sites.noMatch': ['Nenhum site combina com o filtro.', 'No site matches the filter.', 'Ningún sitio coincide con el filtro.'],
   'sites.unlinkedSub': [
     'Ad units que a importação não conseguiu ligar a um site pelo nome. Ligue à mão para entrarem nas métricas do site certo.',
@@ -1047,6 +1069,12 @@ const errors: Record<string, readonly [string, string, string]> = {
     'This network is already connected to a company on Avant. If it is yours, contact Groone.',
     'Esta network ya está conectada a una empresa en Avant. Si es tuya, habla con Groone.',
   ],
+  site_exists: [
+    'A Empresa já tem esse site. Ele pode estar arquivado: marque "Mostrar arquivados".',
+    'The company already has this site. It may be archived: check "Show archived".',
+    'La empresa ya tiene este sitio. Puede estar archivado: marca "Mostrar archivados".',
+  ],
+  site_from_gam: ['Este site veio do GAM e só sai de lá.', 'This site came from GAM and only leaves from there.', 'Este sitio vino de GAM y solo sale de allí.'],
   network_disconnected: ['A network está desconectada.', 'The network is disconnected.', 'La network está desconectada.'],
   sync_too_soon: ['Já tem uma importação recente. Tente de novo em {s} s.', 'There is a recent import. Try again in {s} s.', 'Ya hay una importación reciente. Prueba en {s} s.'],
   gam_network_not_found: [
