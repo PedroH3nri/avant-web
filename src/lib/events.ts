@@ -11,8 +11,13 @@ export interface NetworkUpdated {
   network_id: string
 }
 
+export interface MetricsUpdated {
+  network_id: string
+}
+
 interface EventMap {
   'network.updated': NetworkUpdated
+  'metrics.updated': MetricsUpdated
 }
 type Type = keyof EventMap
 type Handler<T extends Type> = (data: EventMap[T]) => void

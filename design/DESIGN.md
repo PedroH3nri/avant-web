@@ -166,6 +166,9 @@ Sidebar items are 36px rows with a 16px icon; the active item gets the chip fill
 ### Seat usage bar
 One segment per seat of the Groone staff limit: ink for people, amber for pending invites, gray for free seats, with a legend underneath. The same strip, smaller, sits in the internal clients table.
 
+### Metrics and charts
+KPI tiles sit in one hairline-divided strip: 13px muted label, 24px semibold value (20px on phones), and the change against the previous period as an arrow plus the words "acima/abaixo do anterior", green or red but never color alone. Clicking a tile picks the metric of the daily chart. Charts stay monochrome: the current period is a 2px ink line over a faint ink area, the previous period a dashed gray line, hairline grid, tabular tick labels, one y-axis only. Two or more series always get a legend. Line charts follow the pointer (and the arrow keys) with a crosshair and a tooltip, and carry a hidden table for screen readers. Rankings (sites, countries) are horizontal 8px pill bars with the value written beside them. Money shows in the report currency (USD from Ad Manager), formatted by the panel language.
+
 ## Do's and Don'ts
 
 ### Do:
