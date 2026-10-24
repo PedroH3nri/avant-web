@@ -4,7 +4,7 @@ withDefaults(defineProps<{ min?: number }>(), { min: 640 })
 </script>
 
 <template>
-  <div class="overflow-x-auto rounded-lg border bg-card">
+  <div class="relative overflow-x-auto rounded-lg border bg-card">
     <table class="w-full text-left text-[14px] [&_tbody_tr:last-child_td]:border-b-0" :style="{ minWidth: `${min}px` }">
       <slot />
     </table>

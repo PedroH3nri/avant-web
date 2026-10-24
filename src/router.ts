@@ -18,6 +18,7 @@ const routes: RouteRecordRaw[] = [
     children: [
       { path: '', component: () => import('@/views/HomeView.vue') },
       { path: 'desempenho', component: () => import('@/views/PerformanceView.vue'), meta: { permission: 'reports.view' } },
+      { path: 'visitas', component: () => import('@/views/PageViewsView.vue'), meta: { permission: 'reports.view' } },
       { path: 'equipe', component: () => import('@/views/TeamView.vue'), meta: { permission: 'team.view' } },
       { path: 'equipe/:id', component: () => import('@/views/MemberView.vue'), meta: { permission: 'team.view' } },
       { path: 'papeis', component: () => import('@/views/RolesView.vue'), meta: { permission: 'roles.view' } },
