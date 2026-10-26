@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { t } from '@/lib/i18n'
-import { approval, tree } from '@/lib/sites'
-import type { AdUnit } from '@/lib/types'
+import { approval, tree } from '@/modules/sites/rules'
+import type { AdUnit } from '@/modules/sites/types'
 
 const unit = (id: string, name: string, parent_id: string | null = null): AdUnit => ({
   id,

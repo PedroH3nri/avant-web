@@ -22,6 +22,29 @@ src/
 tests/          Vitest
 ```
 
+## Estrutura
+
+Organizado por domínio (objeto → arquivos), no mesmo desenho do avant-api:
+
+```
+src/
+  main.ts, App.vue, router.ts   entrada e rotas (cada rota aponta para a view do domínio)
+  modules/<domínio>/
+    views/          telas
+    components/     peças só deste domínio
+    service.ts      chamadas da API do domínio (a tela nunca usa `api` direto)
+    types.ts        formatos da API do domínio, iguais ao dto.py dele no avant-api
+    rules.ts        regras puras de tela, testadas em tests/
+  modules/internal/<assunto>/    painel interno: clients, people, staff, contracts, results
+  lib/              cliente HTTP (api.ts), i18n, eventos, métricas, tema e tipos comuns
+  components/       componentes comuns e ui/ (shadcn-vue)
+  layouts/          AppShell, AuthFrame e a página 404
+  stores/session.ts sessão da pessoa
+```
+
+Domínios: auth, account, home, team, company, currencies, networks, sites, reports,
+results e costs.
+
 ## Regras de tela
 
 - Visual do `DESIGN.md` do protótipo: Geist, quase monocromático, preto como cor principal,

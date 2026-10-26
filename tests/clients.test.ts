@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { emptyProfile, percentageOk, profileBody, profileOk } from '@/lib/clients'
-import { TAX_TYPES, taxTypeLabel, taxTypeOptions } from '@/lib/fiscal'
+import { emptyProfile, percentageOk, profileBody, profileOk } from '@/modules/internal/clients/rules'
+import { TAX_TYPES, taxTypeLabel, taxTypeOptions } from '@/modules/company/fiscal'
 
 describe('cadastro de cliente', () => {
   it('exige nomes e e-mail, e comissão válida só com indicação', () => {

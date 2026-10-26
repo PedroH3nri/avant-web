@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { costBody, costForm, formatMonth, fromMonthInput, parseAmount, toMonthInput } from '@/lib/costs'
-import { margin, negative, resultRange } from '@/lib/results'
+import { costBody, costForm, formatMonth, fromMonthInput, parseAmount, toMonthInput } from '@/modules/costs/rules'
+import { margin, negative, resultRange } from '@/modules/results/rules'
 
 describe('custos', () => {
   it('lê valores com vírgula ou ponto e recusa o que não é número', () => {

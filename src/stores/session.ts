@@ -2,11 +2,14 @@
 
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
-import { api, ApiError } from '@/lib/api'
+import { ApiError } from '@/lib/api'
 import { reconnectEvents } from '@/lib/events'
 import { lang, langChosen } from '@/lib/i18n'
 import { applyAccent } from '@/lib/theme'
-import type { LoginResult, Me } from '@/lib/types'
+import type { Me } from '@/lib/types'
+import type { LoginResult } from '@/modules/auth/types'
+import { authService } from '@/modules/auth/service'
+import { currencyService } from '@/modules/currencies/service'
 
 export const useSession = defineStore('session', () => {
   const me = ref<Me | null>(null)
@@ -66,14 +69,14 @@ export const useSession = defineStore('session', () => {
 
   /** Troca a moeda de visualização na API e já aplica no painel. */
   async function setDisplayCurrency(code: string) {
-    const saved = await api.put<{ display_currency: string }>('/auth/preferences', { display_currency: code })
+    const saved = await currencyService.setDisplayCurrency(code)
     if (me.value) me.value = { ...me.value, display_currency: saved.display_currency }
   }
 
   /** Carrega a pessoa da sessão; sem sessão fica vazia. */
   async function load(): Promise<Me | null> {
     try {
-      set(await api.get<Me>('/auth/me'))
+      set(await authService.me())
     } catch (error) {
       if (error instanceof ApiError && error.status === 401) set(null)
       else throw error
@@ -83,20 +86,20 @@ export const useSession = defineStore('session', () => {
 
   /** Entra com email e senha. */
   async function login(email: string, password: string): Promise<LoginResult> {
-    const result = await api.post<LoginResult>('/auth/login', { email, password })
+    const result = await authService.login(email, password)
     if (result.me) set(result.me)
     return result
   }
 
   /** Confere o código do 2FA e completa o login. */
   async function verifyMfa(code: string) {
-    set(await api.post<Me>('/auth/mfa/verify', { code }))
+    set(await authService.verifyMfa(code))
   }
 
   /** Sai da sessão e limpa o estado. */
   async function logout() {
     try {
-      await api.post('/auth/logout')
+      await authService.logout()
     } finally {
       set(null)
     }
@@ -104,7 +107,7 @@ export const useSession = defineStore('session', () => {
 
   /** Troca a Empresa ativa e reabre os eventos. */
   async function switchCompany(companyId: string) {
-    set(await api.post<Me>('/auth/me/active-company', { company_id: companyId }))
+    set(await authService.switchCompany(companyId))
     reconnectEvents()
   }
 

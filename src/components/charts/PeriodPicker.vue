@@ -6,7 +6,7 @@ import Button from '@/components/ui/Button.vue'
 import NativeSelect from '@/components/ui/NativeSelect.vue'
 import { t, type Key } from '@/lib/i18n'
 import { PERIOD_PRESETS } from '@/lib/metrics'
-import type { RelativePeriod } from '@/lib/types'
+import type { RelativePeriod } from '@/modules/reports/types'
 
 const period = defineModel<RelativePeriod>('period', { required: true })
 const compare = defineModel<boolean>('compare', { default: true })

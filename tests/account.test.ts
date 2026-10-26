@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { device, keyState, recoveryFile, sortKeys } from '@/lib/account'
-import type { ApiKey } from '@/lib/types'
+import { device, keyState, recoveryFile, sortKeys } from '@/modules/account/rules'
+import type { ApiKey } from '@/modules/account/types'
 
 const key = (id: string, created_at: string, extra: Partial<ApiKey> = {}): ApiKey => ({
   id,
