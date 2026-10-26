@@ -62,15 +62,14 @@ export interface InvitationPreview {
   account_exists: boolean
 }
 
-export type CompanyPlan = 'groone_network' | 'external'
-export type CompanyStatus = 'active' | 'suspended'
+/** Situação da Empresa, como a do publisher no Genius. */
+export type CompanyStatus = 'active' | 'inactive' | 'pending' | 'banned'
 
 export interface CompanyDetail {
   id: string
   name: string
   slug: string
   accent_color: string | null
-  plan: CompanyPlan
   status: CompanyStatus
   /** Vazio na Company Groone: limites valem só para clientes. */
   seat_limit: number | null
@@ -240,16 +239,58 @@ export interface ApiKeyCreated extends ApiKey {
 
 // Painel interno (/api/v1/internal)
 
+/** Dados fiscais de pagamento: o cliente preenche, a equipe Groone só lê. */
+export interface FiscalData {
+  tax_type: string
+  tax_id: string
+  legal_name: string
+  billing_phone_ddi: string
+  billing_phone: string
+  billing_address: string
+  bank_name: string
+  swift_code: string
+  account_number: string
+  routing_number: string
+}
+
+/** O cadastro visto pelo próprio cliente em Configurações. */
+export interface CompanyFiscal {
+  first_name: string
+  last_name: string
+  email: string
+  fiscal: FiscalData | null
+}
+
+/** O que a equipe Groone informa no cadastro do cliente. */
+export interface ClientProfileInput {
+  first_name: string
+  last_name: string
+  email: string
+  phone_ddi: string | null
+  phone: string | null
+  locale: Lang
+  account_manager_id: string | null
+  referred_by_company_id: string | null
+  /** Texto decimal; sem valor, a indicação vale 2%. */
+  referral_percentage: string | null
+  notes: string | null
+}
+
+export interface ClientProfile extends ClientProfileInput {
+  fiscal: FiscalData | null
+}
+
 export interface Client {
   id: string
   name: string
   slug: string
-  plan: CompanyPlan
   status: CompanyStatus
   seat_limit: number
   /** Pessoas mais convites pendentes. */
   seats_used: number
-  owner: UserRef
+  /** Vazio enquanto ninguém aceitou o convite de dono. */
+  owner: UserRef | null
+  profile: ClientProfile | null
 }
 
 export interface ClientDetail extends Client {
@@ -259,10 +300,10 @@ export interface ClientDetail extends Client {
 
 export interface OwnerInvitation {
   id: string
+  /** Vazio só nos convites antigos, de antes do cadastro do cliente. */
+  company_id: string | null
   email: string
   status: Invitation['status']
-  seat_limit: number | null
-  plan: CompanyPlan | null
   expires_at: string
   invited_by: string
 }

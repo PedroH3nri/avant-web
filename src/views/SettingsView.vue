@@ -5,6 +5,7 @@ import { toast } from 'vue-sonner'
 import { RadioGroupIndicator, RadioGroupItem, RadioGroupRoot } from 'reka-ui'
 import Button from '@/components/ui/Button.vue'
 import Card from '@/components/ui/Card.vue'
+import FiscalDataCard from '@/components/settings/FiscalDataCard.vue'
 import Input from '@/components/ui/Input.vue'
 import LangSwitch from '@/components/LangSwitch.vue'
 import LoadError from '@/components/LoadError.vue'
@@ -80,6 +81,7 @@ const preview = (id: string) => applyAccent(ACCENTS.find((option) => option.id =
           <Button :loading="savingName" :disabled="nameInvalid || name.trim() === company.name" @click="saveName">{{ t('common.save') }}</Button>
         </template>
       </Card>
+      <FiscalDataCard v-if="canEdit && !session.company?.is_internal" />
     </template>
 
     <h2 class="text-[13px] font-medium text-muted-foreground">{{ t('set.appearance') }}</h2>
