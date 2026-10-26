@@ -411,3 +411,68 @@ export interface ReportResult {
   labels: Record<string, Record<string, string>>
   currency: string
 }
+
+export type CostKind = 'one_time' | 'recurring' | 'formula'
+
+export interface Cost {
+  id: string
+  name: string
+  kind: CostKind
+  currency: string
+  start_month: string
+  end_month: string | null
+  amount: string | null
+  formula: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface CostInput {
+  name: string
+  kind: CostKind
+  currency: string
+  start_month: string
+  end_month: string | null
+  amount: string | null
+  formula: string | null
+}
+
+export interface FormulaCheck {
+  valid: boolean
+  value: string | null
+  error: string | null
+  variables: string[]
+}
+
+export interface CostLine {
+  cost_id: string
+  name: string
+  kind: CostKind
+  amount: string
+}
+
+export interface MonthResult {
+  month: string
+  billing: string
+  deductions: string
+  revenue: string
+  costs: string
+  result: string
+  deductions_pending: boolean
+  cost_lines: CostLine[]
+}
+
+export interface ResultTotals {
+  billing: string
+  deductions: string
+  revenue: string
+  costs: string
+  result: string
+}
+
+export interface CompanyResults {
+  company: { id: string; name: string }
+  currency: string
+  months: MonthResult[]
+  totals: ResultTotals
+}

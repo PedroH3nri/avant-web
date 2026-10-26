@@ -19,6 +19,8 @@ const routes: RouteRecordRaw[] = [
       { path: '', component: () => import('@/views/HomeView.vue') },
       { path: 'desempenho', component: () => import('@/views/PerformanceView.vue'), meta: { permission: 'reports.view' } },
       { path: 'visitas', component: () => import('@/views/PageViewsView.vue'), meta: { permission: 'reports.view' } },
+      { path: 'resultado', component: () => import('@/views/ResultsView.vue'), meta: { permission: 'results.view' } },
+      { path: 'custos', component: () => import('@/views/CostsView.vue'), meta: { permission: 'costs.view' } },
       { path: 'equipe', component: () => import('@/views/TeamView.vue'), meta: { permission: 'team.view' } },
       { path: 'equipe/:id', component: () => import('@/views/MemberView.vue'), meta: { permission: 'team.view' } },
       { path: 'papeis', component: () => import('@/views/RolesView.vue'), meta: { permission: 'roles.view' } },
@@ -36,6 +38,7 @@ const routes: RouteRecordRaw[] = [
         meta: { internal: true, permission: 'internal.clients.view' },
       },
       { path: 'interno/pessoas', component: () => import('@/views/internal/PeopleView.vue'), meta: { internal: true, permission: 'internal.users.manage' } },
+      { path: 'interno/resultados', component: () => import('@/views/internal/ClientsResultsView.vue'), meta: { internal: true, permission: 'internal.results.view' } },
       { path: 'interno/equipe', component: () => import('@/views/internal/StaffView.vue'), meta: { internal: true, permission: 'internal.staff.manage' } },
       {
         path: 'interno/contratos',

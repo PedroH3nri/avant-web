@@ -23,12 +23,15 @@ const SCREENS = [
   ['inicio', 'Início'],
   ['desempenho', 'Desempenho'],
   ['visitas', 'Page Views'],
+  ['resultado', 'Resultado'],
+  ['custos', 'Custos'],
   ['equipe', 'Equipe'],
   ['networks', 'Networks do GAM'],
   ['conectar', 'Conectar network'],
   ['configuracoes', 'Configurações'],
   ['interno', 'Painel interno · Clientes'],
   ['contratos', 'Painel interno · Contratos'],
+  ['resultados', 'Painel interno · Resultado dos clientes'],
   ['permissoes', 'Modal de permissões'],
 ] as const
 type Screen = (typeof SCREENS)[number][0]
@@ -1282,6 +1285,198 @@ function ContractsScreen() {
   )
 }
 
+/* ---------- Resultado e Custos ---------- */
+
+const usd = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'USD' })
+const RESULT_MONTHS = [
+  { month: 'mai. 2026', billing: 8120, deductions: 96, costs: 1890 },
+  { month: 'jun. 2026', billing: 8790, deductions: 141, costs: 1930 },
+  { month: 'jul. 2026', billing: 9420, deductions: 88, costs: 1960 },
+  { month: 'ago. 2026', billing: 10310, deductions: 212, costs: 2050 },
+  { month: 'set. 2026', billing: 11040, deductions: 133, costs: 2110 },
+  { month: 'out. 2026', billing: 7215, deductions: null, costs: 1820 },
+] as const
+const COST_LINES = [['Imposto (6% do faturamento)', 662.4], ['Equipe de conteúdo', 1200], ['Servidor e CDN', 180], ['Ferramentas', 67.6]] as const
+
+function Money({ value, strong }: { value: number; strong?: boolean }) {
+  return <span className={cn('tnum whitespace-nowrap', strong && 'font-semibold', value < 0 && (strong ? 'text-bad' : 'text-muted-foreground'))}>{usd.format(value)}</span>
+}
+
+function ResultScreen({ go }: { go: (s: Screen) => void }) {
+  const [selected, setSelected] = useState(4)
+  const rows = RESULT_MONTHS.map((m) => {
+    const revenue = m.billing - (m.deductions ?? 0)
+    return { ...m, revenue, result: revenue - m.costs }
+  })
+  const pick = rows[selected]
+  const total = rows.reduce((sum, row) => sum + row.result, 0)
+  return (
+    <>
+      <PageHeader title="Resultado" sub="O que sobra de cada mês: faturamento, menos as deduções do Ad Manager, menos os custos da Empresa."
+        actions={
+          <>
+            <Select defaultValue="6"><SelectTrigger className="h-9 w-[180px]" aria-label="Período"><SelectValue /></SelectTrigger>
+              <SelectContent><SelectItem value="6">Últimos 6 meses</SelectItem><SelectItem value="12">Últimos 12 meses</SelectItem><SelectItem value="year">Este ano</SelectItem></SelectContent>
+            </Select>
+            <Button variant="outline" className="h-9" onClick={() => go('custos')}>Custos</Button>
+          </>
+        } />
+      <Body>
+        <div className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border bg-border md:grid-cols-5">
+          {([['Faturamento', pick.billing], ['Deduções', -(pick.deductions ?? 0)], ['Receita', pick.revenue], ['Custos', -pick.costs], ['Resultado', pick.result]] as const).map(([label, value]) => (
+            <div key={label} className="bg-card p-4">
+              <div className="text-[13px] font-medium text-muted-foreground">{label} · {pick.month}</div>
+              <div className="mt-1 text-[24px] font-semibold tracking-tight"><Money value={value} strong={label === 'Resultado'} /></div>
+              {label === 'Deduções' && pick.deductions === null && <div className="mt-1"><Status tone="ochre">Aguardando o Ad Manager</Status></div>}
+              {label === 'Resultado' && <div className="mt-1 text-[13px] text-muted-foreground tnum">Margem {((pick.result / pick.billing) * 100).toFixed(1).replace('.', ',')}%</div>}
+            </div>
+          ))}
+        </div>
+        <Table min={820}>
+          <thead><tr>{['Mês', 'Faturamento', 'Deduções', 'Receita', 'Custos', 'Resultado'].map((h, i) => <th key={h} className={cn(th, i > 0 && 'text-right')}>{h}</th>)}</tr></thead>
+          <tbody>
+            {rows.map((row, index) => (
+              <tr key={row.month} onClick={() => setSelected(index)} aria-selected={index === selected} className={cn('cursor-pointer hover:bg-muted', index === selected && 'bg-muted')}>
+                <td className={cn(td, 'font-medium whitespace-nowrap')}>{row.month}</td>
+                <td className={cn(td, 'text-right')}><Money value={row.billing} /></td>
+                <td className={cn(td, 'text-right')}>{row.deductions === null ? <Status tone="ochre">Aguardando</Status> : <Money value={-row.deductions} />}</td>
+                <td className={cn(td, 'text-right')}><Money value={row.revenue} /></td>
+                <td className={cn(td, 'text-right')}><Money value={-row.costs} /></td>
+                <td className={cn(td, 'text-right')}><Money value={row.result} strong /></td>
+              </tr>
+            ))}
+            <tr className="bg-muted/60"><td className={cn(td, 'font-medium')}>Total</td><td className={td} colSpan={4} /><td className={cn(td, 'text-right')}><Money value={total} strong /></td></tr>
+          </tbody>
+        </Table>
+        <Card title={`Custos de ${pick.month}`} desc="Cada custo da aba Custos que vale neste mês, já na moeda do painel." footerNote="As deduções chegam do Ad Manager por volta do dia 15 do mês seguinte." footer={<Button variant="outline" size="sm" onClick={() => go('custos')}>Editar custos</Button>}>
+          <ul className="divide-y rounded-md border">{COST_LINES.map(([name, value]) => <li key={name} className="flex items-center justify-between gap-4 px-4 py-3 text-[14px]"><span>{name}</span><Money value={-value} /></li>)}</ul>
+        </Card>
+      </Body>
+    </>
+  )
+}
+
+type ProtoCost = { id: number; name: string; kind: 'one_time' | 'recurring' | 'formula'; currency: string; start: string; end: string; amount: string; formula: string }
+const INITIAL_COSTS: ProtoCost[] = [
+  { id: 1, name: 'Imposto Simples', kind: 'formula', currency: 'BRL', start: '2026-01', end: '', amount: '', formula: 'faturamento * 6%' },
+  { id: 2, name: 'Equipe de conteúdo', kind: 'recurring', currency: 'USD', start: '2026-03', end: '', amount: '1200', formula: '' },
+  { id: 3, name: 'Servidor e CDN', kind: 'recurring', currency: 'USD', start: '2026-01', end: '2026-12', amount: '180', formula: '' },
+  { id: 4, name: 'Evento de lançamento', kind: 'one_time', currency: 'BRL', start: '2026-09', end: '', amount: '4500', formula: '' },
+]
+const KIND_LABEL = { one_time: 'Um mês', recurring: 'Recorrente', formula: 'Fórmula' } as const
+
+function CostsScreen() {
+  const [costs, setCosts] = useState(INITIAL_COSTS)
+  const [editing, setEditing] = useState<ProtoCost | null>(null)
+  const blank: ProtoCost = { id: 0, name: '', kind: 'recurring', currency: 'USD', start: '2026-10', end: '', amount: '', formula: '' }
+  const preview = (() => {
+    if (!editing || editing.kind !== 'formula') return null
+    if (!/^[\sa-z0-9.,%*+\-/()×÷;]+$/i.test(editing.formula) || !editing.formula.trim()) return { error: 'Use números, + − × ÷, parênteses, %, min, max e as variáveis faturamento e receita.' }
+    return { value: editing.formula.includes('6%') ? 600 : 1000 }
+  })()
+  const save = () => {
+    if (!editing) return
+    setCosts(editing.id ? costs.map((cost) => (cost.id === editing.id ? editing : cost)) : [{ ...editing, id: Date.now() }, ...costs])
+    toast.success(editing.id ? 'Custo salvo' : 'Custo criado')
+    setEditing(null)
+  }
+  const value = (cost: ProtoCost) => (cost.kind === 'formula' ? <Code>{cost.formula}</Code> : <span className="tnum">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: cost.currency }).format(Number(cost.amount))}</span>)
+  const period = (cost: ProtoCost) => (cost.kind === 'one_time' ? cost.start : `${cost.start} → ${cost.end || 'sem fim'}`)
+  return (
+    <>
+      <PageHeader title="Custos" sub="Tudo o que sai do faturamento: custos fixos, de um mês só e impostos por fórmula. Entram no Resultado de cada mês." actions={<Button onClick={() => setEditing(blank)}><Plus className="h-4 w-4" />Novo custo</Button>} />
+      <Body>
+        <Table min={760}>
+          <thead><tr><th className={th}>Nome</th><th className={th}>Tipo</th><th className={th}>Valor ou fórmula</th><th className={th}>Período</th><th className={cn(th, 'w-12')}><span className="sr-only">Ações</span></th></tr></thead>
+          <tbody>
+            {costs.map((cost) => (
+              <tr key={cost.id} className="hover:bg-muted">
+                <td className={cn(td, 'font-medium')}>{cost.name}</td>
+                <td className={td}><Badge>{KIND_LABEL[cost.kind]}</Badge></td>
+                <td className={td}>{value(cost)}</td>
+                <td className={cn(td, 'whitespace-nowrap text-[13px] text-muted-foreground tnum')}>{period(cost)}</td>
+                <td className={td}>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild><Button variant="ghost" size="sm" aria-label="Ações do custo"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
+                    <DropdownMenuContent align="end"><DropdownMenuItem onSelect={() => setEditing(cost)}>Editar</DropdownMenuItem><DropdownMenuItem className="text-bad" onSelect={() => setCosts(costs.filter((item) => item.id !== cost.id))}>Excluir</DropdownMenuItem></DropdownMenuContent>
+                  </DropdownMenu>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </Table>
+      </Body>
+      <Dialog open={!!editing} onOpenChange={(open) => !open && setEditing(null)}>
+        <DialogContent className="max-w-[520px]">
+          <DialogHeader><DialogTitle>{editing?.id ? 'Editar custo' : 'Novo custo'}</DialogTitle><DialogDescription>Valores na moeda do custo; o Resultado converte pela cotação do mês.</DialogDescription></DialogHeader>
+          {editing && (
+            <div className="grid gap-4">
+              <Field id="cost-name" label="Nome"><Input id="cost-name" className="h-10" value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} placeholder="Imposto Simples" /></Field>
+              <RadioGroup value={editing.kind} onValueChange={(kind) => setEditing({ ...editing, kind: kind as ProtoCost['kind'] })} className="grid grid-cols-3 gap-2" aria-label="Tipo">
+                {(Object.keys(KIND_LABEL) as ProtoCost['kind'][]).map((kind) => (
+                  <Label key={kind} className={cn('flex h-10 cursor-pointer items-center gap-2 rounded-md border px-3 text-[14px]', editing.kind === kind && 'border-foreground')}><RadioGroupItem value={kind} />{KIND_LABEL[kind]}</Label>
+                ))}
+              </RadioGroup>
+              <div className="grid grid-cols-2 gap-4">
+                <Field id="cost-start" label={editing.kind === 'one_time' ? 'Mês' : 'Começa em'}><Input id="cost-start" type="month" className="h-10" value={editing.start} onChange={(e) => setEditing({ ...editing, start: e.target.value })} /></Field>
+                {editing.kind !== 'one_time' && <Field id="cost-end" label="Termina em (opcional)"><Input id="cost-end" type="month" className="h-10" value={editing.end} onChange={(e) => setEditing({ ...editing, end: e.target.value })} /></Field>}
+              </div>
+              <div className="grid grid-cols-[120px_1fr] gap-4">
+                <Field id="cost-currency" label="Moeda">
+                  <Select value={editing.currency} onValueChange={(currency) => setEditing({ ...editing, currency })}><SelectTrigger id="cost-currency" className="h-10"><SelectValue /></SelectTrigger><SelectContent>{['USD', 'BRL', 'EUR'].map((code) => <SelectItem key={code} value={code}>{code}</SelectItem>)}</SelectContent></Select>
+                </Field>
+                {editing.kind === 'formula' ? (
+                  <Field id="cost-formula" label="Fórmula" error={preview && 'error' in preview ? preview.error : false} hint={preview && 'value' in preview ? `Com faturamento de 10.000 e receita de 9.000, daria ${preview.value}` : undefined}>
+                    <Input id="cost-formula" className="h-10 font-mono" value={editing.formula} onChange={(e) => setEditing({ ...editing, formula: e.target.value })} placeholder="faturamento * 6%" />
+                  </Field>
+                ) : (
+                  <Field id="cost-amount" label="Valor por mês"><Input id="cost-amount" inputMode="decimal" className="h-10 tnum" value={editing.amount} onChange={(e) => setEditing({ ...editing, amount: e.target.value })} placeholder="1200" /></Field>
+                )}
+              </div>
+              {editing.kind === 'formula' && (
+                <div className="flex flex-wrap gap-2">{['faturamento', 'receita', 'min(', 'max('].map((chip) => <Button key={chip} variant="outline" size="sm" className="font-mono" onClick={() => setEditing({ ...editing, formula: `${editing.formula}${chip}` })}>{chip}</Button>)}</div>
+              )}
+            </div>
+          )}
+          <DialogFooter><Button variant="outline" onClick={() => setEditing(null)}>Cancelar</Button><Button disabled={!editing?.name} onClick={save}>Salvar custo</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  )
+}
+
+const CLIENT_RESULTS = [
+  { name: 'Açaí Notícias', billing: 11040, deductions: 133, costs: 2110 },
+  { name: 'Blog do Zé', billing: 2310, deductions: 41, costs: 2600 },
+  { name: 'Portal da Cidade', billing: 30880, deductions: 512, costs: 7400 },
+]
+
+function ClientsResultScreen() {
+  const rows = CLIENT_RESULTS.map((row) => ({ ...row, revenue: row.billing - row.deductions })).map((row) => ({ ...row, result: row.revenue - row.costs }))
+  return (
+    <>
+      <PageHeader title="Resultado dos clientes" sub="O resultado de cada Empresa cliente no mês, com os custos que o cliente cadastrou." actions={<Select defaultValue="2026-09"><SelectTrigger className="h-9 w-[160px]" aria-label="Mês"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="2026-09">set. 2026</SelectItem><SelectItem value="2026-08">ago. 2026</SelectItem></SelectContent></Select>} />
+      <Body>
+        <Table min={820}>
+          <thead><tr>{['Cliente', 'Faturamento', 'Deduções', 'Receita', 'Custos', 'Resultado'].map((h, i) => <th key={h} className={cn(th, i > 0 && 'text-right')}>{h}</th>)}</tr></thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr key={row.name} className="hover:bg-muted">
+                <td className={cn(td, 'font-medium')}>{row.name}</td>
+                <td className={cn(td, 'text-right')}><Money value={row.billing} /></td>
+                <td className={cn(td, 'text-right')}><Money value={-row.deductions} /></td>
+                <td className={cn(td, 'text-right')}><Money value={row.revenue} /></td>
+                <td className={cn(td, 'text-right')}><Money value={-row.costs} /></td>
+                <td className={cn(td, 'text-right')}><Money value={row.result} strong /></td>
+              </tr>
+            ))}
+          </tbody>
+        </Table>
+      </Body>
+    </>
+  )
+}
+
 /* ---------- modal de permissões com filtro por categoria ---------- */
 
 const PROTO_PERMS: [string, string[]][] = [
@@ -1360,12 +1555,15 @@ export default function App() {
       case 'inicio': return <HomeScreen t={t} go={go} members={members} />
       case 'desempenho': return <PerformanceScreen />
       case 'visitas': return <PageViewsScreen />
+      case 'resultado': return <ResultScreen go={go} />
+      case 'custos': return <CostsScreen />
       case 'equipe': return <TeamScreen t={t} members={members} setMembers={setMembers} />
       case 'networks': return <NetworksScreen t={t} go={go} />
       case 'conectar': return <ConnectScreen t={t} go={go} />
       case 'configuracoes': return <SettingsScreen t={t} accent={accent} setAccent={setAccent} theme={theme} setTheme={setTheme} />
       case 'interno': return <InternalScreen t={t} />
       case 'contratos': return <ContractsScreen />
+      case 'resultados': return <ClientsResultScreen />
       case 'permissoes': return <PermissionsScreen />
     }
   })()
