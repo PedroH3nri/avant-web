@@ -39,6 +39,7 @@ const routes: RouteRecordRaw[] = [
       },
       { path: 'interno/pessoas', component: () => import('@/views/internal/PeopleView.vue'), meta: { internal: true, permission: 'internal.users.manage' } },
       { path: 'interno/resultados', component: () => import('@/views/internal/ClientsResultsView.vue'), meta: { internal: true, permission: 'internal.results.view' } },
+      { path: 'interno/equipes', component: () => import('@/views/internal/ClientTeamsView.vue'), meta: { internal: true, permission: 'internal.clients.view' } },
       { path: 'interno/equipe', component: () => import('@/views/internal/StaffView.vue'), meta: { internal: true, permission: 'internal.staff.manage' } },
       {
         path: 'interno/contratos',

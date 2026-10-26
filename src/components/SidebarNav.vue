@@ -19,20 +19,22 @@ const session = useSession()
 const route = useRoute()
 const router = useRouter()
 
-type Item = { to: string; key: Key; icon: Component; internal?: boolean }
+type Item = { to: string; key: Key; icon: Component; internal?: boolean; clientOnly?: boolean }
 type Group = { key: Key | null; items: Item[] }
 
 // O menu é imutável: os mesmos itens em todas as rotas e Empresas, sem filtrar por permissão
 // (o guarda do router e a API decidem o acesso). Itens com ``internal`` abrem o painel interno
 // (o guarda troca para a Company Groone) e só a equipe Groone os vê; os outros abrem a Empresa
-// cliente.
+// cliente. Itens com ``clientOnly`` somem para a equipe Groone, que tem a versão interna deles
+// (Equipes: a Groone vê as equipes de todos os clientes, nunca a própria).
 const GROUPS: Group[] = [
   { key: null, items: [{ to: '/', key: 'nav.home', icon: LayoutDashboard }] },
   {
     key: 'nav.groupClients',
     items: [
       { to: '/interno', key: 'int.clients', icon: Building2, internal: true },
-      { to: '/equipe', key: 'nav.team', icon: Users },
+      { to: '/equipe', key: 'nav.team', icon: Users, clientOnly: true },
+      { to: '/interno/equipes', key: 'nav.team', icon: Users, internal: true },
       { to: '/networks', key: 'nav.networks', icon: Network },
       { to: '/interno/contratos', key: 'int.contracts', icon: FileSignature, internal: true },
       { to: '/sites', key: 'nav.sites', icon: Globe },
@@ -72,9 +74,12 @@ const clientId = computed(() => {
 })
 const staff = computed(() => !!session.internalCompany)
 const onInternal = computed(() => route.meta.internal === true)
-/** Os grupos que a pessoa vê: sem os itens internos para quem não é da equipe Groone. */
+/** Os grupos que a pessoa vê: a equipe Groone troca os itens só de cliente pelos internos. */
 const groups = computed(() =>
-  GROUPS.map((section) => ({ ...section, items: section.items.filter((link) => staff.value || !link.internal) })).filter(
+  GROUPS.map((section) => ({
+    ...section,
+    items: section.items.filter((link) => (staff.value ? !link.clientOnly : !link.internal)),
+  })).filter(
     (section) => section.items.length > 0,
   ),
 )

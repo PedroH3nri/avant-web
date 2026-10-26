@@ -125,6 +125,11 @@ export interface Member {
   joined_at: string
 }
 
+/** Pessoa da equipe de uma Empresa cliente, vista pela equipe Groone (GET /internal/teams). */
+export interface ClientMember extends Member {
+  company: { id: string; name: string; slug: string; is_internal: boolean }
+}
+
 export interface Invitation {
   id: string
   email: string
