@@ -25,6 +25,10 @@ const SCREENS = [
   ['resultado', 'Resultado'],
   ['custos', 'Custos'],
   ['equipe', 'Equipe'],
+  ['grupos', 'Equipe · Grupos'],
+  ['grupo', 'Equipe · Página do grupo'],
+  ['grupoinativo', 'Equipe · Grupo inativo'],
+  ['membro', 'Equipe · Página da pessoa'],
   ['networks', 'Networks do GAM'],
   ['conectar', 'Conectar network'],
   ['configuracoes', 'Configurações'],
@@ -156,7 +160,7 @@ const th = 'h-10 px-4 text-[12px] font-medium text-muted-foreground border-b whi
 const td = 'px-4 py-3 border-b align-middle'
 function Table({ children, min = 640 }: { children: React.ReactNode; min?: number }) {
   return (
-    <div className="overflow-x-auto rounded-lg border bg-card">
+    <div className="relative overflow-x-auto rounded-lg border bg-card">
       <table className="w-full text-left text-[14px] [&_tbody_tr:last-child_td]:border-b-0" style={{ minWidth: min }}>{children}</table>
     </div>
   )
@@ -260,7 +264,7 @@ function LangSwitch({ lang, setLang, className }: { lang: Lang; setLang: (l: Lan
 
 function SidebarContent({ t, screen, go }: { t: T; screen: Screen; go: (s: Screen) => void }) {
   const internal = screen === 'interno'
-  const isActive = (id: Screen) => screen === id || (id === 'networks' && screen === 'conectar')
+  const isActive = (id: Screen) => screen === id || (id === 'networks' && screen === 'conectar') || (id === 'equipe' && ['grupos', 'grupo', 'grupoinativo', 'membro'].includes(screen))
   const item = (active: boolean) => cn('flex h-9 w-full items-center gap-2.5 rounded-md px-2.5 text-left text-[14px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
     active ? 'bg-secondary font-medium text-foreground' : 'text-muted-foreground hover:bg-accent hover:text-foreground')
   return (
@@ -308,7 +312,7 @@ function SidebarContent({ t, screen, go }: { t: T; screen: Screen; go: (s: Scree
   )
 }
 
-function CompanySwitcher({ t, internal }: { t: T; internal: boolean }) {
+function CompanySwitcher({ t, internal, image }: { t: T; internal: boolean; image: string | null }) {
   return (
     <>
         {internal ? (
@@ -316,15 +320,15 @@ function CompanySwitcher({ t, internal }: { t: T; internal: boolean }) {
         ) : (
           <DropdownMenu>
             <DropdownMenuTrigger className="flex min-w-0 items-center gap-2 rounded-md px-1.5 py-1.5 text-left text-[14px] font-medium hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-              <Avatar name="Blog Exemplo" size={20} />
+              <CompanyIcon name="Blog Exemplo" image={image} size={20} />
               <span className="min-w-0 truncate">Blog Exemplo</span>
               <span className="hidden sm:inline-flex"><Badge>Rede Groone</Badge></span>
               <ChevronsUpDown className="h-4 w-4 shrink-0 text-muted-foreground" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-64">
               <DropdownMenuLabel className="text-[12px] font-normal text-muted-foreground">{t('top.companies')}</DropdownMenuLabel>
-              <DropdownMenuItem className="gap-2"><Avatar name="Blog Exemplo" size={20} />Blog Exemplo<Check className="ml-auto h-4 w-4" /></DropdownMenuItem>
-              <DropdownMenuItem className="gap-2" onSelect={() => toast('Trocaria para a Empresa Receitas da Vó')}><Avatar name="Receitas da Vó" size={20} />Receitas da Vó<span className="ml-auto text-[12px] text-muted-foreground">Financeiro</span></DropdownMenuItem>
+              <DropdownMenuItem className="gap-2"><CompanyIcon name="Blog Exemplo" image={image} size={20} />Blog Exemplo<Check className="ml-auto h-4 w-4" /></DropdownMenuItem>
+              <DropdownMenuItem className="gap-2" onSelect={() => toast('Trocaria para a Empresa Receitas da Vó')}><CompanyIcon name="Receitas da Vó" image={SAMPLE_LOGO} size={20} />Receitas da Vó<span className="ml-auto text-[12px] text-muted-foreground">Financeiro</span></DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         )}
@@ -332,7 +336,7 @@ function CompanySwitcher({ t, internal }: { t: T; internal: boolean }) {
   )
 }
 
-function Shell({ t, lang, setLang, screen, go, children }: { t: T; lang: Lang; setLang: (l: Lang) => void; screen: Screen; go: (s: Screen) => void; children: React.ReactNode }) {
+function Shell({ t, lang, setLang, screen, go, image, children }: { t: T; lang: Lang; setLang: (l: Lang) => void; screen: Screen; go: (s: Screen) => void; image: string | null; children: React.ReactNode }) {
   const [open, setOpen] = useState(false)
   const nav = (s: Screen) => { setOpen(false); go(s) }
   return (
@@ -347,7 +351,7 @@ function Shell({ t, lang, setLang, screen, go, children }: { t: T; lang: Lang; s
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-20 flex h-14 items-center gap-2 border-b bg-background px-4 sm:px-6 lg:top-11">
           <Button variant="ghost" size="icon" className="-ml-2 lg:hidden" onClick={() => setOpen(true)} aria-label="Abrir menu"><Menu /></Button>
-          <CompanySwitcher t={t} internal={screen === 'interno'} />
+          <CompanySwitcher t={t} internal={screen === 'interno'} image={image} />
           <LangSwitch lang={lang} setLang={setLang} className="ml-auto w-[132px]" />
         </header>
         {children}
@@ -682,7 +686,7 @@ function PageViewsScreen() {
 
 /* ---------- Equipe ---------- */
 
-function TeamScreen({ t, members, setMembers }: { t: T; members: Member[]; setMembers: (m: Member[]) => void }) {
+function TeamScreen({ t, go, members, setMembers, groupCount }: { t: T; go: (s: Screen) => void; members: Member[]; setMembers: (m: Member[]) => void; groupCount: number }) {
   const [email, setEmail] = useState('')
   const [role, setRole] = useState('Gestor de tráfego')
   const [filter, setFilter] = useState('')
@@ -741,9 +745,9 @@ function TeamScreen({ t, members, setMembers }: { t: T; members: Member[]; setMe
         </Card>
 
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex rounded-md border bg-card p-0.5" role="tablist" aria-label="Equipe">
-            {([['members', t('team.members'), active.length], ['pending', t('team.pending'), pendingList.length], ['roles', t('team.roles'), ROLES.length]] as const).map(([k, l, n]) => (
-              <button key={k} role="tab" aria-selected={view === k} onClick={() => setView(k)} className={cn('h-8 rounded-[4px] px-3 text-[13px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', view === k ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground')}>
+          <div className="flex min-w-0 max-w-full overflow-x-auto rounded-md border bg-card p-0.5" role="tablist" aria-label="Equipe">
+            {([['members', t('team.members'), active.length], ['pending', t('team.pending'), pendingList.length], ['groups', 'Grupos', groupCount], ['roles', t('team.roles'), ROLES.length]] as const).map(([k, l, n]) => (
+              <button key={k} role="tab" aria-selected={view === k} onClick={() => (k === 'groups' ? go('grupos') : setView(k))} className={cn('h-8 rounded-[4px] px-3 text-[13px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', view === k ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground')}>
                 {l} <span className="tnum text-muted-foreground">{n}</span>
               </button>
             ))}
@@ -765,7 +769,7 @@ function TeamScreen({ t, members, setMembers }: { t: T; members: Member[]; setMe
               <tbody>
                 {shown.map((m) => (
                   <tr key={m.email} className="hover:bg-muted">
-                    <td className={td}><div className="flex items-center gap-3"><Avatar name={m.name} /><div className="min-w-0"><div className="font-medium">{m.name}</div><div className="truncate text-[13px] text-muted-foreground">{m.email}</div></div></div></td>
+                    <td className={td}><div className="flex items-center gap-3"><Avatar name={m.name} /><div className="min-w-0"><button className="font-medium hover:underline" onClick={() => go('membro')}>{m.name}</button><div className="truncate text-[13px] text-muted-foreground">{m.email}</div></div></div></td>
                     <td className={td}>{m.state === 'owner' ? <Badge>Dono</Badge> : m.role}</td>
                     <td className={cn(td, 'tnum text-muted-foreground')}>{m.since}</td>
                     <td className={td}>
@@ -1012,7 +1016,7 @@ function ConnectScreen({ t, go }: { t: T; go: (s: Screen) => void }) {
 
 /* ---------- Configurações ---------- */
 
-function SettingsScreen({ t, accent, setAccent, theme, setTheme }: { t: T; accent: string; setAccent: (g: string) => void; theme: string; setTheme: (t: string) => void }) {
+function SettingsScreen({ t, accent, setAccent, theme, setTheme, image, setImage, groups }: { t: T; accent: string; setAccent: (g: string) => void; theme: string; setTheme: (t: string) => void; image: string | null; setImage: (v: string | null) => void; groups: ProtoGroup[] }) {
   const [section, setSection] = useState('geral')
   const [name, setName] = useState('Blog Exemplo')
   const nameErr = name.trim().length === 0 ? 'Informe o nome da Empresa.' : name.length > 48 ? `Use até 48 caracteres (agora são ${name.length}).` : ''
@@ -1022,7 +1026,7 @@ function SettingsScreen({ t, accent, setAccent, theme, setTheme }: { t: T; accen
       <PageHeader title={t('set.title')} sub={t('set.sub')} />
       <Body className="md:grid-cols-[200px_minmax(0,1fr)]">
         <nav className="flex gap-1 overflow-x-auto md:sticky md:top-8 md:h-fit md:flex-col" aria-label="Seções">
-          {[['geral', 'Geral'], ['aparencia', 'Aparência'], ['idioma', 'Idioma']].map(([k, l]) => (
+          {[['geral', 'Geral'], ['aparencia', 'Aparência'], ['comissao', 'Comissão e metas'], ['idioma', 'Idioma']].map(([k, l]) => (
             <a key={k} href={`#cfg-${k}`} onClick={(e) => { e.preventDefault(); setSection(k); document.getElementById(`cfg-${k}`)?.scrollIntoView({ block: 'start' }) }}
               className={cn('whitespace-nowrap rounded-md px-3 py-2 text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', section === k ? 'bg-card font-medium text-foreground' : 'text-muted-foreground hover:text-foreground')}>{l}</a>
           ))}
@@ -1031,6 +1035,7 @@ function SettingsScreen({ t, accent, setAccent, theme, setTheme }: { t: T; accen
           <div id="cfg-geral" className="scroll-mt-8"><Card title="Nome da Empresa" desc="Aparece no seletor de Empresas, nos convites e nos e-mails." footerNote="Use até 48 caracteres." footer={<Button size="sm" disabled={!!nameErr} onClick={() => saved('Nome')}>Salvar</Button>}>
             <div className="max-w-md"><Field id="set-name" label="Nome" error={nameErr}><Input id="set-name" className="h-10" value={name} onChange={(e) => setName(e.target.value)} aria-invalid={!!nameErr} /></Field></div>
           </Card></div>
+          <CompanyImageCard name={name || 'Blog Exemplo'} image={image} setImage={setImage} />
           <Card title="E-mail de contato" desc="Para onde a Groone manda avisos da conta e da network." footerNote="Só a Groone usa esse e-mail." footer={<Button size="sm" onClick={() => saved('E-mail')}>Salvar</Button>}>
             <div className="max-w-md"><Input id="set-mail" aria-label="E-mail de contato" className="h-10" defaultValue="financeiro@blogexemplo.com" /></div>
           </Card>
@@ -1058,6 +1063,7 @@ function SettingsScreen({ t, accent, setAccent, theme, setTheme }: { t: T; accen
               ))}
             </RadioGroup>
           </Card>
+          <div id="cfg-comissao" className="grid scroll-mt-8 gap-6"><CompensationSettings groups={groups} /></div>
           <div id="cfg-idioma" className="scroll-mt-8"><Card title={t('company.lang')} desc="Idioma dos convites e de quem ainda não escolheu o seu. Cada pessoa pode trocar no menu da conta." footer={<Button size="sm" onClick={() => saved('Idioma')}>Salvar</Button>}>
             <div className="max-w-xs">
               <Select defaultValue="pt"><SelectTrigger id="set-lang" aria-label={t('company.lang')} className="h-10"><SelectValue /></SelectTrigger>
@@ -1164,7 +1170,7 @@ function InternalScreen({ t, go }: { t: T; go: (s: Screen) => void }) {
           <tbody>
             {list.map((c) => (
               <tr key={c.name} className="hover:bg-muted">
-                <td className={td}><div className="flex items-center gap-3"><Avatar name={c.name} size={28} /><div className="min-w-0"><button className="font-medium hover:underline" onClick={() => go('cliente')}>{c.name}</button>{c.referredBy && <div className="text-[13px] text-muted-foreground">Indicado por {c.referredBy}</div>}</div></div></td>
+                <td className={td}><div className="flex items-center gap-3"><CompanyIcon name={c.name} image={c.name === 'Receitas da Vó' ? SAMPLE_LOGO : null} size={28} /><div className="min-w-0"><button className="font-medium hover:underline" onClick={() => go('cliente')}>{c.name}</button>{c.referredBy && <div className="text-[13px] text-muted-foreground">Indicado por {c.referredBy}</div>}</div></div></td>
                 <td className={td}><div>{c.contact}</div><div className="text-[13px] text-muted-foreground">{c.email}</div></td>
                 <td className={td}><span className="tnum text-[13px] text-muted-foreground">{c.used}/{c.limit}</span></td>
                 <td className={td}><Status tone={SITUATION[c.situation][1]}>{SITUATION[c.situation][0]}</Status></td>
@@ -1179,6 +1185,7 @@ function InternalScreen({ t, go }: { t: T; go: (s: Screen) => void }) {
 }
 
 function ClientScreen({ go }: { go: (s: Screen) => void }) {
+  const [clientImage, setClientImage] = useState<string | null>(null)
   const [situation, setSituation] = useState<ClientSituation>('pending')
   const [sent, setSent] = useState<string | null>(null)
   const [confirm, setConfirm] = useState<ClientSituation | null>(null)
@@ -1202,6 +1209,7 @@ function ClientScreen({ go }: { go: (s: Screen) => void }) {
         <Card title="Indicação" footer={<Button size="sm" variant="outline">Editar</Button>}>
           <dl className="-my-2 divide-y">{row('Indicado por', 'Blog Exemplo')}{row('Comissão', <span className="tnum">2%</span>)}{row('Observações', <span className="text-muted-foreground">Veio do evento de setembro.</span>)}</dl>
         </Card>
+        <div className="lg:col-span-2"><CompanyImageCard name="Tech Notícias" image={clientImage} setImage={setClientImage} staff /></div>
         <Card title="Dados fiscais" desc="Só o cliente preenche e muda, em Configurações. A equipe Groone só lê." className="lg:col-span-2">
           <div className="flex items-center gap-3 text-[14px] text-muted-foreground"><Lock className="h-4 w-4" />O cliente ainda não preencheu os dados fiscais.</div>
         </Card>
@@ -1587,6 +1595,409 @@ function PermissionsScreen() {
 
 /* ---------- app ---------- */
 
+/* ---------- Grupos, comissão e metas (avant-web#58) ---------- */
+
+const usd0 = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })
+const pctShort = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 })
+const MONTHS = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
+type GoalTemplate = { id: string; name: string; months: number[] }
+const GOAL_TEMPLATES: GoalTemplate[] = [
+  { id: 'padrao', name: 'Meta padrão', months: [3000, 3000, 3000, 3000, 3000, 3000, 3000, 3000, 3000, 3000, 3500, 4000] },
+  { id: 'trafego', name: 'Meta tráfego 2026', months: [4000, 4000, 4200, 4200, 4500, 4500, 4800, 4800, 5000, 5000, 6000, 7000] },
+]
+const COMPANY_DEFAULTS = { commission: 2.5, goal: 'padrao' }
+type GoalMode = 'per_member' | 'split'
+type ProtoGroup = { id: string; name: string; desc: string; members: string[]; commission: number | null; goal: string | null; mode: GoalMode; status: 'active' | 'inactive'; lastLeft?: string }
+const INITIAL_GROUPS: ProtoGroup[] = [
+  { id: 'trafego', name: 'Tráfego pago', desc: 'Campanhas no Facebook Ads e no Google Ads.', members: ['ana@blogexemplo.com'], commission: 3, goal: 'trafego', mode: 'per_member', status: 'active' },
+  { id: 'conteudo', name: 'Conteúdo', desc: 'Redação e SEO dos três sites.', members: ['carla@blogexemplo.com'], commission: null, goal: null, mode: 'split', status: 'active' },
+  { id: 'parcerias', name: 'Parcerias', desc: 'Afiliados e publiposts.', members: [], commission: 4, goal: 'padrao', mode: 'per_member', status: 'inactive', lastLeft: 'Bruno Costa saiu da Empresa em 20/10/2026' },
+]
+const CURRENT_MONTH = 9
+
+function goalName(id: string | null) { return GOAL_TEMPLATES.find((g) => g.id === (id ?? COMPANY_DEFAULTS.goal))?.name ?? '' }
+function goalValue(id: string | null) { return GOAL_TEMPLATES.find((g) => g.id === (id ?? COMPANY_DEFAULTS.goal))?.months[CURRENT_MONTH] ?? 0 }
+function pctText(v: number) { return `${pctShort.format(v)}%` }
+
+/** Origem do valor: mostra se veio da pessoa, do grupo ou da Empresa. */
+function Origin({ from }: { from: 'member' | 'group' | 'company' }) {
+  const label = { member: 'definido para a pessoa', group: 'do grupo', company: 'padrão da Empresa' }[from]
+  return <span className="text-[13px] text-muted-foreground">{label}</span>
+}
+
+/** Ícone da Empresa: a imagem enviada ou a inicial do nome sobre a cor da Empresa. */
+function CompanyIcon({ name, image, size = 20 }: { name: string; image?: string | null; size?: number }) {
+  if (image) return <img src={image} alt="" className="shrink-0 rounded-[5px] object-cover ring-1 ring-inset ring-foreground/10" style={{ width: size, height: size }} />
+  return <span className="inline-flex shrink-0 items-center justify-center rounded-[5px] bg-primary font-semibold text-primary-foreground" style={{ width: size, height: size, fontSize: Math.max(10, size * 0.45) }}>{name.trim()[0]?.toUpperCase()}</span>
+}
+
+const SAMPLE_LOGO = `data:image/svg+xml;utf8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" fill="#F4E9D8"/><circle cx="32" cy="36" r="16" fill="#C2410C"/><path d="M22 22c4-8 16-8 20 0" stroke="#166534" stroke-width="5" fill="none" stroke-linecap="round"/></svg>')}`
+
+/** Abas da Equipe: Membros, Convites e Papéis ficam na tela da equipe; Grupos tem a sua. */
+function TeamTabs({ current, go, counts }: { current: 'members' | 'pending' | 'roles' | 'groups'; go: (s: Screen) => void; counts: Record<string, number> }) {
+  return (
+    <div className="flex min-w-0 max-w-full overflow-x-auto rounded-md border bg-card p-0.5" role="tablist" aria-label="Equipe">
+      {([['members', 'Membros'], ['pending', 'Convites pendentes'], ['groups', 'Grupos'], ['roles', 'Papéis']] as const).map(([k, l]) => (
+        <button key={k} role="tab" aria-selected={current === k} onClick={() => go(k === 'groups' ? 'grupos' : 'equipe')} className={cn('h-8 whitespace-nowrap rounded-[4px] px-3 text-[13px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', current === k ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground')}>
+          {l} <span className="tnum text-muted-foreground">{counts[k]}</span>
+        </button>
+      ))}
+    </div>
+  )
+}
+
+/** Escolha do modo da meta: por funcionário ou dividida pelo grupo. */
+function GoalModeToggle({ value, onChange }: { value: GoalMode; onChange: (v: GoalMode) => void }) {
+  return (
+    <div className="flex flex-wrap rounded-md border bg-card p-0.5" role="radiogroup" aria-label="Como a meta vale">
+      {([['per_member', 'Meta por funcionário'], ['split', 'Meta dividida pelos funcionários do grupo']] as const).map(([k, l]) => (
+        <button key={k} type="button" role="radio" aria-checked={value === k} onClick={() => onChange(k)} className={cn('h-8 rounded-[4px] px-3 text-left text-[13px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', value === k ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground')}>{l}</button>
+      ))}
+    </div>
+  )
+}
+
+/** Campos de comissão e meta do grupo, com "herdar da Empresa" quando vazio. */
+function CompensationFields({ commission, setCommission, goal, setGoal, mode, setMode, people }: { commission: string; setCommission: (v: string) => void; goal: string; setGoal: (v: string) => void; mode: GoalMode; setMode: (v: GoalMode) => void; people: number }) {
+  const value = goalValue(goal === 'inherit' ? null : goal)
+  const share = mode === 'split' && people > 0 ? value / people : value
+  const commissionNumber = Number(commission.replace(',', '.'))
+  const commissionErr = commission !== '' && (Number.isNaN(commissionNumber) || commissionNumber <= 0 || commissionNumber > 100) ? 'Use um número entre 0 e 100.' : ''
+  return (
+    <div className="grid gap-4">
+      <div className="grid gap-4 md:grid-cols-2">
+        <Field id="grp-commission" label="Comissão" error={commissionErr} hint={commission === '' ? `Vazio: herda o padrão da Empresa (${pctText(COMPANY_DEFAULTS.commission)}).` : 'Sobre a receita menos o revshare da Groone e os custos, nos sites de cada pessoa.'}>
+          <div className="relative max-w-[180px]"><Input id="grp-commission" inputMode="decimal" className="h-10 pr-8 tnum" placeholder={pctShort.format(COMPANY_DEFAULTS.commission)} value={commission} onChange={(e) => setCommission(e.target.value)} aria-invalid={!!commissionErr} /><span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[14px] text-muted-foreground">%</span></div>
+        </Field>
+        <Field id="grp-goal" label="Modelo de meta" hint={`${MONTHS[CURRENT_MONTH]}/2026: ${usd0.format(value)} para o grupo inteiro ou para cada pessoa, conforme a escolha abaixo.`}>
+          <Select value={goal} onValueChange={setGoal}>
+            <SelectTrigger id="grp-goal" className="h-10"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="inherit">Herdar da Empresa ({goalName(null)})</SelectItem>
+              {GOAL_TEMPLATES.map((g) => <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </Field>
+      </div>
+      <div className="grid gap-2">
+        <span className="text-[13px] font-medium text-muted-foreground">Como a meta vale</span>
+        <GoalModeToggle value={mode} onChange={setMode} />
+        <p className="text-[13px] text-muted-foreground tnum">
+          {mode === 'per_member' ? `Cada pessoa do grupo tem ${usd0.format(value)} em ${MONTHS[CURRENT_MONTH].toLowerCase()}.` : `${usd0.format(value)} dividido por ${people} ${people === 1 ? 'pessoa' : 'pessoas'}: ${usd0.format(share)} para cada uma em ${MONTHS[CURRENT_MONTH].toLowerCase()}.`}
+        </p>
+      </div>
+    </div>
+  )
+}
+
+/** Diálogo Novo grupo: nome, pessoas (pelo menos uma) e, para quem pode, comissão e meta. */
+function NewGroupDialog({ open, onOpenChange, members, groups, onCreate }: { open: boolean; onOpenChange: (o: boolean) => void; members: Member[]; groups: ProtoGroup[]; onCreate: (g: ProtoGroup) => void }) {
+  const [name, setName] = useState('')
+  const [desc, setDesc] = useState('')
+  const [picked, setPicked] = useState<string[]>([])
+  const [q, setQ] = useState('')
+  const [commission, setCommission] = useState('')
+  const [goal, setGoal] = useState('inherit')
+  const [mode, setMode] = useState<GoalMode>('per_member')
+  const people = members.filter((m) => m.state !== 'pending' && `${m.name} ${m.email}`.toLowerCase().includes(q.toLowerCase()))
+  const groupOf = (email: string) => groups.find((g) => g.members.includes(email))
+  const dupe = groups.some((g) => g.name.toLowerCase() === name.trim().toLowerCase())
+  const nameErr = dupe ? 'Já existe um grupo com esse nome.' : ''
+  const ready = name.trim() !== '' && !dupe && picked.length > 0
+  const reset = () => { setName(''); setDesc(''); setPicked([]); setQ(''); setCommission(''); setGoal('inherit'); setMode('per_member') }
+  const create = () => {
+    if (!ready) return
+    onCreate({ id: name.trim().toLowerCase().replace(/\s+/g, '-'), name: name.trim(), desc: desc.trim(), members: picked, commission: commission === '' ? null : Number(commission.replace(',', '.')), goal: goal === 'inherit' ? null : goal, mode, status: 'active' })
+    reset()
+  }
+  return (
+    <Dialog open={open} onOpenChange={(o) => { if (!o) reset(); onOpenChange(o) }}>
+      <DialogContent className="max-h-[92dvh] gap-5 overflow-y-auto sm:max-w-[640px]">
+        <DialogHeader>
+          <DialogTitle>Novo grupo</DialogTitle>
+          <DialogDescription>Um grupo junta pessoas da equipe para dividir comissão e meta. Ele nasce com pelo menos uma pessoa e cada pessoa fica em um grupo só.</DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field id="grp-name" label="Nome" error={nameErr}><Input id="grp-name" className="h-10" placeholder="Tráfego pago" value={name} onChange={(e) => setName(e.target.value)} aria-invalid={!!nameErr} /></Field>
+          <Field id="grp-desc" label="Descrição (opcional)"><Input id="grp-desc" className="h-10" placeholder="O que o grupo faz" value={desc} onChange={(e) => setDesc(e.target.value)} /></Field>
+        </div>
+        <div className="grid gap-2">
+          <div className="flex items-baseline justify-between gap-3">
+            <span className="text-[13px] font-medium text-muted-foreground">Pessoas</span>
+            <span className={cn('tnum text-[13px]', picked.length === 0 ? 'text-muted-foreground' : 'text-foreground')}>{picked.length} {picked.length === 1 ? 'escolhida' : 'escolhidas'}</span>
+          </div>
+          <div className="relative"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input aria-label="Buscar pessoas" className="h-9 pl-9" placeholder="Buscar pelo nome ou e-mail" value={q} onChange={(e) => setQ(e.target.value)} /></div>
+          <ul className="scroll-thin max-h-[30dvh] divide-y overflow-y-auto rounded-md border">
+            {people.map((m) => {
+              const other = groupOf(m.email)
+              const checked = picked.includes(m.email)
+              return (
+                <li key={m.email}>
+                  <label className={cn('flex items-center gap-3 px-3 py-2.5 text-[14px]', other ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:bg-muted')}>
+                    <input type="checkbox" className="size-4 accent-[hsl(var(--foreground))]" disabled={!!other} checked={checked} onChange={() => setPicked(checked ? picked.filter((p) => p !== m.email) : [...picked, m.email])} />
+                    <Avatar name={m.name} size={28} />
+                    <span className="min-w-0 flex-1"><span className="block truncate font-medium">{m.name}</span><span className="block truncate text-[13px] text-muted-foreground">{m.state === 'owner' ? 'Dono' : m.role}</span></span>
+                    {other && <span className="whitespace-nowrap text-[13px] text-muted-foreground">Em {other.name}</span>}
+                  </label>
+                </li>
+              )
+            })}
+          </ul>
+          <p className="text-[13px] text-muted-foreground">Convites pendentes não aparecem: a pessoa entra no grupo depois de aceitar.</p>
+        </div>
+        <div className="grid gap-3 border-t pt-5">
+          <div><h3 className="text-[16px] font-semibold tracking-[-0.015em]">Comissão e meta</h3><p className="text-[13px] text-muted-foreground">Só quem tem a permissão de comissão e metas vê esta parte.</p></div>
+          <CompensationFields commission={commission} setCommission={setCommission} goal={goal} setGoal={setGoal} mode={mode} setMode={setMode} people={Math.max(picked.length, 1)} />
+        </div>
+        <DialogFooter className="items-center gap-3 sm:justify-between">
+          <p className="text-[13px] text-muted-foreground">{picked.length === 0 ? 'Escolha pelo menos uma pessoa para criar o grupo.' : 'Pronto para criar.'}</p>
+          <div className="flex gap-2"><Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button><Button disabled={!ready} onClick={create}>Criar grupo</Button></div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+/** Equipe › Grupos: lista com pessoas, comissão, meta e situação. */
+function GroupsScreen({ t, go, members, groups, setGroups, openGroup }: { t: T; go: (s: Screen) => void; members: Member[]; groups: ProtoGroup[]; setGroups: (g: ProtoGroup[]) => void; openGroup: (id: string) => void }) {
+  const [creating, setCreating] = useState(false)
+  const active = members.filter((m) => m.state !== 'pending')
+  const counts = { members: active.length, pending: members.length - active.length, groups: groups.length, roles: ROLES.length }
+  const nameOf = (email: string) => members.find((m) => m.email === email)?.name ?? email
+  const loose = active.filter((m) => !groups.some((g) => g.members.includes(m.email)))
+  return (
+    <>
+      <PageHeader title={t('team.title')} sub={t('team.sub')} actions={<Button onClick={() => setCreating(true)}><Plus />Novo grupo</Button>} />
+      <Body>
+        <div className="flex flex-wrap items-center gap-3"><TeamTabs current="groups" go={go} counts={counts} /></div>
+        <Table min={820}>
+          <thead><tr><th className={th}>Grupo</th><th className={th}>Pessoas</th><th className={th}>Comissão</th><th className={th}>Meta de {MONTHS[CURRENT_MONTH].toLowerCase()}</th><th className={th}>Situação</th><th className={cn(th, 'w-16')}><span className="sr-only">Abrir</span></th></tr></thead>
+          <tbody>
+            {groups.map((g) => (
+              <tr key={g.id} className="hover:bg-muted">
+                <td className={td}><button className="font-medium hover:underline" onClick={() => openGroup(g.id)}>{g.name}</button><div className="max-w-[32ch] truncate text-[13px] text-muted-foreground">{g.desc}</div></td>
+                <td className={td}>{g.members.length === 0 ? <span className="text-[13px] text-muted-foreground">Ninguém</span> : (
+                  <div className="flex items-center gap-2"><div className="flex -space-x-2">{g.members.slice(0, 3).map((e) => <span key={e} className="rounded-full ring-2 ring-card"><Avatar name={nameOf(e)} size={24} /></span>)}</div><span className="tnum text-[13px] text-muted-foreground">{g.members.length}</span></div>
+                )}</td>
+                <td className={td}><div className="tnum">{pctText(g.commission ?? COMPANY_DEFAULTS.commission)}</div><Origin from={g.commission === null ? 'company' : 'group'} /></td>
+                <td className={td}><div className="tnum">{usd0.format(goalValue(g.goal))}<span className="text-muted-foreground">{g.mode === 'split' ? ' ÷ grupo' : ' por pessoa'}</span></div><div className="text-[13px] text-muted-foreground">{goalName(g.goal)}{g.goal === null && ' · padrão da Empresa'}</div></td>
+                <td className={td}>{g.status === 'active' ? <Status tone="ok">Ativo</Status> : <Status tone="neutral">Inativo</Status>}</td>
+                <td className={td}><Button variant="ghost" size="sm" onClick={() => openGroup(g.id)}>Abrir</Button></td>
+              </tr>
+            ))}
+          </tbody>
+        </Table>
+        {loose.length > 0 && (
+          <p className="text-[13px] text-muted-foreground">Sem grupo: {loose.map((m) => m.name).join(', ')}. Quem está sem grupo usa a comissão e a meta padrão da Empresa (<button className="text-link hover:underline" onClick={() => go('configuracoes')}>Configurações</button>).</p>
+        )}
+      </Body>
+      <NewGroupDialog open={creating} onOpenChange={setCreating} members={members} groups={groups} onCreate={(g) => { setGroups([...groups, g]); setCreating(false); toast.success(`Grupo ${g.name} criado`, { description: `${g.members.length} ${g.members.length === 1 ? 'pessoa' : 'pessoas'}.` }) }} />
+    </>
+  )
+}
+
+/** Página do grupo: pessoas (o último não sai), comissão e meta, e o estado inativo. */
+function GroupScreen({ t, go, members, groups, setGroups, groupId, openMember }: { t: T; go: (s: Screen) => void; members: Member[]; groups: ProtoGroup[]; setGroups: (g: ProtoGroup[]) => void; groupId: string; openMember: () => void }) {
+  const group = groups.find((g) => g.id === groupId) ?? groups[0]
+  const [adding, setAdding] = useState(false)
+  const [pick, setPick] = useState('')
+  const [deleting, setDeleting] = useState(false)
+  const [commission, setCommission] = useState(group.commission === null ? '' : pctShort.format(group.commission))
+  const [goal, setGoal] = useState(group.goal ?? 'inherit')
+  const [mode, setMode] = useState<GoalMode>(group.mode)
+  const update = (patch: Partial<ProtoGroup>) => setGroups(groups.map((g) => (g.id === group.id ? { ...g, ...patch } : g)))
+  const nameOf = (email: string) => members.find((m) => m.email === email)
+  const free = members.filter((m) => m.state !== 'pending' && !groups.some((g) => g.members.includes(m.email)))
+  const last = group.members.length === 1
+  const add = () => {
+    if (!pick) return
+    update({ members: [...group.members, pick], status: 'active' })
+    toast.success(`${nameOf(pick)?.name} entrou no grupo`, { description: group.status === 'inactive' ? 'O grupo voltou a ficar ativo.' : undefined })
+    setPick(''); setAdding(false)
+  }
+  return (
+    <>
+      <PageHeader title={group.name} sub={group.desc}
+        back={<button onClick={() => go('grupos')} className="inline-flex items-center gap-1 text-[13px] text-muted-foreground hover:text-foreground"><ArrowLeft className="h-3.5 w-3.5" />{t('team.title')} · Grupos</button>}
+        actions={<>
+          {group.status === 'active' && <Button onClick={() => setAdding(true)} disabled={free.length === 0}><Plus />Adicionar pessoa</Button>}
+          <DropdownMenu><DropdownMenuTrigger asChild><Button variant="outline" size="icon" aria-label="Mais ações"><MoreHorizontal /></Button></DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48"><DropdownMenuItem>Renomear</DropdownMenuItem><DropdownMenuSeparator /><DropdownMenuItem className="text-bad focus:text-bad" onSelect={() => setDeleting(true)}>Excluir grupo</DropdownMenuItem></DropdownMenuContent>
+          </DropdownMenu>
+        </>} />
+      <Body>
+        {group.status === 'inactive' && (
+          <section className="flex flex-wrap items-center gap-4 rounded-lg border bg-card p-5">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border text-muted-foreground"><Users className="h-4 w-4" /></span>
+            <div className="min-w-0 flex-1"><div className="flex items-center gap-3"><span className="font-medium">Grupo inativo</span><Status tone="neutral">Sem pessoas</Status></div><p className="text-[14px] text-muted-foreground">{group.lastLeft}. Adicione alguém para reativar o grupo ou exclua-o. Comissão e meta ficam guardadas até lá.</p></div>
+            <div className="flex gap-2"><Button size="sm" onClick={() => setAdding(true)} disabled={free.length === 0}>Adicionar pessoa</Button><Button size="sm" variant="outline" className="text-bad hover:text-bad" onClick={() => setDeleting(true)}>Excluir grupo</Button></div>
+          </section>
+        )}
+        {group.members.length > 0 && (
+          <Table min={600}>
+            <thead><tr><th className={th}>Pessoa</th><th className={th}>{t('team.role')}</th><th className={th}>Comissão</th><th className={cn(th, 'w-12')}><span className="sr-only">Ações</span></th></tr></thead>
+            <tbody>
+              {group.members.map((email) => {
+                const m = nameOf(email)!
+                return (
+                  <tr key={email} className="hover:bg-muted">
+                    <td className={td}><div className="flex items-center gap-3"><Avatar name={m.name} /><div className="min-w-0"><button className="font-medium hover:underline" onClick={openMember}>{m.name}</button><div className="truncate text-[13px] text-muted-foreground">{m.email}</div></div></div></td>
+                    <td className={td}>{m.state === 'owner' ? <Badge>Dono</Badge> : m.role}</td>
+                    <td className={td}><span className="tnum">{pctText(group.commission ?? COMPANY_DEFAULTS.commission)}</span> <Origin from={group.commission === null ? 'company' : 'group'} /></td>
+                    <td className={td}>
+                      {last ? (
+                        <span className="flex h-8 w-8 items-center justify-center text-muted-foreground" title="Um grupo precisa de pelo menos uma pessoa. Para tirar a última, exclua o grupo."><Lock className="h-4 w-4" /><span className="sr-only">Um grupo precisa de pelo menos uma pessoa. Para tirar a última, exclua o grupo.</span></span>
+                      ) : (
+                        <DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8" aria-label={`Ações para ${m.name}`}><MoreHorizontal /></Button></DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-52"><DropdownMenuItem onSelect={openMember}>Ver comissão e meta</DropdownMenuItem><DropdownMenuSeparator /><DropdownMenuItem className="text-bad focus:text-bad" onSelect={() => { update({ members: group.members.filter((x) => x !== email) }); toast(`${m.name} saiu do grupo`, { description: 'Agora usa a comissão e a meta padrão da Empresa.' }) }}>Tirar do grupo</DropdownMenuItem></DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </Table>
+        )}
+        {last && <p className="-mt-3 text-[13px] text-muted-foreground">Um grupo nunca fica vazio pela tela: para tirar a última pessoa, exclua o grupo.</p>}
+        <Card title="Comissão e meta" desc="Quem está no grupo herda estes valores, menos quem tem um valor próprio na página da pessoa. Vazio herda o padrão da Empresa."
+          footerNote="Só quem tem a permissão de comissão e metas vê e muda isto."
+          footer={<Button size="sm" onClick={() => { update({ commission: commission === '' ? null : Number(commission.replace(',', '.')), goal: goal === 'inherit' ? null : goal, mode }); toast.success('Comissão e meta salvas', { description: 'Valem a partir de hoje; meses fechados não mudam.' }) }}>Salvar</Button>}>
+          <CompensationFields commission={commission} setCommission={setCommission} goal={goal} setGoal={setGoal} mode={mode} setMode={setMode} people={Math.max(group.members.length, 1)} />
+        </Card>
+      </Body>
+      <Dialog open={adding} onOpenChange={setAdding}>
+        <DialogContent><DialogHeader><DialogTitle>Adicionar pessoa a {group.name}</DialogTitle><DialogDescription>Só aparece quem ainda não está em nenhum grupo: cada pessoa fica em um grupo só.</DialogDescription></DialogHeader>
+          <Field id="grp-add" label="Pessoa"><Select value={pick} onValueChange={setPick}><SelectTrigger id="grp-add" className="h-10"><SelectValue placeholder="Escolha" /></SelectTrigger><SelectContent>{free.map((m) => <SelectItem key={m.email} value={m.email}>{m.name}</SelectItem>)}</SelectContent></Select></Field>
+          <DialogFooter><Button variant="outline" onClick={() => setAdding(false)}>Cancelar</Button><Button disabled={!pick} onClick={add}>Adicionar</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={deleting} onOpenChange={setDeleting}>
+        <DialogContent><DialogHeader><DialogTitle>Excluir {group.name}?</DialogTitle><DialogDescription>{group.members.length > 0 ? `${group.members.length} ${group.members.length === 1 ? 'pessoa volta' : 'pessoas voltam'} a usar a comissão e a meta padrão da Empresa.` : 'O grupo está sem pessoas.'} Comissões de meses já fechados não mudam.</DialogDescription></DialogHeader>
+          <DialogFooter><Button variant="outline" onClick={() => setDeleting(false)}>Cancelar</Button><Button variant="destructive" onClick={() => { setGroups(groups.filter((g) => g.id !== group.id)); setDeleting(false); toast(`Grupo ${group.name} excluído`); go('grupos') }}>Excluir grupo</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  )
+}
+
+/** Página da pessoa: grupo, comissão e meta que valem e de onde vêm, com exceção opcional. */
+function MemberScreen({ t, go, groups, openGroup }: { t: T; go: (s: Screen) => void; groups: ProtoGroup[]; openGroup: (id: string) => void }) {
+  const person = INITIAL_MEMBERS[1]
+  const group = groups.find((g) => g.members.includes(person.email))
+  const [own, setOwn] = useState(false)
+  const [ownCommission, setOwnCommission] = useState('')
+  const [ownGoal, setOwnGoal] = useState('inherit')
+  const groupCommission = group?.commission ?? COMPANY_DEFAULTS.commission
+  const commissionFrom: 'member' | 'group' | 'company' = own && ownCommission !== '' ? 'member' : group?.commission != null ? 'group' : 'company'
+  const commissionValue = commissionFrom === 'member' ? Number(ownCommission.replace(',', '.')) : groupCommission
+  const goalId = own && ownGoal !== 'inherit' ? ownGoal : group?.goal ?? null
+  const goalFrom: 'member' | 'group' | 'company' = own && ownGoal !== 'inherit' ? 'member' : group?.goal != null ? 'group' : 'company'
+  const mode = goalFrom === 'member' ? 'per_member' : group?.mode ?? 'per_member'
+  const goalAmount = mode === 'split' && group ? goalValue(goalId) / group.members.length : goalValue(goalId)
+  const row = (label: string, value: React.ReactNode, from?: React.ReactNode) => <div className="grid grid-cols-[140px_1fr] gap-3 py-3 text-[14px] sm:grid-cols-[180px_1fr_auto]"><dt className="text-muted-foreground">{label}</dt><dd className="min-w-0 tnum">{value}</dd>{from && <dd className="col-start-2 sm:col-start-auto">{from}</dd>}</div>
+  return (
+    <>
+      <PageHeader title={person.name} sub={`${person.role} · ${person.email}`}
+        back={<button onClick={() => go('equipe')} className="inline-flex items-center gap-1 text-[13px] text-muted-foreground hover:text-foreground"><ArrowLeft className="h-3.5 w-3.5" />{t('team.title')}</button>} />
+      <Body className="lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <Card title="Grupo" desc="Cada pessoa fica em um grupo só. Trocar de grupo muda a comissão e a meta herdadas a partir de hoje."
+          footer={<Button size="sm" variant="outline" onClick={() => group && openGroup(group.id)}>Abrir o grupo</Button>}>
+          <div className="flex items-center gap-3">{group ? <><span className="font-medium">{group.name}</span><span className="text-[13px] text-muted-foreground">{group.members.length} {group.members.length === 1 ? 'pessoa' : 'pessoas'}</span></> : <span className="text-muted-foreground">Sem grupo</span>}</div>
+        </Card>
+        <Card title="O que vale para esta pessoa" desc={`Em ${MONTHS[CURRENT_MONTH].toLowerCase()}/2026, nos sites atribuídos a ${person.name.split(' ')[0]}.`}>
+          <dl className="-my-3 divide-y">
+            {row('Comissão', pctText(commissionValue), <Origin from={commissionFrom} />)}
+            {row('Meta', <>{usd0.format(goalAmount)} <span className="text-muted-foreground">· {goalName(goalId)}{mode === 'split' && group ? ` ÷ ${group.members.length}` : ''}</span></>, <Origin from={goalFrom} />)}
+          </dl>
+        </Card>
+        <Card className="lg:col-span-2" title="Valor próprio" desc="Use só quando esta pessoa foge da regra do grupo. O valor próprio vence o grupo e o padrão da Empresa."
+          footerNote="Só quem tem a permissão de comissão e metas vê e muda isto."
+          footer={own ? <><Button size="sm" variant="outline" onClick={() => { setOwn(false); setOwnCommission(''); setOwnGoal('inherit') }}>Voltar a herdar</Button><Button size="sm" onClick={() => toast.success('Valor próprio salvo')}>Salvar</Button></> : <Button size="sm" variant="outline" onClick={() => setOwn(true)}>Definir valor próprio</Button>}>
+          {own ? (
+            <div className="grid gap-4 md:grid-cols-2">
+              <Field id="own-commission" label="Comissão" hint={`Vazio: herda ${pctText(groupCommission)} ${group?.commission != null ? 'do grupo' : 'da Empresa'}.`}>
+                <div className="relative max-w-[180px]"><Input id="own-commission" inputMode="decimal" className="h-10 pr-8 tnum" placeholder={pctShort.format(groupCommission)} value={ownCommission} onChange={(e) => setOwnCommission(e.target.value)} /><span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[14px] text-muted-foreground">%</span></div>
+              </Field>
+              <Field id="own-goal" label="Modelo de meta" hint="Com valor próprio, a meta é sempre da pessoa, não dividida.">
+                <Select value={ownGoal} onValueChange={setOwnGoal}><SelectTrigger id="own-goal" className="h-10"><SelectValue /></SelectTrigger>
+                  <SelectContent><SelectItem value="inherit">Herdar do grupo</SelectItem>{GOAL_TEMPLATES.map((g) => <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>)}</SelectContent>
+                </Select>
+              </Field>
+            </div>
+          ) : <p className="text-[14px] text-muted-foreground">Nenhum: {person.name.split(' ')[0]} herda tudo do grupo.</p>}
+        </Card>
+      </Body>
+    </>
+  )
+}
+
+/** Configurações › Comissão e metas: padrão da Empresa e modelos de meta mensais. */
+function CompensationSettings({ groups }: { groups: ProtoGroup[] }) {
+  const [commission, setCommission] = useState(pctShort.format(COMPANY_DEFAULTS.commission))
+  const [goal, setGoal] = useState(COMPANY_DEFAULTS.goal)
+  const [editing, setEditing] = useState<GoalTemplate | null>(null)
+  const using = (id: string) => groups.filter((g) => (g.goal ?? COMPANY_DEFAULTS.goal) === id).length
+  return (
+    <>
+      <Card title="Padrão da Empresa" desc="Vale para quem está sem grupo e para os grupos que deixam comissão ou meta em branco."
+        footerNote="Comissão sobre a receita menos o revshare da Groone e os custos, nos sites de cada pessoa." footer={<Button size="sm" onClick={() => toast.success('Padrão salvo')}>Salvar</Button>}>
+        <div className="grid gap-4 md:grid-cols-2">
+          <Field id="def-commission" label="Comissão"><div className="relative max-w-[180px]"><Input id="def-commission" inputMode="decimal" className="h-10 pr-8 tnum" value={commission} onChange={(e) => setCommission(e.target.value)} /><span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[14px] text-muted-foreground">%</span></div></Field>
+          <Field id="def-goal" label="Modelo de meta"><Select value={goal} onValueChange={setGoal}><SelectTrigger id="def-goal" className="h-10"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="none">Sem meta</SelectItem>{GOAL_TEMPLATES.map((g) => <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>)}</SelectContent></Select></Field>
+        </div>
+      </Card>
+      <section className="overflow-hidden rounded-lg border bg-card">
+        <div className="p-6"><h2 className="text-[20px] font-semibold tracking-tight">Modelos de meta</h2><p className="mt-2 text-[14px] text-muted-foreground">Um valor por mês, em dólar. Grupos e pessoas escolhem um modelo.</p></div>
+        <div className="relative overflow-x-auto border-t">
+          <table className="w-full min-w-[560px] text-left text-[14px] [&_tbody_tr:last-child_td]:border-b-0">
+            <thead><tr><th className={th}>Modelo</th><th className={cn(th, 'text-right')}>{MONTHS[CURRENT_MONTH]}/2026</th><th className={cn(th, 'text-right')}>Ano</th><th className={cn(th, 'text-right')}>Grupos</th><th className={cn(th, 'w-20')}><span className="sr-only">Editar</span></th></tr></thead>
+            <tbody>{GOAL_TEMPLATES.map((g) => (
+              <tr key={g.id}><td className={cn(td, 'font-medium')}>{g.name}{g.id === COMPANY_DEFAULTS.goal && <span className="ml-2"><Badge>Padrão</Badge></span>}</td><td className={cn(td, 'text-right tnum')}>{usd0.format(g.months[CURRENT_MONTH])}</td><td className={cn(td, 'text-right tnum text-muted-foreground')}>{usd0.format(g.months.reduce((s, v) => s + v, 0))}</td><td className={cn(td, 'text-right tnum')}>{using(g.id)}</td><td className={cn(td, 'text-right')}><Button variant="ghost" size="sm" onClick={() => setEditing(g)}>Editar</Button></td></tr>
+            ))}</tbody>
+          </table>
+        </div>
+        <div className="flex justify-end border-t bg-muted px-6 py-3"><Button size="sm" variant="outline" className="bg-card" onClick={() => setEditing({ id: 'novo', name: '', months: Array(12).fill(0) })}><Plus />Novo modelo</Button></div>
+      </section>
+      <Dialog open={editing !== null} onOpenChange={(o) => !o && setEditing(null)}>
+        <DialogContent className="sm:max-w-[560px]"><DialogHeader><DialogTitle>{editing?.id === 'novo' ? 'Novo modelo de meta' : `Editar ${editing?.name}`}</DialogTitle><DialogDescription>Valor do mês em dólar. Mudar um mês já fechado não refaz a comissão dele.</DialogDescription></DialogHeader>
+          <Field id="tpl-name" label="Nome"><Input id="tpl-name" className="h-10" defaultValue={editing?.name} placeholder="Meta 2027" /></Field>
+          <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">{MONTHS.map((m, i) => <Field key={m} id={`tpl-${i}`} label={m}><Input id={`tpl-${i}`} inputMode="numeric" className="h-10 tnum" defaultValue={editing?.months[i] || ''} placeholder="0" /></Field>)}</div>
+          <DialogFooter><Button variant="outline" onClick={() => setEditing(null)}>Cancelar</Button><Button onClick={() => { setEditing(null); toast.success('Modelo salvo') }}>Salvar</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  )
+}
+
+/** Envio da imagem da Empresa: prévia, trocar e remover. Serve ao cliente e à equipe Groone. */
+function CompanyImageCard({ name, image, setImage, staff }: { name: string; image: string | null; setImage: (v: string | null) => void; staff?: boolean }) {
+  const [err, setErr] = useState('')
+  const pick = (file: File | undefined) => {
+    if (!file) return
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) { setErr('Use uma imagem PNG, JPEG ou WebP.'); return }
+    if (file.size > 2 * 1024 * 1024) { setErr(`A imagem tem ${(file.size / 1024 / 1024).toFixed(1).replace('.', ',')} MB. Use uma de até 2 MB.`); return }
+    setErr(''); setImage(URL.createObjectURL(file))
+    toast.success('Imagem trocada', { description: staff ? `O cliente vê na auditoria que a Groone trocou.` : 'Aparece para todos da Empresa.' })
+  }
+  return (
+    <Card title="Imagem da Empresa" desc={staff ? `Aparece para ${name} no seletor de Empresas e para a Groone na lista de clientes. Fica na auditoria do cliente como troca feita pela Groone.` : 'Aparece no seletor de Empresas, para todos da Empresa, e para a Groone na lista de clientes.'}
+      footerNote={err ? <span className="text-bad">{err}</span> : 'PNG, JPEG ou WebP até 2 MB. Cortamos em quadrado de 256 × 256.'}
+      footer={<>
+        {image && <Button size="sm" variant="outline" onClick={() => { setImage(null); toast('Imagem removida', { description: 'Volta a inicial do nome.' }) }}>Remover</Button>}
+        <Button size="sm" asChild><label className="cursor-pointer">{image ? 'Trocar imagem' : 'Enviar imagem'}<input type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" onChange={(e) => pick(e.target.files?.[0])} /></label></Button>
+      </>}>
+      <div className="flex items-center gap-4">
+        <CompanyIcon name={name} image={image} size={64} />
+        <div className="grid gap-2 text-[13px] text-muted-foreground">
+          <span>Como aparece no seletor:</span>
+          <span className="flex items-center gap-2 text-[14px] font-medium text-foreground"><CompanyIcon name={name} image={image} size={20} />{name}</span>
+        </div>
+      </div>
+    </Card>
+  )
+}
+
 export default function App() {
   const initial = typeof location !== 'undefined' && isScreen(location.hash.slice(1)) ? (location.hash.slice(1) as Screen) : 'equipe'
   const [screen, setScreen] = useState<Screen>(initial)
@@ -1594,6 +2005,10 @@ export default function App() {
   const [members, setMembers] = useState(INITIAL_MEMBERS)
   const [accent, setAccent] = useState('padrao')
   const [theme, setTheme] = useState('system')
+  const [groups, setGroups] = useState(INITIAL_GROUPS)
+  const [groupId, setGroupId] = useState('trafego')
+  const [image, setImage] = useState<string | null>(null)
+  const openGroup = (id: string) => { setGroupId(id); go(id === 'parcerias' ? 'grupoinativo' : 'grupo') }
   const t: T = (k) => translate(lang, k)
 
   const go = (s: Screen) => {
@@ -1625,10 +2040,14 @@ export default function App() {
       case 'visitas': return <PageViewsScreen />
       case 'resultado': return <ResultScreen go={go} />
       case 'custos': return <CostsScreen />
-      case 'equipe': return <TeamScreen t={t} members={members} setMembers={setMembers} />
+      case 'equipe': return <TeamScreen t={t} go={go} members={members} setMembers={setMembers} groupCount={groups.length} />
+      case 'grupos': return <GroupsScreen t={t} go={go} members={members} groups={groups} setGroups={setGroups} openGroup={openGroup} />
+      case 'grupo': return <GroupScreen key={groupId} t={t} go={go} members={members} groups={groups} setGroups={setGroups} groupId={groupId === 'parcerias' ? 'trafego' : groupId} openMember={() => go('membro')} />
+      case 'grupoinativo': return <GroupScreen key="parcerias" t={t} go={go} members={members} groups={groups} setGroups={setGroups} groupId="parcerias" openMember={() => go('membro')} />
+      case 'membro': return <MemberScreen t={t} go={go} groups={groups} openGroup={openGroup} />
       case 'networks': return <NetworksScreen t={t} go={go} />
       case 'conectar': return <ConnectScreen t={t} go={go} />
-      case 'configuracoes': return <SettingsScreen t={t} accent={accent} setAccent={setAccent} theme={theme} setTheme={setTheme} />
+      case 'configuracoes': return <SettingsScreen t={t} accent={accent} setAccent={setAccent} theme={theme} setTheme={setTheme} image={image} setImage={setImage} groups={groups} />
       case 'interno': return <InternalScreen t={t} go={go} />
       case 'cliente': return <ClientScreen go={go} />
       case 'fiscais': return <FiscalScreen />
@@ -1649,7 +2068,7 @@ export default function App() {
           {SCREENS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
         </select>
       </div>
-      <div className="flex flex-1 flex-col">{auth ? body : <Shell t={t} lang={lang} setLang={setLang} screen={screen} go={go}>{body}</Shell>}</div>
+      <div className="flex flex-1 flex-col">{auth ? body : <Shell t={t} lang={lang} setLang={setLang} screen={screen} go={go} image={image}>{body}</Shell>}</div>
       <Toaster position="bottom-right" theme={theme === 'system' ? 'system' : (theme as 'light' | 'dark')} toastOptions={{ className: 'font-sans' }} />
     </div>
   )
