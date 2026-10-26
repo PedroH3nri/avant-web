@@ -5,7 +5,7 @@
  */
 
 import type { BarItem } from '@/components/charts/BarChart.vue'
-import type { MetricFormat, MetricKind, MetricValues, ReportRange, ReportRow, RelativePeriod } from './types'
+import type { MetricFormat, MetricKind, MetricValues, RelativePeriod, ReportRange, ReportRow } from '@/modules/reports/types'
 
 /** Moeda em que o GAM paga e o padrão do painel (``BASE_CURRENCY`` do avant-core). */
 export const REPORT_CURRENCY = 'USD'

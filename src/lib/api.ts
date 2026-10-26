@@ -37,7 +37,7 @@ export function readCookie(name: string, source = document.cookie): string | nul
   return null
 }
 
-type Query = Record<string, string | number | boolean | null | undefined>
+export type Query = Record<string, string | number | boolean | null | undefined>
 
 export interface RequestOptions {
   query?: Query

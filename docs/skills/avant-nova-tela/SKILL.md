@@ -8,7 +8,7 @@ description: Use ao criar ou mudar uma tela no avant-web (protótipo primeiro, D
 1. **Protótipo primeiro**: desenhe a tela em `design/prototype/` seguindo `design/DESIGN.md` e `design/PRODUCT.md` (skill `impeccable` ajuda). Só depois o Vue.
 2. **Visual**: Geist, quase monocromático, preto como cor principal, azul só para links e foco. Estado é ponto + palavra, nunca só cor.
 3. **Textos** só por `t('chave')` em `src/lib/i18n.ts`, com PT, EN e ES. Erros da API por `errorText(code)`. Nada de string solta no template.
-4. **Tipos** em `src/lib/types.ts`, iguais aos `schemas.py` do avant-api.
+4. **Onde fica**: em `src/modules/<domínio>/`, a tela em `views/`, as peças em `components/`, as chamadas da API no `service.ts` (a tela nunca usa `api` direto), os tipos no `types.ts` (iguais ao `dto.py` do domínio no avant-api; os comuns em `src/lib/types.ts`) e as regras puras em `rules.ts`, com teste em `tests/`.
 5. **Rotas do painel em português** em `src/router.ts`; a API continua em inglês. Não mudar `/entrar`, `/entrar/2fa`, `/convite/{token}`, `/redefinir-senha/{token}`, `/configuracoes/conta`.
 6. **Permissão**: `session.can('permissao')` só esconde o que não serve; quem decide é a API. Rota com `meta.permission`; painel interno com `meta.internal`.
 7. **Componentes** de `src/components/ui/` (reka-ui no estilo shadcn-vue). Tabelas com `whitespace-nowrap`.

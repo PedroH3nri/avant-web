@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { contractActions, formatRevshare, manualNetworks, parseRevshare } from '@/lib/contracts'
-import type { ContractNetwork } from '@/lib/types'
+import { contractActions, formatRevshare, manualNetworks, parseRevshare } from '@/modules/internal/contracts/rules'
+import type { ContractNetwork } from '@/modules/internal/contracts/types'
 
 /** Network de contrato mínima para os testes. */
 function network(code: string, manual: boolean): ContractNetwork {

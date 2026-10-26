@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { change, countryName, dailySeries, daysOf, formatMetric, hourLabel, hourlyItems, niceTicks, peakHour, toNumber } from '@/lib/metrics'
-import type { ReportRow } from '@/lib/types'
+import type { ReportRow } from '@/modules/reports/types'
 
 /** Linha do resultado com a data e a receita. */
 const row = (date: string, revenue: string, ecpm: string | null): ReportRow => ({
