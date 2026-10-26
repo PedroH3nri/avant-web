@@ -99,9 +99,10 @@ describe('SidebarNav', () => {
     await r.push('/interno')
     const w = mount(SidebarNav, { global: { plugins: [r] } })
     expect(labels(w)).toEqual(['Dashboard', 'Clientes', 'Equipes', 'Networks do GAM', 'Contratos', 'Sites', 'Ad Manager', 'Page Views', 'Resultado', 'Resultado dos clientes', 'Equipe Groone', 'Papéis e permissões', 'Custos'])
+    // Equipes, para a equipe Groone, são as equipes dos clientes, nunca a própria.
     await w.findAll('nav a').find((a) => a.text() === 'Equipes')!.trigger('click')
     await flushPromises()
-    expect(r.currentRoute.value.path).toBe('/equipe')
+    expect(r.currentRoute.value.path).toBe('/interno/equipes')
   })
 
   it('quem não é da equipe Groone não vê o grupo interno', async () => {
