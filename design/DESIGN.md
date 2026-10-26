@@ -119,7 +119,16 @@ components:
 
 The category standard for a SaaS dashboard, played straight at the craft level of the Vercel dashboard (the owner's reference, 2026-10-22). Near-monochrome, dense where data lives, quiet everywhere else. Brand shows up in precision: hairline borders, tight heading tracking, tabular numbers, and status that reads at a glance. Built light-first for desk work in daylight, with a full dark theme.
 
-Status: approved by the owner on 2026-10-22 as the official Avant identity. New surfaces and the production Vue 3 build inherit this system; the monogram mark stays provisional until a logo exists.
+Status: approved by the owner on 2026-10-22 as the official Avant identity. New surfaces and the production Vue 3 build inherit this system. The mark (Ápice) was chosen on 2026-10-26; see Brand mark.
+
+## Brand mark
+
+The Ápice (chosen by the owner on 2026-10-26, avant-web#56): an A without a crossbar, read as the peak of a revenue line, with a dot where the crossbar would be, the measured data point. Drawn on a 32 grid: stroke `M7 25L16 7.5L25 25` at 3.4 with miter joins and butt ends, dot at (16, 19.4) with radius 2.5. Source of truth: `src/components/ui/Mark.vue`.
+
+- **Always black and white.** Never the company accent, never blue, never a gradient. Tile: ink square (22.5% corner radius) with the mark in white at 78%; in dark mode the tile is #EDEDED with the mark in #0A0A0A. Bare mark (`<Mark bare />`): the mark alone in the current text color.
+- **Use it wherever the product identifies itself:** sidebar header, sign-in screens, favicon (`public/favicon.svg`, follows the browser theme), app icons (`apple-touch-icon.png`, `icon-192.png`, `icon-512.png`, maskable 512, `site.webmanifest`).
+- **Footer watermark:** every screen ends with the bare mark at 14px and "Avant by GroOne" in 12px muted text (`BrandSignature.vue`); the sign-in footer adds the domain.
+- Exploration of the other directions: https://claude.ai/artifact/H3uyQrB1WGcRVGR4XUVhyP
 
 ## Colors
 

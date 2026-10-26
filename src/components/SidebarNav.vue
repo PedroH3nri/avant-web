@@ -137,7 +137,7 @@ async function logout() {
       </RouterLink>
       <span class="leading-tight">
         <span class="block text-[14px] font-semibold tracking-tight">Avant</span>
-        <span class="block text-[12px] text-muted-foreground">by Groone</span>
+        <span class="block text-[12px] text-muted-foreground">{{ t('brand.by') }}</span>
       </span>
     </div>
     <nav v-if="ready" class="grid gap-0.5 overflow-y-auto p-3" :aria-label="t('nav.main')">
