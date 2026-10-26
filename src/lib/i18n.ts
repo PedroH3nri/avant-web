@@ -721,6 +721,22 @@ const dict = {
   ],
   'acc.security': ['Segurança', 'Security', 'Seguridad'],
   'acc.access': ['Acesso', 'Access', 'Acceso'],
+  'acc.preferences': ['Preferências', 'Preferences', 'Preferencias'],
+  'cur.title': ['Moeda', 'Currency', 'Moneda'],
+  'cur.desc': [
+    'Moeda em que você vê receita, eCPM e resultado. O Ad Manager paga em dólar; cada dia é convertido pela cotação daquele dia.',
+    'Currency you see revenue, eCPM and results in. Ad Manager pays in US dollars; each day is converted at that day’s rate.',
+    'Moneda en la que ves ingresos, eCPM y resultados. Ad Manager paga en dólares; cada día se convierte con la cotización de ese día.',
+  ],
+  'cur.label': ['Moeda do painel', 'Panel currency', 'Moneda del panel'],
+  'cur.note': ['Vale só para você, em todas as Empresas.', 'Applies only to you, in every company.', 'Vale solo para ti, en todas las empresas.'],
+  'cur.missing': [
+    'Algumas moedas aparecem quando a primeira cotação chegar.',
+    'Some currencies show up once their first rate arrives.',
+    'Algunas monedas aparecen cuando llegue su primera cotización.',
+  ],
+  'cur.save': ['Salvar moeda', 'Save currency', 'Guardar moneda'],
+  'cur.saved': ['Moeda salva', 'Currency saved', 'Moneda guardada'],
   'acc.setupTitle': ['Configure o 2FA para continuar', 'Set up 2FA to continue', 'Configura el 2FA para continuar'],
   'acc.setupBody': [
     'A equipe Groone usa o painel sempre com o 2FA. Ative abaixo e o resto do painel aparece.',
@@ -1205,6 +1221,12 @@ const errors: Record<string, readonly [string, string, string]> = {
     'La consulta es demasiado pesada. Reduce el período o las dimensiones.',
   ],
   invalid_input: ['Confira os campos.', 'Check the fields.', 'Revisa los campos.'],
+  unsupported_currency: ['Moeda não aceita.', 'Currency not supported.', 'Moneda no admitida.'],
+  currency_unavailable: [
+    'Ainda não há cotação para esta moeda. Tente mais tarde.',
+    'There is no rate for this currency yet. Try again later.',
+    'Todavía no hay cotización para esta moneda. Inténtalo más tarde.',
+  ],
   google_unavailable: [
     'O login com Google não está disponível agora. Entre com e-mail e senha.',
     'Google sign-in is not available right now. Use email and password.',

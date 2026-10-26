@@ -7,7 +7,7 @@
 import type { BarItem } from '@/components/charts/BarChart.vue'
 import type { MetricFormat, MetricKind, MetricValues, ReportRange, ReportRow, RelativePeriod } from './types'
 
-/** Moeda dos relatórios do GAM (``REPORT_CURRENCY`` do avant-core). */
+/** Moeda em que o GAM paga e o padrão do painel (``BASE_CURRENCY`` do avant-core). */
 export const REPORT_CURRENCY = 'USD'
 
 export const PERIOD_PRESETS: RelativePeriod[] = ['yesterday', 'last_7_days', 'last_30_days', 'this_month', 'last_month']
@@ -19,14 +19,14 @@ export function toNumber(value: string | number | null | undefined): number | nu
   return Number.isFinite(parsed) ? parsed : null
 }
 
-/** Formata uma métrica no idioma: moeda, número inteiro ou porcentagem (que já vem vezes 100). */
-export function formatMetric(value: number | null, format: MetricFormat, locale: string, compact = false): string {
+/** Formata uma métrica no idioma: moeda (a da resposta), número inteiro ou porcentagem (que já vem vezes 100). */
+export function formatMetric(value: number | null, format: MetricFormat, locale: string, compact = false, currency = REPORT_CURRENCY): string {
   if (value === null) return '–'
   const notation = compact ? ('compact' as const) : ('standard' as const)
   if (format === 'currency') {
     return new Intl.NumberFormat(locale, {
       style: 'currency',
-      currency: REPORT_CURRENCY,
+      currency,
       notation,
       maximumFractionDigits: compact ? 1 : 2,
       minimumFractionDigits: compact ? 0 : 2,

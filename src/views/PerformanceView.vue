@@ -18,6 +18,7 @@ import { onEvent } from '@/lib/events'
 import { errorText, lang, locale, t } from '@/lib/i18n'
 import { change, countryName, dailySeries, daysOf, formatMetric, shortDay, toNumber } from '@/lib/metrics'
 import { td, th } from '@/lib/table'
+import { useSession } from '@/stores/session'
 import type { MetricCatalog, MetricDef, MetricValues, RelativePeriod, ReportQuery, ReportResult } from '@/lib/types'
 
 const KPI_KEYS = ['revenue', 'impressions', 'ecpm', 'ctr', 'active_view']
@@ -34,6 +35,7 @@ const byCountry = ref<ReportResult | null>(null)
 const loading = ref(true)
 const loadError = ref<string | null>(null)
 let latestLoad = 0
+const session = useSession()
 
 const kpis = computed<MetricDef[]>(() =>
   KPI_KEYS.map((key) => catalog.value?.metrics.find((metric) => metric.key === key)).filter((metric): metric is MetricDef => !!metric),
@@ -43,7 +45,7 @@ const empty = computed(() => !!daily.value && daily.value.rows.length === 0)
 
 /** Consulta do motor de relatórios no período escolhido. */
 function query(body: Omit<ReportQuery, 'period'>, range?: { start: string; end: string }): Promise<ReportResult> {
-  return api.post<ReportResult>('/reports/query', { ...body, period: range ?? { preset: period.value } })
+  return api.post<ReportResult>('/reports/query', { ...body, currency: session.displayCurrency, period: range ?? { preset: period.value } })
 }
 
 /** Carrega o catálogo (uma vez) e as consultas da tela; resposta atrasada de outro período é ignorada. */
@@ -76,12 +78,12 @@ async function load() {
 }
 
 onMounted(load)
-watch([period, compare], load)
+watch([period, compare, () => session.displayCurrency], load)
 onEvent('metrics.updated', useDebounceFn(load, REFRESH_DELAY_MS))
 
 /** Valor de uma métrica formatado no idioma atual. */
 const show = (metric: MetricDef | undefined, value: number | null, compact = false) =>
-  metric ? formatMetric(value, metric.format, locale.value, compact) : '–'
+  metric ? formatMetric(value, metric.format, locale.value, compact, daily.value?.currency) : '–'
 /** Valor numérico de uma métrica num conjunto de valores da API. */
 const valueOf = (values: MetricValues | null | undefined, key: string) => toNumber(values?.[key])
 /** Variação em % já formatada, sem sinal (a seta diz a direção). */

@@ -22,6 +22,7 @@ function me(active: string, permissions: string[]): Me {
     is_staff: true,
     mfa_enabled: true,
     mfa_setup_required: false,
+    display_currency: 'USD',
   }
 }
 

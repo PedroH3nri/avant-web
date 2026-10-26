@@ -8,6 +8,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
 import { ShieldAlert } from 'lucide-vue-next'
 import ApiKeysCard from '@/components/account/ApiKeysCard.vue'
+import CurrencyCard from '@/components/account/CurrencyCard.vue'
 import GoogleCard from '@/components/account/GoogleCard.vue'
 import MfaCard from '@/components/account/MfaCard.vue'
 import PasswordCard from '@/components/account/PasswordCard.vue'
@@ -54,5 +55,12 @@ onMounted(() => {
     </h2>
     <SessionsCard ref="sessions" />
     <ApiKeysCard v-if="!session.me?.mfa_setup_required && session.company" />
+
+    <template v-if="!session.me?.mfa_setup_required">
+      <h2 class="text-[13px] font-medium text-muted-foreground">
+        {{ t('acc.preferences') }}
+      </h2>
+      <CurrencyCard />
+    </template>
   </PageBody>
 </template>

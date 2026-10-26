@@ -35,6 +35,16 @@ export interface Me {
   is_staff: boolean
   mfa_enabled: boolean
   mfa_setup_required: boolean
+  display_currency: string
+}
+
+/** Moeda do painel, de GET /currencies. */
+export interface Currency {
+  code: string
+  name: string
+  symbol: string
+  decimals: number
+  available: boolean
 }
 
 export interface LoginResult {
@@ -374,6 +384,7 @@ export interface ReportQuery {
   compare?: boolean
   order?: { field: string; descending?: boolean }[]
   limit?: number
+  currency?: string
 }
 
 /** Valores decimais chegam como texto, para não perder centavos no caminho. */
@@ -398,4 +409,5 @@ export interface ReportResult {
   previous_totals: MetricValues | null
   truncated: boolean
   labels: Record<string, Record<string, string>>
+  currency: string
 }
