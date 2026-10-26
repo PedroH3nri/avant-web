@@ -7,6 +7,9 @@ import { computed, ref, watch } from 'vue'
 import type { Lang, Localized } from './types'
 
 const dict = {
+  // Marca
+  'brand.signature': ['Avant by GroOne', 'Avant by GroOne', 'Avant by GroOne'],
+  'brand.by': ['by GroOne', 'by GroOne', 'by GroOne'],
   // Navegação e topo
   'nav.home': ['Dashboard', 'Dashboard', 'Dashboard'],
   'nav.adManager': ['Ad Manager', 'Ad Manager', 'Ad Manager'],

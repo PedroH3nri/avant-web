@@ -2,6 +2,7 @@
 /** Moldura das telas sem login: marca, idioma e o cartão no centro. */
 import Mark from '@/components/ui/Mark.vue'
 import LangSwitch from '@/components/LangSwitch.vue'
+import BrandSignature from '@/components/BrandSignature.vue'
 </script>
 
 <template>
@@ -15,6 +16,8 @@ import LangSwitch from '@/components/LangSwitch.vue'
     <main class="flex flex-1 items-start justify-center px-4 pb-16 pt-10 sm:pt-20">
       <div class="w-full max-w-[360px]"><slot /></div>
     </main>
-    <footer class="border-t px-6 py-4 text-[13px] text-muted-foreground">Avant by Groone · avant.groone.com</footer>
+    <footer class="flex items-center gap-2 border-t px-6 py-4 text-[12px] text-muted-foreground">
+      <BrandSignature /><span aria-hidden="true">·</span><span>avant.groone.com</span>
+    </footer>
   </div>
 </template>
