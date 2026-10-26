@@ -13,6 +13,7 @@ function me(permissions: string[], accent: string | null = null): Me {
     is_staff: false,
     mfa_enabled: false,
     mfa_setup_required: false,
+    display_currency: 'USD',
   }
 }
 

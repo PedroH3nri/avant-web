@@ -61,6 +61,15 @@ export const useSession = defineStore('session', () => {
     if (first && value && !langChosen()) lang.value = value.user.locale
   }
 
+  /** Moeda em que a pessoa vê os valores; dólar até a sessão carregar. */
+  const displayCurrency = computed(() => me.value?.display_currency ?? 'USD')
+
+  /** Troca a moeda de visualização na API e já aplica no painel. */
+  async function setDisplayCurrency(code: string) {
+    const saved = await api.put<{ display_currency: string }>('/auth/preferences', { display_currency: code })
+    if (me.value) me.value = { ...me.value, display_currency: saved.display_currency }
+  }
+
   /** Carrega a pessoa da sessão; sem sessão fica vazia. */
   async function load(): Promise<Me | null> {
     try {
@@ -99,5 +108,5 @@ export const useSession = defineStore('session', () => {
     reconnectEvents()
   }
 
-  return { me, loaded, company, internalCompany, clientCompanies, lastClientId, can, canIn, set, load, login, verifyMfa, logout, switchCompany }
+  return { me, loaded, company, internalCompany, clientCompanies, lastClientId, displayCurrency, can, canIn, set, load, login, verifyMfa, logout, switchCompany, setDisplayCurrency }
 })
