@@ -19,7 +19,6 @@ import { Mark, SeatBar, SeatDot, SeatStrip, type SeatState } from './tiles'
 const SCREENS = [
   ['login', 'Login'],
   ['convite', 'Aceite de convite'],
-  ['empresa', 'Criar Empresa'],
   ['inicio', 'Início'],
   ['desempenho', 'Desempenho'],
   ['visitas', 'Page Views'],
@@ -30,6 +29,8 @@ const SCREENS = [
   ['conectar', 'Conectar network'],
   ['configuracoes', 'Configurações'],
   ['interno', 'Painel interno · Clientes'],
+  ['cliente', 'Painel interno · Página do cliente'],
+  ['fiscais', 'Configurações · Dados fiscais'],
   ['contratos', 'Painel interno · Contratos'],
   ['resultados', 'Painel interno · Resultado dos clientes'],
   ['permissoes', 'Modal de permissões'],
@@ -66,14 +67,6 @@ const SITES = [
   { domain: 'blogexemplo.com', network: 'Blog Exemplo Principal', approval: 'ok' as const, units: 12 },
   { domain: 'receitas.blogexemplo.com', network: 'Blog Exemplo Principal', approval: 'ok' as const, units: 7 },
   { domain: 'viagens.blogexemplo.com', network: 'Blog Exemplo Principal', approval: 'review' as const, units: 3 },
-]
-type Client = { name: string; owner: string; inNetwork: boolean; code: string | null; used: number; pending: number; limit: number; status: 'active' | 'invited' | 'error' }
-const INITIAL_CLIENTS: Client[] = [
-  { name: 'Blog Exemplo', owner: 'pedro@blogexemplo.com', inNetwork: true, code: '21987654321', used: 4, pending: 1, limit: 10, status: 'error' },
-  { name: 'Receitas da Vó', owner: 'ana@receitasdavo.com.br', inNetwork: true, code: '22110099887', used: 2, pending: 0, limit: 5, status: 'active' },
-  { name: 'Tech Notícias', owner: 'contato@technoticias.com', inNetwork: false, code: null, used: 0, pending: 1, limit: 3, status: 'invited' },
-  { name: 'Guia do Pet', owner: 'marina@guiadopet.com.br', inNetwork: true, code: '23456789012', used: 6, pending: 0, limit: 6, status: 'active' },
-  { name: 'Futebol de Bairro', owner: 'leo@futebolbairro.com', inNetwork: false, code: null, used: 1, pending: 0, limit: 3, status: 'active' },
 ]
 const SERVICE_ACCOUNT = 'avant-gam@groone-avant.iam.gserviceaccount.com'
 
@@ -225,6 +218,7 @@ function Invite({ t, go }: { t: T; go: (s: Screen) => void }) {
     <AuthFrame>
       <div className="flex justify-center -space-x-2"><Avatar name="Pedro Henrique" size={44} /><span className="inline-flex rounded-[9px] ring-2 ring-background"><Mark size={44} /></span></div>
       <h1 className="mt-6 text-center text-[28px] font-semibold leading-tight tracking-[-0.03em]">Entrar na Blog Exemplo</h1>
+      {/* No convite de dono a Empresa já existe: a Groone cadastrou antes. Não há tela de criar Empresa. */}
       <p className="mt-3 text-center text-[14px] text-muted-foreground">
         <span className="text-foreground">Pedro Henrique</span> convidou <span className="text-foreground">rafael@agenciadias.com</span> como <span className="text-foreground">Gestor de tráfego</span>. Convite válido até 23/10/2026, 14:05.
       </p>
@@ -238,30 +232,6 @@ function Invite({ t, go }: { t: T; go: (s: Screen) => void }) {
         </Field>
         <Button type="submit" className="mt-2 h-10" disabled={!pw || mismatch || short}>{t('invite.submit')}</Button>
         <p className="text-center text-[13px] text-muted-foreground">{t('invite.google')}</p>
-      </form>
-    </AuthFrame>
-  )
-}
-
-function CreateCompany({ t, go }: { t: T; go: (s: Screen) => void }) {
-  return (
-    <AuthFrame>
-      <h1 className="text-[28px] font-semibold leading-tight tracking-[-0.03em]">{t('company.title')}</h1>
-      <p className="mt-2 text-[14px] text-muted-foreground">{t('company.sub')}</p>
-      <form className="mt-8 grid gap-5" onSubmit={(e) => { e.preventDefault(); toast.success('Empresa criada'); go('inicio') }}>
-        <Field id="co-name" label={t('company.name')}><Input id="co-name" className="h-10" defaultValue="Blog Exemplo" /></Field>
-        <Field id="co-site" label={t('company.site')} hint="Os outros sites chegam sozinhos quando a network do GAM for conectada."><Input id="co-site" className="h-10" defaultValue="blogexemplo.com" /></Field>
-        <Field id="co-lang" label={t('company.lang')}>
-          <Select defaultValue="pt"><SelectTrigger id="co-lang" className="h-10"><SelectValue /></SelectTrigger>
-            <SelectContent><SelectItem value="pt">Português</SelectItem><SelectItem value="en">English</SelectItem><SelectItem value="es">Español</SelectItem></SelectContent>
-          </Select>
-        </Field>
-        <div className="grid gap-2 rounded-lg border p-4">
-          <div className="flex items-center justify-between text-[13px]"><span className="font-medium">Vagas de funcionários</span><span className="tnum text-muted-foreground">1 de 10</span></div>
-          <SeatBar seats={['owner', ...Array<SeatState>(9).fill('free')]} />
-          <p className="text-[13px] text-muted-foreground">Limite definido pela Groone. Você ocupa a primeira vaga.</p>
-        </div>
-        <Button type="submit" className="h-10">{t('company.submit')}</Button>
       </form>
     </AuthFrame>
   )
@@ -1103,76 +1073,175 @@ function SettingsScreen({ t, accent, setAccent, theme, setTheme }: { t: T; accen
 
 /* ---------- Painel interno ---------- */
 
-function InternalScreen({ t }: { t: T }) {
-  const [clients, setClients] = useState(INITIAL_CLIENTS)
+type ClientSituation = 'active' | 'pending' | 'inactive' | 'banned'
+type ProtoClient = { name: string; contact: string; email: string; situation: ClientSituation; used: number; limit: number; referredBy: string | null }
+const PROTO_CLIENTS: ProtoClient[] = [
+  { name: 'Blog Exemplo', contact: 'Pedro Henrique', email: 'pedro@blogexemplo.com', situation: 'active', used: 5, limit: 10, referredBy: null },
+  { name: 'Receitas da Vó', contact: 'Ana Ribeiro', email: 'ana@receitasdavo.com.br', situation: 'active', used: 2, limit: 5, referredBy: 'Blog Exemplo' },
+  { name: 'Tech Notícias', contact: 'Caio Prado', email: 'contato@technoticias.com', situation: 'pending', used: 0, limit: 3, referredBy: null },
+  { name: 'Guia do Pet', contact: 'Marina Luz', email: 'marina@guiadopet.com.br', situation: 'inactive', used: 6, limit: 6, referredBy: null },
+  { name: 'Apostas Já', contact: 'Leo Melo', email: 'leo@apostasja.com', situation: 'banned', used: 1, limit: 3, referredBy: null },
+]
+const SITUATION: Record<ClientSituation, [string, 'ok' | 'ochre' | 'neutral' | 'bad']> = {
+  active: ['Ativo', 'ok'],
+  pending: ['Pendente', 'ochre'],
+  inactive: ['Inativo', 'neutral'],
+  banned: ['Banido', 'bad'],
+}
+
+function NewClientForm({ clients, onDone }: { clients: ProtoClient[]; onDone: (c: ProtoClient | null) => void }) {
+  const [form, setForm] = useState({ name: '', limit: '5', first: '', last: '', email: '', ddi: '+55', phone: '', lang: 'pt', referrer: 'none', pct: '2', notes: '' })
+  const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm({ ...form, [k]: e.target.value })
+  const emailTaken = clients.some((c) => c.email === form.email.trim().toLowerCase())
+  const ok = form.name.trim() && form.first.trim() && form.last.trim() && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(form.email.trim()) && !emailTaken && Number(form.limit) >= 1
+  return (
+    <Card title="Novo cliente" desc="O cliente fica pendente. Nenhum e-mail sai agora: envie o convite de dono pela página do cliente quando quiser."
+      footerNote="Os dados fiscais o próprio cliente preenche, em Configurações."
+      footer={<><Button variant="outline" onClick={() => onDone(null)}>Cancelar</Button><Button form="new-client" type="submit" disabled={!ok}>Cadastrar cliente</Button></>}>
+      <form id="new-client" className="grid gap-6" onSubmit={(e) => { e.preventDefault(); if (ok) onDone({ name: form.name.trim(), contact: `${form.first} ${form.last}`, email: form.email.trim().toLowerCase(), situation: 'pending', used: 0, limit: Number(form.limit), referredBy: form.referrer === 'none' ? null : form.referrer }) }}>
+        <fieldset className="grid gap-4 md:grid-cols-[1fr_110px]">
+          <legend className="mb-3 text-[13px] font-medium text-muted-foreground">Empresa</legend>
+          <Field id="nc-name" label="Nome do cliente"><Input id="nc-name" className="h-10" autoFocus value={form.name} onChange={set('name')} placeholder="Portal da Cidade" /></Field>
+          <Field id="nc-limit" label="Vagas"><Input id="nc-limit" className="h-10 tnum" type="number" min={1} value={form.limit} onChange={set('limit')} /></Field>
+        </fieldset>
+        <fieldset className="grid gap-4 md:grid-cols-2">
+          <legend className="mb-3 text-[13px] font-medium text-muted-foreground">Contato</legend>
+          <Field id="nc-first" label="Nome"><Input id="nc-first" className="h-10" value={form.first} onChange={set('first')} autoComplete="off" /></Field>
+          <Field id="nc-last" label="Sobrenome"><Input id="nc-last" className="h-10" value={form.last} onChange={set('last')} autoComplete="off" /></Field>
+          <Field id="nc-email" label="E-mail" hint="Recebe o convite de dono." error={emailTaken && 'Outro cliente já usa este e-mail.'}><Input id="nc-email" className="h-10" type="email" value={form.email} onChange={set('email')} aria-invalid={emailTaken} placeholder="dono@site.com" /></Field>
+          <div className="grid grid-cols-[90px_1fr] gap-3">
+            <Field id="nc-ddi" label="DDI"><Input id="nc-ddi" className="h-10 tnum" value={form.ddi} onChange={set('ddi')} /></Field>
+            <Field id="nc-phone" label="Telefone (opcional)"><Input id="nc-phone" className="h-10 tnum" value={form.phone} onChange={set('phone')} inputMode="tel" /></Field>
+          </div>
+          <Field id="nc-lang" label="Idioma do convite">
+            <Select value={form.lang} onValueChange={(v) => setForm({ ...form, lang: v })}><SelectTrigger id="nc-lang" className="h-10"><SelectValue /></SelectTrigger>
+              <SelectContent><SelectItem value="pt">Português</SelectItem><SelectItem value="en">English</SelectItem><SelectItem value="es">Español</SelectItem></SelectContent>
+            </Select>
+          </Field>
+        </fieldset>
+        <fieldset className="grid gap-4 md:grid-cols-[1fr_160px]">
+          <legend className="mb-3 text-[13px] font-medium text-muted-foreground">Indicação</legend>
+          <Field id="nc-ref" label="Indicado por">
+            <Select value={form.referrer} onValueChange={(v) => setForm({ ...form, referrer: v })}><SelectTrigger id="nc-ref" className="h-10"><SelectValue /></SelectTrigger>
+              <SelectContent><SelectItem value="none">Ninguém</SelectItem>{clients.map((c) => <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>)}</SelectContent>
+            </Select>
+          </Field>
+          <Field id="nc-pct" label="Comissão (%)" hint="2% se ninguém mudar."><Input id="nc-pct" className="h-10 tnum" disabled={form.referrer === 'none'} value={form.pct} onChange={set('pct')} inputMode="decimal" /></Field>
+        </fieldset>
+        <Field id="nc-notes" label="Observações (opcional)"><Textarea id="nc-notes" value={form.notes} onChange={set('notes')} rows={2} /></Field>
+      </form>
+    </Card>
+  )
+}
+
+function InternalScreen({ t, go }: { t: T; go: (s: Screen) => void }) {
+  const [clients, setClients] = useState(PROTO_CLIENTS)
   const [q, setQ] = useState('')
-  const [tab, setTab] = useState<'all' | 'net' | 'out' | 'err'>('all')
+  const [tab, setTab] = useState<'all' | ClientSituation>('all')
   const [adding, setAdding] = useState(false)
-  const [form, setForm] = useState({ name: '', owner: '', limit: '5', net: 'yes', code: '' })
-  const counts = { all: clients.length, net: clients.filter((c) => c.inNetwork).length, out: clients.filter((c) => !c.inNetwork).length, err: clients.filter((c) => c.status === 'error').length }
-  const list = useMemo(() => clients.filter((c) => (tab === 'all' || (tab === 'net' && c.inNetwork) || (tab === 'out' && !c.inNetwork) || (tab === 'err' && c.status === 'error')) && (q === '' || `${c.name} ${c.owner} ${c.code ?? ''}`.toLowerCase().includes(q.toLowerCase()))), [clients, q, tab])
-  const formOk = form.name.trim() && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(form.owner.trim()) && Number(form.limit) >= 1
-
-  const add = () => {
-    if (!formOk) return
-    setClients([{ name: form.name.trim(), owner: form.owner.trim(), inNetwork: form.net === 'yes', code: form.code || null, used: 0, pending: 1, limit: Number(form.limit), status: 'invited' }, ...clients])
-    toast.success(`Cliente ${form.name.trim()} criado`, { description: `Convite enviado para ${form.owner.trim()}.` })
-    setForm({ name: '', owner: '', limit: '5', net: 'yes', code: '' })
-    setAdding(false)
-  }
-
+  const count = (k: 'all' | ClientSituation) => (k === 'all' ? clients.length : clients.filter((c) => c.situation === k).length)
+  const list = useMemo(() => clients.filter((c) => (tab === 'all' || c.situation === tab) && (q === '' || `${c.name} ${c.contact} ${c.email}`.toLowerCase().includes(q.toLowerCase()))), [clients, q, tab])
   return (
     <>
-      <PageHeader title={t('int.title')} sub={t('int.sub')} actions={<Button onClick={() => setAdding((v) => !v)} aria-expanded={adding} variant={adding ? 'outline' : 'default'}>{adding ? t('team.cancel') : t('int.new')}</Button>} />
+      <PageHeader title={t('int.title')} sub={t('int.sub')} actions={!adding && <Button onClick={() => setAdding(true)}>{t('int.new')}</Button>} />
       <Body>
-        {adding && (
-          <Card title={t('int.new')} desc="O dono recebe o convite por e-mail, válido por 1 dia. Com network code, a network fica ligada a este cliente."
-            footer={<Button form="new-client" type="submit" disabled={!formOk}>Criar e enviar convite</Button>}>
-            <form id="new-client" className="grid gap-4 md:grid-cols-2 xl:grid-cols-[1.2fr_1.2fr_110px_170px_1fr]" onSubmit={(e) => { e.preventDefault(); add() }}>
-              <Field id="nc-name" label="Nome do cliente"><Input id="nc-name" className="h-10" autoFocus value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Portal da Cidade" /></Field>
-              <Field id="nc-owner" label="E-mail do dono"><Input id="nc-owner" className="h-10" type="email" value={form.owner} onChange={(e) => setForm({ ...form, owner: e.target.value })} placeholder="dono@site.com" /></Field>
-              <Field id="nc-limit" label="Vagas"><Input id="nc-limit" className="h-10 tnum" type="number" min={1} value={form.limit} onChange={(e) => setForm({ ...form, limit: e.target.value })} /></Field>
-              <Field id="nc-net" label="Rede">
-                <Select value={form.net} onValueChange={(v) => setForm({ ...form, net: v })}><SelectTrigger id="nc-net" className="h-10"><SelectValue /></SelectTrigger>
-                  <SelectContent><SelectItem value="yes">Rede Groone</SelectItem><SelectItem value="no">Fora da rede</SelectItem></SelectContent>
-                </Select>
-              </Field>
-              <Field id="nc-code" label="Network code MCM (opcional)"><Input id="nc-code" className="h-10 font-mono" inputMode="numeric" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value.replace(/\D/g, '') })} /></Field>
-            </form>
-          </Card>
-        )}
+        {adding && <NewClientForm clients={clients} onDone={(c) => { if (c) { setClients([c, ...clients]); toast.success(`${c.name} cadastrado`, { description: 'Envie o convite de dono pela página do cliente.' }) } setAdding(false) }} />}
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex flex-wrap rounded-md border bg-card p-0.5" role="tablist" aria-label="Filtrar clientes">
-            {([['all', 'Todos'], ['net', 'Rede Groone'], ['out', 'Fora da rede'], ['err', 'Com erro']] as const).map(([k, l]) => (
+            {([['all', 'Todos'], ['active', 'Ativos'], ['pending', 'Pendentes'], ['inactive', 'Inativos'], ['banned', 'Banidos']] as const).map(([k, l]) => (
               <button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)} className={cn('h-8 rounded-[4px] px-3 text-[13px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', tab === k ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground')}>
-                {l} <span className={cn('tnum', k === 'err' && counts.err ? 'text-bad' : 'text-muted-foreground')}>{counts[k]}</span>
+                {l} <span className="tnum text-muted-foreground">{count(k)}</span>
               </button>
             ))}
           </div>
           <div className="relative ml-auto w-full sm:w-80">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input aria-label="Buscar clientes" className="h-9 bg-card pl-9" placeholder="Nome, e-mail do dono ou network code" value={q} onChange={(e) => setQ(e.target.value)} />
+            <Input aria-label="Buscar clientes" className="h-9 bg-card pl-9" placeholder="Nome do cliente" value={q} onChange={(e) => setQ(e.target.value)} />
           </div>
         </div>
-        {list.length === 0 ? (
-          <Card pad><div className="font-medium">Nenhum cliente encontrado</div><p className="mt-1 text-[14px] text-muted-foreground">Busque pelo nome, pelo e-mail do dono ou pelo network code.</p><Button variant="outline" size="sm" className="mt-4" onClick={() => { setQ(''); setTab('all') }}>Limpar filtros</Button></Card>
-        ) : (
-          <Table min={760}>
-            <thead><tr><th className={th}>Cliente</th><th className={th}>Rede</th><th className={th}>Network MCM</th><th className={th}>Funcionários</th><th className={th}>Status</th><th className={cn(th, 'w-16')}><span className="sr-only">Abrir</span></th></tr></thead>
-            <tbody>
-              {list.map((c) => (
-                <tr key={c.name} className="hover:bg-muted">
-                  <td className={td}><div className="flex items-center gap-3"><Avatar name={c.name} size={28} /><div className="min-w-0"><div className="font-medium">{c.name}</div><div className="text-[13px] text-muted-foreground">{c.owner}</div></div></div></td>
-                  <td className={cn(td, 'text-muted-foreground')}>{c.inNetwork ? 'Rede Groone' : 'Fora da rede'}</td>
-                  <td className={td}>{c.code ? <Code>{c.code}</Code> : <span className="text-muted-foreground">–</span>}</td>
-                  <td className={td}><div className="flex items-center gap-3"><SeatStrip used={c.used} pending={c.pending} limit={c.limit} /><span className="tnum text-[13px] text-muted-foreground">{c.used + c.pending}/{c.limit}</span></div></td>
-                  <td className={td}>{c.status === 'active' ? <Status tone="ok">Ativo</Status> : c.status === 'invited' ? <Status tone="ochre">Convite enviado</Status> : <Status tone="bad">Network sem acesso</Status>}</td>
-                  <td className={td}><Button variant="ghost" size="sm">Abrir</Button></td>
-                </tr>
-              ))}
-            </tbody>
-          </Table>
-        )}
+        <Table min={760}>
+          <thead><tr><th className={th}>Cliente</th><th className={th}>Contato</th><th className={th}>Funcionários</th><th className={th}>Situação</th><th className={cn(th, 'w-16')}><span className="sr-only">Abrir</span></th></tr></thead>
+          <tbody>
+            {list.map((c) => (
+              <tr key={c.name} className="hover:bg-muted">
+                <td className={td}><div className="flex items-center gap-3"><Avatar name={c.name} size={28} /><div className="min-w-0"><button className="font-medium hover:underline" onClick={() => go('cliente')}>{c.name}</button>{c.referredBy && <div className="text-[13px] text-muted-foreground">Indicado por {c.referredBy}</div>}</div></div></td>
+                <td className={td}><div>{c.contact}</div><div className="text-[13px] text-muted-foreground">{c.email}</div></td>
+                <td className={td}><span className="tnum text-[13px] text-muted-foreground">{c.used}/{c.limit}</span></td>
+                <td className={td}><Status tone={SITUATION[c.situation][1]}>{SITUATION[c.situation][0]}</Status></td>
+                <td className={td}><Button variant="ghost" size="sm" onClick={() => go('cliente')}>Abrir</Button></td>
+              </tr>
+            ))}
+          </tbody>
+        </Table>
+      </Body>
+    </>
+  )
+}
+
+function ClientScreen({ go }: { go: (s: Screen) => void }) {
+  const [situation, setSituation] = useState<ClientSituation>('pending')
+  const [sent, setSent] = useState<string | null>(null)
+  const [confirm, setConfirm] = useState<ClientSituation | null>(null)
+  const row = (label: string, value: React.ReactNode) => <div className="grid grid-cols-[160px_1fr] gap-3 py-2 text-[14px]"><dt className="text-muted-foreground">{label}</dt><dd className="min-w-0">{value}</dd></div>
+  return (
+    <>
+      <PageHeader title="Tech Notícias" sub="Cliente pendente: o dono ainda não aceitou o convite."
+        back={<button onClick={() => go('interno')} className="inline-flex items-center gap-1 text-[13px] text-muted-foreground hover:text-foreground"><ArrowLeft className="h-3.5 w-3.5" />Clientes</button>}
+        actions={<>
+          {situation === 'pending' && <Button onClick={() => { setSent('agora'); toast.success('Convite enviado', { description: 'contato@technoticias.com · vale por 1 dia.' }) }}><Mail className="h-4 w-4" />{sent ? 'Reenviar convite' : 'Enviar convite'}</Button>}
+          <DropdownMenu><DropdownMenuTrigger asChild><Button variant="outline">Situação: {SITUATION[situation][0]}</Button></DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56"><DropdownMenuLabel>Mudar situação</DropdownMenuLabel>
+              {(['active', 'inactive', 'banned'] as const).map((k) => <DropdownMenuItem key={k} disabled={k === 'active' && situation === 'pending'} onSelect={() => setConfirm(k)}>{SITUATION[k][0]}{k === 'active' && situation === 'pending' && <span className="ml-auto text-[12px] text-muted-foreground">sem dono</span>}</DropdownMenuItem>)}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </>} />
+      <Body className="lg:grid-cols-2">
+        <Card title="Contato" footer={<Button size="sm" variant="outline">Editar</Button>}>
+          <dl className="-my-2 divide-y">{row('Nome', 'Caio Prado')}{row('E-mail', 'contato@technoticias.com')}{row('Telefone', <span className="tnum">+55 11 98888-7777</span>)}{row('Idioma', 'Português')}{row('Convite', sent ? <Status tone="ochre">Enviado {sent}</Status> : <span className="text-muted-foreground">Ainda não enviado</span>)}</dl>
+        </Card>
+        <Card title="Indicação" footer={<Button size="sm" variant="outline">Editar</Button>}>
+          <dl className="-my-2 divide-y">{row('Indicado por', 'Blog Exemplo')}{row('Comissão', <span className="tnum">2%</span>)}{row('Observações', <span className="text-muted-foreground">Veio do evento de setembro.</span>)}</dl>
+        </Card>
+        <Card title="Dados fiscais" desc="Só o cliente preenche e muda, em Configurações. A equipe Groone só lê." className="lg:col-span-2">
+          <div className="flex items-center gap-3 text-[14px] text-muted-foreground"><Lock className="h-4 w-4" />O cliente ainda não preencheu os dados fiscais.</div>
+        </Card>
+        <Card title="Networks" desc="Ligadas pelo MCM com o e-mail do contato. Mudar a situação do cliente liga ou desliga as networks." className="lg:col-span-2">
+          <p className="text-[14px] text-muted-foreground">Nenhuma network ainda. Quando o cliente aceitar o MCM da Groone, ela aparece aqui sozinha.</p>
+        </Card>
+      </Body>
+      <Dialog open={confirm !== null} onOpenChange={(o) => !o && setConfirm(null)}>
+        <DialogContent><DialogHeader><DialogTitle>Deixar Tech Notícias {confirm ? SITUATION[confirm][0].toLowerCase() : ''}?</DialogTitle>
+          <DialogDescription>{confirm === 'active' ? 'As networks desligadas junto com o cliente voltam a sincronizar.' : 'Os membros perdem o acesso e as networks do cliente param de sincronizar.'}</DialogDescription></DialogHeader>
+          <DialogFooter><Button variant="outline" onClick={() => setConfirm(null)}>Cancelar</Button><Button variant={confirm === 'active' ? 'default' : 'destructive'} onClick={() => { if (confirm) setSituation(confirm); setConfirm(null) }}>Confirmar</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  )
+}
+
+function FiscalScreen() {
+  const [type, setType] = useState('BR_PJ')
+  return (
+    <>
+      <PageHeader title="Dados fiscais" sub="Para a Groone pagar a sua parte da receita. Só quem pode editar a Empresa vê e muda estes dados." />
+      <Body>
+        <Card title="Documento" footerNote="Todos os campos são obrigatórios." footer={<Button onClick={() => toast.success('Dados fiscais salvos')}>Salvar</Button>}>
+          <form className="grid gap-4 md:grid-cols-2" onSubmit={(e) => e.preventDefault()}>
+            <Field id="fi-type" label="Tipo de documento">
+              <Select value={type} onValueChange={setType}><SelectTrigger id="fi-type" className="h-10"><SelectValue /></SelectTrigger>
+                <SelectContent><SelectItem value="BR_PJ">Brasil · CNPJ</SelectItem><SelectItem value="BR_PF">Brasil · CPF</SelectItem><SelectItem value="US_PJ">Estados Unidos · EIN</SelectItem><SelectItem value="PT_PJ">Portugal · NIPC</SelectItem></SelectContent>
+              </Select>
+            </Field>
+            <Field id="fi-id" label={type === 'BR_PF' ? 'CPF' : 'CNPJ'}><Input id="fi-id" className="h-10 tnum" defaultValue="11.222.333/0001-81" /></Field>
+            <Field id="fi-legal" label="Razão social ou nome completo"><Input id="fi-legal" className="h-10" defaultValue="Blog Exemplo Ltda." /></Field>
+            <div className="grid grid-cols-[90px_1fr] gap-3"><Field id="fi-ddi" label="DDI"><Input id="fi-ddi" className="h-10 tnum" defaultValue="+55" /></Field><Field id="fi-phone" label="Telefone de cobrança"><Input id="fi-phone" className="h-10 tnum" defaultValue="11 3333-0000" /></Field></div>
+            <div className="md:col-span-2"><Field id="fi-addr" label="Endereço de cobrança"><Input id="fi-addr" className="h-10" defaultValue="Rua das Flores, 100, São Paulo, SP" /></Field></div>
+            <Field id="fi-bank" label="Banco"><Input id="fi-bank" className="h-10" defaultValue="Banco Exemplo" /></Field>
+            <Field id="fi-swift" label="SWIFT" hint="8 a 11 letras ou números."><Input id="fi-swift" className="h-10 font-mono uppercase" defaultValue="EXMPBRSP" /></Field>
+            <Field id="fi-account" label="Conta"><Input id="fi-account" className="h-10 tnum" defaultValue="12345-6" /></Field>
+            <Field id="fi-routing" label="Agência ou routing number"><Input id="fi-routing" className="h-10 tnum" defaultValue="0001" /></Field>
+          </form>
+        </Card>
       </Body>
     </>
   )
@@ -1546,12 +1615,11 @@ export default function App() {
   useEffect(() => { document.documentElement.lang = lang === 'pt' ? 'pt-BR' : lang }, [lang])
 
   const a = ACCENTS.find((x) => x.id === accent)!
-  const auth = screen === 'login' || screen === 'convite' || screen === 'empresa'
+  const auth = screen === 'login' || screen === 'convite'
   const body = (() => {
     switch (screen) {
       case 'login': return <Login t={t} go={go} />
       case 'convite': return <Invite t={t} go={go} />
-      case 'empresa': return <CreateCompany t={t} go={go} />
       case 'inicio': return <HomeScreen t={t} go={go} members={members} />
       case 'desempenho': return <PerformanceScreen />
       case 'visitas': return <PageViewsScreen />
@@ -1561,7 +1629,9 @@ export default function App() {
       case 'networks': return <NetworksScreen t={t} go={go} />
       case 'conectar': return <ConnectScreen t={t} go={go} />
       case 'configuracoes': return <SettingsScreen t={t} accent={accent} setAccent={setAccent} theme={theme} setTheme={setTheme} />
-      case 'interno': return <InternalScreen t={t} />
+      case 'interno': return <InternalScreen t={t} go={go} />
+      case 'cliente': return <ClientScreen go={go} />
+      case 'fiscais': return <FiscalScreen />
       case 'contratos': return <ContractsScreen />
       case 'resultados': return <ClientsResultScreen />
       case 'permissoes': return <PermissionsScreen />

@@ -1,10 +1,11 @@
 <script setup lang="ts">
-/** Painel interno: clientes, novo cliente (convite de dono) e convites de dono pendentes. */
+/** Painel interno: clientes, cadastro de cliente novo (sem e-mail) e convites de dono pendentes. */
 import { computed, onMounted, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
 import { useRouter } from 'vue-router'
 import { Building2, Search, UserSearch } from 'lucide-vue-next'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
+import ClientProfileForm from '@/components/internal/ClientProfileForm.vue'
 import LoadError from '@/components/LoadError.vue'
 import PageBody from '@/components/PageBody.vue'
 import PageHeader from '@/components/PageHeader.vue'
@@ -14,18 +15,18 @@ import Card from '@/components/ui/Card.vue'
 import DataTable from '@/components/ui/DataTable.vue'
 import Field from '@/components/ui/Field.vue'
 import Input from '@/components/ui/Input.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
 import SeatBar from '@/components/ui/SeatBar.vue'
 import Status from '@/components/ui/Status.vue'
 import TableState from '@/components/ui/TableState.vue'
 import { api, ApiError } from '@/lib/api'
+import { emptyProfile, profileBody, profileOk, STATUS_TONE } from '@/lib/clients'
 import { errorText, formatAgo, t } from '@/lib/i18n'
 import { td, th } from '@/lib/table'
-import type { Client, CompanyPlan, Items, OwnerInvitation } from '@/lib/types'
+import type { Client, CompanyStatus, Items, OwnerInvitation } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import { useSession } from '@/stores/session'
 
-type Tab = 'all' | CompanyPlan | 'suspended'
+type Tab = 'all' | CompanyStatus
 
 const session = useSession()
 const canManage = computed(() => session.can('internal.clients.manage'))
@@ -38,12 +39,14 @@ const searchText = ref('')
 const tab = ref<Tab>('all')
 
 const adding = ref(false)
-const email = ref('')
+const name = ref('')
 const seats = ref('5')
-const plan = ref<CompanyPlan>('groone_network')
+const profile = ref(emptyProfile())
 const creating = ref(false)
-const emailOk = computed(() => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.value.trim()))
 const seatsOk = computed(() => Number.isInteger(Number(seats.value)) && Number(seats.value) >= 1 && Number(seats.value) <= 10000)
+const formOk = computed(() => name.value.trim().length >= 2 && seatsOk.value && profileOk(profile.value))
+const referrers = computed(() => (clients.value ?? []).map((client) => ({ id: client.id, name: client.name })))
+const clientNames = computed(() => new Map((clients.value ?? []).map((client) => [client.id, client.name])))
 
 const canceling = ref<OwnerInvitation | null>(null)
 const cancelOpen = computed({
@@ -80,40 +83,37 @@ watch(searchText, () => {
   timer = setTimeout(load, 300)
 })
 
+const tabs: Tab[] = ['all', 'active', 'pending', 'inactive', 'banned']
 const counts = computed(() => {
   const list = clients.value ?? []
-  return {
-    all: list.length,
-    groone_network: list.filter((client) => client.plan === 'groone_network').length,
-    external: list.filter((client) => client.plan === 'external').length,
-    suspended: list.filter((client) => client.status === 'suspended').length,
-  }
+  return Object.fromEntries(tabs.map((option) => [option, option === 'all' ? list.length : list.filter((client) => client.status === option).length])) as Record<Tab, number>
 })
-const shown = computed(() =>
-  (clients.value ?? []).filter((client) => tab.value === 'all' || (tab.value === 'suspended' ? client.status === 'suspended' : client.plan === tab.value)),
-)
-const tabs: Tab[] = ['all', 'groone_network', 'external', 'suspended']
-/** Nome da aba no idioma atual. */
-const tabLabel = (tab: Tab) => (tab === 'all' ? t('int.tab.all') : tab === 'suspended' ? t('int.tab.suspended') : t(`int.plan.${tab}`))
+const shown = computed(() => (clients.value ?? []).filter((client) => tab.value === 'all' || client.status === tab.value))
 /** Classes da aba, ativa ou não. */
 const tabClass = (on: boolean) =>
   cn(
     'h-8 rounded-[4px] px-3 text-[13px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
     on ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground',
   )
-const planOptions = computed(() => (['groone_network', 'external'] as const).map((plan) => ({ value: plan, label: t(`int.plan.${plan}`) })))
 
-/** Convida o dono de um cliente novo. */
+/** Fecha o formulário e volta aos valores iniciais. */
+function closeForm() {
+  adding.value = false
+  name.value = ''
+  seats.value = '5'
+  profile.value = emptyProfile()
+}
+
+/** Cadastra o cliente pendente; o convite de dono sai depois, pela página do cliente. */
 async function create() {
-  if (!emailOk.value || !seatsOk.value) return
+  if (!formOk.value) return
   creating.value = true
   try {
-    const invitation = await api.post<OwnerInvitation>('/internal/clients', { email: email.value.trim(), seat_limit: Number(seats.value), plan: plan.value })
-    invites.value = [invitation, ...invites.value]
-    toast.success(t('int.created', { email: invitation.email }))
-    email.value = ''
-    seats.value = '5'
-    adding.value = false
+    const client = await api.post<Client>('/internal/clients', { name: name.value.trim(), seat_limit: Number(seats.value), profile: profileBody(profile.value) })
+    clients.value = [client, ...(clients.value ?? [])]
+    toast.success(t('int.clientCreated', { name: client.name }))
+    closeForm()
+    await router.push(`/interno/clientes/${client.id}`)
   } catch (error) {
     fail(error)
   } finally {
@@ -157,32 +157,34 @@ function clearFilters() {
 
 /** Diz se a data já passou. */
 const expired = (iso: string) => new Date(iso).getTime() <= Date.now()
+/** Nome de quem indicou o cliente, quando houver. */
+const referrerName = (client: Client) => (client.profile?.referred_by_company_id ? clientNames.value.get(client.profile.referred_by_company_id) : undefined)
 </script>
 
 <template>
   <PageHeader :title="t('int.clients')" :sub="t('int.sub')">
     <template #actions>
       <Button v-if="canSearchPeople" variant="outline" @click="router.push('/interno/pessoas')"><UserSearch />{{ t('int.peopleSearchOpen') }}</Button>
-      <Button v-if="canManage" :variant="adding ? 'outline' : 'default'" :aria-expanded="adding" @click="adding = !adding">
-        {{ adding ? t('common.cancel') : t('int.new') }}
-      </Button>
+      <Button v-if="canManage && !adding" @click="adding = true">{{ t('int.new') }}</Button>
     </template>
   </PageHeader>
   <PageBody>
-    <Card v-if="adding" :title="t('int.new')" :desc="t('int.newDesc')">
-      <form id="new-client" class="grid gap-4 md:grid-cols-[1.4fr_110px_200px]" @submit.prevent="create">
-        <Field id="nc-email" :label="t('int.ownerEmail')">
-          <Input id="nc-email" v-model="email" type="email" autocomplete="off" placeholder="dono@site.com" />
-        </Field>
-        <Field id="nc-seats" :label="t('int.seats')">
-          <Input id="nc-seats" v-model="seats" type="number" min="1" max="10000" class="tnum" :invalid="!seatsOk" />
-        </Field>
-        <Field id="nc-plan" :label="t('int.plan')">
-          <NativeSelect id="nc-plan" v-model="plan" :options="planOptions" />
-        </Field>
+    <Card v-if="adding" :title="t('int.new')" :desc="t('int.newDesc')" :footer-note="t('int.newNote')">
+      <form id="new-client" class="grid gap-6" @submit.prevent="create">
+        <fieldset class="grid gap-4 md:grid-cols-[1fr_120px]">
+          <legend class="mb-3 text-[13px] font-medium text-muted-foreground">{{ t('int.section.company') }}</legend>
+          <Field id="nc-name" :label="t('int.clientName')">
+            <Input id="nc-name" v-model="name" maxlength="120" autocomplete="off" placeholder="Portal da Cidade" />
+          </Field>
+          <Field id="nc-seats" :label="t('int.seats')">
+            <Input id="nc-seats" v-model="seats" type="number" min="1" max="10000" class="tnum" :invalid="!seatsOk" />
+          </Field>
+        </fieldset>
+        <ClientProfileForm v-model="profile" id-prefix="nc" :referrers="referrers" />
       </form>
       <template #footer>
-        <Button type="submit" form="new-client" :loading="creating" :disabled="!emailOk || !seatsOk">{{ t('int.create') }}</Button>
+        <Button variant="outline" @click="closeForm">{{ t('common.cancel') }}</Button>
+        <Button type="submit" form="new-client" :loading="creating" :disabled="!formOk">{{ t('int.createClient') }}</Button>
       </template>
     </Card>
 
@@ -194,8 +196,7 @@ const expired = (iso: string) => new Date(iso).getTime() <= Date.now()
           <div class="min-w-0 flex-1">
             <div class="truncate text-[14px] font-medium">{{ invite.email }}</div>
             <div class="mt-0.5 text-[13px] text-muted-foreground">
-              <template v-if="invite.plan">{{ t(`int.plan.${invite.plan}`) }} · </template>
-              <template v-if="invite.seat_limit">{{ invite.seat_limit }} {{ t('int.seats').toLowerCase() }} · </template>
+              <template v-if="invite.company_id && clientNames.get(invite.company_id)">{{ clientNames.get(invite.company_id) }} · </template>
               <span :class="expired(invite.expires_at) && 'text-ochre'">{{
                 expired(invite.expires_at) ? t('int.expired') : t('int.expires', { when: formatAgo(invite.expires_at) })
               }}</span>
@@ -213,7 +214,7 @@ const expired = (iso: string) => new Date(iso).getTime() <= Date.now()
       <div class="flex flex-wrap items-center gap-3">
         <div class="flex flex-wrap rounded-md border bg-card p-0.5" role="tablist" :aria-label="t('int.clients')">
           <button v-for="tabOption in tabs" :key="tabOption" type="button" role="tab" :aria-selected="tab === tabOption" :class="tabClass(tab === tabOption)" @click="tab = tabOption">
-            {{ tabLabel(tabOption) }} <span class="tnum text-muted-foreground">{{ counts[tabOption] }}</span>
+            {{ t(`int.tab.${tabOption}`) }} <span class="tnum text-muted-foreground">{{ counts[tabOption] }}</span>
           </button>
         </div>
         <div class="relative ml-auto w-full sm:w-80">
@@ -226,9 +227,9 @@ const expired = (iso: string) => new Date(iso).getTime() <= Date.now()
         <thead>
           <tr>
             <th :class="th">{{ t('int.client') }}</th>
-            <th :class="th">{{ t('int.plan') }}</th>
+            <th :class="th">{{ t('int.contact') }}</th>
             <th :class="th">{{ t('int.employees') }}</th>
-            <th :class="th">{{ t('team.status') }}</th>
+            <th :class="th">{{ t('int.situation') }}</th>
             <th :class="[th, 'w-16']"><span class="sr-only">{{ t('int.open') }}</span></th>
           </tr>
         </thead>
@@ -249,11 +250,17 @@ const expired = (iso: string) => new Date(iso).getTime() <= Date.now()
                 <Avatar :name="client.name" :size="28" />
                 <div class="min-w-0">
                   <RouterLink :to="`/interno/clientes/${client.id}`" class="font-medium hover:underline">{{ client.name }}</RouterLink>
-                  <div class="truncate text-[13px] text-muted-foreground">{{ client.owner.email }}</div>
+                  <div v-if="referrerName(client)" class="truncate text-[13px] text-muted-foreground">{{ t('int.referredByName', { name: referrerName(client) ?? '' }) }}</div>
                 </div>
               </div>
             </td>
-            <td :class="[td, 'text-muted-foreground']">{{ t(`int.plan.${client.plan}`) }}</td>
+            <td :class="td">
+              <template v-if="client.profile">
+                <div class="truncate">{{ client.profile.first_name }} {{ client.profile.last_name }}</div>
+                <div class="truncate text-[13px] text-muted-foreground">{{ client.profile.email }}</div>
+              </template>
+              <span v-else class="text-[13px] text-muted-foreground">{{ client.owner?.email ?? t('int.none.dash') }}</span>
+            </td>
             <td :class="td">
               <div class="flex items-center gap-3">
                 <SeatBar
@@ -267,7 +274,7 @@ const expired = (iso: string) => new Date(iso).getTime() <= Date.now()
               </div>
             </td>
             <td :class="td">
-              <Status :tone="client.status === 'active' ? 'ok' : 'bad'">{{ t(`int.status.${client.status}`) }}</Status>
+              <Status :tone="STATUS_TONE[client.status]">{{ t(`int.status.${client.status}`) }}</Status>
             </td>
             <td :class="td">
               <RouterLink

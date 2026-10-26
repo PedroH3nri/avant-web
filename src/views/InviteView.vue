@@ -23,7 +23,6 @@ const loadError = ref<string | null>(null)
 const name = ref('')
 const password = ref('')
 const password2 = ref('')
-const companyName = ref('')
 const busy = ref(false)
 const error = ref<string | null>(null)
 
@@ -31,9 +30,8 @@ const owner = computed(() => invite.value?.kind === 'owner')
 const short = computed(() => password.value.length > 0 && password.value.length < 10)
 const mismatch = computed(() => password2.value.length > 0 && password.value !== password2.value)
 const sameEmail = computed(() => session.me?.user.email.toLowerCase() === invite.value?.email.toLowerCase())
-const companyOk = computed(() => !owner.value || companyName.value.trim().length >= 2)
 const formOk = computed(
-  () => name.value.trim() !== '' && password.value.length >= 10 && password.value === password2.value && companyOk.value,
+  () => name.value.trim() !== '' && password.value.length >= 10 && password.value === password2.value,
 )
 const loginLink = computed(() => ({ path: '/entrar', query: { next: route.fullPath } }))
 
@@ -56,7 +54,6 @@ async function accept() {
   error.value = null
   const body: Record<string, unknown> = { locale: lang.value }
   if (!session.me) Object.assign(body, { name: name.value.trim(), password: password.value })
-  if (owner.value) body.company = { name: companyName.value.trim() }
   try {
     session.set(await api.post<Me>(`/auth/invitations/${encodeURIComponent(token)}/accept`, body))
     await router.push('/')
@@ -86,7 +83,7 @@ async function switchAccount() {
     <p v-else-if="!invite" class="text-[14px] text-muted-foreground" role="status">{{ t('common.loading') }}</p>
     <template v-else>
       <h1 class="text-[28px] font-semibold tracking-[-0.03em]">
-        {{ owner ? t('invite.titleOwner') : t('invite.title', { company: invite.company_name ?? '' }) }}
+        {{ owner ? t('invite.titleOwner', { company: invite.company_name ?? '' }) : t('invite.title', { company: invite.company_name ?? '' }) }}
       </h1>
       <p class="mt-2 text-[14px] text-muted-foreground">
         {{
@@ -101,11 +98,8 @@ async function switchAccount() {
         <p class="mt-6 text-[14px]">{{ t('invite.loggedAs', { email: session.me.user.email }) }}</p>
         <p v-if="!sameEmail" class="mt-3 text-[13px] text-bad" role="alert">{{ errorText('invitation_email_mismatch') }}</p>
         <form v-else class="mt-6 grid gap-4" @submit.prevent="accept">
-          <Field v-if="owner" id="inv-company" :label="t('company.name')" :hint="t('company.nameHint')">
-            <Input id="inv-company" v-model="companyName" maxlength="120" />
-          </Field>
           <p v-if="error" class="text-[13px] text-bad" role="alert">{{ error }}</p>
-          <Button type="submit" size="form" :loading="busy" :disabled="!companyOk">{{ t('invite.acceptLogged') }}</Button>
+          <Button type="submit" size="form" :loading="busy">{{ t('invite.acceptLogged') }}</Button>
         </form>
         <Button variant="link" class="mt-4 px-0" @click="switchAccount">{{ t('invite.switch') }}</Button>
       </template>
@@ -131,9 +125,6 @@ async function switchAccount() {
         </Field>
         <Field id="inv-pw2" :label="t('invite.pw2')" :error="mismatch && t('invite.pwMismatch')">
           <Input id="inv-pw2" v-model="password2" type="password" autocomplete="new-password" :invalid="mismatch" />
-        </Field>
-        <Field v-if="owner" id="inv-company" :label="t('company.name')" :hint="t('company.nameHint')">
-          <Input id="inv-company" v-model="companyName" maxlength="120" />
         </Field>
         <p v-if="error" class="text-[13px] text-bad" role="alert">{{ error }}</p>
         <Button type="submit" size="form" :loading="busy" :disabled="!formOk">{{ t('invite.submit') }}</Button>
