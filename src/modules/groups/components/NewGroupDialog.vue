@@ -99,7 +99,7 @@ async function create() {
                 :checked="picked.includes(member.id)"
                 @change="toggle(member.id)"
               />
-              <Avatar :name="member.user.name" :size="28" />
+              <Avatar :name="member.user.name" :image-url="member.user.image_url" :size="28" />
               <span class="min-w-0 flex-1">
                 <span class="block truncate font-medium">{{ member.user.name }}</span>
                 <span class="block truncate text-[13px] text-muted-foreground">{{ member.is_owner ? t('team.owner') : pick(member.role?.name) }}</span>

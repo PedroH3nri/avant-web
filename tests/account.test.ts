@@ -7,7 +7,7 @@ const key = (id: string, created_at: string, extra: Partial<ApiKey> = {}): ApiKe
   name: id,
   prefix: 'abcd',
   permissions: ['sites.view'],
-  owner: { id: 'u1', email: 'a@a.com', name: 'A', locale: 'pt' },
+  owner: { id: 'u1', email: 'a@a.com', name: 'A', locale: 'pt', image_url: null },
   created_at,
   expires_at: '2099-01-01T00:00:00Z',
   last_used_at: null,

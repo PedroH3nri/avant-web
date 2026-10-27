@@ -99,7 +99,7 @@ async function assign(member: Member, roleId: string) {
             <tr v-for="member in members" :key="member.id" class="hover:bg-muted">
               <td :class="td">
                 <div class="flex items-center gap-3">
-                  <Avatar :name="member.user.name" />
+                  <Avatar :name="member.user.name" :image-url="member.user.image_url" />
                   <div class="min-w-0">
                     <div class="font-medium">
                       {{ member.user.name }}<span v-if="isMe(member)" class="font-normal text-muted-foreground"> ({{ t('team.you') }})</span>

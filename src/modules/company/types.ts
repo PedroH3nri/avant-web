@@ -7,7 +7,6 @@ export interface CompanyDetail {
   id: string
   name: string
   slug: string
-  accent_color: string | null
   status: CompanyStatus
   /** Vazio na Company Groone: limites valem só para clientes. */
   seat_limit: number | null

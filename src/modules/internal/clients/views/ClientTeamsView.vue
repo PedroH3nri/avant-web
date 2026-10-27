@@ -91,7 +91,7 @@ const statusText = (member: ClientMember) => (member.status === 'active' ? t('te
         <tr v-for="member in members ?? []" :key="member.id">
           <td :class="td">
             <div class="flex items-center gap-3">
-              <Avatar :name="member.user.name" :size="28" />
+              <Avatar :name="member.user.name" :image-url="member.user.image_url" :size="28" />
               <div class="min-w-0">
                 <div class="font-medium">{{ member.user.name }}</div>
                 <div class="truncate text-[13px] text-muted-foreground">{{ member.user.email }}</div>

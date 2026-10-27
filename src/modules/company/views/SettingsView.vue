@@ -1,14 +1,12 @@
 <script setup lang="ts">
-/** Configurações da Empresa: nome, imagem, dados fiscais, cor do sistema, tema e idioma. */
+/** Configurações da Empresa: nome, imagem, dados fiscais e idioma. Tema e cor são de cada pessoa, em Minha conta. */
 import { computed, onMounted, ref } from 'vue'
 import { toast } from 'vue-sonner'
-import { ArrowLeft, Check } from 'lucide-vue-next'
-import { RadioGroupItem, RadioGroupRoot } from 'reka-ui'
+import { ArrowLeft } from 'lucide-vue-next'
 import Button from '@/components/ui/Button.vue'
 import Card from '@/components/ui/Card.vue'
 import CompanyImageCard from '@/components/CompanyImageCard.vue'
 import FiscalDataCard from '@/modules/company/components/FiscalDataCard.vue'
-import ThemeCard from '@/modules/company/components/ThemeCard.vue'
 import Input from '@/components/ui/Input.vue'
 import LangSwitch from '@/components/LangSwitch.vue'
 import LoadError from '@/components/LoadError.vue'
@@ -16,9 +14,7 @@ import PageBody from '@/components/PageBody.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import { ApiError } from '@/lib/api'
 import { errorText, t } from '@/lib/i18n'
-import { accentFor, ACCENTS, applyAccent } from '@/lib/theme'
 import type { CompanyDetail } from '@/modules/company/types'
-import { cn } from '@/lib/utils'
 import { useSession } from '@/stores/session'
 import { companyService } from '@/modules/company/service'
 
@@ -26,9 +22,7 @@ const session = useSession()
 const company = ref<CompanyDetail | null>(null)
 const loadError = ref<string | null>(null)
 const name = ref('')
-const accent = ref<string>(ACCENTS[0]!.id)
 const savingName = ref(false)
-const savingAccent = ref(false)
 const canEdit = computed(() => session.can('company.edit'))
 const isGroone = computed(() => session.company?.is_internal === true)
 const nameInvalid = computed(() => name.value.trim().length < 2)
@@ -40,7 +34,6 @@ async function load() {
   try {
     company.value = await companyService.show()
     name.value = company.value.name
-    accent.value = accentFor(company.value.accent_color).id
   } catch (error) {
     loadError.value = error instanceof ApiError ? errorText(error.code) : errorText('unknown')
   }
@@ -52,7 +45,7 @@ async function save(body: Record<string, unknown>, busy: typeof savingName) {
   busy.value = true
   try {
     company.value = await companyService.update(body)
-    // O seletor de Empresas e a cor vêm do /auth/me.
+    // O seletor de Empresas vem do /auth/me.
     await session.load()
     toast.success(t('common.saved'))
   } catch (error) {
@@ -76,10 +69,6 @@ async function removeImage() {
 
 /** Salva o nome da Empresa. */
 const saveName = () => save({ name: name.value.trim() }, savingName)
-/** Salva a cor de destaque da Empresa. */
-const saveAccent = () => save({ accent_color: ACCENTS.find((option) => option.id === accent.value)!.hex }, savingAccent)
-// Prévia na hora; se não salvar, a cor da Empresa volta ao recarregar.
-const preview = (id: string) => applyAccent(ACCENTS.find((option) => option.id === id)!.hex)
 </script>
 
 <template>
@@ -106,39 +95,6 @@ const preview = (id: string) => applyAccent(ACCENTS.find((option) => option.id =
       <CompanyImageCard :name="company.name" :image-url="company.image_url" :readonly="!canEdit" :save="saveImage" :remove="removeImage" />
       <FiscalDataCard v-if="canEdit && !session.company?.is_internal" />
     </template>
-
-    <h2 class="text-[13px] font-medium text-muted-foreground">{{ t('set.appearance') }}</h2>
-    <Card v-if="company" :title="t('set.accent')" :desc="t('set.accentDesc')">
-      <RadioGroupRoot
-        v-model="accent"
-        :disabled="!canEdit"
-        class="flex flex-wrap gap-2"
-        :aria-label="t('set.accent')"
-        @update:model-value="(value) => preview(String(value))"
-      >
-        <RadioGroupItem
-          v-for="accentOption in ACCENTS"
-          :key="accentOption.id"
-          :value="accentOption.id"
-          :class="
-            cn(
-              'flex h-10 items-center gap-2 rounded-md border bg-background px-3 text-[14px] hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:hover:bg-background',
-              accent === accentOption.id && 'border-foreground',
-            )
-          "
-        >
-          <span class="h-4 w-4 rounded-full ring-1 ring-inset ring-foreground/10" :style="{ background: accentOption.id === 'default' ? 'hsl(var(--foreground))' : accentOption.hex }" />
-          {{ t(`accent.${accentOption.id}`) }}
-          <Check v-if="accent === accentOption.id" class="h-3.5 w-3.5" aria-hidden="true" />
-        </RadioGroupItem>
-      </RadioGroupRoot>
-      <template #note>{{ canEdit ? t('set.accentNote') : t('set.accentReadonly') }}</template>
-      <template v-if="canEdit" #footer>
-        <Button :loading="savingAccent" :disabled="accent === accentFor(company.accent_color).id" @click="saveAccent">{{ t('common.save') }}</Button>
-      </template>
-    </Card>
-
-    <ThemeCard />
 
     <h2 class="text-[13px] font-medium text-muted-foreground">{{ t('set.language') }}</h2>
     <Card :title="t('set.language')" :desc="t('set.langDesc')">

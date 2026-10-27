@@ -6,6 +6,12 @@ export type Localized = Partial<Record<Lang, string>>
 
 export type SiteScope = 'all' | 'assigned'
 
+/** Tema do painel escolhido pela pessoa. */
+export type Theme = 'light' | 'dark' | 'system'
+
+/** Cor de destaque escolhida pela pessoa. */
+export type AccentId = 'default' | 'blue' | 'green' | 'purple' | 'orange'
+
 export interface Items<T> {
   items: T[]
   next_cursor: string | null
@@ -16,13 +22,14 @@ export interface UserRef {
   email: string
   name: string
   locale: Lang
+  /** Vazio sem foto: o painel mostra as iniciais do nome. */
+  image_url: string | null
 }
 
 export interface CompanyRef {
   id: string
   name: string
   slug: string
-  accent_color: string | null
   is_owner: boolean
   /** Diz se é a Company Groone. */
   is_internal: boolean
@@ -40,4 +47,7 @@ export interface Me {
   mfa_enabled: boolean
   mfa_setup_required: boolean
   display_currency: string
+  /** Tema e cor que a pessoa escolheu; valem em todas as Empresas. */
+  theme: Theme
+  accent: AccentId
 }

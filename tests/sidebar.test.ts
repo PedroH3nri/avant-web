@@ -11,10 +11,10 @@ const Blank = defineComponent({ template: '<div />' })
 
 function me(active: string, permissions: string[]): Me {
   return {
-    user: { id: 'u', email: 'ana@groone.com', name: 'Ana Lima', locale: 'pt' },
+    user: { id: 'u', email: 'ana@groone.com', name: 'Ana Lima', locale: 'pt', image_url: null },
     companies: [
-      { id: 'g', name: 'Groone', slug: 'groone', accent_color: null, is_owner: false, is_internal: true, image_url: null },
-      { id: 'c', name: 'Cliente', slug: 'cliente', accent_color: null, is_owner: true, is_internal: false, image_url: null },
+      { id: 'g', name: 'Groone', slug: 'groone', is_owner: false, is_internal: true, image_url: null },
+      { id: 'c', name: 'Cliente', slug: 'cliente', is_owner: true, is_internal: false, image_url: null },
     ],
     active_company_id: active,
     permissions,
@@ -23,6 +23,8 @@ function me(active: string, permissions: string[]): Me {
     mfa_enabled: true,
     mfa_setup_required: false,
     display_currency: 'USD',
+    theme: 'system',
+    accent: 'default',
   }
 }
 

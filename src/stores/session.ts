@@ -5,8 +5,9 @@ import { computed, ref } from 'vue'
 import { ApiError } from '@/lib/api'
 import { reconnectEvents } from '@/lib/events'
 import { lang, langChosen } from '@/lib/i18n'
-import { applyAccent } from '@/lib/theme'
-import type { Me } from '@/lib/types'
+import { applyAccent, theme } from '@/lib/theme'
+import type { AccentId, Me, Theme, UserRef } from '@/lib/types'
+import { accountService } from '@/modules/account/service'
 import type { LoginResult } from '@/modules/auth/types'
 import { authService } from '@/modules/auth/service'
 import { currencyService } from '@/modules/currencies/service'
@@ -47,7 +48,7 @@ export const useSession = defineStore('session', () => {
     return known ? grants(known, wanted) : true
   }
 
-  /** Guarda a pessoa da sessão e aplica idioma e cor da Empresa. */
+  /** Guarda a pessoa da sessão e aplica idioma, tema e cor dela. */
   function set(value: Me | null) {
     const first = me.value === null && value !== null
     me.value = value
@@ -59,7 +60,8 @@ export const useSession = defineStore('session', () => {
       knownPermissions.value = { ...knownPermissions.value, [value.active_company_id]: value.permissions }
       if (!company.value?.is_internal) lastClientId.value = value.active_company_id
     }
-    applyAccent(company.value?.accent_color)
+    applyAccent(value?.accent)
+    if (value) theme.value = value.theme
     // Na primeira carga, o idioma da conta vale se a pessoa ainda não escolheu outro aqui.
     if (first && value && !langChosen()) lang.value = value.user.locale
   }
@@ -71,6 +73,25 @@ export const useSession = defineStore('session', () => {
   async function setDisplayCurrency(code: string) {
     const saved = await currencyService.setDisplayCurrency(code)
     if (me.value) me.value = { ...me.value, display_currency: saved.display_currency }
+  }
+
+  /** Troca o tema ou a cor da pessoa: aplica na hora e volta atrás se a API recusar. */
+  async function setAppearance(change: { theme?: Theme; accent?: AccentId }) {
+    if (!me.value) return
+    const before = { theme: me.value.theme, accent: me.value.accent }
+    set({ ...me.value, ...change })
+    try {
+      const saved = await accountService.appearance(change)
+      if (me.value) set({ ...me.value, ...saved })
+    } catch (error) {
+      if (me.value) set({ ...me.value, ...before })
+      throw error
+    }
+  }
+
+  /** Atualiza a pessoa da sessão depois de trocar a foto. */
+  function setUser(user: UserRef) {
+    if (me.value) me.value = { ...me.value, user }
   }
 
   /** Carrega a pessoa da sessão; sem sessão fica vazia. */
@@ -111,5 +132,5 @@ export const useSession = defineStore('session', () => {
     reconnectEvents()
   }
 
-  return { me, loaded, company, internalCompany, clientCompanies, lastClientId, displayCurrency, can, canIn, set, load, login, verifyMfa, logout, switchCompany, setDisplayCurrency }
+  return { me, loaded, company, internalCompany, clientCompanies, lastClientId, displayCurrency, can, canIn, set, load, login, verifyMfa, logout, switchCompany, setDisplayCurrency, setAppearance, setUser }
 })

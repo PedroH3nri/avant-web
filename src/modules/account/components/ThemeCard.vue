@@ -1,12 +1,15 @@
 <script setup lang="ts">
 /** Cartão do tema (Claro, Escuro, Sistema) com uma prévia de cada opção, como no protótipo. */
+import { toast } from 'vue-sonner'
 import { RadioGroupIndicator, RadioGroupItem, RadioGroupRoot } from 'reka-ui'
 import Card from '@/components/ui/Card.vue'
-import { t } from '@/lib/i18n'
-import { theme, type Theme } from '@/lib/theme'
+import { ApiError } from '@/lib/api'
+import { errorText, t } from '@/lib/i18n'
+import { theme, THEMES, type Theme } from '@/lib/theme'
 import { cn } from '@/lib/utils'
+import { useSession } from '@/stores/session'
 
-const themes: Theme[] = ['light', 'dark', 'system']
+const session = useSession()
 
 /** Fundo da prévia de cada tema; o do sistema mostra metade clara e metade escura. */
 function previewClass(option: Theme): string {
@@ -15,9 +18,13 @@ function previewClass(option: Theme): string {
   return 'bg-gradient-to-r from-white from-50% to-neutral-950 to-50%'
 }
 
-/** Muda o tema quando a pessoa escolhe uma opção. */
-function choose(value: unknown) {
-  theme.value = value as Theme
+/** Aplica o tema na hora e guarda na conta, para valer em qualquer navegador. */
+async function choose(value: unknown) {
+  try {
+    await session.setAppearance({ theme: value as Theme })
+  } catch (error) {
+    toast.error(errorText(error instanceof ApiError ? error.code : 'unknown'))
+  }
 }
 </script>
 
@@ -25,7 +32,7 @@ function choose(value: unknown) {
   <Card :title="t('set.theme')" :desc="t('set.themeDesc')">
     <RadioGroupRoot :model-value="theme" class="grid gap-3 sm:grid-cols-3" :aria-label="t('set.theme')" @update:model-value="choose">
       <RadioGroupItem
-        v-for="themeOption in themes"
+        v-for="themeOption in THEMES"
         :key="themeOption"
         :value="themeOption"
         :class="

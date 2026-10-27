@@ -221,7 +221,7 @@ const deleteDesc = computed(() => {
           <tr v-for="row in rows" :key="row.groupMember.membership_id" class="hover:bg-muted">
             <td :class="td">
               <div class="flex items-center gap-3">
-                <Avatar :name="row.member?.user.name ?? '?'" />
+                <Avatar :name="row.member?.user.name ?? '?'" :image-url="row.member?.user.image_url" />
                 <div class="min-w-0">
                   <RouterLink v-if="row.member" :to="`/equipe/${row.member.id}`" class="font-medium hover:underline focus-visible:underline focus-visible:outline-none">{{
                     row.member.user.name
