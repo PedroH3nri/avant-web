@@ -7,12 +7,15 @@ import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
 import { ShieldAlert } from 'lucide-vue-next'
+import AccentCard from '@/modules/account/components/AccentCard.vue'
 import ApiKeysCard from '@/modules/account/components/ApiKeysCard.vue'
 import CurrencyCard from '@/modules/account/components/CurrencyCard.vue'
 import GoogleCard from '@/modules/account/components/GoogleCard.vue'
 import MfaCard from '@/modules/account/components/MfaCard.vue'
 import PasswordCard from '@/modules/account/components/PasswordCard.vue'
+import ProfileImageCard from '@/modules/account/components/ProfileImageCard.vue'
 import SessionsCard from '@/modules/account/components/SessionsCard.vue'
+import ThemeCard from '@/modules/account/components/ThemeCard.vue'
 import PageBody from '@/components/PageBody.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import { errorText, t } from '@/lib/i18n'
@@ -43,6 +46,13 @@ onMounted(() => {
       </div>
     </div>
 
+    <template v-if="!session.me?.mfa_setup_required">
+      <h2 class="text-[13px] font-medium text-muted-foreground">
+        {{ t('photo.title') }}
+      </h2>
+      <ProfileImageCard />
+    </template>
+
     <h2 class="text-[13px] font-medium text-muted-foreground">
       {{ t('acc.security') }}
     </h2>
@@ -61,6 +71,12 @@ onMounted(() => {
         {{ t('acc.preferences') }}
       </h2>
       <CurrencyCard />
+
+      <h2 class="text-[13px] font-medium text-muted-foreground">
+        {{ t('set.appearance') }}
+      </h2>
+      <AccentCard />
+      <ThemeCard />
     </template>
   </PageBody>
 </template>

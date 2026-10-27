@@ -1,15 +1,16 @@
 /**
- * Tema (por pessoa, neste navegador) e cor do sistema (por Empresa, vem da API como
- * ``accent_color``). Só ``--primary`` e o texto sobre ele mudam com a cor.
+ * Tema e cor do sistema, escolhas de cada pessoa (vêm do /auth/me como ``theme`` e ``accent``).
+ * O navegador lembra o tema para a primeira tela não piscar. Só ``--primary`` muda com a cor.
  */
 
 import { ref, watch } from 'vue'
+import type { AccentId, Theme } from '@/lib/types'
 
-export type Theme = 'light' | 'dark' | 'system'
+export type { AccentId, Theme }
 
 export interface Accent {
-  id: 'default' | 'blue' | 'green' | 'purple' | 'orange'
-  /** O que vai para a API; a Empresa sem cor (null) usa o padrão. */
+  id: AccentId
+  /** Cor da amostra no seletor. */
   hex: string
   light: string
   dark: string
@@ -23,10 +24,11 @@ export const ACCENTS: Accent[] = [
   { id: 'orange', hex: '#d9530b', light: '22 92% 44%', dark: '26 95% 60%' },
 ]
 
-/** Cor de destaque cadastrada para o hex, ou a padrão. */
-export function accentFor(hex: string | null | undefined): Accent {
-  const found = ACCENTS.find((accent) => accent.hex.toLowerCase() === hex?.toLowerCase())
-  return found ?? ACCENTS[0]!
+export const THEMES: Theme[] = ['light', 'dark', 'system']
+
+/** Cor de destaque com o id, ou a padrão. */
+export function accentFor(id: string | null | undefined): Accent {
+  return ACCENTS.find((accent) => accent.id === id) ?? ACCENTS[0]!
 }
 
 /** CSS que troca a cor primária nos temas claro e escuro. */
@@ -37,24 +39,24 @@ export function accentCss(accent: Accent): string {
   return `:root{${light}}@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){${dark}}}:root[data-theme="dark"]{${dark}}`
 }
 
-/** Aplica a cor de destaque da Empresa na página. */
-export function applyAccent(hex: string | null | undefined) {
+/** Aplica a cor de destaque da pessoa na página. */
+export function applyAccent(id: string | null | undefined) {
   let element = document.getElementById('avant-accent') as HTMLStyleElement | null
   if (!element) {
     element = document.createElement('style')
     element.id = 'avant-accent'
     document.head.appendChild(element)
   }
-  element.textContent = accentCss(accentFor(hex))
+  element.textContent = accentCss(accentFor(id))
 }
 
 const STORAGE = 'avant.theme'
 
-/** Tema salvo no navegador, ou o do sistema. */
+/** Tema lembrado no navegador, ou o do sistema. */
 function savedTheme(): Theme {
   try {
     const stored = localStorage.getItem(STORAGE)
-    if (stored === 'light' || stored === 'dark' || stored === 'system') return stored
+    if (stored && (THEMES as string[]).includes(stored)) return stored as Theme
   } catch {
     // sem localStorage
   }

@@ -175,7 +175,7 @@ async function logout() {
         <DropdownMenuTrigger
           class="flex items-center gap-2.5 rounded-md p-1.5 text-left hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <Avatar :name="session.me?.user.name ?? ''" :size="28" />
+          <Avatar :name="session.me?.user.name ?? ''" :image-url="session.me?.user.image_url" :size="28" />
           <span class="min-w-0 flex-1">
             <span class="block truncate text-[13px] font-medium">{{ session.me?.user.name }}</span>
             <span class="block truncate text-[12px] text-muted-foreground">{{ session.me?.user.email }}</span>

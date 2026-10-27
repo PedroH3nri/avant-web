@@ -256,7 +256,7 @@ async function cancel(invitation: Invitation) {
             <tr v-for="member in shown" :key="member.id" class="hover:bg-muted">
               <td :class="td">
                 <div class="flex items-center gap-3">
-                  <Avatar :name="member.user.name" />
+                  <Avatar :name="member.user.name" :image-url="member.user.image_url" />
                   <div class="min-w-0">
                     <div class="font-medium">
                       <RouterLink :to="`/equipe/${member.id}`" class="hover:underline focus-visible:underline focus-visible:outline-none">{{ member.user.name }}</RouterLink

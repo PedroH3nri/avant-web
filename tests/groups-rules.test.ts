@@ -18,7 +18,7 @@ const makeGroup = (id: string, name: string, membershipIds: string[]): Group => 
 /** Uma pessoa da equipe com o vínculo e a situação dados. */
 const makeMember = (id: string, status: Member['status'] = 'active'): Member => ({
   id,
-  user: { id: `user-${id}`, name: id, email: `${id}@acai.com`, locale: 'pt' },
+  user: { id: `user-${id}`, name: id, email: `${id}@acai.com`, locale: 'pt', image_url: null },
   role: null,
   status,
   is_owner: false,

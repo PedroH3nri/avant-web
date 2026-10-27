@@ -7,9 +7,7 @@ import Button from '@/components/ui/Button.vue'
 import Card from '@/components/ui/Card.vue'
 import { ApiError } from '@/lib/api'
 import { errorText, t } from '@/lib/i18n'
-
-const ACCEPTED = ['image/png', 'image/jpeg', 'image/webp']
-const MAX_BYTES = 2 * 1024 * 1024
+import { ACCEPTED_IMAGES, imageProblem } from '@/lib/images'
 
 const props = withDefaults(
   defineProps<{
@@ -34,15 +32,8 @@ async function pick(event: Event) {
   const file = target.files?.[0]
   target.value = ''
   if (!file) return
-  if (!ACCEPTED.includes(file.type)) {
-    problem.value = t('image.wrongType')
-    return
-  }
-  if (file.size > MAX_BYTES) {
-    problem.value = t('image.tooLarge', { size: (file.size / 1024 / 1024).toFixed(1) })
-    return
-  }
-  problem.value = ''
+  problem.value = imageProblem(file)
+  if (problem.value) return
   await run(() => props.save(file), props.staff ? t('image.changedByGroone') : t('image.changedHint'), t('image.changed'))
 }
 
@@ -77,7 +68,7 @@ async function run(action: () => Promise<void>, description: string, title: stri
         </span>
       </div>
     </div>
-    <input ref="input" type="file" :accept="ACCEPTED.join(',')" class="sr-only" tabindex="-1" aria-hidden="true" @change="pick" />
+    <input ref="input" type="file" :accept="ACCEPTED_IMAGES.join(',')" class="sr-only" tabindex="-1" aria-hidden="true" @change="pick" />
     <template #note>
       <span v-if="problem" class="text-bad" role="alert">{{ problem }}</span>
       <template v-else>{{ readonly ? t('image.readonly') : t('image.note') }}</template>

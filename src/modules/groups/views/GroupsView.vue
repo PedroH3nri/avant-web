@@ -54,6 +54,8 @@ watch(() => session.me?.active_company_id, load)
 
 /** Nome da pessoa pelo id do vínculo. */
 const nameOf = (membershipId: string) => members.value.find((member) => member.id === membershipId)?.user.name ?? '?'
+/** Foto da pessoa do vínculo, se ela tiver uma. */
+const imageOf = (membershipId: string) => members.value.find((member) => member.id === membershipId)?.user.image_url ?? null
 
 /** Junta o grupo novo à lista e avisa. */
 function created(group: Group) {
@@ -101,7 +103,7 @@ const openTab = (tab: 'members' | 'pending') => router.push(tab === 'pending' ? 
               <div v-else class="flex items-center gap-2">
                 <div class="flex -space-x-2">
                   <span v-for="member in group.members.slice(0, 3)" :key="member.membership_id" class="rounded-full ring-2 ring-card" :title="nameOf(member.membership_id)">
-                    <Avatar :name="nameOf(member.membership_id)" :size="24" />
+                    <Avatar :name="nameOf(member.membership_id)" :image-url="imageOf(member.membership_id)" :size="24" />
                   </span>
                 </div>
                 <span class="text-[13px] text-muted-foreground tnum">{{ group.members.length }}</span>

@@ -179,7 +179,7 @@ async function move() {
       <Card v-if="canAssign" :title="t('site.people')" :desc="t('site.peopleDesc')">
         <ul class="grid gap-3">
           <li v-for="person in people" :key="person.id" class="flex items-center gap-3 text-[14px]">
-            <Avatar :name="person.user.name" :size="28" />
+            <Avatar :name="person.user.name" :image-url="person.user.image_url" :size="28" />
             <RouterLink :to="`/equipe/${person.id}`" class="min-w-0 flex-1 truncate font-medium hover:underline">{{ person.user.name }}</RouterLink>
             <span class="text-[13px] text-muted-foreground">{{ person.is_owner ? t('team.owner') : t(`site.via.${person.via}`) }}</span>
           </li>
