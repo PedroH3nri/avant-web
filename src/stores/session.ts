@@ -4,9 +4,9 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { ApiError } from '@/lib/api'
 import { reconnectEvents } from '@/lib/events'
-import { lang, langChosen } from '@/lib/i18n'
+import { chooseLang } from '@/lib/i18n'
 import { applyAccent, theme } from '@/lib/theme'
-import type { AccentId, Me, Theme, UserRef } from '@/lib/types'
+import type { AccentId, Lang, Me, Theme, UserRef } from '@/lib/types'
 import { accountService } from '@/modules/account/service'
 import type { LoginResult } from '@/modules/auth/types'
 import { authService } from '@/modules/auth/service'
@@ -50,7 +50,6 @@ export const useSession = defineStore('session', () => {
 
   /** Guarda a pessoa da sessão e aplica idioma, tema e cor dela. */
   function set(value: Me | null) {
-    const first = me.value === null && value !== null
     me.value = value
     loaded.value = true
     if (value === null) {
@@ -61,9 +60,10 @@ export const useSession = defineStore('session', () => {
       if (!company.value?.is_internal) lastClientId.value = value.active_company_id
     }
     applyAccent(value?.accent)
-    if (value) theme.value = value.theme
-    // Na primeira carga, o idioma da conta vale se a pessoa ainda não escolheu outro aqui.
-    if (first && value && !langChosen()) lang.value = value.user.locale
+    if (value) {
+      theme.value = value.theme
+      chooseLang(value.user.locale)
+    }
   }
 
   /** Moeda em que a pessoa vê os valores; dólar até a sessão carregar. */
@@ -75,18 +75,24 @@ export const useSession = defineStore('session', () => {
     if (me.value) me.value = { ...me.value, display_currency: saved.display_currency }
   }
 
-  /** Troca o tema ou a cor da pessoa: aplica na hora e volta atrás se a API recusar. */
-  async function setAppearance(change: { theme?: Theme; accent?: AccentId }) {
+  /** Troca o tema, a cor ou o idioma da pessoa: aplica na hora e volta atrás se a API recusar. */
+  async function setAppearance(change: { theme?: Theme; accent?: AccentId; locale?: Lang }) {
     if (!me.value) return
-    const before = { theme: me.value.theme, accent: me.value.accent }
-    set({ ...me.value, ...change })
+    const before = { theme: me.value.theme, accent: me.value.accent, locale: me.value.user.locale }
+    applyAppearance({ ...before, ...change })
     try {
-      const saved = await accountService.appearance(change)
-      if (me.value) set({ ...me.value, ...saved })
+      applyAppearance(await accountService.appearance(change))
     } catch (error) {
-      if (me.value) set({ ...me.value, ...before })
+      applyAppearance(before)
       throw error
     }
+  }
+
+  /** Coloca tema, cor e idioma na pessoa da sessão e aplica no painel. */
+  function applyAppearance(appearance: { theme: Theme; accent: AccentId; locale: Lang }) {
+    if (!me.value) return
+    const { locale, ...rest } = appearance
+    set({ ...me.value, ...rest, user: { ...me.value.user, locale } })
   }
 
   /** Atualiza a pessoa da sessão depois de trocar a foto. */

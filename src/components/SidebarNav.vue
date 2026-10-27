@@ -1,9 +1,9 @@
 <script setup lang="ts">
-/** Sidebar fixa: Dashboard, grupos Clientes, Relatórios e Empresa, Configurações e a conta. */
+/** Sidebar fixa: Dashboard, grupos Clientes, Relatórios e Empresa, e a conta no rodapé. */
 import { computed, type Component } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { DropdownMenuRoot, DropdownMenuTrigger } from 'reka-ui'
-import { Building2, ChartLine, ChevronsUpDown, Eye, Receipt, Scale, FileSignature, Globe, LayoutDashboard, LogOut, Network, Settings, ShieldCheck, UserRound, Users, UsersRound } from 'lucide-vue-next'
+import { Building2, ChartLine, ChevronsUpDown, Eye, Receipt, Scale, FileSignature, Globe, LayoutDashboard, LogOut, Network, ShieldCheck, UserRound, Users, UsersRound } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 import Avatar from '@/components/ui/Avatar.vue'
 import Mark from '@/components/ui/Mark.vue'
@@ -62,8 +62,6 @@ const GROUPS: Group[] = [
 const SIBLINGS: Record<string, string[]> = {
   '/interno': ['/interno/clientes/', '/interno/pessoas'],
 }
-// Configurações da Empresa cliente: no rodapé, junto da conta.
-const SETTINGS: Item = { to: '/configuracoes', key: 'nav.settings', icon: Settings }
 
 const ready = computed(() => !!session.me && !session.me.mfa_setup_required)
 /** A Empresa cliente do grupo Clientes: a ativa ou a última por onde a pessoa passou. */
@@ -88,8 +86,6 @@ const groups = computed(() =>
 function active(link: Item) {
   if (!!link.internal !== onInternal.value) return false
   if (link.to === '/') return route.path === '/'
-  // Minha conta fica embaixo de /configuracoes, mas não é a tela de Configurações.
-  if (route.path.startsWith('/configuracoes/conta')) return false
   // A lista de clientes é /interno; as outras telas internas têm o próprio item.
   if (route.path === link.to || (link.to !== '/interno' && route.path.startsWith(`${link.to}/`))) return true
   // Irmã terminada em barra vale para as telas embaixo dela; as outras, só o caminho exato.
@@ -161,16 +157,6 @@ async function logout() {
       </template>
     </nav>
     <div class="mt-auto grid gap-1 border-t p-3">
-      <template v-if="ready">
-        <RouterLink
-          :to="SETTINGS.to"
-          :aria-current="active(SETTINGS) ? 'page' : undefined"
-          :class="item(active(SETTINGS))"
-          @click="openLink($event, SETTINGS.to)"
-        >
-          <component :is="SETTINGS.icon" />{{ t(SETTINGS.key) }}
-        </RouterLink>
-      </template>
       <DropdownMenuRoot>
         <DropdownMenuTrigger
           class="flex items-center gap-2.5 rounded-md p-1.5 text-left hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"

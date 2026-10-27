@@ -83,14 +83,13 @@ describe('SidebarNav', () => {
     expect(w.find('nav [aria-current="page"]').text()).toBe('Dashboard')
   })
 
-  it('Configurações fica no rodapé, fora da navegação', async () => {
+  it('não tem botão de Configurações: a Empresa se configura pela Equipe', async () => {
     const session = useSession()
     session.set(me('c', ['*']))
-    const r = router()
-    await r.push('/')
-    const w = mount(SidebarNav, { global: { plugins: [r] } })
-    expect(labels(w)).not.toContain('Configurações')
-    expect(w.findAll('a').map((a) => a.text())).toContain('Configurações')
+    const testRouter = router()
+    await testRouter.push('/')
+    const wrapper = mount(SidebarNav, { global: { plugins: [testRouter] } })
+    expect(wrapper.findAll('a').map((link) => link.text())).not.toContain('Configurações')
   })
 
   it('equipe Groone sem Empresa cliente tem os mesmos links, todos clicáveis', async () => {

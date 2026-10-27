@@ -4,7 +4,8 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { toast } from 'vue-sonner'
 import { DropdownMenuRoot, DropdownMenuSeparator, DropdownMenuTrigger } from 'reka-ui'
-import { Lock, Mail, MoreHorizontal, RefreshCw, Search } from 'lucide-vue-next'
+import { Lock, Mail, MoreHorizontal, RefreshCw, Search, Settings } from 'lucide-vue-next'
+import CompanyIcon from '@/components/CompanyIcon.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import LoadError from '@/components/LoadError.vue'
 import PageBody from '@/components/PageBody.vue'
@@ -47,6 +48,7 @@ const filter = ref('')
 const canInvite = computed(() => session.can('team.invite'))
 const canManage = computed(() => session.can('team.manage'))
 const canRoles = computed(() => session.can('roles.view'))
+const canEditCompany = computed(() => session.can('company.edit'))
 
 /** Carrega Empresa, membros, convites e papéis. */
 async function load() {
@@ -194,6 +196,16 @@ async function cancel(invitation: Invitation) {
     <LoadError v-if="loadError" :message="loadError" @retry="load" />
     <p v-else-if="!loaded" class="text-[14px] text-muted-foreground" role="status">{{ t('common.loading') }}</p>
     <template v-else>
+      <Card v-if="session.company && canEditCompany" :title="t('team.settings')" :desc="t('team.settingsDesc', { company: session.company.name })">
+        <div class="flex items-center gap-3">
+          <CompanyIcon :name="session.company.name" :image-url="session.company.image_url" :size="40" />
+          <span class="text-[15px] font-medium">{{ session.company.name }}</span>
+        </div>
+        <template #note>{{ t('team.settingsNote') }}</template>
+        <template #footer>
+          <Button size="sm" @click="$router.push('/configuracoes')"><Settings />{{ t('team.settingsEdit') }}</Button>
+        </template>
+      </Card>
       <Card v-if="canInvite && roleOptions.length" :title="t('team.invite')" :desc="t(limit === null ? 'team.inviteDescNoLimit' : 'team.inviteDesc')">
         <form id="invite-form" class="grid gap-4 md:grid-cols-[minmax(0,1fr)_240px]" novalidate @submit.prevent="sendInvite">
           <Field id="inv-email" :label="t('login.email')" :error="dupe && t('team.dupe')">
