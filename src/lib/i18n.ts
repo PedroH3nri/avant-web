@@ -1155,6 +1155,18 @@ const dict = {
   'int.people': ['Pessoas', 'People', 'Personas'],
   'int.peopleSearchOpen': ['Buscar pessoa', 'Find a person', 'Buscar persona'],
   'int.staff': ['Equipe Groone', 'Groone team', 'Equipo Groone'],
+  'int.grooneSettings': ['Configurações da Groone', 'Groone settings', 'Configuración de Groone'],
+  'int.grooneSettingsDesc': [
+    'Nome, imagem, cores e tema da Groone no Avant.',
+    'Groone name, image, colors and theme in Avant.',
+    'Nombre, imagen, colores y tema de Groone en Avant.',
+  ],
+  'int.grooneSettingsEdit': ['Editar configurações da Groone', 'Edit Groone settings', 'Editar configuración de Groone'],
+  'int.grooneSettingsNote': [
+    'A imagem aparece no seletor de Empresas de toda a equipe Groone.',
+    'The image shows in the company switcher for the whole Groone team.',
+    'La imagen aparece en el selector de empresas de todo el equipo Groone.',
+  ],
   'int.contracts': ['Contratos', 'Contracts', 'Contratos'],
   'ct.sub': [
     'O revshare da Groone em cada network MCM. No Manage Account ele vem do GAM de hora em hora; no Manage Inventory, a equipe cadastra.',
