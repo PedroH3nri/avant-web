@@ -1,11 +1,13 @@
 <script setup lang="ts">
-/** Configurações da Empresa: nome, cor de destaque e tema. */
+/** Configurações da Empresa: nome, dados fiscais, cor do sistema, tema e idioma. */
 import { computed, onMounted, ref } from 'vue'
 import { toast } from 'vue-sonner'
-import { RadioGroupIndicator, RadioGroupItem, RadioGroupRoot } from 'reka-ui'
+import { Check } from 'lucide-vue-next'
+import { RadioGroupItem, RadioGroupRoot } from 'reka-ui'
 import Button from '@/components/ui/Button.vue'
 import Card from '@/components/ui/Card.vue'
 import FiscalDataCard from '@/modules/company/components/FiscalDataCard.vue'
+import ThemeCard from '@/modules/company/components/ThemeCard.vue'
 import Input from '@/components/ui/Input.vue'
 import LangSwitch from '@/components/LangSwitch.vue'
 import LoadError from '@/components/LoadError.vue'
@@ -13,7 +15,7 @@ import PageBody from '@/components/PageBody.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import { ApiError } from '@/lib/api'
 import { errorText, t } from '@/lib/i18n'
-import { accentFor, ACCENTS, applyAccent, theme, type Theme } from '@/lib/theme'
+import { accentFor, ACCENTS, applyAccent } from '@/lib/theme'
 import type { CompanyDetail } from '@/modules/company/types'
 import { cn } from '@/lib/utils'
 import { useSession } from '@/stores/session'
@@ -28,7 +30,6 @@ const savingName = ref(false)
 const savingAccent = ref(false)
 const canEdit = computed(() => session.can('company.edit'))
 const nameInvalid = computed(() => name.value.trim().length < 2)
-const themes: Theme[] = ['light', 'dark', 'system']
 
 /** Carrega a Empresa. */
 async function load() {
@@ -100,14 +101,14 @@ const preview = (id: string) => applyAccent(ACCENTS.find((option) => option.id =
           :value="accentOption.id"
           :class="
             cn(
-              'flex h-10 items-center gap-2 rounded-md border bg-background px-3 text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 data-[state=checked]:border-foreground',
+              'flex h-10 items-center gap-2 rounded-md border bg-background px-3 text-[14px] hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:hover:bg-background',
+              accent === accentOption.id && 'border-foreground',
             )
           "
         >
-          <span class="relative grid h-4 w-4 place-items-center rounded-full" :style="{ background: accentOption.id === 'default' ? 'hsl(var(--foreground))' : accentOption.hex }">
-            <RadioGroupIndicator class="h-1.5 w-1.5 rounded-full bg-background" />
-          </span>
+          <span class="h-4 w-4 rounded-full ring-1 ring-inset ring-foreground/10" :style="{ background: accentOption.id === 'default' ? 'hsl(var(--foreground))' : accentOption.hex }" />
           {{ t(`accent.${accentOption.id}`) }}
+          <Check v-if="accent === accentOption.id" class="h-3.5 w-3.5" aria-hidden="true" />
         </RadioGroupItem>
       </RadioGroupRoot>
       <template #note>{{ canEdit ? t('set.accentNote') : t('set.accentReadonly') }}</template>
@@ -116,25 +117,7 @@ const preview = (id: string) => applyAccent(ACCENTS.find((option) => option.id =
       </template>
     </Card>
 
-    <Card :title="t('set.theme')" :desc="t('set.themeDesc')">
-      <div class="flex max-w-[360px] rounded-md border bg-background p-0.5" role="group" :aria-label="t('set.theme')">
-        <button
-          v-for="themeOption in themes"
-          :key="themeOption"
-          type="button"
-          :aria-pressed="theme === themeOption"
-          :class="
-            cn(
-              'h-8 flex-1 rounded-[4px] text-[13px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-              theme === themeOption ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground',
-            )
-          "
-          @click="theme = themeOption"
-        >
-          {{ t(`set.theme.${themeOption}`) }}
-        </button>
-      </div>
-    </Card>
+    <ThemeCard />
 
     <h2 class="text-[13px] font-medium text-muted-foreground">{{ t('set.language') }}</h2>
     <Card :title="t('set.language')" :desc="t('set.langDesc')">
