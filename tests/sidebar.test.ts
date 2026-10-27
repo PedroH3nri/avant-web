@@ -13,8 +13,8 @@ function me(active: string, permissions: string[]): Me {
   return {
     user: { id: 'u', email: 'ana@groone.com', name: 'Ana Lima', locale: 'pt' },
     companies: [
-      { id: 'g', name: 'Groone', slug: 'groone', accent_color: null, is_owner: false, is_internal: true },
-      { id: 'c', name: 'Cliente', slug: 'cliente', accent_color: null, is_owner: true, is_internal: false },
+      { id: 'g', name: 'Groone', slug: 'groone', accent_color: null, is_owner: false, is_internal: true, image_url: null },
+      { id: 'c', name: 'Cliente', slug: 'cliente', accent_color: null, is_owner: true, is_internal: false, image_url: null },
     ],
     active_company_id: active,
     permissions,

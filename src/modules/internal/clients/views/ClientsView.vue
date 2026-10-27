@@ -9,7 +9,7 @@ import ClientProfileForm from '@/modules/internal/clients/components/ClientProfi
 import LoadError from '@/components/LoadError.vue'
 import PageBody from '@/components/PageBody.vue'
 import PageHeader from '@/components/PageHeader.vue'
-import Avatar from '@/components/ui/Avatar.vue'
+import CompanyIcon from '@/components/CompanyIcon.vue'
 import Button from '@/components/ui/Button.vue'
 import Card from '@/components/ui/Card.vue'
 import DataTable from '@/components/ui/DataTable.vue'
@@ -249,7 +249,7 @@ const referrerName = (client: Client) => (client.profile?.referred_by_company_id
           <tr v-for="client in shown" :key="client.id" class="hover:bg-muted">
             <td :class="td">
               <div class="flex items-center gap-3">
-                <Avatar :name="client.name" :size="28" />
+                <CompanyIcon :name="client.name" :image-url="client.image_url" :size="28" />
                 <div class="min-w-0">
                   <RouterLink :to="`/interno/clientes/${client.id}`" class="font-medium hover:underline">{{ client.name }}</RouterLink>
                   <div v-if="referrerName(client)" class="truncate text-[13px] text-muted-foreground">{{ t('int.referredByName', { name: referrerName(client) ?? '' }) }}</div>

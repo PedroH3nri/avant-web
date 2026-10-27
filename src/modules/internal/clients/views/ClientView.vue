@@ -12,6 +12,7 @@ import PageHeader from '@/components/PageHeader.vue'
 import Badge from '@/components/ui/Badge.vue'
 import Button from '@/components/ui/Button.vue'
 import Card from '@/components/ui/Card.vue'
+import CompanyImageCard from '@/components/CompanyImageCard.vue'
 import DataTable from '@/components/ui/DataTable.vue'
 import Dialog from '@/components/ui/Dialog.vue'
 import Field from '@/components/ui/Field.vue'
@@ -56,6 +57,18 @@ const auditBusy = ref(false)
 
 /** Mostra o erro num aviso. */
 const fail = (error: unknown) => toast.error(errorText(error instanceof ApiError ? error.code : 'unknown'))
+
+/** Envia a imagem nova do cliente e recarrega a página com a auditoria. */
+async function saveImage(file: File) {
+  await clientService.setImage(id.value, file)
+  await load()
+}
+
+/** Tira a imagem do cliente e recarrega a página com a auditoria. */
+async function removeImage() {
+  await clientService.removeImage(id.value)
+  await load()
+}
 
 /** Carrega o cliente e a auditoria. */
 async function load() {
@@ -307,6 +320,8 @@ function who(auditEntry: AuditEntry) {
           <Button v-else variant="outline" @click="openEdit">{{ t('int.edit') }}</Button>
         </template>
       </Card>
+
+      <CompanyImageCard :name="client.name" :image-url="client.image_url" staff :readonly="!canManage" :save="saveImage" :remove="removeImage" />
 
       <Card :title="t('int.fiscalTitle')" :desc="t('int.fiscalDesc')">
         <dl v-if="client.profile?.fiscal" class="-my-2 grid divide-y text-[14px]">
