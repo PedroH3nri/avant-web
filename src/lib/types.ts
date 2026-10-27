@@ -26,6 +26,8 @@ export interface CompanyRef {
   is_owner: boolean
   /** Diz se é a Company Groone. */
   is_internal: boolean
+  /** Vazio sem imagem: o painel mostra a inicial do nome. */
+  image_url: string | null
 }
 
 export interface Me {

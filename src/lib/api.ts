@@ -42,6 +42,8 @@ export type Query = Record<string, string | number | boolean | null | undefined>
 export interface RequestOptions {
   query?: Query
   body?: unknown
+  /** Arquivo enviado cru no corpo, como a imagem da Empresa. */
+  file?: Blob
   signal?: AbortSignal
 }
 
@@ -66,6 +68,7 @@ export function setUnauthorizedHandler(handler: () => void) {
 export async function request<T>(method: string, path: string, options: RequestOptions = {}): Promise<T> {
   const headers: Record<string, string> = { Accept: 'application/json' }
   if (options.body !== undefined) headers['Content-Type'] = 'application/json'
+  if (options.file) headers['Content-Type'] = options.file.type || 'application/octet-stream'
   if (!SAFE.has(method)) {
     const csrf = readCookie(CSRF_COOKIE)
     if (csrf) headers['X-CSRF-Token'] = csrf
@@ -76,7 +79,7 @@ export async function request<T>(method: string, path: string, options: RequestO
       method,
       headers,
       credentials: 'same-origin',
-      body: options.body === undefined ? undefined : JSON.stringify(options.body),
+      body: options.file ?? (options.body === undefined ? undefined : JSON.stringify(options.body)),
       signal: options.signal,
     })
   } catch (error) {
@@ -106,6 +109,7 @@ export const api = {
   post: <T>(path: string, body?: unknown) => request<T>('POST', path, { body: body ?? {} }),
   put: <T>(path: string, body: unknown) => request<T>('PUT', path, { body }),
   patch: <T>(path: string, body: unknown) => request<T>('PATCH', path, { body }),
+  putFile: <T>(path: string, file: Blob) => request<T>('PUT', path, { file }),
   // Desligar o 2FA manda o código no corpo do DELETE.
   delete: <T = void>(path: string, body?: unknown) => request<T>('DELETE', path, { body }),
 }

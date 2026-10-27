@@ -39,6 +39,8 @@ export interface Client {
   /** Vazio enquanto ninguém aceitou o convite de dono. */
   owner: UserRef | null
   profile: ClientProfile | null
+  /** Vazio sem imagem: o painel mostra a inicial do nome. */
+  image_url: string | null
 }
 
 export interface ClientDetail extends Client {

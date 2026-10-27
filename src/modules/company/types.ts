@@ -13,6 +13,8 @@ export interface CompanyDetail {
   seat_limit: number | null
   seats_used: number
   settings: Record<string, unknown>
+  /** Vazio sem imagem: o painel mostra a inicial do nome. */
+  image_url: string | null
 }
 
 // Painel interno (/api/v1/internal)
