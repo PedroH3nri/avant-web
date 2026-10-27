@@ -1,6 +1,7 @@
 <script setup lang="ts">
 /** Equipe: membros, convites pendentes e convite novo. */
 import { computed, onMounted, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { toast } from 'vue-sonner'
 import { DropdownMenuRoot, DropdownMenuSeparator, DropdownMenuTrigger } from 'reka-ui'
 import { Lock, Mail, MoreHorizontal, RefreshCw, Search } from 'lucide-vue-next'
@@ -27,19 +28,20 @@ import { errorText, formatAgo, formatDate, pick, t } from '@/lib/i18n'
 import { td, th } from '@/lib/table'
 import type { CompanyDetail } from '@/modules/company/types'
 import type { Invitation, Member, Role } from '@/modules/team/types'
-import { cn } from '@/lib/utils'
+import TeamTabs from '@/modules/team/components/TeamTabs.vue'
 import { useSession } from '@/stores/session'
 import { companyService } from '@/modules/company/service'
 import { teamService } from '@/modules/team/service'
 
 const session = useSession()
+const route = useRoute()
 const company = ref<CompanyDetail | null>(null)
 const members = ref<Member[]>([])
 const invites = ref<Invitation[]>([])
 const roles = ref<Role[]>([])
 const loaded = ref(false)
 const loadError = ref<string | null>(null)
-const view = ref<'members' | 'pending'>('members')
+const view = ref<'members' | 'pending'>(route.query.aba === 'convites' ? 'pending' : 'members')
 const filter = ref('')
 
 const canInvite = computed(() => session.can('team.invite'))
@@ -184,18 +186,6 @@ async function cancel(invitation: Invitation) {
   }
 }
 
-const tabs = computed(() =>
-  [
-    { id: 'members' as const, label: t('team.members'), n: members.value.length, show: true },
-    { id: 'pending' as const, label: t('team.pending'), n: invites.value.length, show: true },
-  ].filter((tab) => tab.show),
-)
-/** Classes da aba, ativa ou não. */
-const tab = (on: boolean) =>
-  cn(
-    'h-8 rounded-[4px] px-3 text-[13px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-    on ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground',
-  )
 </script>
 
 <template>
@@ -241,11 +231,7 @@ const tab = (on: boolean) =>
       </Card>
 
       <div class="flex flex-wrap items-center gap-3">
-        <div class="flex rounded-md border bg-card p-0.5" role="tablist" :aria-label="t('team.title')">
-          <button v-for="tabOption in tabs" :key="tabOption.id" type="button" role="tab" :aria-selected="view === tabOption.id" :class="tab(view === tabOption.id)" @click="view = tabOption.id">
-            {{ tabOption.label }} <span class="text-muted-foreground tnum">{{ tabOption.n }}</span>
-          </button>
-        </div>
+        <TeamTabs :current="view" :counts="{ members: members.length, pending: invites.length }" @select="view = $event" />
         <div v-if="view === 'members'" class="relative ml-auto w-full sm:w-64">
           <Search class="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
           <Input v-model="filter" :aria-label="t('team.filterLabel')" class="h-9 bg-card pl-9" :placeholder="t('team.filter')" />
