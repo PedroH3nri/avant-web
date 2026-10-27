@@ -4,7 +4,7 @@ defineProps<{ id: string; label: string; hint?: string; error?: string | false |
 </script>
 
 <template>
-  <div class="grid min-w-0 gap-2">
+  <div class="grid min-w-0 content-start gap-2">
     <label :for="id" class="text-[13px] font-medium text-muted-foreground">{{ label }}</label>
     <slot />
     <p v-if="error" :id="`${id}-error`" class="text-[13px] text-bad">{{ error }}</p>
