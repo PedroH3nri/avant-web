@@ -614,6 +614,8 @@ const dict = {
   'perm.group.api': ['API', 'API', 'API'],
   'perm.group.internal': ['Painel interno', 'Internal panel', 'Panel interno'],
   'perm.group.contracts': ['Contratos', 'Contracts', 'Contratos'],
+  'perm.group.costs': ['Custos', 'Costs', 'Costos'],
+  'perm.group.groups': ['Grupos', 'Groups', 'Grupos'],
   'role.filterLabel': ['Filtrar permissões por categoria', 'Filter permissions by category', 'Filtrar permisos por categoría'],
   'role.filterAll': ['Todas', 'All', 'Todas'],
   'common.confirm': ['Confirmar', 'Confirm', 'Confirmar'],
@@ -2002,6 +2004,12 @@ function fill(text: string, params?: Record<string, string | number>): string {
 /** Texto da chave no idioma atual. */
 export function t(key: Key, params?: Record<string, string | number>): string {
   return fill(dict[key][index[lang.value]], params)
+}
+
+/** Nome do grupo de permissões no idioma atual; um grupo novo da API sem texto aqui mostra a chave. */
+export function permissionGroupLabel(group: string): string {
+  const key = `perm.group.${group}`
+  return key in dict ? t(key as Key) : group
 }
 
 /** Nome vindo da API em vários idiomas (papéis, permissões). */

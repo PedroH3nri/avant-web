@@ -1,11 +1,17 @@
 import { nextTick } from 'vue'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { auditText, chooseLang, errorText, formatAgo, pick, t } from '@/lib/i18n'
+import { auditText, chooseLang, errorText, formatAgo, permissionGroupLabel, pick, t } from '@/lib/i18n'
 import { safeNext } from '@/lib/nav'
 
 beforeEach(() => chooseLang('pt'))
 
 describe('i18n', () => {
+  it('dá nome a todo grupo de permissões do catálogo e não quebra com um grupo novo', () => {
+    const catalogGroups = ['api', 'audit', 'company', 'contracts', 'costs', 'groups', 'internal', 'network', 'reports', 'roles', 'sites', 'team']
+    for (const group of catalogGroups) expect(permissionGroupLabel(group)).not.toBe(group)
+    expect(permissionGroupLabel('novo_grupo')).toBe('novo_grupo')
+  })
+
   it('troca o idioma e preenche parâmetros', async () => {
     expect(t('home.seatsOf', { used: 3, limit: 5 })).toBe('3 de 5 vagas')
     chooseLang('en')

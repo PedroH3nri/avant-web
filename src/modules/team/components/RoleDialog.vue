@@ -8,7 +8,7 @@ import Dialog from '@/components/ui/Dialog.vue'
 import Field from '@/components/ui/Field.vue'
 import Input from '@/components/ui/Input.vue'
 import { ApiError } from '@/lib/api'
-import { errorText, pick, t, type Key } from '@/lib/i18n'
+import { errorText, permissionGroupLabel, pick, t } from '@/lib/i18n'
 import type { SiteScope } from '@/lib/types'
 import type { Permission, Role } from '@/modules/team/types'
 import { cn } from '@/lib/utils'
@@ -47,8 +47,6 @@ const chipClass = (on: boolean) =>
     'h-7 rounded-full border px-3 text-[12px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
     on ? 'border-foreground bg-foreground text-background' : 'text-muted-foreground hover:text-foreground',
   )
-/** Nome do grupo de permissões no idioma atual. */
-const groupLabel = (group: string) => t(`perm.group.${group}` as Key)
 
 /** Marca ou desmarca uma permissão do papel. */
 function toggle(key: string, on: boolean) {
@@ -102,12 +100,12 @@ async function save() {
             :class="chipClass(category === groupKey)"
             @click="category = groupKey"
           >
-            {{ groupLabel(groupKey) }}
+            {{ permissionGroupLabel(groupKey) }}
           </button>
         </div>
         <div class="scroll-thin grid max-h-[min(44dvh,380px)] gap-4 overflow-y-auto rounded-md border p-4">
           <div v-for="[groupKey, perms] in shownGroups" :key="groupKey" class="grid gap-2">
-            <h3 class="text-[13px] font-medium">{{ groupLabel(groupKey) }}</h3>
+            <h3 class="text-[13px] font-medium">{{ permissionGroupLabel(groupKey) }}</h3>
             <Checkbox
               v-for="perm in perms"
               :id="`perm-${perm.key}`"
