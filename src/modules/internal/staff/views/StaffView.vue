@@ -2,6 +2,8 @@
 /** Painel interno: a equipe Groone e o convite com os papéis da Company Groone. */
 import { computed, onMounted, ref } from 'vue'
 import { toast } from 'vue-sonner'
+import { Settings } from 'lucide-vue-next'
+import CompanyIcon from '@/components/CompanyIcon.vue'
 import LoadError from '@/components/LoadError.vue'
 import PageBody from '@/components/PageBody.vue'
 import PageHeader from '@/components/PageHeader.vue'
@@ -28,6 +30,7 @@ const staff = ref<Member[] | null>(null)
 const roles = ref<Role[]>([])
 const invites = ref<Invitation[]>([])
 const loadError = ref<string | null>(null)
+const canEditGroone = computed(() => session.can('company.edit'))
 const email = ref('')
 const roleId = ref('')
 const busy = ref(false)
@@ -78,6 +81,16 @@ async function invite() {
   <PageHeader :title="t('int.staff')" :sub="t('int.staffSub')" />
   <PageBody>
     <LoadError v-if="loadError" :message="loadError" @retry="load" />
+    <Card v-if="session.company" :title="t('int.grooneSettings')" :desc="t('int.grooneSettingsDesc')">
+      <div class="flex items-center gap-3">
+        <CompanyIcon :name="session.company.name" :image-url="session.company.image_url" :size="40" />
+        <span class="text-[15px] font-medium">{{ session.company.name }}</span>
+      </div>
+      <template #note>{{ canEditGroone ? t('int.grooneSettingsNote') : t('image.readonly') }}</template>
+      <template v-if="canEditGroone" #footer>
+        <Button size="sm" @click="$router.push('/configuracoes')"><Settings />{{ t('int.grooneSettingsEdit') }}</Button>
+      </template>
+    </Card>
     <Card v-if="roleOptions.length" :title="t('int.staffInvite')" :desc="t('int.staffInviteDesc')">
       <form id="staff-invite" class="grid gap-4 md:grid-cols-[1.4fr_1fr]" @submit.prevent="invite">
         <Field id="si-email" :label="t('login.email')">

@@ -2,7 +2,7 @@
 /** Configurações da Empresa: nome, imagem, dados fiscais, cor do sistema, tema e idioma. */
 import { computed, onMounted, ref } from 'vue'
 import { toast } from 'vue-sonner'
-import { Check } from 'lucide-vue-next'
+import { ArrowLeft, Check } from 'lucide-vue-next'
 import { RadioGroupItem, RadioGroupRoot } from 'reka-ui'
 import Button from '@/components/ui/Button.vue'
 import Card from '@/components/ui/Card.vue'
@@ -30,6 +30,7 @@ const accent = ref<string>(ACCENTS[0]!.id)
 const savingName = ref(false)
 const savingAccent = ref(false)
 const canEdit = computed(() => session.can('company.edit'))
+const isGroone = computed(() => session.company?.is_internal === true)
 const nameInvalid = computed(() => name.value.trim().length < 2)
 
 /** Carrega a Empresa. */
@@ -82,7 +83,13 @@ const preview = (id: string) => applyAccent(ACCENTS.find((option) => option.id =
 </script>
 
 <template>
-  <PageHeader :title="t('set.title')" :sub="t('set.sub')" />
+  <PageHeader :title="isGroone ? t('int.grooneSettings') : t('set.title')" :sub="isGroone ? t('int.grooneSettingsDesc') : t('set.sub')">
+    <template v-if="isGroone" #back>
+      <RouterLink to="/interno/equipe" class="mb-3 inline-flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-foreground">
+        <ArrowLeft class="size-4" />{{ t('int.staff') }}
+      </RouterLink>
+    </template>
+  </PageHeader>
   <PageBody class="[&>*]:max-w-[880px]">
     <LoadError v-if="loadError" :message="loadError" @retry="load" />
 
