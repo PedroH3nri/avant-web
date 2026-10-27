@@ -1,7 +1,7 @@
 <script setup lang="ts">
-/** Menu para trocar a Empresa ativa da sessão. */
+/** Menu para trocar a Empresa ativa da sessão; aparece em todas as telas, painel interno incluído. */
 import { useRoute, useRouter } from 'vue-router'
-import { DropdownMenuLabel, DropdownMenuRoot, DropdownMenuTrigger } from 'reka-ui'
+import { DropdownMenuLabel, DropdownMenuRoot, DropdownMenuSeparator, DropdownMenuTrigger } from 'reka-ui'
 import { Check, ChevronsUpDown } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 import Badge from '@/components/ui/Badge.vue'
@@ -30,10 +30,7 @@ async function pick(id: string) {
 </script>
 
 <template>
-  <span v-if="route.meta.internal" class="flex min-w-0 items-center gap-2 text-[14px] font-medium">
-    Groone<Badge>{{ t('nav.internal') }}</Badge>
-  </span>
-  <DropdownMenuRoot v-else-if="session.company">
+  <DropdownMenuRoot v-if="session.company">
     <DropdownMenuTrigger
       class="flex min-w-0 items-center gap-2 rounded-md px-1.5 py-1.5 text-left text-[14px] font-medium hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
@@ -43,7 +40,15 @@ async function pick(id: string) {
     </DropdownMenuTrigger>
     <MenuContent class="w-64">
       <DropdownMenuLabel class="px-2 py-1.5 text-[12px] text-muted-foreground">{{ t('top.companies') }}</DropdownMenuLabel>
-      <!-- A Company Groone entra pelo painel interno, no menu lateral. -->
+      <template v-if="session.internalCompany">
+        <MenuItem @select="pick(session.internalCompany.id)">
+          <CompanyIcon :name="session.internalCompany.name" :image-url="session.internalCompany.image_url" :size="20" />
+          <span class="min-w-0 truncate">{{ session.internalCompany.name }}</span>
+          <Badge class="ml-auto">{{ t('top.internalBadge') }}</Badge>
+          <Check v-if="session.internalCompany.id === session.company.id" />
+        </MenuItem>
+        <DropdownMenuSeparator v-if="session.clientCompanies.length" class="-mx-1 my-1 h-px bg-border" />
+      </template>
       <MenuItem v-for="clientCompany in session.clientCompanies" :key="clientCompany.id" @select="pick(clientCompany.id)">
         <CompanyIcon :name="clientCompany.name" :image-url="clientCompany.image_url" :size="20" />
         <span class="min-w-0 truncate">{{ clientCompany.name }}</span>

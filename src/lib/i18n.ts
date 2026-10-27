@@ -19,7 +19,6 @@ const dict = {
   'nav.sites': ['Sites', 'Sites', 'Sitios'],
   'nav.settings': ['Configurações', 'Settings', 'Configuración'],
   'nav.account': ['Minha conta', 'My account', 'Mi cuenta'],
-  'nav.internal': ['Painel interno Groone', 'Groone internal panel', 'Panel interno Groone'],
   'nav.groupClients': ['Clientes', 'Clients', 'Clientes'],
   'nav.groupReports': ['Relatórios', 'Reports', 'Informes'],
   'nav.groupCompany': ['Empresa', 'Company', 'Empresa'],
@@ -28,6 +27,7 @@ const dict = {
   'nav.main': ['Menu principal', 'Main menu', 'Menú principal'],
   'top.logout': ['Sair', 'Sign out', 'Salir'],
   'top.companies': ['Suas Empresas', 'Your companies', 'Tus empresas'],
+  'top.internalBadge': ['Interno', 'Internal', 'Interno'],
   'top.network': ['Rede Groone', 'Groone network', 'Red Groone'],
   'top.lang': ['Idioma', 'Language', 'Idioma'],
 
