@@ -11,7 +11,7 @@ import Input from '@/components/ui/Input.vue'
 import NativeSelect from '@/components/ui/NativeSelect.vue'
 import { copy } from '@/modules/account/rules'
 import { ApiError } from '@/lib/api'
-import { errorText, pick, t, type Key } from '@/lib/i18n'
+import { errorText, permissionGroupLabel, pick, t } from '@/lib/i18n'
 import type { ApiKey } from '@/modules/account/types'
 import type { Permission } from '@/modules/team/types'
 import { useSession } from '@/stores/session'
@@ -59,8 +59,6 @@ const groups = computed(() => {
   for (const permission of list.filter((permission) => !NOT_FOR_KEYS.has(permission.key))) by.set(permission.group, [...(by.get(permission.group) ?? []), permission])
   return [...by.entries()]
 })
-/** Nome do grupo de permissões no idioma atual. */
-const groupLabel = (group: string) => t(`perm.group.${group}` as Key)
 const options = DAYS.map((days) => ({
   value: String(days),
   label: days === 365 ? t('key.year') : t('key.days', { n: days }),
@@ -146,7 +144,7 @@ async function copyToken() {
           {{ t('key.permsHint') }}
         </p>
         <div v-for="[g, perms] in groups" :key="g" class="grid gap-2">
-          <h3 class="text-[13px] font-medium">{{ groupLabel(g) }}</h3>
+          <h3 class="text-[13px] font-medium">{{ permissionGroupLabel(g) }}</h3>
           <Checkbox
             v-for="perm in perms"
             :id="`key-perm-${perm.key}`"
