@@ -356,9 +356,9 @@ const dict = {
   // Configurações
   'set.title': ['Configurações', 'Settings', 'Configuración'],
   'set.sub': [
-    'Dados da Empresa e idioma. Tema, cor e foto ficam em Minha conta.',
-    'Company details and language. Theme, color and photo are in My account.',
-    'Datos de la empresa e idioma. Tema, color y foto están en Mi cuenta.',
+    'Nome, imagem e dados fiscais da Empresa. Tema, cor, idioma e foto ficam em Minha conta.',
+    'Company name, image and tax details. Theme, color, language and photo are in My account.',
+    'Nombre, imagen y datos fiscales de la empresa. Tema, color, idioma y foto están en Mi cuenta.',
   ],
   'set.general': ['Geral', 'General', 'General'],
   'set.appearance': ['Aparência', 'Appearance', 'Apariencia'],
@@ -449,9 +449,9 @@ const dict = {
   'set.theme.dark': ['Escuro', 'Dark', 'Oscuro'],
   'set.theme.system': ['Sistema', 'System', 'Sistema'],
   'set.langDesc': [
-    'O idioma do painel para você. Os e-mails seguem o idioma da sua conta.',
-    'The panel language for you. Emails follow your account language.',
-    'El idioma del panel para ti. Los correos siguen el idioma de tu cuenta.',
+    'Só para você, guardado na sua conta. Os e-mails do Avant também chegam nesse idioma.',
+    'Just for you, saved to your account. Avant emails also arrive in this language.',
+    'Solo para ti, guardado en tu cuenta. Los correos de Avant también llegan en este idioma.',
   ],
   'accent.default': ['Padrão', 'Default', 'Predeterminado'],
   'accent.blue': ['Azul', 'Blue', 'Azul'],
@@ -1180,10 +1180,22 @@ const dict = {
   'int.staff': ['Equipe Groone', 'Groone team', 'Equipo Groone'],
   'int.grooneSettings': ['Configurações da Groone', 'Groone settings', 'Configuración de Groone'],
   'int.grooneSettingsDesc': [
-    'Nome, imagem, cores e tema da Groone no Avant.',
-    'Groone name, image, colors and theme in Avant.',
-    'Nombre, imagen, colores y tema de Groone en Avant.',
+    'Nome e imagem da Groone no Avant.',
+    'Groone name and image in Avant.',
+    'Nombre e imagen de Groone en Avant.',
   ],
+  'team.settings': ['Configurações da Empresa', 'Company settings', 'Configuración de la empresa'],
+  'team.settingsDesc': [
+    'Nome, imagem e dados fiscais de {company}.',
+    'Name, image and tax details of {company}.',
+    'Nombre, imagen y datos fiscales de {company}.',
+  ],
+  'team.settingsNote': [
+    'A imagem aparece no seletor de Empresas de toda a equipe.',
+    'The image shows in the company switcher for the whole team.',
+    'La imagen aparece en el selector de empresas de todo el equipo.',
+  ],
+  'team.settingsEdit': ['Editar configurações da Empresa', 'Edit company settings', 'Editar configuración de la empresa'],
   'int.grooneSettingsEdit': ['Editar configurações da Groone', 'Edit Groone settings', 'Editar configuración de Groone'],
   'int.grooneSettingsNote': [
     'A imagem aparece no seletor de Empresas de toda a equipe Groone.',

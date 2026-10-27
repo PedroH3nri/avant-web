@@ -1,7 +1,7 @@
 /** Chamadas da API da página Minha conta: senha, sessões, 2FA, Google, chaves de API, aparência e foto. */
 
 import { api } from '@/lib/api'
-import type { AccentId, Items, Theme, UserRef } from '@/lib/types'
+import type { AccentId, Items, Lang, Theme, UserRef } from '@/lib/types'
 import type { ApiKey, ApiKeyCreated, AuthSession, GoogleStatus, MfaSetup, RecoveryCodes } from '@/modules/account/types'
 
 /** Serviço da conta da pessoa. */
@@ -32,8 +32,9 @@ export const accountService = {
   createApiKey: (body: unknown) => api.post<ApiKeyCreated>('/api-keys', body),
   /** Revoga uma chave de API. */
   revokeApiKey: (keyId: string) => api.delete(`/api-keys/${keyId}`),
-  /** Salva o tema e a cor que a pessoa escolheu. */
-  appearance: (body: { theme?: Theme; accent?: AccentId }) => api.patch<{ theme: Theme; accent: AccentId }>('/auth/appearance', body),
+  /** Salva o tema, a cor e o idioma que a pessoa escolheu. */
+  appearance: (body: { theme?: Theme; accent?: AccentId; locale?: Lang }) =>
+    api.patch<{ theme: Theme; accent: AccentId; locale: Lang }>('/auth/appearance', body),
   /** Envia a foto de perfil (PNG, JPEG ou WebP até 2 MB). */
   setImage: (file: File) => api.putFile<UserRef>('/auth/me/image', file),
   /** Tira a foto de perfil. */

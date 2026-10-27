@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** Configurações da Empresa: nome, imagem, dados fiscais e idioma. Tema e cor são de cada pessoa, em Minha conta. */
+/** Configurações da Empresa: nome, imagem e dados fiscais. Tema, cor, idioma e foto são de cada pessoa, em Minha conta. */
 import { computed, onMounted, ref } from 'vue'
 import { toast } from 'vue-sonner'
 import { ArrowLeft } from 'lucide-vue-next'
@@ -8,7 +8,6 @@ import Card from '@/components/ui/Card.vue'
 import CompanyImageCard from '@/components/CompanyImageCard.vue'
 import FiscalDataCard from '@/modules/company/components/FiscalDataCard.vue'
 import Input from '@/components/ui/Input.vue'
-import LangSwitch from '@/components/LangSwitch.vue'
 import LoadError from '@/components/LoadError.vue'
 import PageBody from '@/components/PageBody.vue'
 import PageHeader from '@/components/PageHeader.vue'
@@ -73,9 +72,12 @@ const saveName = () => save({ name: name.value.trim() }, savingName)
 
 <template>
   <PageHeader :title="isGroone ? t('int.grooneSettings') : t('set.title')" :sub="isGroone ? t('int.grooneSettingsDesc') : t('set.sub')">
-    <template v-if="isGroone" #back>
-      <RouterLink to="/interno/equipe" class="mb-3 inline-flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-foreground">
-        <ArrowLeft class="size-4" />{{ t('int.staff') }}
+    <template #back>
+      <RouterLink
+        :to="isGroone ? '/interno/equipe' : '/equipe'"
+        class="mb-3 inline-flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-foreground"
+      >
+        <ArrowLeft class="size-4" />{{ isGroone ? t('int.staff') : t('team.title') }}
       </RouterLink>
     </template>
   </PageHeader>
@@ -95,10 +97,5 @@ const saveName = () => save({ name: name.value.trim() }, savingName)
       <CompanyImageCard :name="company.name" :image-url="company.image_url" :readonly="!canEdit" :save="saveImage" :remove="removeImage" />
       <FiscalDataCard v-if="canEdit && !session.company?.is_internal" />
     </template>
-
-    <h2 class="text-[13px] font-medium text-muted-foreground">{{ t('set.language') }}</h2>
-    <Card :title="t('set.language')" :desc="t('set.langDesc')">
-      <LangSwitch class="max-w-[360px]" />
-    </Card>
   </PageBody>
 </template>

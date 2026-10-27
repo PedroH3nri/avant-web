@@ -1,11 +1,28 @@
 <script setup lang="ts">
-/** Botões para trocar o idioma do painel (PT, EN, ES). */
+/** Botões para trocar o idioma do painel (PT, EN, ES). Com sessão, o idioma fica guardado na conta. */
+import { toast } from 'vue-sonner'
+import { ApiError } from '@/lib/api'
 import { cn } from '@/lib/utils'
-import { chooseLang, lang, t } from '@/lib/i18n'
+import { chooseLang, errorText, lang, t } from '@/lib/i18n'
 import type { Lang } from '@/lib/types'
+import { useSession } from '@/stores/session'
 
 defineProps<{ class?: string }>()
+const session = useSession()
 const langs: Lang[] = ['pt', 'en', 'es']
+
+/** Troca o idioma na hora; com sessão, guarda na conta (e-mails também seguem esse idioma). */
+async function choose(option: Lang) {
+  if (!session.me) {
+    chooseLang(option)
+    return
+  }
+  try {
+    await session.setAppearance({ locale: option })
+  } catch (error) {
+    toast.error(errorText(error instanceof ApiError ? error.code : 'unknown'))
+  }
+}
 </script>
 
 <template>
@@ -21,7 +38,7 @@ const langs: Lang[] = ['pt', 'en', 'es']
           lang === option ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground',
         )
       "
-      @click="chooseLang(option)"
+      @click="choose(option)"
     >
       {{ option }}
     </button>

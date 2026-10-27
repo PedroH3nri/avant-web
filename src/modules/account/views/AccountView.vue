@@ -16,8 +16,10 @@ import PasswordCard from '@/modules/account/components/PasswordCard.vue'
 import ProfileImageCard from '@/modules/account/components/ProfileImageCard.vue'
 import SessionsCard from '@/modules/account/components/SessionsCard.vue'
 import ThemeCard from '@/modules/account/components/ThemeCard.vue'
+import LangSwitch from '@/components/LangSwitch.vue'
 import PageBody from '@/components/PageBody.vue'
 import PageHeader from '@/components/PageHeader.vue'
+import Card from '@/components/ui/Card.vue'
 import { errorText, t } from '@/lib/i18n'
 import { useSession } from '@/stores/session'
 
@@ -77,6 +79,9 @@ onMounted(() => {
       </h2>
       <AccentCard />
       <ThemeCard />
+      <Card :title="t('set.language')" :desc="t('set.langDesc')">
+        <LangSwitch class="max-w-[360px]" />
+      </Card>
     </template>
   </PageBody>
 </template>

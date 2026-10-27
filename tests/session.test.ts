@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { useSession } from '@/stores/session'
+import { lang } from '@/lib/i18n'
 import { theme } from '@/lib/theme'
 import { accountService } from '@/modules/account/service'
 import type { AccentId, Me, Theme } from '@/lib/types'
@@ -53,12 +54,17 @@ describe('session.can', () => {
   it('guarda a aparência na conta e volta atrás se a API recusar', async () => {
     const session = useSession()
     session.set(me([]))
-    vi.spyOn(accountService, 'appearance').mockResolvedValueOnce({ theme: 'system', accent: 'blue' })
+    vi.spyOn(accountService, 'appearance').mockResolvedValueOnce({ theme: 'system', accent: 'blue', locale: 'pt' })
     await session.setAppearance({ accent: 'blue' })
     expect(session.me?.accent).toBe('blue')
+    vi.spyOn(accountService, 'appearance').mockResolvedValueOnce({ theme: 'system', accent: 'blue', locale: 'es' })
+    await session.setAppearance({ locale: 'es' })
+    expect(session.me?.user.locale).toBe('es')
+    expect(lang.value).toBe('es')
     vi.spyOn(accountService, 'appearance').mockRejectedValueOnce(new Error('falhou'))
-    await expect(session.setAppearance({ theme: 'dark' })).rejects.toThrow('falhou')
+    await expect(session.setAppearance({ theme: 'dark', locale: 'en' })).rejects.toThrow('falhou')
     expect(session.me?.theme).toBe('system')
     expect(theme.value).toBe('system')
+    expect(lang.value).toBe('es')
   })
 })
