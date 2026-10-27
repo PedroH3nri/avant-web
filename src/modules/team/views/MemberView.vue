@@ -22,6 +22,9 @@ import type { DirectPermission, MemberDetail, Permission, Role } from '@/modules
 import { useSession } from '@/stores/session'
 import { siteService } from '@/modules/sites/service'
 import { teamService } from '@/modules/team/service'
+import { groupOf } from '@/modules/groups/rules'
+import { groupService } from '@/modules/groups/service'
+import type { Group } from '@/modules/groups/types'
 
 const route = useRoute()
 const session = useSession()
@@ -31,6 +34,7 @@ const member = ref<MemberDetail | null>(null)
 const role = ref<Role | null>(null)
 const catalog = ref<Permission[]>([])
 const allSites = ref<SiteListItem[]>([])
+const groups = ref<Group[]>([])
 const assigned = ref<Set<string>>(new Set())
 const savedAssigned = ref<Set<string>>(new Set())
 const loadError = ref<string | null>(null)
@@ -39,6 +43,8 @@ const notFound = ref(false)
 const canAssign = computed(() => session.can('sites.assign'))
 const canGrant = computed(() => session.can('permissions.grant'))
 const canSeeSites = computed(() => session.can('sites.view'))
+const canSeeGroups = computed(() => session.can('groups.view'))
+const memberGroup = computed(() => groupOf(groups.value, id))
 const roleLabel = computed(() => pick(member.value?.role?.name))
 const scope = computed(() => (member.value?.is_owner ? 'all' : (role.value?.site_scope ?? 'assigned')))
 
@@ -50,12 +56,14 @@ async function load() {
   loadError.value = null
   try {
     const memberDetail = await teamService.member(id)
-    const [roles, perms, sites, mine] = await Promise.all([
+    const [roles, perms, sites, mine, groupPage] = await Promise.all([
       session.can('roles.view') ? teamService.roles() : empty<Role>(),
       session.can('roles.view') ? teamService.permissions() : empty<Permission>(),
       canSeeSites.value ? siteService.list() : empty<SiteListItem>(),
       teamService.memberSites(id),
+      canSeeGroups.value ? groupService.list() : empty<Group>(),
     ])
+    groups.value = groupPage.items
     member.value = memberDetail
     role.value = roles.items.find((candidate) => candidate.id === memberDetail.role?.id) ?? null
     catalog.value = perms.items
@@ -195,6 +203,16 @@ const permName = (key: string) => pick(catalog.value.find((permission) => permis
             <dd class="mt-1 tnum">{{ formatDate(member.joined_at, false) }}</dd>
           </div>
         </dl>
+      </Card>
+
+      <Card v-if="canSeeGroups" :title="t('groups.memberCard')" :desc="t('groups.memberCardDesc')">
+        <div class="flex items-center gap-3 text-[14px]">
+          <template v-if="memberGroup">
+            <RouterLink :to="`/equipe/grupos/${memberGroup.id}`" class="font-medium hover:underline">{{ memberGroup.name }}</RouterLink>
+            <span class="text-[13px] text-muted-foreground">{{ t('groups.peopleCount', { n: memberGroup.members.length }) }}</span>
+          </template>
+          <span v-else class="text-muted-foreground">{{ t('groups.noGroup') }}</span>
+        </div>
       </Card>
 
       <Card v-if="canSeeSites" :title="t('member.sites')">
