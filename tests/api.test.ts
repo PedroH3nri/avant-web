@@ -26,6 +26,17 @@ describe('api', () => {
     expect(patchInit.body).toBe('{"name":"A"}')
   })
 
+  it('envia o arquivo cru no PUT da imagem, com o tipo dele e o CSRF', async () => {
+    document.cookie = 'avant_csrf=abc'
+    const fetch = respond(200, { image_url: '/api/v1/company/image?v=1' })
+    const file = new File(['png'], 'logo.png', { type: 'image/png' })
+    await api.putFile('/company/image', file)
+    const [url, init] = fetch.mock.calls[0] as unknown as [string, RequestInit]
+    const headers = init.headers as Record<string, string>
+    expect([url, init.method, init.body]).toEqual(['/api/v1/company/image', 'PUT', file])
+    expect([headers['Content-Type'], headers['X-CSRF-Token']]).toEqual(['image/png', 'abc'])
+  })
+
   it('transforma o corpo de erro em ApiError', async () => {
     respond(
       429,

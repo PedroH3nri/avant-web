@@ -1,11 +1,12 @@
 <script setup lang="ts">
-/** Configurações da Empresa: nome, dados fiscais, cor do sistema, tema e idioma. */
+/** Configurações da Empresa: nome, imagem, dados fiscais, cor do sistema, tema e idioma. */
 import { computed, onMounted, ref } from 'vue'
 import { toast } from 'vue-sonner'
 import { Check } from 'lucide-vue-next'
 import { RadioGroupItem, RadioGroupRoot } from 'reka-ui'
 import Button from '@/components/ui/Button.vue'
 import Card from '@/components/ui/Card.vue'
+import CompanyImageCard from '@/components/CompanyImageCard.vue'
 import FiscalDataCard from '@/modules/company/components/FiscalDataCard.vue'
 import ThemeCard from '@/modules/company/components/ThemeCard.vue'
 import Input from '@/components/ui/Input.vue'
@@ -60,6 +61,18 @@ async function save(body: Record<string, unknown>, busy: typeof savingName) {
   }
 }
 
+/** Envia a imagem nova; o seletor de Empresas pega a URL nova do /auth/me. */
+async function saveImage(file: File) {
+  company.value = await companyService.setImage(file)
+  await session.load()
+}
+
+/** Tira a imagem da Empresa. */
+async function removeImage() {
+  company.value = await companyService.removeImage()
+  await session.load()
+}
+
 /** Salva o nome da Empresa. */
 const saveName = () => save({ name: name.value.trim() }, savingName)
 /** Salva a cor de destaque da Empresa. */
@@ -83,6 +96,7 @@ const preview = (id: string) => applyAccent(ACCENTS.find((option) => option.id =
           <Button :loading="savingName" :disabled="nameInvalid || name.trim() === company.name" @click="saveName">{{ t('common.save') }}</Button>
         </template>
       </Card>
+      <CompanyImageCard :name="company.name" :image-url="company.image_url" :readonly="!canEdit" :save="saveImage" :remove="removeImage" />
       <FiscalDataCard v-if="canEdit && !session.company?.is_internal" />
     </template>
 

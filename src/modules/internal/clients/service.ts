@@ -14,6 +14,10 @@ export const clientService = {
   create: (body: unknown) => api.post<Client>('/internal/clients', body),
   /** Muda nome, vagas ou cadastro de um cliente. */
   update: (companyId: string, body: unknown) => api.patch<Client>(`/internal/clients/${companyId}`, body),
+  /** Troca a imagem de um cliente pelo arquivo escolhido. */
+  setImage: (companyId: string, file: File) => api.putFile<Client>(`/internal/clients/${companyId}/image`, file),
+  /** Tira a imagem de um cliente. */
+  removeImage: (companyId: string) => api.delete<Client>(`/internal/clients/${companyId}/image`),
   /** Troca a situação do cliente. */
   setStatus: (companyId: string, status: string) => api.put(`/internal/clients/${companyId}/status`, { status }),
   /** Passa a posse para outro membro. */
