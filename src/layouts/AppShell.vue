@@ -36,7 +36,6 @@ const open = ref(false)
         <LangSwitch class="ml-auto w-[132px]" />
       </header>
       <RouterView />
-      <footer class="mt-auto flex justify-center px-4 py-6 opacity-80"><BrandSignature /></footer>
     </div>
   </div>
 </template>
