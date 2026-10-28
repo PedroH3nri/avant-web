@@ -19,6 +19,7 @@ const routes: RouteRecordRaw[] = [
       { path: '', component: () => import('@/modules/home/views/HomeView.vue') },
       { path: 'desempenho', component: () => import('@/modules/reports/views/PerformanceView.vue'), meta: { permission: 'reports.view' } },
       { path: 'visitas', component: () => import('@/modules/reports/views/PageViewsView.vue'), meta: { permission: 'reports.view' } },
+      { path: 'relatorios', component: () => import('@/modules/reports/views/ReportsView.vue'), meta: { permission: 'reports.view' } },
       { path: 'resultado', component: () => import('@/modules/results/views/ResultsView.vue'), meta: { permission: 'results.view' } },
       { path: 'custos', component: () => import('@/modules/costs/views/CostsView.vue'), meta: { permission: 'costs.view' } },
       { path: 'equipe', component: () => import('@/modules/team/views/TeamView.vue'), meta: { permission: 'team.view' } },
