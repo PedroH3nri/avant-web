@@ -5,6 +5,7 @@ import {
   canExport,
   chartAllowed,
   completeAt,
+  customKey,
   dimensionText,
   metricInfo,
   seriesColor,
@@ -14,6 +15,7 @@ import {
   fromReport,
   fromTemplate,
   pickSource,
+  sampleFor,
   scaleError,
   scaleHue,
   toInput,
@@ -201,5 +203,16 @@ describe('regras do construtor de relatórios', () => {
     expect(canExport('saved')).toBe(true)
     expect(canExport('dirty')).toBe(false)
     expect(canExport('new')).toBe(false)
+  })
+
+  it('mantém os valores de exemplo das variáveis que continuam na fórmula', () => {
+    expect(sampleFor(['revenue', 'ad_requests'], { revenue: '10', clicks: '3' })).toEqual({ revenue: '10', ad_requests: '' })
+    expect(sampleFor([], { revenue: '10' })).toEqual({})
+  })
+
+  it('mostra a chave que a métrica vai ganhar, como o core', () => {
+    expect(customKey('RPM por requisição')).toBe('rpm_por_requisicao')
+    expect(customKey('Ação 2!')).toBe('acao_2')
+    expect(customKey('  ')).toBe('')
   })
 })

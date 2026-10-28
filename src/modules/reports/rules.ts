@@ -332,3 +332,18 @@ export function builderState(draft: ReportDraft, saved: SavedReportInput | null,
 export function canExport(state: BuilderState): boolean {
   return state === 'saved'
 }
+
+/** Os valores de exemplo das variáveis da fórmula: mantém os já digitados e tira os que saíram. */
+export function sampleFor(variables: string[], previous: Record<string, string>): Record<string, string> {
+  return Object.fromEntries(variables.map((key) => [key, previous[key] ?? '']))
+}
+
+/** A chave que a métrica ganha pelo nome, como o ``slugify`` do core (sem acento, com ``_``). */
+export function customKey(name: string): string {
+  return name
+    .normalize('NFKD')
+    .replace(/[^\x00-\x7F]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+}

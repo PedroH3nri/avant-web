@@ -20,6 +20,7 @@ import { errorText, lang, pick, t } from '@/lib/i18n'
 import { networkName } from '@/modules/networks/rules'
 import { networkService } from '@/modules/networks/service'
 import ConfigPanel, { type FilterOption } from '@/modules/reports/components/ConfigPanel.vue'
+import CustomMetricDialog from '@/modules/reports/components/CustomMetricDialog.vue'
 import FieldsPanel from '@/modules/reports/components/FieldsPanel.vue'
 import MetricStylePopover from '@/modules/reports/components/MetricStylePopover.vue'
 import ReportChart from '@/modules/reports/components/ReportChart.vue'
@@ -38,8 +39,8 @@ import {
   withMetrics,
   type ReportDraft,
 } from '@/modules/reports/rules'
-import { exportUrl, reportService } from '@/modules/reports/service'
-import type { MetricCatalog, MetricStyle, ReportResult, SavedReport, SavedReportInput } from '@/modules/reports/types'
+import { customMetricService, exportUrl, reportService } from '@/modules/reports/service'
+import type { CustomMetric, MetricCatalog, MetricStyle, ReportResult, SavedReport, SavedReportInput } from '@/modules/reports/types'
 import { siteService } from '@/modules/sites/service'
 import { teamService } from '@/modules/team/service'
 import { useSession } from '@/stores/session'
@@ -67,11 +68,16 @@ const busy = ref(false)
 const saveError = ref<string | null>(null)
 const touched = ref(false)
 const leaving = ref<string | null>(null)
+const metricOpen = ref(false)
+const editingMetric = ref<CustomMetric | null>(null)
+const removingMetric = ref<CustomMetric | null>(null)
+const removingBusy = ref(false)
 let allowLeave = false
 let latest = 0
 let retryTimer: ReturnType<typeof setTimeout> | null = null
 
 const canManage = computed(() => session.can('reports.manage'))
+const canManageMetrics = computed(() => session.can('metrics.manage'))
 const editable = computed(() => draft.value.editable && (draft.value.id !== null || canManage.value))
 const state = computed(() => (catalog.value ? builderState(draft.value, saved.value, catalog.value) : 'new'))
 const stateText = computed(() =>
@@ -177,6 +183,66 @@ function toggleDimension(key: string) {
 /** Troca a cor e a aparência de uma métrica. */
 function setStyle(key: string, style: MetricStyle) {
   change({ ...draft.value, styles: { ...draft.value.styles, [key]: style } })
+}
+
+/** Abre a modal de métrica nova. */
+function newMetric() {
+  editingMetric.value = null
+  metricOpen.value = true
+}
+/** A métrica personalizada completa (com a fórmula) pela chave da consulta. */
+async function findMetric(queryKey: string): Promise<CustomMetric | null> {
+  try {
+    const list = await customMetricService.list()
+    return list.items.find((metric) => metric.query_key === queryKey) ?? null
+  } catch (error) {
+    toast.error(apiMessage(error))
+    return null
+  }
+}
+/** Abre a modal para editar uma métrica da Empresa. */
+async function editMetric(queryKey: string) {
+  const metric = await findMetric(queryKey)
+  if (!metric) return
+  editingMetric.value = metric
+  metricOpen.value = true
+}
+/** Pergunta antes de apagar uma métrica da Empresa. */
+async function askRemoveMetric(queryKey: string) {
+  removingMetric.value = await findMetric(queryKey)
+}
+/** Recarrega o catálogo depois de mudar uma métrica personalizada. */
+async function refreshCatalog() {
+  catalog.value = await reportService.catalog()
+}
+/** Métrica criada ou editada: atualiza o catálogo e, se nova, põe no relatório. */
+async function metricSaved(metric: CustomMetric, created: boolean) {
+  try {
+    await refreshCatalog()
+  } catch (error) {
+    toast.error(apiMessage(error))
+    return
+  }
+  toast.success(created ? t('report.metricCreated', { name: metric.name }) : t('report.metricUpdated'))
+  if (created && editable.value && !draft.value.metrics.includes(metric.query_key)) toggleMetric(metric.query_key)
+  else void runPreview()
+}
+/** Apaga a métrica; em uso por outra métrica ou relatório, a API recusa e diz por quê. */
+async function removeMetric() {
+  const metric = removingMetric.value
+  if (!metric) return
+  removingBusy.value = true
+  try {
+    await customMetricService.remove(metric.id)
+    removingMetric.value = null
+    await refreshCatalog()
+    if (draft.value.metrics.includes(metric.query_key)) toggleMetric(metric.query_key)
+    toast.success(t('report.metricDeleted'))
+  } catch (error) {
+    toast.error(error instanceof ApiError && error.code === 'custom_metric_in_use' && error.message ? error.message : apiMessage(error))
+  } finally {
+    removingBusy.value = false
+  }
 }
 
 /** Grava (cria ou troca) com o que veio da modal de salvar. */
@@ -294,7 +360,13 @@ onBeforeUnmount(() => {
     <LoadError v-if="loadError" class="m-6" :message="loadError" @retry="load" />
     <div v-else-if="catalog" class="grid flex-1 lg:grid-cols-[264px_minmax(0,1fr)_300px]">
       <aside class="border-b lg:border-b-0 lg:border-r" :aria-label="t('report.fields')">
-        <FieldsPanel :draft="draft" :catalog="catalog" :editable="editable" :can-manage-metrics="false" @metric="toggleMetric" @dimension="toggleDimension" />
+        <FieldsPanel :draft="draft" :catalog="catalog" :editable="editable" :can-manage-metrics="canManageMetrics"
+          @metric="toggleMetric"
+          @dimension="toggleDimension"
+          @new-metric="newMetric"
+          @edit-metric="editMetric"
+          @delete-metric="askRemoveMetric"
+        />
       </aside>
       <main class="min-w-0 bg-muted">
         <div class="grid gap-4 p-4 sm:p-6">
@@ -333,6 +405,16 @@ onBeforeUnmount(() => {
     :busy="busy"
     :error="saveError"
     @save="save"
+  />
+  <CustomMetricDialog v-if="catalog" v-model:open="metricOpen" :metric="editingMetric" :catalog="catalog" @saved="metricSaved" />
+  <ConfirmDialog
+    :open="removingMetric !== null"
+    :title="t('report.metricDeleteTitle', { name: removingMetric?.name ?? '' })"
+    :desc="t('report.metricDeleteDesc')"
+    :action="t('common.delete')"
+    :busy="removingBusy"
+    @update:open="(open) => !open && (removingMetric = null)"
+    @confirm="removeMetric"
   />
   <ConfirmDialog
     :open="leaving !== null"
