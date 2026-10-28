@@ -31,7 +31,7 @@
 
 ---
 
-### Task 1: Core — cor e aparência por métrica em `check_chart` (v0.33.0)
+### Task 1: Core — duas dimensões nos gráficos de eixo e cor/aparência por métrica em `check_chart` (v0.33.0)
 
 Repositório `avant-core`.
 
@@ -44,6 +44,21 @@ Repositório `avant-core`.
 - Produces: `check_chart(chart_type, options, definition) -> dict[str, Any]` aceita `options["metrics"]: {chave: {"color"?: str, "scale"?: {"mode": str, "from": number, "to": number}}}` e devolve a versão limpa (cores e modos como texto, números como `float`/`int` do JSON, métricas sem nada omitidas, `metrics` omitido se vazio).
 
 - [ ] **Step 1: Testes que falham**
+
+Gráficos de eixo (linha, barras, área) aceitam 1 dimensão, ou 2 dimensões com uma métrica só
+(a segunda divide em séries); 3 ou mais só na tabela:
+
+```python
+@pytest.mark.parametrize("chart", [ChartType.LINE, ChartType.BAR, ChartType.AREA])
+def test_axis_charts_take_two_dimensions_with_one_metric(chart):
+    check_chart(chart, {}, definition(metrics=("revenue",), dimensions=("date", "site")))
+    with pytest.raises(InvalidInput):
+        check_chart(chart, {}, definition(metrics=("revenue", "ecpm"), dimensions=("date", "site")))
+    with pytest.raises(InvalidInput):
+        check_chart(chart, {}, definition(metrics=("revenue",), dimensions=("date", "site", "country")))
+```
+
+Cor e aparência:
 
 ```python
 def test_metric_styles_are_cleaned():
@@ -112,6 +127,10 @@ expect(fieldAvailable({ kind: 'dimension', key: 'hour' }, draft({ metrics: ['rev
 expect(fieldAvailable({ kind: 'dimension', key: 'hour' }, draft({ metrics: ['page_views'] }), catalog)).toBe(true)
 expect(withMetrics(draft({ metrics: ['page_views'], dimensions: ['hour'] }), ['page_views', 'revenue'], catalog).dimensions).toEqual([])
 expect(chartAllowed('pie', 1, 1)).toBe(true); expect(chartAllowed('pie', 2, 1)).toBe(false)
+expect(chartAllowed('line', 1, 2)).toBe(true); expect(chartAllowed('line', 2, 2)).toBe(false); expect(chartAllowed('bar', 1, 3)).toBe(false)
+expect(axisSplit(['site', 'date'])).toEqual({ axis: 'date', split: 'site' })
+expect(axisSplit(['site', 'country'])).toEqual({ axis: 'site', split: 'country' })
+expect(axisSplit(['date'])).toEqual({ axis: 'date', split: null })
 expect(chartAllowed('kpi', 1, 0)).toBe(true); expect(chartAllowed('funnel', 1, 0)).toBe(false)
 expect(withDimensions(draft({ chart: 'line', dimensions: ['date'] }), [], catalog).chart).toBe('table')
 expect(scaleHue({ mode: 'green_red', from: 0, to: 100 }, 0)).toBe(135)
@@ -135,7 +154,8 @@ Mais: `fromReport(saved)` e `fromTemplate(template, lang)` voltam um `ReportDraf
   - `pickSource(metrics, dimensions, filterFields, catalog): MetricSource | null` — interseção; preferência `gam`, `page_views`, `gam_key_values`
   - `fieldAvailable(field: {kind: 'metric'|'dimension'; key: string}, draft, catalog): boolean`
   - `withMetrics(draft, metrics, catalog): ReportDraft` e `withDimensions(draft, dimensions, catalog): ReportDraft` — tiram dimensões/filtros/estilos que ficaram sem fonte ou sem métrica e trocam o gráfico por `table` se não servir
-  - `chartAllowed(chart, metricCount, dimensionCount): boolean` (regras do core)
+  - `chartAllowed(chart, metricCount, dimensionCount): boolean` (regras do core, com 2 dimensões só com uma métrica nos gráficos de eixo)
+  - `axisSplit(dimensions): { axis: string | null; split: string | null }` — com duas, o eixo é a de tempo (`date`, `week`, `month`, `hour`) se houver, senão a primeira; a outra divide em séries
   - `scaleHue(scale, value): number`, `scaleError(scale): Key | null`
   - `toQuery(draft, currency, catalog): ReportQuery` (ordem: data/semana/mês/hora no eixo de linha/área → crescente por ela; senão a primeira métrica decrescente)
   - `toInput(draft): SavedReportInput`, `fromReport(report): ReportDraft`, `fromTemplate(template, lang): ReportDraft`
@@ -152,6 +172,7 @@ Mais: `fromReport(saved)` e `fromTemplate(template, lang)` voltam um `ReportDraf
 
 **Interfaces:**
 - Produces: `<ReportChart :draft :result :catalog :currency />` e `<ReportTable :draft :result :catalog :currency />`; o KPI usa `scaleHue` para a cor do número; a tabela pinta o fundo com `hsl(<hue> 80% 45% / 0.18)`.
+- A tabela tem uma coluna por dimensão (uma linha por combinação, como a API devolve). Com duas dimensões, linha/área/barras usam `axisSplit`: uma série por valor da dimensão de divisão, no máximo 10 (as maiores pelo total; o resto some com o aviso "mostrando 10 de N"), cores na ordem `cyan, magenta, lime, orange, violet, yellow, red`; barras agrupadas por valor do eixo. Teste em `tests/report-rules.test.ts`: `splitSeries(result, axis, split, metric)` devolve os rótulos do eixo em ordem e as séries ordenadas pelo total, cortadas em 10.
 
 - [ ] **Step 1: Teste** — `seriesColor('lime')` → `'var(--series-lime)'`, `seriesColor(undefined)` → `undefined`. Rodar → FAIL.
 - [ ] **Step 2: Implementar** as peças; cada gráfico tem descrição para leitor de tela (padrão dos existentes). Nomes de site/network pelo `result.labels`; data por `shortDay`.

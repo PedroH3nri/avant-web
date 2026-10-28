@@ -2050,15 +2050,15 @@ const INITIAL_CUSTOMS: CustomDef[] = [
 type ChartKind = 'table' | 'line' | 'bar' | 'area' | 'pie' | 'kpi' | 'funnel'
 const CHARTS: { key: ChartKind; label: string; rule: string }[] = [
   { key: 'table', label: 'Tabela', rule: 'Qualquer combinação' },
-  { key: 'line', label: 'Linha', rule: 'Pelo menos 1 dimensão (a primeira é o eixo)' },
-  { key: 'bar', label: 'Barras', rule: 'Pelo menos 1 dimensão' },
-  { key: 'area', label: 'Área', rule: 'Pelo menos 1 dimensão' },
+  { key: 'line', label: 'Linha', rule: '1 dimensão, ou 2 com uma métrica' },
+  { key: 'bar', label: 'Barras', rule: '1 dimensão, ou 2 com uma métrica' },
+  { key: 'area', label: 'Área', rule: '1 dimensão, ou 2 com uma métrica' },
   { key: 'pie', label: 'Pizza', rule: '1 métrica e 1 dimensão' },
   { key: 'kpi', label: 'KPI', rule: '1 métrica e nenhuma dimensão' },
   { key: 'funnel', label: 'Funil', rule: '2 ou mais métricas e nenhuma dimensão' },
 ]
 function chartAllowed(chart: ChartKind, metrics: number, dims: number) {
-  if (chart === 'line' || chart === 'bar' || chart === 'area') return dims >= 1
+  if (chart === 'line' || chart === 'bar' || chart === 'area') return dims === 1 || (dims === 2 && metrics === 1)
   if (chart === 'pie') return metrics === 1 && dims === 1
   if (chart === 'kpi') return metrics === 1 && dims === 0
   if (chart === 'funnel') return metrics >= 2 && dims === 0
@@ -2136,13 +2136,31 @@ function sampleValue(metric: string, row: string, kind: Kind) {
   if (kind === 'money') return metric.includes('rpm') || metric === 'ecpm' ? 2 + f * 3 : 4200 * f
   return Math.round(182000 * f)
 }
-function dimRows(draft: ReportDraft) {
-  const first = draft.dims[0]
-  if (!first) return ['Total']
+const TIME_DIMS = ['date', 'week', 'month', 'hour']
+const SPLIT_COLORS = ['#00E5FF', '#FF2BD6', '#39FF14', '#FF7A00', '#8B5CFF', '#FFE600', '#FF1744']
+const MAX_SERIES = 10
+function dimValues(draft: ReportDraft, dim: string) {
   const days = PERIODS.find(([k]) => k === draft.period)![2]
-  const values = first === 'date' ? series(days, 1, 1).map((p) => p.day) : DIM_VALUES[first] ?? []
-  const filter = draft.filters.find((f) => f.field === first)
-  return (filter ? values.filter((v) => filter.values.includes(v)) : values).slice(0, first === 'date' || first === 'hour' ? undefined : draft.limit)
+  const values = dim === 'date' ? series(days, 1, 1).map((p) => p.day) : DIM_VALUES[dim] ?? []
+  const filter = draft.filters.find((f) => f.field === dim)
+  return (filter ? values.filter((v) => filter.values.includes(v)) : values).slice(0, TIME_DIMS.includes(dim) ? undefined : draft.limit)
+}
+/** O eixo do gráfico (a dimensão de tempo, se houver) e a que divide em séries. */
+function axisSplit(draft: ReportDraft): { axis: string | null; split: string | null } {
+  if (draft.dims.length < 2) return { axis: draft.dims[0] ?? null, split: null }
+  const time = draft.dims.find((d) => TIME_DIMS.includes(d))
+  const axis = time ?? draft.dims[0]
+  return { axis, split: draft.dims.find((d) => d !== axis) ?? null }
+}
+/** A chave de uma combinação, na ordem das dimensões escolhidas. */
+function comboKey(draft: ReportDraft, values: Record<string, string>) { return draft.dims.map((d) => values[d]).join(' · ') }
+function dimRows(draft: ReportDraft) {
+  const { axis } = axisSplit(draft)
+  return axis ? dimValues(draft, axis) : ['Total']
+}
+/** Todas as combinações das dimensões, como a API devolve (uma linha por combinação). */
+function comboRows(draft: ReportDraft): Record<string, string>[] {
+  return draft.dims.reduce<Record<string, string>[]>((rows, dim) => rows.flatMap((row) => dimValues(draft, dim).map((v) => ({ ...row, [dim]: v }))), [{}])
 }
 
 function formulaVars(formula: string) { return [...new Set(formula.match(/custom\.[a-z0-9_]+|[a-z_][a-z0-9_]*/g) ?? [])] }
@@ -2336,6 +2354,59 @@ function ReportChart({ draft, customs }: { draft: ReportDraft; customs: CustomDe
       </div>
     )
   }
+  const { axis, split } = axisSplit(draft)
+  if (split && axis && (draft.chart === 'line' || draft.chart === 'area' || draft.chart === 'bar')) {
+    const axisValues = dimValues(draft, axis)
+    const splitValues = dimValues(draft, split).slice(0, MAX_SERIES)
+    const valueAt = (a: string, b: string) => value(first.key, comboKey(draft, { [axis]: a, [split]: b }), first.kind)
+    const lines = splitValues.map((b) => axisValues.map((a) => valueAt(a, b)))
+    const W = 960, H = 260, L = 56, R = 12, T = 12, B = 26
+    const top = Math.max(...lines.flat()) * 1.1 || 1
+    const y = (v: number) => T + (H - T - B) * (1 - v / top)
+    const step = Math.max(1, Math.ceil(axisValues.length / 8))
+    const splitLabel = R_DIMENSIONS.find((d) => d.key === split)?.label
+    const legend = (
+      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 text-[13px] text-muted-foreground">
+        <span className="font-medium text-foreground">{first.label} por {splitLabel?.toLowerCase()}:</span>
+        {splitValues.map((b, i) => <span key={b} className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm" style={{ background: SPLIT_COLORS[i % SPLIT_COLORS.length] }} />{b}</span>)}
+      </div>
+    )
+    if (draft.chart === 'bar') {
+      const group = (W - L - R) / axisValues.length
+      const barWidth = Math.max(2, (group * 0.8) / splitValues.length)
+      return (
+        <div>
+          <svg viewBox={`0 0 ${W} ${H}`} className="h-[260px] w-full" role="img" aria-label={`${first.label} por ${axis} e ${split}`}>
+            {[0, 0.5, 1].map((f) => <g key={f}><line x1={L} x2={W - R} y1={y(top * f)} y2={y(top * f)} className="stroke-border" /><text x={L - 8} y={y(top * f) + 4} textAnchor="end" className="fill-muted-foreground text-[11px] tnum">{compact(first.kind, top * f)}</text></g>)}
+            {axisValues.map((a, i) => (
+              <g key={a}>
+                {splitValues.map((b, s) => <rect key={b} x={L + i * group + group * 0.1 + s * barWidth} y={y(lines[s][i])} width={barWidth - 1} height={y(0) - y(lines[s][i])} rx={1.5} style={{ fill: SPLIT_COLORS[s % SPLIT_COLORS.length] }} />)}
+                {i % step === 0 && <text x={L + i * group + group / 2} y={H - 8} textAnchor="middle" className="fill-muted-foreground text-[11px] tnum">{a}</text>}
+              </g>
+            ))}
+          </svg>
+          {legend}
+        </div>
+      )
+    }
+    const x = (i: number) => L + (axisValues.length === 1 ? (W - L - R) / 2 : (i * (W - L - R)) / (axisValues.length - 1))
+    const path = (vals: number[]) => vals.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join('')
+    return (
+      <div>
+        <svg viewBox={`0 0 ${W} ${H}`} className="h-[260px] w-full" role="img" aria-label={`${first.label} por ${axis} e ${split}`}>
+          {[0, 0.5, 1].map((f) => <g key={f}><line x1={L} x2={W - R} y1={y(top * f)} y2={y(top * f)} className="stroke-border" /><text x={L - 8} y={y(top * f) + 4} textAnchor="end" className="fill-muted-foreground text-[11px] tnum">{compact(first.kind, top * f)}</text></g>)}
+          {axisValues.map((a, i) => i % step === 0 && <text key={a} x={x(i)} y={H - 8} textAnchor="middle" className="fill-muted-foreground text-[11px] tnum">{a}</text>)}
+          {lines.map((vals, s) => (
+            <g key={splitValues[s]}>
+              {draft.chart === 'area' && <path d={`${path(vals)}L${x(vals.length - 1)},${y(0)}L${x(0)},${y(0)}Z`} style={{ fill: SPLIT_COLORS[s % SPLIT_COLORS.length], fillOpacity: 0.1 }} />}
+              <path d={path(vals)} fill="none" strokeWidth={2.25} strokeLinejoin="round" style={{ stroke: SPLIT_COLORS[s % SPLIT_COLORS.length] }} />
+            </g>
+          ))}
+        </svg>
+        {legend}
+      </div>
+    )
+  }
   if (draft.chart === 'bar') {
     return <div className="py-2"><Bars color={colorOf(first.key)} items={rows.map((r) => [r, Math.round(value(first.key, r, first.kind))] as const)} /></div>
   }
@@ -2367,19 +2438,20 @@ function ReportChart({ draft, customs }: { draft: ReportDraft; customs: CustomDe
 }
 
 function ReportTable({ draft, customs }: { draft: ReportDraft; customs: CustomDef[] }) {
-  const rows = dimRows(draft)
+  const rows = comboRows(draft)
   const metrics = draft.metrics.map((m) => ({ key: m, ...metricDef(m, customs) }))
   if (!metrics.length) return null
-  const dimLabel = R_DIMENSIONS.find((d) => d.key === draft.dims[0])?.label
+  const shown = rows.slice(0, 30)
   return (
+    <>
     <Table min={480}>
-      <thead><tr>{dimLabel && <th className={th}>{dimLabel}</th>}{metrics.map((m) => <th key={m.key} className={cn(th, 'text-right')}>{m.label}</th>)}</tr></thead>
+      <thead><tr>{draft.dims.map((d) => <th key={d} className={th}>{R_DIMENSIONS.find((x) => x.key === d)?.label}</th>)}{metrics.map((m) => <th key={m.key} className={cn(th, 'text-right')}>{m.label}</th>)}</tr></thead>
       <tbody>
-        {rows.slice(0, 12).map((r) => (
-          <tr key={r} className="hover:bg-muted">
-            {dimLabel && <td className={cn(td, 'whitespace-nowrap font-medium')}>{r}</td>}
+        {shown.map((row) => (
+          <tr key={comboKey(draft, row) || 'total'} className="hover:bg-muted">
+            {draft.dims.map((d) => <td key={d} className={cn(td, 'whitespace-nowrap font-medium')}>{row[d]}</td>)}
             {metrics.map((m) => {
-              const v = sampleValue(m.key, r, m.kind)
+              const v = sampleValue(m.key, draft.dims.length ? comboKey(draft, row) : 'Total', m.kind)
               const scale = draft.styles[m.key]?.scale
               return <td key={m.key} className={cn(td, 'text-right tnum whitespace-nowrap')} style={scale ? { background: `hsl(${scaleHue(scale, v)} 80% 45% / 0.18)` } : undefined}>{fmt(m.kind, v)}</td>
             })}
@@ -2387,6 +2459,8 @@ function ReportTable({ draft, customs }: { draft: ReportDraft; customs: CustomDe
         ))}
       </tbody>
     </Table>
+    {rows.length > shown.length && <p className="text-[13px] text-muted-foreground">Mostrando {shown.length} de {rows.length} linhas. A exportação traz todas.</p>}
+    </>
   )
 }
 
@@ -2677,10 +2751,13 @@ function ReportBuilderScreen({ initial, customs, setCustoms, onBack, onSave }: {
               {draft.dims.length > 0 && <span className="px-1 text-[13px] text-muted-foreground">por</span>}
               {draft.dims.map((d) => <span key={d} className="inline-flex h-7 items-center gap-1 rounded-full border border-dashed bg-card pl-3 pr-1 text-[13px]">{R_DIMENSIONS.find((x) => x.key === d)?.label}{editable && <button onClick={() => setDims(draft.dims.filter((x) => x !== d))} aria-label="Tirar dimensão" className="rounded-full p-1 hover:bg-accent"><X className="h-3 w-3" /></button>}</span>)}
             </div>
-            <Card pad footerNote={`${PERIODS.find(([k]) => k === draft.period)![1]}${draft.compare ? ', comparando com o período anterior' : ''} · em R$, a sua moeda · só os sites que você vê`}>
-              <ReportChart draft={draft} customs={customs} />
-            </Card>
+            {draft.chart !== 'table' && (
+              <Card pad footerNote={`${PERIODS.find(([k]) => k === draft.period)![1]}${draft.compare ? ', comparando com o período anterior' : ''} · em R$, a sua moeda · só os sites que você vê`}>
+                <ReportChart draft={draft} customs={customs} />
+              </Card>
+            )}
             {draft.chart !== 'table' && draft.chart !== 'kpi' && <h2 className="text-[14px] font-semibold">Dados</h2>}
+            {draft.chart === 'table' && <p className="text-[13px] text-muted-foreground">{PERIODS.find(([k]) => k === draft.period)![1]} · em R$, a sua moeda · só os sites que você vê</p>}
             {draft.chart !== 'kpi' && <ReportTable draft={draft} customs={customs} />}
           </div>
         </main>
@@ -2698,6 +2775,8 @@ function ReportBuilderScreen({ initial, customs, setCustoms, onBack, onSave }: {
               )
             })}
           </div>
+          {draft.dims.length === 2 && draft.metrics.length > 1 && <p className="mx-4 mt-2 text-[12px] text-muted-foreground">Com duas dimensões, linha, barras e área usam uma métrica só. A tabela mostra todas.</p>}
+          {draft.dims.length > 2 && <p className="mx-4 mt-2 text-[12px] text-muted-foreground">Com mais de duas dimensões, só a tabela.</p>}
           {(draft.chart === 'bar' || draft.chart === 'area') && (
             <label className="mx-4 mt-3 flex items-center gap-2 text-[13px]"><input type="checkbox" checked={draft.stacked} onChange={(e) => update({ stacked: e.target.checked })} className="h-4 w-4 accent-[hsl(var(--primary))]" disabled={!editable} />Empilhar as séries</label>
           )}

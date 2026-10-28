@@ -75,6 +75,7 @@ base dos dashboards (#16) e das páginas (#17).
 
 ### Backend (core, pequena)
 
+- `check_chart`: gráficos de eixo aceitam 1 dimensão, ou 2 com uma métrica; 3 ou mais só tabela.
 - `check_chart` passa a aceitar `metrics` em `chart_options`: um objeto
   `{chave da métrica: {"color"?: str, "scale"?: {"mode", "from", "to"}}}`.
   - a chave precisa estar nas métricas da consulta;
@@ -92,8 +93,12 @@ base dos dashboards (#16) e das páginas (#17).
   filtros; escolhe `gam`, senão `page_views`, senão `gam_key_values`. Um campo fica disponível se
   somá-lo deixa alguma fonte. Tirar uma métrica pode liberar campos; pôr uma métrica tira as
   dimensões e filtros que ficariam sem fonte.
-- **Gráfico permitido**: as mesmas regras do core (linha/barras/área ≥ 1 dimensão; pizza 1 e 1;
-  KPI 1 e 0; funil ≥ 2 e 0). Mudou a escolha e o gráfico deixou de servir: volta para tabela.
+- **Gráfico permitido**: as mesmas regras do core (linha/barras/área com 1 dimensão, ou 2 com uma
+  métrica; pizza 1 e 1; KPI 1 e 0; funil ≥ 2 e 0). Mudou a escolha e o gráfico deixou de servir:
+  volta para tabela.
+- **Duas dimensões** (Pedro: "quero que apareça os itens separados por site e data"): a tabela
+  mostra uma coluna por dimensão, uma linha por combinação; nos gráficos de eixo, a dimensão de
+  tempo é o eixo e a outra divide em séries coloridas (até 10).
 - **Prévia**: `POST /reports/query` com debounce de 600 ms, na moeda da pessoa; resposta velha é
   descartada; erro da API aparece no lugar do gráfico (`errorText`). Limite de taxa: mostra o
   aviso e tenta de novo depois de `retry_after`.
