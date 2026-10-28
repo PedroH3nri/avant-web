@@ -134,7 +134,7 @@ const title = 'px-4 pb-1.5 pt-4 text-[12px] font-medium uppercase tracking-wide 
         <p v-if="!item.values.length" class="mt-1 text-[12px] text-muted-foreground">{{ t('report.filterEmpty') }}</p>
       </div>
       <div v-if="editable && filterable.length" class="flex gap-2">
-        <NativeSelect v-model="newField" :options="filterable" class="flex-1" :aria-label="t('report.filterField')" />
+        <NativeSelect :model-value="newField || filterable[0]?.value" :options="filterable" class="flex-1" :aria-label="t('report.filterField')" @update:model-value="(value) => (newField = value)" />
         <Button variant="outline" @click="addFilter"><Plus />{{ t('report.filter') }}</Button>
       </div>
     </div>
