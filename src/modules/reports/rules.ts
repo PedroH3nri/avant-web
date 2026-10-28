@@ -319,3 +319,16 @@ export function metricInfo(key: string, catalog: MetricCatalog, lang: Lang): { l
   const custom = catalog.custom_metrics.find((item) => item.query_key === key)
   return custom ? { label: custom.name, format: custom.format } : { label: key, format: 'number' }
 }
+
+export type BuilderState = 'new' | 'dirty' | 'saved'
+
+/** Novo (nunca salvo), com alterações ou igual ao que está salvo (comparando o que iria para a API). */
+export function builderState(draft: ReportDraft, saved: SavedReportInput | null, catalog: MetricCatalog): BuilderState {
+  if (draft.id === null || saved === null) return 'new'
+  return JSON.stringify(toInput(draft, catalog)) === JSON.stringify(saved) ? 'saved' : 'dirty'
+}
+
+/** Só se exporta o que está salvo: o arquivo sai do relatório gravado, não do rascunho. */
+export function canExport(state: BuilderState): boolean {
+  return state === 'saved'
+}

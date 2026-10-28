@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
   axisSplit,
+  builderState,
+  canExport,
   chartAllowed,
   completeAt,
   dimensionText,
@@ -186,5 +188,18 @@ describe('regras do construtor de relatórios', () => {
     expect(metricInfo('revenue', catalog, 'pt')).toEqual({ label: 'x', format: 'currency' })
     expect(metricInfo('custom.rpm', catalog, 'pt')).toEqual({ label: 'RPM', format: 'currency' })
     expect(metricInfo('custom.sumiu', catalog, 'pt')).toEqual({ label: 'custom.sumiu', format: 'number' })
+  })
+
+  it('diz se o relatório é novo, tem alterações ou está salvo', () => {
+    const saved = draft({ id: 'r1', name: 'Receita' })
+    const snapshot = toInput(saved, catalog)
+    expect(builderState(draft({ name: 'Novo' }), null, catalog)).toBe('new')
+    expect(builderState(saved, snapshot, catalog)).toBe('saved')
+    expect(builderState({ ...saved, name: 'Receita ' }, snapshot, catalog)).toBe('saved')
+    expect(builderState({ ...saved, compare: true }, snapshot, catalog)).toBe('dirty')
+    expect(builderState({ ...saved, styles: { revenue: { color: 'lime' } } }, snapshot, catalog)).toBe('dirty')
+    expect(canExport('saved')).toBe(true)
+    expect(canExport('dirty')).toBe(false)
+    expect(canExport('new')).toBe(false)
   })
 })
