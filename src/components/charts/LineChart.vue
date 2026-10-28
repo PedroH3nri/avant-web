@@ -10,6 +10,8 @@ export interface LineSeries {
   values: (number | null)[]
   tone?: 'primary' | 'muted'
   dashed?: boolean
+  /** Cor viva escolhida pela pessoa (variável CSS); sem ela, o preto do painel. */
+  color?: string
 }
 
 const props = withDefaults(
@@ -60,12 +62,13 @@ function linePath(values: (number | null)[]): string {
   return path
 }
 
-/** Área da primeira série até a linha de base, quando não há vazios. */
-const areaPath = computed(() => {
-  const first = props.series[0]
-  if (!props.area || !first || first.values.some((value) => value === null) || pointCount.value < 2) return ''
+/** Área de cada série com cor (ou da primeira, sem cor) até a linha de base, quando não há vazios. */
+const areaPaths = computed(() => {
+  if (!props.area || pointCount.value < 2) return []
   const baseline = yOf(0).toFixed(1)
-  return `${linePath(first.values)}L${xOf(pointCount.value - 1).toFixed(1)},${baseline}L${xOf(0).toFixed(1)},${baseline}Z`
+  return props.series
+    .filter((line, index) => (index === 0 || line.color) && line.values.every((value) => value !== null))
+    .map((line) => ({ key: line.key, color: line.color, d: `${linePath(line.values)}L${xOf(pointCount.value - 1).toFixed(1)},${baseline}L${xOf(0).toFixed(1)},${baseline}Z` }))
 })
 const labelStep = computed(() => Math.max(1, Math.ceil(pointCount.value / Math.max(2, Math.floor(plotWidth.value / 72)))))
 /** Primeira e última data encostam na borda do gráfico, as outras ficam centradas. */
@@ -74,6 +77,10 @@ const anchor = (index: number) => (pointCount.value > 1 && index === 0 ? 'start'
 const stroke = (line: LineSeries) => (line.tone === 'muted' ? 'stroke-muted-foreground/70' : 'stroke-foreground')
 /** Cor do ponto da série. */
 const dot = (line: LineSeries) => (line.tone === 'muted' ? 'fill-muted-foreground' : 'fill-foreground')
+/** A cor viva no traço, quando a série tem uma. */
+const strokeStyle = (line: LineSeries) => (line.color ? { stroke: line.color } : undefined)
+/** A cor viva no ponto, quando a série tem uma. */
+const dotStyle = (line: LineSeries) => (line.color ? { fill: line.color } : undefined)
 
 /** Índice do ponto mais perto do mouse. */
 function track(event: PointerEvent) {
@@ -100,7 +107,7 @@ const tooltipLeft = computed(() => {
   <div ref="box" class="relative w-full">
     <div v-if="series.length > 1" class="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-muted-foreground">
       <span v-for="line in series" :key="line.key" class="flex items-center gap-1.5">
-        <svg width="16" height="4" aria-hidden="true"><line x1="0" x2="16" y1="2" y2="2" :class="stroke(line)" stroke-width="2" :stroke-dasharray="line.dashed ? '4 3' : undefined" /></svg>
+        <svg width="16" height="4" aria-hidden="true"><line x1="0" x2="16" y1="2" y2="2" :class="stroke(line)" :style="strokeStyle(line)" stroke-width="2" :stroke-dasharray="line.dashed ? '4 3' : undefined" /></svg>
         {{ line.name }}
       </span>
     </div>
@@ -124,13 +131,14 @@ const tooltipLeft = computed(() => {
       <template v-for="(label, index) in labels" :key="label">
         <text v-if="index % labelStep === 0" :x="xOf(index)" :y="height - 8" :text-anchor="anchor(index)" class="fill-muted-foreground text-[11px] tnum">{{ label }}</text>
       </template>
-      <path v-if="areaPath" :d="areaPath" class="fill-foreground/[0.05]" />
+      <path v-for="shape in areaPaths" :key="`area-${shape.key}`" :d="shape.d" :class="shape.color ? undefined : 'fill-foreground/[0.05]'" :style="shape.color ? { fill: shape.color, fillOpacity: 0.12 } : undefined" />
       <path
         v-for="line in [...series].reverse()"
         :key="line.key"
         :d="linePath(line.values)"
         fill="none"
         :class="stroke(line)"
+        :style="strokeStyle(line)"
         stroke-width="2"
         stroke-linejoin="round"
         stroke-linecap="round"
@@ -138,13 +146,13 @@ const tooltipLeft = computed(() => {
       />
       <template v-if="pointCount === 1">
         <template v-for="line in series" :key="line.key">
-          <circle v-if="line.values[0] !== null" :cx="xOf(0)" :cy="yOf(line.values[0] ?? 0)" r="4" :class="dot(line)" />
+          <circle v-if="line.values[0] !== null" :cx="xOf(0)" :cy="yOf(line.values[0] ?? 0)" r="4" :class="dot(line)" :style="dotStyle(line)" />
         </template>
       </template>
       <g v-if="hovered !== null">
         <line :x1="xOf(hovered)" :x2="xOf(hovered)" :y1="padding.top" :y2="padding.top + plotHeight" class="stroke-muted-foreground/40" stroke-width="1" />
         <template v-for="line in series" :key="line.key">
-          <circle v-if="line.values[hovered] !== null" :cx="xOf(hovered)" :cy="yOf(line.values[hovered] ?? 0)" r="4" :class="dot(line)" class="stroke-card" stroke-width="2" />
+          <circle v-if="line.values[hovered] !== null" :cx="xOf(hovered)" :cy="yOf(line.values[hovered] ?? 0)" r="4" :class="dot(line)" :style="dotStyle(line)" class="stroke-card" stroke-width="2" />
         </template>
       </g>
     </svg>

@@ -3,6 +3,10 @@ import {
   axisSplit,
   chartAllowed,
   completeAt,
+  dimensionText,
+  metricInfo,
+  seriesColor,
+  splitSeries,
   emptyDraft,
   fieldAvailable,
   fromReport,
@@ -17,7 +21,7 @@ import {
   wordAt,
   type ReportDraft,
 } from '@/modules/reports/rules'
-import type { MetricCatalog, ReportTemplate, SavedReport } from '@/modules/reports/types'
+import type { MetricCatalog, ReportRow, ReportTemplate, SavedReport } from '@/modules/reports/types'
 
 const label = { pt: 'x', en: 'x', es: 'x' }
 const catalog: MetricCatalog = {
@@ -143,5 +147,44 @@ describe('regras do construtor de relatórios', () => {
     expect(wordAt('custom.rp', 9)).toEqual({ word: 'custom.rp', start: 0 })
     expect(completeAt('revenue / ad_re', 15, 'ad_requests')).toEqual({ text: 'revenue / ad_requests ', cursor: 22 })
     expect(completeAt('(reve) * 2', 5, 'revenue')).toEqual({ text: '(revenue ) * 2', cursor: 9 })
+  })
+
+  it('dá a cor da paleta pelo nome', () => {
+    expect(seriesColor('lime')).toBe('var(--series-lime)')
+    expect(seriesColor(undefined)).toBeUndefined()
+  })
+
+  it('divide a segunda dimensão em séries, as maiores primeiro, até 10', () => {
+    const row = (date: string, site: string, revenue: string | null): ReportRow => ({ dimensions: { date, site }, metrics: { revenue }, previous: null })
+    const rows = [row('2026-10-01', 'a', '1'), row('2026-10-01', 'b', '5'), row('2026-10-02', 'b', '6'), row('2026-10-02', 'a', null)]
+    expect(splitSeries(rows, 'date', 'site', 'revenue')).toEqual({
+      axisValues: ['2026-10-01', '2026-10-02'],
+      series: [
+        { value: 'b', values: [5, 6] },
+        { value: 'a', values: [1, null] },
+      ],
+      hidden: 0,
+    })
+    const many = Array.from({ length: 12 }, (_, index) => row('2026-10-01', `s${index}`, String(index)))
+    const split = splitSeries(many, 'date', 'site', 'revenue')
+    expect(split.series).toHaveLength(10)
+    expect(split.series[0]?.value).toBe('s11')
+    expect(split.hidden).toBe(2)
+  })
+
+  it('escreve o valor da dimensão no idioma', () => {
+    const labels = { site: { s1: 'acai.com.br' } }
+    expect(dimensionText('site', 's1', labels, 'pt-BR')).toBe('acai.com.br')
+    expect(dimensionText('site', 's9', labels, 'pt-BR')).toBe('s9')
+    expect(dimensionText('date', '2026-10-05', labels, 'pt-BR')).toBe('05/10')
+    expect(dimensionText('hour', '9', labels, 'pt-BR')).toBe('09h')
+    expect(dimensionText('country', 'BR', labels, 'pt-BR')).toBe('Brasil')
+    expect(dimensionText('site', null, labels, 'pt-BR')).toBeNull()
+  })
+
+  it('dá o nome e o formato de métricas do catálogo e personalizadas', () => {
+    expect(metricInfo('revenue', catalog, 'pt')).toEqual({ label: 'x', format: 'currency' })
+    expect(metricInfo('custom.rpm', catalog, 'pt')).toEqual({ label: 'RPM', format: 'currency' })
+    expect(metricInfo('custom.sumiu', catalog, 'pt')).toEqual({ label: 'custom.sumiu', format: 'number' })
   })
 })

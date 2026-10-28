@@ -221,6 +221,13 @@ const dict = {
   'nav.pageViews': ['Page Views', 'Page Views', 'Page Views'],
   'nav.reports': ['Relatórios', 'Reports', 'Informes'],
   // Relatórios salvos e construtor
+  'report.empty': ['(vazio)', '(empty)', '(vacío)'],
+  'report.noData': ['Sem dados no período.', 'No data in this period.', 'Sin datos en el período.'],
+  'report.chartOf': ['{metric} por {dimension}', '{metric} by {dimension}', '{metric} por {dimension}'],
+  'report.vsPrevious': ['{value} em relação ao período anterior', '{value} versus the previous period', '{value} frente al período anterior'],
+  'report.hiddenSeries': ['Mostrando as {shown} maiores de {total}. A tabela traz todas.', 'Showing the {shown} largest of {total}. The table has them all.', 'Mostrando las {shown} mayores de {total}. La tabla las trae todas.'],
+  'report.previousOf': ['{metric} (anterior)', '{metric} (previous)', '{metric} (anterior)'],
+  'report.truncated': ['Mostrando as primeiras {n} linhas. Aumente o limite ou filtre para ver mais.', 'Showing the first {n} rows. Raise the limit or filter to see more.', 'Mostrando las primeras {n} filas. Sube el límite o filtra para ver más.'],
   'report.scaleOrder': ['Use dois números, o início menor que o fim.', 'Use two numbers, the start lower than the end.', 'Usa dos números, el inicio menor que el fin.'],
   'nav.results': ['Resultado', 'Results', 'Resultado'],
   'nav.costs': ['Custos', 'Costs', 'Costos'],

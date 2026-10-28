@@ -5,20 +5,24 @@
  */
 
 import type { Key } from '@/lib/i18n'
+import { countryName, hourLabel, shortDay, toNumber } from '@/lib/metrics'
 import type { Lang } from '@/lib/types'
 import type {
   ChartOptions,
   ChartType,
   MetricCatalog,
+  MetricFormat,
   MetricScale,
   MetricSource,
   MetricStyle,
   RelativePeriod,
   ReportQuery,
+  ReportRow,
   ReportTemplate,
   SavedQuery,
   SavedReport,
   SavedReportInput,
+  SeriesColor,
   Visibility,
 } from '@/modules/reports/types'
 
@@ -54,6 +58,10 @@ const AXIS_CHARTS: ChartType[] = ['line', 'bar', 'area']
 const STACKABLE: ChartType[] = ['bar', 'area']
 const GREEN_HUE = 135
 const DEFAULT_LIMIT = 100
+export const MAX_SERIES = 10
+export const SERIES_COLORS: SeriesColor[] = ['lime', 'cyan', 'magenta', 'violet', 'orange', 'yellow', 'red']
+/** Ordem das cores quando a segunda dimensão divide o gráfico em séries. */
+export const SPLIT_COLORS: SeriesColor[] = ['cyan', 'magenta', 'lime', 'orange', 'violet', 'yellow', 'red']
 
 /** Rascunho de um relatório novo: receita por dia, em linha, nos últimos 30 dias. */
 export function emptyDraft(name = ''): ReportDraft {
@@ -261,4 +269,53 @@ export function completeAt(text: string, cursor: number, key: string): { text: s
   const { start } = wordAt(text, cursor)
   const inserted = `${key} `
   return { text: `${text.slice(0, start)}${inserted}${text.slice(cursor)}`, cursor: start + inserted.length }
+}
+
+/** A cor da paleta como variável CSS (o tom claro e o escuro ficam no styles.css). */
+export function seriesColor(color: SeriesColor | undefined): string | undefined {
+  return color ? `var(--series-${color})` : undefined
+}
+
+export interface SplitSeries {
+  axisValues: (string | null)[]
+  series: { value: string | null; values: (number | null)[] }[]
+  /** Quantas séries ficaram de fora por passar de ``MAX_SERIES``. */
+  hidden: number
+}
+
+/** A segunda dimensão em séries: o eixo na ordem das linhas, as séries pela soma, até 10. */
+export function splitSeries(rows: ReportRow[], axis: string, split: string, metric: string): SplitSeries {
+  const axisValues = [...new Set(rows.map((row) => row.dimensions[axis] ?? null))]
+  const position = new Map(axisValues.map((value, index) => [value, index]))
+  const groups = new Map<string | null, (number | null)[]>()
+  for (const row of rows) {
+    const key = row.dimensions[split] ?? null
+    const values = groups.get(key) ?? axisValues.map(() => null)
+    values[position.get(row.dimensions[axis] ?? null) ?? 0] = toNumber(row.metrics[metric])
+    groups.set(key, values)
+  }
+  /** A soma da série, para ordenar as maiores primeiro. */
+  const total = (values: (number | null)[]) => values.reduce<number>((sum, value) => sum + (value ?? 0), 0)
+  const series = [...groups.entries()]
+    .map(([value, values]) => ({ value, values }))
+    .sort((first, second) => total(second.values) - total(first.values))
+  return { axisValues, series: series.slice(0, MAX_SERIES), hidden: Math.max(0, series.length - MAX_SERIES) }
+}
+
+/** O valor de uma dimensão como a pessoa lê: nome do site, data curta, hora, país; vazio é vazio. */
+export function dimensionText(dimension: string, value: string | null, labels: Record<string, Record<string, string>>, locale: string): string | null {
+  if (value === null) return null
+  if (dimension === 'date' || dimension === 'week') return shortDay(value, locale)
+  if (dimension === 'month') return new Intl.DateTimeFormat(locale, { month: 'short', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${value.slice(0, 7)}-01T00:00:00Z`))
+  if (dimension === 'hour') return hourLabel(Number(value))
+  if (dimension === 'country') return countryName(value, locale)
+  return labels[dimension]?.[value] ?? value
+}
+
+/** O nome (no idioma) e o formato de uma métrica do catálogo ou personalizada. */
+export function metricInfo(key: string, catalog: MetricCatalog, lang: Lang): { label: string; format: MetricFormat } {
+  const metric = catalog.metrics.find((item) => item.key === key)
+  if (metric) return { label: metric.label[lang], format: metric.format }
+  const custom = catalog.custom_metrics.find((item) => item.query_key === key)
+  return custom ? { label: custom.name, format: custom.format } : { label: key, format: 'number' }
 }
