@@ -219,6 +219,9 @@ const dict = {
     'Las visitas llegan cada hora de los sitios con la etiqueta de Groone instalada.',
   ],
   'nav.pageViews': ['Page Views', 'Page Views', 'Page Views'],
+  'nav.reports': ['Relatórios', 'Reports', 'Informes'],
+  // Relatórios salvos e construtor
+  'report.scaleOrder': ['Use dois números, o início menor que o fim.', 'Use two numbers, the start lower than the end.', 'Usa dos números, el inicio menor que el fin.'],
   'nav.results': ['Resultado', 'Results', 'Resultado'],
   'nav.costs': ['Custos', 'Costs', 'Costos'],
   'int.results': ['Resultado dos clientes', 'Client results', 'Resultado de los clientes'],
