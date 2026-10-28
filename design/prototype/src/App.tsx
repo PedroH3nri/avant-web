@@ -10,6 +10,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { cn } from '@/lib/utils'
 import { translate, type Key, type Lang } from './i18n'
 import { Mark, SeatBar, SeatDot, SeatStrip, type SeatState } from './tiles'
@@ -607,14 +608,14 @@ function PerformanceScreen() {
 const PV_HOURS = Array.from({ length: 24 }, (_, h) => Math.round(120000 + 70000 * Math.cos(((h - 6) / 24) * 2 * Math.PI)))
 const PV_COUNTRIES = [['Brasil', 2032211], ['Portugal', 365906], ['Estados Unidos', 244283], ['Angola', 101881], ['Sem país', 40730]] as const
 
-function Bars({ items }: { items: readonly (readonly [string, number])[] }) {
+function Bars({ items, color }: { items: readonly (readonly [string, number])[]; color?: string }) {
   const max = Math.max(...items.map(([, v]) => v)) || 1
   return (
     <ul className="grid gap-2">
       {items.map(([label, v]) => (
         <li key={label} className="grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)_auto] items-center gap-3 text-[13px]">
           <span className="truncate">{label}</span>
-          <span className="h-2 rounded-full bg-muted"><span className="block h-2 rounded-full bg-foreground" style={{ width: `${(v / max) * 100}%` }} /></span>
+          <span className="h-2 rounded-full bg-muted"><span className="block h-2 rounded-full bg-foreground" style={{ width: `${(v / max) * 100}%`, background: color }} /></span>
           <span className="tnum text-right">{int.format(v)}</span>
         </li>
       ))}
@@ -2065,19 +2066,40 @@ function chartAllowed(chart: ChartKind, metrics: number, dims: number) {
 }
 
 type Visibility = 'private' | 'company' | 'roles'
+type ScaleMode = 'green_red' | 'red_green'
+type MetricStyle = { color?: string; scale?: { mode: ScaleMode; from: number; to: number } }
+const NEON = [
+  { key: 'lime', label: 'Verde neon', value: '#39FF14' },
+  { key: 'cyan', label: 'Ciano', value: '#00E5FF' },
+  { key: 'magenta', label: 'Magenta', value: '#FF2BD6' },
+  { key: 'violet', label: 'Violeta', value: '#8B5CFF' },
+  { key: 'orange', label: 'Laranja', value: '#FF7A00' },
+  { key: 'yellow', label: 'Amarelo', value: '#FFE600' },
+  { key: 'red', label: 'Vermelho', value: '#FF1744' },
+]
+const SCALES: { key: ScaleMode; label: string; desc: string }[] = [
+  { key: 'green_red', label: 'Começa verde, fica vermelho', desc: 'Para o que é melhor baixo, como custo.' },
+  { key: 'red_green', label: 'Começa vermelho, fica verde', desc: 'Para o que é melhor alto, como receita.' },
+]
+function scaleHue(scale: NonNullable<MetricStyle['scale']>, value: number) {
+  const span = scale.to - scale.from
+  const ratio = span === 0 ? (value >= scale.to ? 1 : 0) : Math.min(1, Math.max(0, (value - scale.from) / span))
+  return scale.mode === 'green_red' ? 135 * (1 - ratio) : 135 * ratio
+}
 type RFilter = { field: string; values: string[] }
 type ReportDraft = {
   id: string | null; name: string; description: string; metrics: string[]; dims: string[]; filters: RFilter[]
   period: PeriodKey; compare: boolean; chart: ChartKind; stacked: boolean; limit: number
   visibility: Visibility; roles: string[]; owner: string; updated: string
+  styles: Record<string, MetricStyle>
 }
 const ME = 'Pedro Henrique'
-const blank = (): ReportDraft => ({ id: null, name: 'Relatório sem nome', description: '', metrics: ['revenue'], dims: ['date'], filters: [], period: 'last_30_days', compare: false, chart: 'line', stacked: false, limit: 100, visibility: 'private', roles: [], owner: ME, updated: 'Agora' })
+const blank = (): ReportDraft => ({ id: null, name: 'Relatório sem nome', description: '', metrics: ['revenue'], dims: ['date'], filters: [], period: 'last_30_days', compare: false, chart: 'line', stacked: false, limit: 100, visibility: 'private', roles: [], owner: ME, updated: 'Agora', styles: {} })
 const INITIAL_REPORTS: ReportDraft[] = [
-  { ...blank(), id: 'r1', name: 'Receita por site', metrics: ['revenue', 'impressions', 'ecpm'], dims: ['site'], chart: 'table', visibility: 'company', updated: 'Hoje, 10:12' },
-  { ...blank(), id: 'r2', name: 'RPM por requisição no mês', metrics: ['custom.rpm_por_requisicao'], dims: ['date'], period: 'this_month', chart: 'line', compare: true, visibility: 'private', updated: 'Ontem, 18:40' },
+  { ...blank(), id: 'r1', name: 'Receita por site', metrics: ['revenue', 'impressions', 'ecpm'], dims: ['site'], chart: 'table', visibility: 'company', updated: 'Hoje, 10:12', styles: { ecpm: { scale: { mode: 'red_green', from: 2, to: 4.5 } } } },
+  { ...blank(), id: 'r2', name: 'RPM por requisição no mês', metrics: ['custom.rpm_por_requisicao', 'ecpm'], dims: ['date'], period: 'this_month', chart: 'line', compare: true, visibility: 'private', updated: 'Ontem, 18:40', styles: { 'custom.rpm_por_requisicao': { color: '#FF2BD6' }, ecpm: { color: '#00E5FF' } } },
   { ...blank(), id: 'r3', name: 'Top ad units', metrics: ['revenue'], dims: ['ad_unit'], chart: 'bar', limit: 5, visibility: 'roles', roles: ['Gestor de tráfego'], owner: 'Ana Souza', updated: '24/10/2026' },
-  { ...blank(), id: 'r4', name: 'Receita do mês', metrics: ['revenue'], dims: [], period: 'this_month', chart: 'kpi', compare: true, visibility: 'company', owner: 'João Lima', updated: '20/10/2026' },
+  { ...blank(), id: 'r4', name: 'Receita do mês', metrics: ['revenue'], dims: [], period: 'this_month', chart: 'kpi', compare: true, visibility: 'company', owner: 'João Lima', updated: '20/10/2026', styles: { revenue: { scale: { mode: 'red_green', from: 2000, to: 5000 } } } },
 ]
 const TEMPLATES: (Omit<ReportDraft, 'id' | 'owner' | 'updated'> & { key: string; desc: string })[] = [
   { ...blank(), key: 'revenue_by_site', name: 'Receita por site', desc: 'Receita, impressões e eCPM de cada site nos últimos 30 dias.', metrics: ['revenue', 'impressions', 'ecpm'], dims: ['site'], chart: 'table' },
@@ -2267,12 +2289,15 @@ function ReportChart({ draft, customs }: { draft: ReportDraft; customs: CustomDe
   if (!chartAllowed(draft.chart, metrics.length, draft.dims.length)) return <p className="py-16 text-center text-[14px] text-muted-foreground">{CHART_LABEL[draft.chart]} pede: {CHARTS.find((c) => c.key === draft.chart)!.rule.toLowerCase()}.</p>
   const first = metrics[0]
   const value = (m: string, row: string, kind: Kind) => sampleValue(m, row, kind)
+  const colorOf = (key: string) => draft.styles[key]?.color
   if (draft.chart === 'kpi') {
     const now = value(first.key, 'total', first.kind)
+    const scale = draft.styles[first.key]?.scale
+    const kpiColor = scale ? `hsl(${scaleHue(scale, now)} 75% 42%)` : colorOf(first.key)
     return (
       <div className="py-10 text-center">
         <div className="text-[13px] font-medium text-muted-foreground">{first.label}</div>
-        <div className="mt-2 text-[44px] font-semibold tracking-[-0.04em] tnum">{fmt(first.kind, now)}</div>
+        <div className="mt-2 text-[44px] font-semibold tracking-[-0.04em] tnum" style={{ color: kpiColor }}>{fmt(first.kind, now)}</div>
         {draft.compare && <div className="mt-2"><Delta now={now} before={value(first.key, 'prev', first.kind)} /></div>}
       </div>
     )
@@ -2284,7 +2309,7 @@ function ReportChart({ draft, customs }: { draft: ReportDraft; customs: CustomDe
         {metrics.map((m, i) => (
           <li key={m.key} className="grid grid-cols-[140px_1fr_auto] items-center gap-3 text-[13px]">
             <span className="truncate">{m.label}</span>
-            <span className="flex justify-center"><span className="block h-8 rounded-sm bg-foreground" style={{ width: `${(values[i] / values[0]) * 100}%`, opacity: 1 - i * 0.15 }} /></span>
+            <span className="flex justify-center"><span className="block h-8 rounded-sm bg-foreground" style={{ width: `${(values[i] / values[0]) * 100}%`, opacity: colorOf(m.key) ? 1 : 1 - i * 0.15, background: colorOf(m.key) }} /></span>
             <span className="w-24 text-right tnum">{int.format(values[i])}{i > 0 && <span className="block text-[12px] text-muted-foreground">{pct.format((values[i] / values[i - 1]) * 100)}%</span>}</span>
           </li>
         ))}
@@ -2300,19 +2325,19 @@ function ReportChart({ draft, customs }: { draft: ReportDraft; customs: CustomDe
       angle += (v / total) * Math.PI * 2
       const large = angle - start > Math.PI ? 1 : 0
       const p = (a: number, r: number) => `${100 + r * Math.cos(a)},${100 + r * Math.sin(a)}`
-      return <path key={rows[i]} d={`M${p(start, 90)}A90,90 0 ${large} 1 ${p(angle, 90)}L${p(angle, 52)}A52,52 0 ${large} 0 ${p(start, 52)}Z`} className="fill-foreground stroke-card" strokeWidth={2} style={{ opacity: 1 - i * (0.7 / rows.length) }} />
+      return <path key={rows[i]} d={`M${p(start, 90)}A90,90 0 ${large} 1 ${p(angle, 90)}L${p(angle, 52)}A52,52 0 ${large} 0 ${p(start, 52)}Z`} className="fill-foreground stroke-card" strokeWidth={2} style={{ opacity: 1 - i * (0.7 / rows.length), fill: colorOf(first.key) }} />
     })
     return (
       <div className="flex flex-wrap items-center justify-center gap-8 py-4">
         <svg viewBox="0 0 200 200" className="h-[200px] w-[200px]" role="img" aria-label={`${first.label} por ${draft.dims[0]}`}>{arcs}</svg>
         <ul className="grid gap-1.5 text-[13px]">
-          {rows.map((r, i) => <li key={r} className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-sm bg-foreground" style={{ opacity: 1 - i * (0.7 / rows.length) }} /><span className="min-w-0 flex-1 truncate">{r}</span><span className="tnum text-muted-foreground">{pct.format((values[i] / total) * 100)}%</span></li>)}
+          {rows.map((r, i) => <li key={r} className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-sm bg-foreground" style={{ opacity: 1 - i * (0.7 / rows.length), background: colorOf(first.key) }} /><span className="min-w-0 flex-1 truncate">{r}</span><span className="tnum text-muted-foreground">{pct.format((values[i] / total) * 100)}%</span></li>)}
         </ul>
       </div>
     )
   }
   if (draft.chart === 'bar') {
-    return <div className="py-2"><Bars items={rows.map((r) => [r, Math.round(value(first.key, r, first.kind))] as const)} /></div>
+    return <div className="py-2"><Bars color={colorOf(first.key)} items={rows.map((r) => [r, Math.round(value(first.key, r, first.kind))] as const)} /></div>
   }
   if (draft.chart === 'line' || draft.chart === 'area') {
     const W = 960, H = 240, L = 56, R = 12, T = 12, B = 26
@@ -2328,13 +2353,13 @@ function ReportChart({ draft, customs }: { draft: ReportDraft; customs: CustomDe
           {[0, 0.5, 1].map((f) => <g key={f}><line x1={L} x2={W - R} y1={y(max * f)} y2={y(max * f)} className="stroke-border" /><text x={L - 8} y={y(max * f) + 4} textAnchor="end" className="fill-muted-foreground text-[11px] tnum">{compact(first.kind, max * f)}</text></g>)}
           {rows.map((r, i) => i % step === 0 && <text key={r} x={x(i)} y={H - 8} textAnchor="middle" className="fill-muted-foreground text-[11px] tnum">{r}</text>)}
           {all.map((vals, s) => (
-            <g key={metrics[s].key} style={{ opacity: 1 - s * 0.3 }}>
-              {draft.chart === 'area' && <path d={`${path(vals)}L${x(vals.length - 1)},${y(0)}L${x(0)},${y(0)}Z`} className="fill-foreground/[0.08]" />}
-              <path d={path(vals)} fill="none" className="stroke-foreground" strokeWidth={2} strokeDasharray={s ? '5 4' : undefined} strokeLinejoin="round" />
+            <g key={metrics[s].key} style={{ opacity: colorOf(metrics[s].key) ? 1 : 1 - s * 0.3 }}>
+              {draft.chart === 'area' && <path d={`${path(vals)}L${x(vals.length - 1)},${y(0)}L${x(0)},${y(0)}Z`} className="fill-foreground/[0.08]" style={colorOf(metrics[s].key) ? { fill: colorOf(metrics[s].key), fillOpacity: 0.14 } : undefined} />}
+              <path d={path(vals)} fill="none" className="stroke-foreground" strokeWidth={colorOf(metrics[s].key) ? 2.5 : 2} strokeDasharray={s && !colorOf(metrics[s].key) ? '5 4' : undefined} strokeLinejoin="round" style={{ stroke: colorOf(metrics[s].key) }} />
             </g>
           ))}
         </svg>
-        {metrics.length > 1 && <div className="mt-2 flex flex-wrap gap-4 text-[13px] text-muted-foreground">{metrics.map((m, s) => <span key={m.key} className="flex items-center gap-1.5"><span className={cn('w-4 border-t-2 border-foreground', s && 'border-dashed')} style={{ opacity: 1 - s * 0.3 }} />{m.label}</span>)}</div>}
+        {metrics.length > 1 && <div className="mt-2 flex flex-wrap gap-4 text-[13px] text-muted-foreground">{metrics.map((m, s) => <span key={m.key} className="flex items-center gap-1.5"><span className={cn('w-4 border-t-2 border-foreground', s && !colorOf(m.key) && 'border-dashed')} style={{ opacity: colorOf(m.key) ? 1 : 1 - s * 0.3, borderColor: colorOf(m.key) }} />{m.label}</span>)}</div>}
       </div>
     )
   }
@@ -2353,7 +2378,11 @@ function ReportTable({ draft, customs }: { draft: ReportDraft; customs: CustomDe
         {rows.slice(0, 12).map((r) => (
           <tr key={r} className="hover:bg-muted">
             {dimLabel && <td className={cn(td, 'whitespace-nowrap font-medium')}>{r}</td>}
-            {metrics.map((m) => <td key={m.key} className={cn(td, 'text-right tnum whitespace-nowrap')}>{fmt(m.kind, sampleValue(m.key, r, m.kind))}</td>)}
+            {metrics.map((m) => {
+              const v = sampleValue(m.key, r, m.kind)
+              const scale = draft.styles[m.key]?.scale
+              return <td key={m.key} className={cn(td, 'text-right tnum whitespace-nowrap')} style={scale ? { background: `hsl(${scaleHue(scale, v)} 80% 45% / 0.18)` } : undefined}>{fmt(m.kind, v)}</td>
+            })}
           </tr>
         ))}
       </tbody>
@@ -2517,6 +2546,51 @@ function SaveDialog({ open, onOpenChange, draft, onSave }: { open: boolean; onOp
   )
 }
 
+function MetricStylePopover({ label, kind, style, disabled, onChange }: { label: string; kind: Kind; style: MetricStyle; disabled: boolean; onChange: (s: MetricStyle) => void }) {
+  const scale = style.scale
+  const swatch = scale ? `linear-gradient(90deg, hsl(${scale.mode === 'green_red' ? 135 : 0} 75% 45%), hsl(${scale.mode === 'green_red' ? 0 : 135} 75% 45%))` : style.color
+  const unit = kind === 'money' ? 'R$' : kind === 'pct' ? '%' : ''
+  return (
+    <Popover>
+      <PopoverTrigger disabled={disabled} className="inline-flex h-6 items-center gap-1.5 rounded-full px-2 hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:hover:bg-transparent">
+        <span className="h-3 w-3 rounded-full border" style={{ background: swatch ?? 'hsl(var(--foreground))' }} aria-hidden="true" />{label}
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-[300px]">
+        <h3 className="text-[14px] font-semibold">{label}</h3>
+        <div className="mt-3 text-[12px] font-medium text-muted-foreground">Cor</div>
+        <div className="mt-2 flex flex-wrap gap-2" role="radiogroup" aria-label="Cor">
+          <button role="radio" aria-checked={!style.color} aria-label="Padrão" title="Padrão" onClick={() => onChange({ ...style, color: undefined })} className={cn('h-7 w-7 rounded-full border-2 bg-foreground', !style.color ? 'ring-2 ring-ring ring-offset-2 ring-offset-background' : 'border-transparent')} />
+          {NEON.map((c) => (
+            <button key={c.key} role="radio" aria-checked={style.color === c.value} aria-label={c.label} title={c.label} onClick={() => onChange({ ...style, color: c.value })}
+              className={cn('h-7 w-7 rounded-full', style.color === c.value && 'ring-2 ring-ring ring-offset-2 ring-offset-background')} style={{ background: c.value, boxShadow: `0 0 10px ${c.value}80` }} />
+          ))}
+        </div>
+        <div className="mt-4 text-[12px] font-medium text-muted-foreground">Aparência pelo valor</div>
+        <div className="mt-2 grid gap-1.5">
+          <label className="flex items-center gap-2 text-[13px]"><input type="radio" name={`scale-${label}`} checked={!scale} onChange={() => onChange({ ...style, scale: undefined })} className="accent-[hsl(var(--primary))]" />Nenhuma</label>
+          {SCALES.map((m) => (
+            <label key={m.key} className="flex items-start gap-2 text-[13px]">
+              <input type="radio" name={`scale-${label}`} checked={scale?.mode === m.key} onChange={() => onChange({ ...style, scale: { mode: m.key, from: scale?.from ?? 0, to: scale?.to ?? 100 } })} className="mt-0.5 accent-[hsl(var(--primary))]" />
+              <span><span className="flex items-center gap-2">{m.label}<span className="h-2 w-10 rounded-full" style={{ background: `linear-gradient(90deg, hsl(${m.key === 'green_red' ? 135 : 0} 75% 45%), hsl(${m.key === 'green_red' ? 0 : 135} 75% 45%))` }} /></span><span className="block text-[12px] text-muted-foreground">{m.desc}</span></span>
+            </label>
+          ))}
+        </div>
+        {scale && (
+          <div className="mt-3 grid grid-cols-2 gap-3">
+            <Field id={`from-${label}`} label={`${scale.mode === 'green_red' ? 'Verde' : 'Vermelho'} até ${unit}`.trim()}>
+              <Input id={`from-${label}`} inputMode="decimal" value={scale.from} onChange={(e) => onChange({ ...style, scale: { ...scale, from: Number(e.target.value.replace(',', '.')) || 0 } })} className="h-8 tnum" />
+            </Field>
+            <Field id={`to-${label}`} label={`${scale.mode === 'green_red' ? 'Vermelho' : 'Verde'} a partir de ${unit}`.trim()}>
+              <Input id={`to-${label}`} inputMode="decimal" value={scale.to} onChange={(e) => onChange({ ...style, scale: { ...scale, to: Number(e.target.value.replace(',', '.')) || 0 } })} className="h-8 tnum" />
+            </Field>
+            <p className="col-span-2 text-[12px] text-muted-foreground">Entre os dois valores a cor passa aos poucos. Vale na tabela e no KPI.</p>
+          </div>
+        )}
+      </PopoverContent>
+    </Popover>
+  )
+}
+
 function ReportBuilderScreen({ initial, customs, setCustoms, onBack, onSave }: { initial: ReportDraft; customs: CustomDef[]; setCustoms: (c: CustomDef[]) => void; onBack: () => void; onSave: (d: ReportDraft) => void }) {
   const [draft, setDraft] = useState<ReportDraft>(initial)
   const [search, setSearch] = useState('')
@@ -2588,7 +2662,14 @@ function ReportBuilderScreen({ initial, customs, setCustoms, onBack, onSave }: {
         <main className="min-w-0 bg-muted">
           <div className="grid gap-4 p-4 sm:p-6">
             <div className="flex flex-wrap items-center gap-1.5">
-              {draft.metrics.map((m) => <span key={m} className="inline-flex h-7 items-center gap-1 rounded-full border bg-card pl-3 pr-1 text-[13px]">{metricDef(m, customs).label}{editable && <button onClick={() => setMetrics(draft.metrics.filter((x) => x !== m))} aria-label={`Tirar ${metricDef(m, customs).label}`} className="rounded-full p-1 hover:bg-accent"><X className="h-3 w-3" /></button>}</span>)}
+              {draft.metrics.map((m) => (
+                <span key={m} className="inline-flex h-7 items-center gap-1 rounded-full border bg-card pl-1 pr-1 text-[13px]">
+                  <MetricStylePopover label={metricDef(m, customs).label} kind={metricDef(m, customs).kind} style={draft.styles[m] ?? {}} disabled={!editable}
+                    onChange={(style) => update({ styles: { ...draft.styles, [m]: style } })} />
+                  {editable && <button onClick={() => setMetrics(draft.metrics.filter((x) => x !== m))} aria-label={`Tirar ${metricDef(m, customs).label}`} className="rounded-full p-1 hover:bg-accent"><X className="h-3 w-3" /></button>}
+                </span>
+              ))}
+              {editable && draft.metrics.length > 0 && <span className="px-1 text-[12px] text-muted-foreground">Clique numa métrica para escolher a cor e a aparência.</span>}
               {draft.dims.length > 0 && <span className="px-1 text-[13px] text-muted-foreground">por</span>}
               {draft.dims.map((d) => <span key={d} className="inline-flex h-7 items-center gap-1 rounded-full border border-dashed bg-card pl-3 pr-1 text-[13px]">{R_DIMENSIONS.find((x) => x.key === d)?.label}{editable && <button onClick={() => setDims(draft.dims.filter((x) => x !== d))} aria-label="Tirar dimensão" className="rounded-full p-1 hover:bg-accent"><X className="h-3 w-3" /></button>}</span>)}
             </div>
