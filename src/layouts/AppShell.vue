@@ -6,7 +6,6 @@ import { Menu } from 'lucide-vue-next'
 import CompanySwitcher from '@/components/CompanySwitcher.vue'
 import LangSwitch from '@/components/LangSwitch.vue'
 import SidebarNav from '@/components/SidebarNav.vue'
-import BrandSignature from '@/components/BrandSignature.vue'
 import Button from '@/components/ui/Button.vue'
 import { t } from '@/lib/i18n'
 
