@@ -2407,7 +2407,7 @@ function FieldItem({ label, picked, disabled, hint, badge, onClick }: { label: s
   )
 }
 
-function CustomMetricSheet({ open, onOpenChange, customs, onSave }: { open: boolean; onOpenChange: (o: boolean) => void; customs: CustomDef[]; onSave: (c: CustomDef) => void }) {
+function CustomMetricDialog({ open, onOpenChange, customs, onSave }: { open: boolean; onOpenChange: (o: boolean) => void; customs: CustomDef[]; onSave: (c: CustomDef) => void }) {
   const [name, setName] = useState('')
   const [formula, setFormula] = useState('')
   const [kind, setKind] = useState<Kind>('money')
@@ -2433,11 +2433,14 @@ function CustomMetricSheet({ open, onOpenChange, customs, onSave }: { open: bool
   const key = name.trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '')
   const canSave = !!name.trim() && !!formula && !error
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-[460px]">
-        <SheetTitle className="text-[20px] font-semibold tracking-tight">Nova métrica</SheetTitle>
-        <p className="mt-1 text-[14px] text-muted-foreground">Uma conta sobre as métricas que já existem. Ela fica disponível para toda a Empresa.</p>
-        <div className="mt-6 grid gap-5">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[92dvh] overflow-y-auto sm:max-w-[760px]">
+        <DialogHeader>
+          <DialogTitle>Nova métrica</DialogTitle>
+          <DialogDescription>Uma conta sobre as métricas que já existem. Ela fica disponível para toda a Empresa.</DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_280px]">
+        <div className="grid content-start gap-5">
           <Field id="cm-name" label="Nome" hint={key ? `Na fórmula de outras métricas: custom.${key}` : undefined}>
             <Input id="cm-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="RPM por requisição" maxLength={80} />
           </Field>
@@ -2469,7 +2472,8 @@ function CustomMetricSheet({ open, onOpenChange, customs, onSave }: { open: bool
             </Field>
             <Field id="cm-dec" label="Casas decimais"><Input id="cm-dec" type="number" min={0} max={6} value={decimals} onChange={(e) => setDecimals(e.target.value)} className="h-9" /></Field>
           </div>
-          <section className="rounded-lg border bg-muted p-4">
+        </div>
+          <section className="self-start rounded-lg border bg-muted p-4">
             <h3 className="text-[14px] font-semibold">Prévia</h3>
             <p className="mt-1 text-[13px] text-muted-foreground">Informe valores de exemplo para conferir a conta. O cálculo é feito pelo Avant, igual ao dos relatórios.</p>
             {vars.length ? (
@@ -2490,12 +2494,12 @@ function CustomMetricSheet({ open, onOpenChange, customs, onSave }: { open: bool
             ) : <p className="mt-3 text-[13px] text-muted-foreground">Os campos aparecem quando a fórmula estiver válida.</p>}
           </section>
         </div>
-        <div className="mt-6 flex justify-end gap-2 border-t pt-4">
+        <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
           <Button disabled={!canSave} onClick={() => onSave({ key, name: name.trim(), formula: formula.trim(), kind, decimals: Number(decimals) || 0 })}>Criar métrica</Button>
-        </div>
-      </SheetContent>
-    </Sheet>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }
 
@@ -2739,7 +2743,7 @@ function ReportBuilderScreen({ initial, customs, setCustoms, onBack, onSave }: {
           </div>
         </aside>
       </div>
-      <CustomMetricSheet open={creating} onOpenChange={setCreating} customs={customs}
+      <CustomMetricDialog open={creating} onOpenChange={setCreating} customs={customs}
         onSave={(c) => { setCustoms([...customs, c]); setMetrics([...draft.metrics, `custom.${c.key}`]); setCreating(false); toast.success('Métrica criada', { description: `${c.name} já está no relatório.` }) }} />
       <SaveDialog open={saving} onOpenChange={setSaving} draft={draft}
         onSave={(patch) => { const saved = { ...draft, ...patch, id: draft.id ?? `r${Date.now()}`, updated: 'Agora' }; setDraft(saved); setDirty(false); setSaving(false); onSave(saved); toast.success('Relatório salvo') }} />
