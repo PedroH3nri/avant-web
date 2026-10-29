@@ -1,13 +1,13 @@
 /** Chamadas da API dos contratos de revshare no painel interno. */
 
-import { api } from '@/lib/api'
-import type { Items } from '@/lib/types'
+import { api, type Query } from '@/lib/api'
+import type { Items, Page } from '@/lib/types'
 import type { Contract, ContractNetwork } from '@/modules/internal/contracts/types'
 
 /** Serviço dos contratos. */
 export const contractService = {
-  /** Os contratos; ``query`` já vem montada (com ``?`` ou vazia). */
-  list: (query: string) => api.get<Items<Contract>>(`/internal/contracts${query}`),
+  /** Uma página dos contratos, do mais novo para o mais antigo, com filtros. */
+  list: (query?: Query) => api.get<Page<Contract>>('/internal/contracts', query),
   /** Networks MCM ativas com o contrato em vigor. */
   networks: () => api.get<Items<ContractNetwork>>('/internal/contracts/networks'),
   /** Contrato à mão de uma network Manage Inventory. */

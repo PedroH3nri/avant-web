@@ -3,9 +3,14 @@ import { api } from '@/lib/api'
 import { accountService } from '@/modules/account/service'
 import { costService } from '@/modules/costs/service'
 import { clientService } from '@/modules/internal/clients/service'
+import { contractService } from '@/modules/internal/contracts/service'
+import { goalService } from '@/modules/internal/goals/service'
+import { peopleService } from '@/modules/internal/people/service'
+import { staffService } from '@/modules/internal/staff/service'
 import { groupService } from '@/modules/groups/service'
 import { networkService } from '@/modules/networks/service'
 import { reportService } from '@/modules/reports/service'
+import { resultService } from '@/modules/results/service'
 import { siteService } from '@/modules/sites/service'
 import { teamService } from '@/modules/team/service'
 
@@ -94,6 +99,28 @@ describe('clientes do painel interno em páginas', () => {
       ['/internal/owner-invitations', { page: 4 }],
       ['/internal/clients/c1/audit', { page: 5 }],
       ['/internal/clients/options', undefined],
+    ])
+  })
+})
+
+describe('listas do painel interno em páginas', () => {
+  afterEach(() => vi.restoreAllMocks())
+
+  it('pede a página dos contratos, equipe Groone, pessoas, resultado e modelos de meta', async () => {
+    const get = vi.spyOn(api, 'get').mockResolvedValue({ items: [], total: 0, page: 1, pages: 0, page_size: 10 })
+    await contractService.list({ page: 2, status: 'active' })
+    await staffService.list({ page: 3 })
+    await peopleService.search('ana', 4)
+    await resultService.clients({ start: '2026-10-01', end: '2026-10-01', currency: 'USD', page: 5 })
+    await goalService.templatePage({ page: 6 })
+    await goalService.templates()
+    expect(get.mock.calls.map((call) => [call[0], call[1]])).toEqual([
+      ['/internal/contracts', { page: 2, status: 'active' }],
+      ['/internal/staff', { page: 3 }],
+      ['/internal/users', { q: 'ana', page: 4 }],
+      ['/internal/results', { start: '2026-10-01', end: '2026-10-01', currency: 'USD', page: 5 }],
+      ['/internal/goal-templates', { page: 6 }],
+      ['/internal/goal-templates/options', undefined],
     ])
   })
 })

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /** Painel interno: contratos das networks MCM, com o revshare da Groone em cada uma. */
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { DropdownMenuRoot, DropdownMenuSeparator, DropdownMenuTrigger } from 'reka-ui'
 import { MoreHorizontal } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
@@ -16,6 +16,7 @@ import Input from '@/components/ui/Input.vue'
 import MenuContent from '@/components/ui/MenuContent.vue'
 import MenuItem from '@/components/ui/MenuItem.vue'
 import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Pagination from '@/components/ui/Pagination.vue'
 import Status from '@/components/ui/Status.vue'
 import TableState from '@/components/ui/TableState.vue'
 import { ApiError } from '@/lib/api'
@@ -32,6 +33,9 @@ type Filter = ContractStatus | 'all'
 const session = useSession()
 const networks = ref<ContractNetwork[] | null>(null)
 const contracts = ref<Contract[] | null>(null)
+const page = ref(1)
+const total = ref(0)
+const pages = ref(0)
 const loadError = ref<string | null>(null)
 const filter = ref<Filter>('active')
 const filters: Filter[] = ['active', 'ended', 'all']
@@ -50,28 +54,37 @@ const canCreate = computed(() => session.can('internal.contracts.create'))
 const canUpdate = computed(() => session.can('internal.contracts.update'))
 const canDelete = computed(() => session.can('internal.contracts.delete'))
 
-/** Carrega as networks MCM com o contrato ativo e os contratos do filtro atual. */
+/** Carrega a página dos contratos do filtro atual; se ela ficou vazia, volta uma. */
+async function loadContracts() {
+  const found = await contractService.list({ page: page.value, status: filter.value === 'all' ? undefined : filter.value })
+  if (found.items.length === 0 && page.value > 1) {
+    page.value = Math.max(1, found.pages)
+    return
+  }
+  contracts.value = found.items
+  total.value = found.total
+  pages.value = found.pages
+}
+
+/** Carrega as networks MCM com o contrato ativo e a página dos contratos do filtro atual. */
 async function load() {
   loadError.value = null
   try {
-    const query = filter.value === 'all' ? '' : `?status=${filter.value}`
-    const [networkPage, contractPage] = await Promise.all([
-      contractService.networks(),
-      contractService.list(query),
-    ])
+    const [networkPage] = await Promise.all([contractService.networks(), loadContracts()])
     networks.value = networkPage.items
-    contracts.value = contractPage.items
   } catch (error) {
     loadError.value = errorText(error instanceof ApiError ? error.code : 'unknown')
   }
 }
 onMounted(load)
+watch(page, () => loadContracts().catch((error) => (loadError.value = errorText(error instanceof ApiError ? error.code : 'unknown'))))
 
-/** Troca o filtro e busca de novo os contratos. */
+/** Troca o filtro e busca de novo os contratos, na página 1. */
 function choose(next: Filter) {
   filter.value = next
   contracts.value = null
-  void load()
+  if (page.value === 1) void load()
+  else page.value = 1
 }
 
 const manual = computed(() => manualNetworks(networks.value ?? []))
@@ -301,6 +314,7 @@ async function confirmRemove() {
             </tr>
           </tbody>
         </DataTable>
+        <Pagination v-model:page="page" :total="total" :pages="pages" />
       </section>
     </template>
   </PageBody>
