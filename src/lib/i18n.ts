@@ -417,6 +417,12 @@ const dict = {
   'goals.saveTemplate': ['Salvar modelo', 'Save template', 'Guardar plantilla'],
   'goals.templateSaved': ['Modelo de meta salvo', 'Goal template saved', 'Plantilla de meta guardada'],
   'goals.templateDeleted': ['Modelo de meta apagado', 'Goal template deleted', 'Plantilla de meta borrada'],
+  // Paginação
+  'pagination.label': ['Páginas', 'Pages', 'Páginas'],
+  'pagination.range': ['{first}–{last} de {total}', '{first}–{last} of {total}', '{first}–{last} de {total}'],
+  'pagination.previous': ['Página anterior', 'Previous page', 'Página anterior'],
+  'pagination.next': ['Próxima página', 'Next page', 'Página siguiente'],
+  'pagination.page': ['Página {page}', 'Page {page}', 'Página {page}'],
   'report.empty': ['(vazio)', '(empty)', '(vacío)'],
   'report.noData': ['Sem dados no período.', 'No data in this period.', 'Sin datos en el período.'],
   'report.chartOf': ['{metric} por {dimension}', '{metric} by {dimension}', '{metric} por {dimension}'],

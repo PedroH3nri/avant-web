@@ -6,6 +6,7 @@ import LoadError from '@/components/LoadError.vue'
 import PageBody from '@/components/PageBody.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import RolesPanel from '@/modules/team/components/RolesPanel.vue'
+import Pagination from '@/components/ui/Pagination.vue'
 import Avatar from '@/components/ui/Avatar.vue'
 import Badge from '@/components/ui/Badge.vue'
 import DataTable from '@/components/ui/DataTable.vue'
@@ -22,6 +23,9 @@ import { teamService } from '@/modules/team/service'
 // fazer. Permissões diretas de uma pessoa ficam na página dela, em Equipe.
 const session = useSession()
 const members = ref<Member[]>([])
+const page = ref(1)
+const total = ref(0)
+const pages = ref(0)
 const roles = ref<Role[]>([])
 const permissions = ref<Permission[]>([])
 const loaded = ref(false)
@@ -38,11 +42,13 @@ async function load() {
     const [rolePage, permissionPage, memberPage] = await Promise.all([
       teamService.roles(),
       teamService.permissions(),
-      canTeam.value ? teamService.members() : Promise.resolve({ items: [] as Member[], next_cursor: null }),
+      canTeam.value ? teamService.members({ page: page.value }) : Promise.resolve({ items: [] as Member[], total: 0, page: 1, pages: 0, page_size: 10 }),
     ])
     roles.value = rolePage.items
     permissions.value = permissionPage.items
-    members.value = memberPage.items.filter((member) => member.status !== 'removed')
+    members.value = memberPage.items
+    total.value = memberPage.total
+    pages.value = memberPage.pages
     loaded.value = true
   } catch (error) {
     loadError.value = errorText(error instanceof ApiError ? error.code : 'unknown')
@@ -50,6 +56,7 @@ async function load() {
 }
 onMounted(load)
 watch(() => session.me?.active_company_id, load)
+watch(page, load)
 
 const roleOptions = computed(() => roles.value.map((role) => ({ value: role.id, label: pick(role.name) })))
 /** Diz se o membro é a própria pessoa. */
@@ -130,6 +137,7 @@ async function assign(member: Member, roleId: string) {
             </tr>
           </tbody>
         </DataTable>
+      <Pagination v-model:page="page" :total="total" :pages="pages" />
       </section>
 
       <section class="grid gap-3" aria-labelledby="roles-title">

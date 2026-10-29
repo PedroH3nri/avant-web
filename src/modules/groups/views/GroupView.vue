@@ -57,7 +57,7 @@ const rows = computed(() =>
 async function load() {
   loadError.value = null
   try {
-    const [detail, groupPage, memberPage] = await Promise.all([groupService.show(groupId), groupService.list(), teamService.members()])
+    const [detail, groupPage, memberPage] = await Promise.all([groupService.show(groupId), groupService.list(), teamService.memberOptions()])
     group.value = detail
     groups.value = groupPage.items
     members.value = memberPage.items.filter((member) => member.status !== 'removed')
