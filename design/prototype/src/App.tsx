@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Toaster, toast } from 'sonner'
 import { Check, ChevronsUpDown, Copy, Loader2, LogOut, Plus, RefreshCw, Search, X, AlertTriangle, ArrowLeft, MoreHorizontal, Lock, Mail, ExternalLink, Home, Users, Network, Settings, ShieldCheck, Menu, BarChart3, Eye, FileText, Wallet, Target, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -371,26 +371,32 @@ function RailSidebar({ screen, go }: { screen: Screen; go: (s: Screen) => void }
   const groups = internal ? INTERNAL_RAIL : CLIENT_RAIL
   const owner = groups.find((group) => group.items.some((entry) => entry.id === screen || entry.also?.includes(screen))) ?? groups[0]
   const [picked, setPicked] = useState<string | null>(null)
-  const [open, setOpen] = useState(() => { try { return localStorage.getItem(RAIL_STORAGE) !== 'closed' } catch { return true } })
-  useEffect(() => { setPicked(null) }, [screen])
-  const shown = groups.find((group) => group.key === picked) ?? owner
+  const [hovered, setHovered] = useState<string | null>(null)
+  const [open, setOpen] = useState(() => { try { return localStorage.getItem(RAIL_STORAGE) === 'open' } catch { return false } })
+  const closing = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => { setPicked(null); setHovered(null) }, [screen])
+  const shown = groups.find((group) => group.key === (hovered ?? picked)) ?? owner
+  const floating = !open && hovered !== null
+  /** Abre o painel do grupo sob o mouse, cancelando um fechamento pendente. */
+  const hover = (key: string) => { if (closing.current) clearTimeout(closing.current); setHovered(key) }
+  /** Fecha o painel flutuante com um pequeno atraso, para dar tempo de o mouse chegar nele. */
+  const leave = () => { closing.current = setTimeout(() => setHovered(null), 180) }
   const keep = (value: boolean) => { setOpen(value); try { localStorage.setItem(RAIL_STORAGE, value ? 'open' : 'closed') } catch { /* sem armazenamento */ } }
   const choose = (group: RailGroup) => {
-    if (group.items.length === 1) { go(group.items[0].id); return }
+    if (group.items.length === 1 || !open) { go(group.items[0].id); return }
     setPicked(group.key)
-    if (!open) keep(true)
   }
   return (
-    <div className="flex h-full">
+    <div className="relative flex h-full" onMouseLeave={leave}>
       <div className="flex w-[72px] shrink-0 flex-col items-center border-r bg-sidebar py-3">
         <button onClick={() => go(internal ? 'interno' : 'inicio')} aria-label="Avant, início" className="rounded-md p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><Mark size={28} /></button>
         <nav className="mt-4 grid w-full gap-1 px-1.5" aria-label="Grupos do menu">
           {groups.map((group) => {
             const Icon = group.icon
             const current = owner.key === group.key
-            const showing = open && shown.key === group.key
+            const showing = (open || floating) && shown.key === group.key
             return (
-              <button key={group.key} onClick={() => choose(group)} aria-current={current ? 'page' : undefined} aria-expanded={group.items.length > 1 ? showing : undefined} title={group.label}
+              <button key={group.key} onClick={() => choose(group)} onMouseEnter={() => hover(group.key)} onFocus={() => hover(group.key)} aria-current={current ? 'page' : undefined} aria-expanded={group.items.length > 1 ? showing : undefined} title={group.label}
                 className={cn('flex flex-col items-center gap-1 rounded-md py-2 text-[10.5px] font-medium leading-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                   current ? 'bg-secondary text-foreground' : showing ? 'bg-accent text-foreground' : 'text-muted-foreground hover:bg-accent hover:text-foreground')}>
                 <Icon className="h-[18px] w-[18px]" />{group.label}
@@ -399,15 +405,15 @@ function RailSidebar({ screen, go }: { screen: Screen; go: (s: Screen) => void }
           })}
         </nav>
         <div className="mt-auto grid w-full gap-1 px-1.5">
-          <button onClick={() => keep(!open)} title={open ? 'Recolher o painel' : 'Abrir o painel'} aria-label={open ? 'Recolher o painel' : 'Abrir o painel'} className="flex justify-center rounded-md py-2 text-muted-foreground hover:bg-accent hover:text-foreground">{open ? <PanelLeftClose className="h-[18px] w-[18px]" /> : <PanelLeftOpen className="h-[18px] w-[18px]" />}</button>
+          <button onClick={() => keep(!open)} title={open ? 'Soltar o painel (abre ao passar o mouse)' : 'Fixar o painel aberto'} aria-label={open ? 'Soltar o painel' : 'Fixar o painel aberto'} className="flex justify-center rounded-md py-2 text-muted-foreground hover:bg-accent hover:text-foreground">{open ? <PanelLeftClose className="h-[18px] w-[18px]" /> : <PanelLeftOpen className="h-[18px] w-[18px]" />}</button>
           <button onClick={() => go(internal ? 'inicio' : 'interno')} title={internal ? 'Voltar ao painel do cliente' : 'Painel interno'} className="flex flex-col items-center gap-1 rounded-md py-2 text-[10.5px] font-medium leading-none text-muted-foreground hover:bg-accent hover:text-foreground">
             {internal ? <ArrowLeft className="h-[18px] w-[18px]" /> : <ShieldCheck className="h-[18px] w-[18px]" />}{internal ? 'Cliente' : 'Interno'}
           </button>
           <div className="mt-1 flex justify-center"><Avatar name="Pedro Henrique" size={30} /></div>
         </div>
       </div>
-      {open && (
-        <div className="flex w-[220px] shrink-0 flex-col border-r bg-sidebar">
+      {(open || floating) && (
+        <div onMouseEnter={() => hovered && hover(hovered)} className={cn('flex w-[220px] shrink-0 flex-col border-r bg-sidebar', floating && 'absolute inset-y-0 left-[72px] z-30 shadow-xl animate-in fade-in-0 slide-in-from-left-2 duration-150')}>
           <div className="flex h-14 items-center border-b px-4"><span className="text-[14px] font-semibold tracking-tight">{shown.label}</span>{internal && <Badge>Interno</Badge>}</div>
           <nav className="grid gap-0.5 p-3" aria-label={shown.label}>
             {shown.items.map((entry) => {
@@ -426,7 +432,7 @@ function Shell({ t, lang, setLang, screen, go, image, children }: { t: T; lang: 
   const nav = (s: Screen) => { setOpen(false); go(s) }
   return (
     <div className="flex flex-1">
-      <aside className="sticky top-11 hidden h-[calc(100dvh-2.75rem)] shrink-0 self-start lg:block"><RailSidebar screen={screen} go={go} /></aside>
+      <aside className="sticky top-11 z-40 hidden h-[calc(100dvh-2.75rem)] shrink-0 self-start lg:block"><RailSidebar screen={screen} go={go} /></aside>
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent side="left" className="w-[272px] p-0 [&>button:first-child]:hidden">
           <SheetTitle className="sr-only">Menu</SheetTitle>
