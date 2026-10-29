@@ -21,7 +21,7 @@ import { goalTone, monthOptions } from '@/modules/internal/goals/rules'
 import { goalService } from '@/modules/internal/goals/service'
 import type { GoalMode, GoalTemplate, PersonGoal, RoleGoal, TeamGoals } from '@/modules/internal/goals/types'
 import { teamService } from '@/modules/team/service'
-import type { Role } from '@/modules/team/types'
+import type { RoleOption } from '@/modules/team/types'
 import { useSession } from '@/stores/session'
 
 const session = useSession()
@@ -32,7 +32,7 @@ const mine = ref<PersonGoal | null>(null)
 const team = ref<TeamGoals | null>(null)
 const templates = ref<GoalTemplate[]>([])
 const roleGoals = ref<RoleGoal[]>([])
-const roles = ref<Role[]>([])
+const roles = ref<RoleOption[]>([])
 const loadError = ref<string | null>(null)
 const templatesOpen = ref(false)
 const canView = computed(() => session.can('internal.commissions.view'))
@@ -48,7 +48,7 @@ async function load() {
     mine.value = own
     team.value = everyone
     if (canView.value || canManage.value) {
-      const [templateList, goalList, roleList] = await Promise.all([goalService.templates(), goalService.roleGoals(), teamService.roles()])
+      const [templateList, goalList, roleList] = await Promise.all([goalService.templates(), goalService.roleGoals(), teamService.roleOptions()])
       templates.value = templateList.items
       roleGoals.value = goalList.items
       roles.value = roleList.items.filter((role) => !role.is_system)
@@ -61,9 +61,9 @@ onMounted(load)
 watch(month, load)
 
 /** A meta de um papel, se houver. */
-const goalOf = (role: Role) => roleGoals.value.find((goal) => goal.role_id === role.id)
+const goalOf = (role: RoleOption) => roleGoals.value.find((goal) => goal.role_id === role.id)
 /** Troca o modelo ou o modo da meta do papel. */
-async function setGoal(role: Role, templateId: string, mode: GoalMode) {
+async function setGoal(role: RoleOption, templateId: string, mode: GoalMode) {
   try {
     await goalService.setRoleGoal(role.id, templateId || null, mode)
     roleGoals.value = (await goalService.roleGoals()).items

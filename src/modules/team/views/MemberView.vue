@@ -18,7 +18,7 @@ import { ApiError } from '@/lib/api'
 import { errorText, formatDate, pick, t } from '@/lib/i18n'
 import type { Items } from '@/lib/types'
 import type { SiteListItem } from '@/modules/sites/types'
-import type { DirectPermission, MemberDetail, Permission, Role } from '@/modules/team/types'
+import type { DirectPermission, MemberDetail, Permission, RoleOption } from '@/modules/team/types'
 import { useSession } from '@/stores/session'
 import { siteService } from '@/modules/sites/service'
 import { teamService } from '@/modules/team/service'
@@ -31,7 +31,7 @@ const session = useSession()
 const id = String(route.params.id)
 
 const member = ref<MemberDetail | null>(null)
-const role = ref<Role | null>(null)
+const role = ref<RoleOption | null>(null)
 const catalog = ref<Permission[]>([])
 const allSites = ref<SiteListItem[]>([])
 const groups = ref<Group[]>([])
@@ -57,11 +57,11 @@ async function load() {
   try {
     const memberDetail = await teamService.member(id)
     const [roles, perms, sites, mine, groupPage] = await Promise.all([
-      session.can('roles.view') ? teamService.roles() : empty<Role>(),
+      session.can('roles.view') ? teamService.roleOptions() : empty<RoleOption>(),
       session.can('roles.view') ? teamService.permissions() : empty<Permission>(),
       canSeeSites.value ? siteService.list() : empty<SiteListItem>(),
       teamService.memberSites(id),
-      canSeeGroups.value ? groupService.list() : empty<Group>(),
+      canSeeGroups.value ? groupService.options() : empty<Group>(),
     ])
     groups.value = groupPage.items
     member.value = memberDetail

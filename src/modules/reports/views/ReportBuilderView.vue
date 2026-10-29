@@ -126,7 +126,7 @@ async function load() {
 /** Papéis (para "Papéis escolhidos") e os sites e networks dos filtros, se a pessoa pode ver. */
 async function loadExtras() {
   const [roleList, siteList, networkList] = await Promise.allSettled([
-    session.can('roles.view') ? teamService.roles() : Promise.reject(new Error('sem permissão')),
+    session.can('roles.view') ? teamService.roleOptions() : Promise.reject(new Error('sem permissão')),
     session.can('sites.view') ? siteService.list() : Promise.reject(new Error('sem permissão')),
     session.can('network.view') ? networkService.list() : Promise.reject(new Error('sem permissão')),
   ])

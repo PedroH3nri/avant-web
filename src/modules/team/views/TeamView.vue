@@ -29,8 +29,9 @@ import TableState from '@/components/ui/TableState.vue'
 import { ApiError } from '@/lib/api'
 import { errorText, formatAgo, formatDate, pick, t } from '@/lib/i18n'
 import { td, th } from '@/lib/table'
+import type { Page } from '@/lib/types'
 import type { CompanyDetail } from '@/modules/company/types'
-import type { Invitation, Member, Role } from '@/modules/team/types'
+import type { Invitation, Member, RoleOption } from '@/modules/team/types'
 import TeamTabs from '@/modules/team/components/TeamTabs.vue'
 import { useSession } from '@/stores/session'
 import { companyService } from '@/modules/company/service'
@@ -42,7 +43,7 @@ const route = useRoute()
 const company = ref<CompanyDetail | null>(null)
 const members = ref<Member[]>([])
 const invites = ref<Invitation[]>([])
-const roles = ref<Role[]>([])
+const roles = ref<RoleOption[]>([])
 const loaded = ref(false)
 const loadError = ref<string | null>(null)
 const view = ref<'members' | 'pending'>(route.query.aba === 'convites' ? 'pending' : 'members')
@@ -51,6 +52,9 @@ const page = ref(1)
 const total = ref(0)
 const teamSize = ref(0)
 const pages = ref(0)
+const invitePage = ref(1)
+const inviteTotal = ref(0)
+const invitePages = ref(0)
 
 const canInvite = computed(() => session.can('team.invite'))
 const canManage = computed(() => session.can('team.manage'))
@@ -64,15 +68,15 @@ async function load() {
     const [companyDetail, memberPage, invitationPage, rolePage] = await Promise.all([
       companyService.show(),
       teamService.members({ page: page.value, q: filter.value.trim() || undefined }),
-      teamService.invitations(),
-      canRoles.value ? teamService.roles() : Promise.resolve({ items: [] as Role[], next_cursor: null }),
+      teamService.invitations({ page: invitePage.value }),
+      canRoles.value ? teamService.roleOptions() : Promise.resolve({ items: [] as RoleOption[], next_cursor: null }),
     ])
     company.value = companyDetail
     members.value = memberPage.items
     total.value = memberPage.total
     pages.value = memberPage.pages
     if (!filter.value.trim()) teamSize.value = memberPage.total
-    invites.value = invitationPage.items.filter((invitation) => invitation.status === 'pending')
+    showInvites(invitationPage)
     roles.value = rolePage.items
     loaded.value = true
   } catch (error) {
@@ -84,7 +88,7 @@ watch(() => session.me?.active_company_id, load)
 
 // Sem limite (Company Groone), não há vagas a contar.
 const limit = computed(() => company.value?.seat_limit ?? null)
-const used = computed(() => teamSize.value + invites.value.length)
+const used = computed(() => teamSize.value + inviteTotal.value)
 const full = computed(() => limit.value !== null && used.value >= limit.value)
 /** Nome do papel pelo id. */
 const roleName = (id: string | null) => pick(roles.value.find((role) => role.id === id)?.name)
@@ -116,6 +120,24 @@ const searchMembers = useDebounceFn(() => {
 watch(filter, () => void searchMembers())
 watch(page, () => void loadMembers())
 
+/** Guarda a página dos convites pendentes. */
+function showInvites(found: Page<Invitation>) {
+  invites.value = found.items
+  inviteTotal.value = found.total
+  invitePages.value = found.pages
+}
+/** Recarrega a página dos convites; se ela ficou vazia, volta uma. */
+async function loadInvites() {
+  try {
+    const found = await teamService.invitations({ page: invitePage.value })
+    if (found.items.length === 0 && invitePage.value > 1) invitePage.value = Math.max(1, found.pages)
+    else showInvites(found)
+  } catch (error) {
+    errorToast(error)
+  }
+}
+watch(invitePage, () => void loadInvites())
+
 // Convite
 const email = ref('')
 const inviteRole = ref('')
@@ -136,7 +158,8 @@ async function sendInvite() {
   sending.value = true
   try {
     const invitation = await teamService.invite(email.value.trim(), inviteRole.value)
-    invites.value = [invitation, ...invites.value]
+    if (invitePage.value === 1) await loadInvites()
+    else invitePage.value = 1
     toast.success(t('team.sent', { email: invitation.email }), { description: t('team.sentSub') })
     email.value = ''
   } catch (error) {
@@ -168,8 +191,6 @@ async function patchMember(member: Member, body: { role_id?: string; status?: 'a
     members.value = members.value.map((existing) => (existing.id === member.id ? { ...existing, ...updated } : existing))
     toast.success(t('team.updated'))
     roleTarget.value = null
-    // Contagem de pessoas por papel.
-    if (body.role_id && canRoles.value) roles.value = (await teamService.roles()).items
   } catch (error) {
     errorToast(error)
   } finally {
@@ -209,7 +230,7 @@ async function resend(invitation: Invitation) {
 async function cancel(invitation: Invitation) {
   try {
     await teamService.cancelInvitation(invitation.id)
-    invites.value = invites.value.filter((invite) => invite.id !== invitation.id)
+    await loadInvites()
     toast(t('team.canceled', { email: invitation.email }))
   } catch (error) {
     errorToast(error)
@@ -259,10 +280,10 @@ async function cancel(invitation: Invitation) {
             ><span class="font-semibold">{{ used }}</span> <span class="text-muted-foreground">/ {{ limit }}</span></span
           >
         </div>
-        <SeatBar class="mt-3" :used="teamSize" :pending="invites.length" :limit="limit" :label="t('team.seats')" />
+        <SeatBar class="mt-3" :used="teamSize" :pending="inviteTotal" :limit="limit" :label="t('team.seats')" />
         <ul class="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-[13px] text-muted-foreground">
           <li class="flex items-center gap-2"><span class="size-2 rounded-[2px] bg-primary" />{{ t('team.seatsActive', { n: teamSize }) }}</li>
-          <li class="flex items-center gap-2"><span class="size-2 rounded-[2px] bg-ochre" />{{ t('team.seatsPending', { n: invites.length }) }}</li>
+          <li class="flex items-center gap-2"><span class="size-2 rounded-[2px] bg-ochre" />{{ t('team.seatsPending', { n: inviteTotal }) }}</li>
           <li class="flex items-center gap-2">
             <span class="size-2 rounded-[2px] bg-muted-foreground/15" />{{ t('team.seatsFree', { n: Math.max(limit - used, 0) }) }}
           </li>
@@ -271,7 +292,7 @@ async function cancel(invitation: Invitation) {
       </Card>
 
       <div class="flex flex-wrap items-center gap-3">
-        <TeamTabs :current="view" :counts="{ members: teamSize, pending: invites.length }" @select="view = $event" />
+        <TeamTabs :current="view" :counts="{ members: teamSize, pending: inviteTotal }" @select="view = $event" />
         <div v-if="view === 'members'" class="relative ml-auto w-full sm:w-64">
           <Search class="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
           <Input v-model="filter" :aria-label="t('team.filterLabel')" class="h-9 bg-card pl-9" :placeholder="t('team.filter')" />
@@ -367,6 +388,7 @@ async function cancel(invitation: Invitation) {
             </tr>
           </tbody>
         </DataTable>
+        <Pagination v-model:page="invitePage" :total="inviteTotal" :pages="invitePages" />
       </template>
 
     </template>

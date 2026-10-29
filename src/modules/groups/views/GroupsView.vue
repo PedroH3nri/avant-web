@@ -10,6 +10,7 @@ import PageHeader from '@/components/PageHeader.vue'
 import Avatar from '@/components/ui/Avatar.vue'
 import Button from '@/components/ui/Button.vue'
 import DataTable from '@/components/ui/DataTable.vue'
+import Pagination from '@/components/ui/Pagination.vue'
 import Status from '@/components/ui/Status.vue'
 import TableState from '@/components/ui/TableState.vue'
 import { ApiError } from '@/lib/api'
@@ -27,6 +28,10 @@ import { useSession } from '@/stores/session'
 const session = useSession()
 const router = useRouter()
 const groups = ref<Group[]>([])
+const allGroups = ref<Group[]>([])
+const page = ref(1)
+const total = ref(0)
+const pages = ref(0)
 const members = ref<Member[]>([])
 const pendingCount = ref(0)
 const loaded = ref(false)
@@ -34,16 +39,24 @@ const loadError = ref<string | null>(null)
 const creating = ref(false)
 
 const canManage = computed(() => session.can('groups.manage'))
-const loose = computed(() => freeMembers(groups.value, members.value))
+const loose = computed(() => freeMembers(allGroups.value, members.value))
 
-/** Carrega os grupos, as pessoas da equipe e quantos convites estão pendentes. */
+/** Carrega a página dos grupos, todos os grupos, as pessoas da equipe e quantos convites estão pendentes. */
 async function load() {
   loadError.value = null
   try {
-    const [groupPage, memberPage, invitationPage] = await Promise.all([groupService.list(), teamService.memberOptions(), teamService.invitations()])
+    const [groupPage, groupList, memberPage, invitationPage] = await Promise.all([
+      groupService.list({ page: page.value }),
+      groupService.options(),
+      teamService.memberOptions(),
+      teamService.invitations(),
+    ])
     groups.value = groupPage.items
+    total.value = groupPage.total
+    pages.value = groupPage.pages
+    allGroups.value = groupList.items
     members.value = memberPage.items.filter((member) => member.status !== 'removed')
-    pendingCount.value = invitationPage.items.filter((invitation) => invitation.status === 'pending').length
+    pendingCount.value = invitationPage.total
     loaded.value = true
   } catch (error) {
     loadError.value = errorText(error instanceof ApiError ? error.code : 'unknown')
@@ -51,15 +64,17 @@ async function load() {
 }
 onMounted(load)
 watch(() => session.me?.active_company_id, load)
+watch(page, load)
 
 /** Nome da pessoa pelo id do vínculo. */
 const nameOf = (membershipId: string) => members.value.find((member) => member.id === membershipId)?.user.name ?? '?'
 /** Foto da pessoa do vínculo, se ela tiver uma. */
 const imageOf = (membershipId: string) => members.value.find((member) => member.id === membershipId)?.user.image_url ?? null
 
-/** Junta o grupo novo à lista e avisa. */
+/** Volta para a primeira página, onde o grupo novo aparece, e avisa. */
 function created(group: Group) {
-  groups.value = [...groups.value, group].sort((first, second) => first.name.localeCompare(second.name))
+  if (page.value === 1) void load()
+  else page.value = 1
   toast.success(t('groups.created', { name: group.name }), { description: t('groups.peopleCount', { n: group.members.length }) })
 }
 
@@ -75,7 +90,7 @@ const openTab = (tab: 'members' | 'pending') => router.push(tab === 'pending' ? 
   </PageHeader>
   <PageBody>
     <div class="flex flex-wrap items-center gap-3">
-      <TeamTabs current="groups" :counts="{ members: members.length, pending: pendingCount, groups: groups.length }" @select="openTab" />
+      <TeamTabs current="groups" :counts="{ members: members.length, pending: pendingCount, groups: total }" @select="openTab" />
     </div>
     <LoadError v-if="loadError" :message="loadError" @retry="load" />
     <p v-else-if="!loaded" class="text-[14px] text-muted-foreground" role="status">{{ t('common.loading') }}</p>
@@ -118,10 +133,11 @@ const openTab = (tab: 'members' | 'pending') => router.push(tab === 'pending' ? 
           </tr>
         </tbody>
       </DataTable>
-      <p v-if="loose.length > 0 && groups.length > 0" class="text-[13px] text-muted-foreground">
+      <Pagination v-model:page="page" :total="total" :pages="pages" />
+      <p v-if="loose.length > 0 && allGroups.length > 0" class="text-[13px] text-muted-foreground">
         {{ t('groups.loose', { names: loose.map((member) => member.user.name).join(', ') }) }}
       </p>
     </template>
-    <NewGroupDialog v-model:open="creating" :members="members" :groups="groups" @created="created" />
+    <NewGroupDialog v-model:open="creating" :members="members" :groups="allGroups" @created="created" />
   </PageBody>
 </template>

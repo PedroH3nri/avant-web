@@ -1,13 +1,15 @@
 /** Chamadas da API dos grupos de funcionários da Empresa ativa. */
 
-import { api } from '@/lib/api'
-import type { Items } from '@/lib/types'
+import { api, type Query } from '@/lib/api'
+import type { Items, Page } from '@/lib/types'
 import type { Group, GroupInput } from '@/modules/groups/types'
 
 /** Serviço dos grupos da Empresa ativa. */
 export const groupService = {
-  /** Os grupos, pelo nome, com as pessoas de cada um. */
-  list: () => api.get<Items<Group>>('/groups'),
+  /** Uma página dos grupos, do mais novo ao mais antigo, com as pessoas de cada um. */
+  list: (query?: Query) => api.get<Page<Group>>('/groups', query),
+  /** Todos os grupos, para as telas que juntam pessoas e grupos. */
+  options: () => api.get<Items<Group>>('/groups/options'),
   /** Um grupo com as pessoas dele. */
   show: (groupId: string) => api.get<Group>(`/groups/${groupId}`),
   /** Cria um grupo com pelo menos uma pessoa. */

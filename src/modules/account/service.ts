@@ -1,7 +1,7 @@
 /** Chamadas da API da página Minha conta: senha, sessões, 2FA, Google, chaves de API, aparência e foto. */
 
-import { api } from '@/lib/api'
-import type { AccentId, Items, Lang, Theme, UserRef } from '@/lib/types'
+import { api, type Query } from '@/lib/api'
+import type { AccentId, Lang, Page, Theme, UserRef } from '@/lib/types'
 import type { ApiKey, ApiKeyCreated, AuthSession, GoogleStatus, MfaSetup, RecoveryCodes } from '@/modules/account/types'
 
 /** Serviço da conta da pessoa. */
@@ -26,8 +26,8 @@ export const accountService = {
   newRecoveryCodes: (body: { code: string }) => api.post<RecoveryCodes>('/auth/mfa/recovery-codes', body),
   /** Desliga o 2FA. */
   disableMfa: (body: { code: string }) => api.delete('/auth/mfa', body),
-  /** As chaves de API que a pessoa enxerga. */
-  apiKeys: () => api.get<Items<ApiKey>>('/api-keys'),
+  /** Uma página das chaves de API que a pessoa enxerga. */
+  apiKeys: (query?: Query) => api.get<Page<ApiKey>>('/api-keys', query),
   /** Cria uma chave de API; o token volta só nesta resposta. */
   createApiKey: (body: unknown) => api.post<ApiKeyCreated>('/api-keys', body),
   /** Revoga uma chave de API. */

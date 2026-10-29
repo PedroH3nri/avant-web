@@ -15,8 +15,8 @@ import type { Permission, Role } from '@/modules/team/types'
 import { useSession } from '@/stores/session'
 import { teamService } from '@/modules/team/service'
 
-const roles = defineModel<Role[]>('roles', { required: true })
-const props = defineProps<{ permissions: Permission[] }>()
+const props = defineProps<{ roles: Role[]; permissions: Permission[] }>()
+const emit = defineEmits<{ changed: [] }>()
 const session = useSession()
 const canManage = computed(() => session.can('roles.manage'))
 
@@ -40,10 +40,9 @@ function edit(target: Role | null) {
   dialog.value = true
 }
 
-/** Põe na lista o papel criado ou atualizado. */
-function saved(role: Role) {
-  const exists = roles.value.some((existing) => existing.id === role.id)
-  roles.value = exists ? roles.value.map((existing) => (existing.id === role.id ? role : existing)) : [...roles.value, role]
+/** Avisa a tela para recarregar a página dos papéis. */
+function saved() {
+  emit('changed')
 }
 
 /** Apaga o papel escolhido. */
@@ -53,7 +52,7 @@ async function remove() {
   busy.value = true
   try {
     await teamService.deleteRole(current.id)
-    roles.value = roles.value.filter((role) => role.id !== current.id)
+    emit('changed')
     toast(t('role.deleted'))
     deleting.value = null
   } catch (error) {

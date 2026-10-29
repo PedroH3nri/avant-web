@@ -39,6 +39,9 @@ export interface Role {
   member_count: number
 }
 
+/** O papel nas listas inteiras para seletores (`/roles/options`). */
+export type RoleOption = Pick<Role, 'id' | 'name' | 'is_system' | 'site_scope'>
+
 export interface Permission {
   key: string
   group: string
