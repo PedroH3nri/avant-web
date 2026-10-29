@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /** Painel interno: um cliente. Situação, convite de dono, cadastro, dados fiscais, vagas, dono, equipe e atividade. */
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { toast } from 'vue-sonner'
 import { ArrowLeft, Lock, Mail } from 'lucide-vue-next'
@@ -18,12 +18,14 @@ import Dialog from '@/components/ui/Dialog.vue'
 import Field from '@/components/ui/Field.vue'
 import Input from '@/components/ui/Input.vue'
 import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Pagination from '@/components/ui/Pagination.vue'
 import Status from '@/components/ui/Status.vue'
 import { ApiError } from '@/lib/api'
 import { emptyProfile, profileBody, profileInput, profileOk, STAFF_STATUSES, STATUS_TONE } from '@/modules/internal/clients/rules'
 import { taxTypeLabel } from '@/modules/company/fiscal'
 import { auditText, errorText, formatAgo, formatDate, pick, t } from '@/lib/i18n'
 import { td, th } from '@/lib/table'
+import type { Page } from '@/lib/types'
 import type { CompanyStatus } from '@/modules/company/types'
 import type { AuditEntry, ClientDetail, OwnerInvitation } from '@/modules/internal/clients/types'
 import { useSession } from '@/stores/session'
@@ -52,8 +54,9 @@ const ownerOpen = ref(false)
 const ownerPick = ref('')
 const ownerBusy = ref(false)
 const audit = ref<AuditEntry[]>([])
-const cursor = ref<string | null>(null)
-const auditBusy = ref(false)
+const auditPage = ref(1)
+const auditTotal = ref(0)
+const auditPages = ref(0)
 
 /** Mostra o erro num aviso. */
 const fail = (error: unknown) => toast.error(errorText(error instanceof ApiError ? error.code : 'unknown'))
@@ -61,27 +64,23 @@ const fail = (error: unknown) => toast.error(errorText(error instanceof ApiError
 /** Envia a imagem nova do cliente e recarrega a página com a auditoria. */
 async function saveImage(file: File) {
   await clientService.setImage(id.value, file)
-  await load()
+  await reload()
 }
 
 /** Tira a imagem do cliente e recarrega a página com a auditoria. */
 async function removeImage() {
   await clientService.removeImage(id.value)
-  await load()
+  await reload()
 }
 
 /** Carrega o cliente e a auditoria. */
 async function load() {
   loadError.value = null
   try {
-    const [clientDetail, auditPage] = await Promise.all([
-      clientService.show(id.value),
-      clientService.audit(id.value, { limit: 30 }),
-    ])
+    const [clientDetail, found] = await Promise.all([clientService.show(id.value), clientService.audit(id.value, { page: auditPage.value })])
     client.value = clientDetail
     seats.value = String(clientDetail.seat_limit)
-    audit.value = auditPage.items
-    cursor.value = auditPage.next_cursor
+    showAudit(found)
   } catch (error) {
     loadError.value = errorText(error instanceof ApiError ? error.code : 'unknown')
   }
@@ -89,27 +88,38 @@ async function load() {
 onMounted(async () => {
   await load()
   try {
-    const page = await clientService.list()
-    referrers.value = page.items.map((item) => ({ id: item.id, name: item.name }))
+    const list = await clientService.options()
+    referrers.value = list.items.map((item) => ({ id: item.id, name: item.name }))
   } catch {
     // sem a lista, a indicação aparece pelo id
   }
 })
 
-/** Carrega mais entradas da auditoria. */
-async function more() {
-  if (!cursor.value) return
-  auditBusy.value = true
+/** Depois de uma ação: o cliente de novo e a auditoria na página 1, onde a entrada nova aparece. */
+async function reload() {
+  if (auditPage.value === 1) return load()
+  auditPage.value = 1
+  const detail = await clientService.show(id.value)
+  client.value = detail
+  seats.value = String(detail.seat_limit)
+}
+
+/** Guarda a página da auditoria. */
+function showAudit(found: Page<AuditEntry>) {
+  audit.value = found.items
+  auditTotal.value = found.total
+  auditPages.value = found.pages
+}
+
+/** Carrega a página da auditoria escolhida. */
+async function loadAudit() {
   try {
-    const items = await clientService.audit(id.value, { limit: 30, cursor: cursor.value })
-    audit.value = [...audit.value, ...items.items]
-    cursor.value = items.next_cursor
+    showAudit(await clientService.audit(id.value, { page: auditPage.value }))
   } catch (error) {
     fail(error)
-  } finally {
-    auditBusy.value = false
   }
 }
+watch(auditPage, loadAudit)
 
 const seatsNum = computed(() => Number(seats.value))
 const seatsLow = computed(() => !!client.value && seatsNum.value < client.value.seats_used)
@@ -133,13 +143,14 @@ async function save() {
   }
 }
 
-/** Recarrega a auditoria do começo. */
+/** Recarrega a auditoria do começo, onde a ação nova aparece. */
 async function reloadAudit() {
-  const items = await clientService.audit(id.value, { limit: 30 }).catch(() => null)
-  if (items) {
-    audit.value = items.items
-    cursor.value = items.next_cursor
+  if (auditPage.value !== 1) {
+    auditPage.value = 1
+    return
   }
+  const found = await clientService.audit(id.value, { page: 1 }).catch(() => null)
+  if (found) showAudit(found)
 }
 
 /** Troca a situação do cliente pela escolhida no diálogo; as networks acompanham. */
@@ -152,7 +163,7 @@ async function setStatus() {
     await clientService.setStatus(current.id, status)
     nextStatus.value = null
     toast.success(t('int.situationChanged'))
-    await load()
+    await reload()
   } catch (error) {
     fail(error)
   } finally {
@@ -168,7 +179,7 @@ async function sendInvite() {
   try {
     ownerInvite.value = await clientService.inviteOwner(current.id)
     toast.success(t('int.inviteSent', { email: ownerInvite.value.email }))
-    await load()
+    await reload()
   } catch (error) {
     fail(error)
   } finally {
@@ -183,8 +194,8 @@ async function openEdit() {
   profile.value = current.profile ? profileInput(current.profile) : emptyProfile()
   editing.value = true
   try {
-    const page = await clientService.list()
-    referrers.value = page.items.filter((item) => item.id !== current.id).map((item) => ({ id: item.id, name: item.name }))
+    const list = await clientService.options()
+    referrers.value = list.items.filter((item) => item.id !== current.id).map((item) => ({ id: item.id, name: item.name }))
   } catch (error) {
     fail(error)
   }
@@ -235,7 +246,7 @@ async function changeOwner() {
     await clientService.changeOwner(current.id, ownerPick.value)
     ownerOpen.value = false
     toast.success(t('int.ownerChanged'))
-    await load()
+    await reload()
   } catch (error) {
     fail(error)
   } finally {
@@ -422,9 +433,7 @@ function who(auditEntry: AuditEntry) {
             <time class="tnum text-[13px] text-muted-foreground" :datetime="entry.created_at">{{ formatDate(entry.created_at) }}</time>
           </li>
         </ol>
-        <template v-if="cursor" #footer>
-          <Button variant="outline" :loading="auditBusy" @click="more">{{ t('int.more') }}</Button>
-        </template>
+        <Pagination v-if="auditPages > 1" v-model:page="auditPage" :total="auditTotal" :pages="auditPages" class="mt-3" />
       </Card>
     </template>
   </PageBody>

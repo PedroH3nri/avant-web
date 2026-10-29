@@ -7,6 +7,7 @@ import PageBody from '@/components/PageBody.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import DataTable from '@/components/ui/DataTable.vue'
 import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Pagination from '@/components/ui/Pagination.vue'
 import Status from '@/components/ui/Status.vue'
 import TableState from '@/components/ui/TableState.vue'
 import { ApiError } from '@/lib/api'
@@ -33,30 +34,38 @@ const monthChoices = (() => {
 })()
 const month = ref<string>(monthChoices[1] ?? monthChoices[0] ?? '')
 const clients = ref<CompanyResults[] | null>(null)
+const page = ref(1)
+const total = ref(0)
+const pages = ref(0)
 const loadError = ref<string | null>(null)
 let latestLoad = 0
 
 const monthOptions = computed(() => monthChoices.map((value) => ({ value, label: formatMonth(value, locale.value) })))
 const currency = computed(() => clients.value?.[0]?.currency ?? session.displayCurrency)
-const rows = computed(() =>
-  (clients.value ?? []).map((client) => ({ client, month: client.months[0] ?? null })).sort((first, second) => Number(second.month?.result ?? 0) - Number(first.month?.result ?? 0)),
-)
+// A API já devolve do maior resultado para o menor.
+const rows = computed(() => (clients.value ?? []).map((client) => ({ client, month: client.months[0] ?? null })))
 
-/** Carrega o resultado do mês de todas as Empresas cliente. */
+/** Carrega uma página do ranking das Empresas cliente pelo resultado do mês. */
 async function load() {
   const current = ++latestLoad
   loadError.value = null
   clients.value = null
   try {
-    const query = new URLSearchParams({ start: month.value, end: month.value, currency: session.displayCurrency })
-    const page = await resultService.clients(query)
-    if (current === latestLoad) clients.value = page.items
+    const found = await resultService.clients({ start: month.value, end: month.value, currency: session.displayCurrency, page: page.value })
+    if (current !== latestLoad) return
+    clients.value = found.items
+    total.value = found.total
+    pages.value = found.pages
   } catch (error) {
     if (current === latestLoad) loadError.value = errorText(error instanceof ApiError ? error.code : 'unknown')
   }
 }
 onMounted(load)
-watch([month, () => session.displayCurrency], load)
+watch(page, load)
+watch([month, () => session.displayCurrency], () => {
+  if (page.value === 1) void load()
+  else page.value = 1
+})
 
 /** Valor em dinheiro na moeda do resultado. */
 const money = (value: number | string) => formatMetric(Number(value), 'currency', locale.value, false, currency.value)
@@ -104,5 +113,6 @@ const valueClass = (value: number | string, strong = false) =>
         </tr>
       </tbody>
     </DataTable>
+    <Pagination v-if="!loadError" v-model:page="page" :total="total" :pages="pages" />
   </PageBody>
 </template>

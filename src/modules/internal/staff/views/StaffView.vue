@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /** Painel interno: a equipe Groone e o convite com os papéis da Company Groone. */
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
 import { Settings } from 'lucide-vue-next'
 import CompanyIcon from '@/components/CompanyIcon.vue'
@@ -15,6 +15,7 @@ import DataTable from '@/components/ui/DataTable.vue'
 import Field from '@/components/ui/Field.vue'
 import Input from '@/components/ui/Input.vue'
 import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Pagination from '@/components/ui/Pagination.vue'
 import Status from '@/components/ui/Status.vue'
 import TableState from '@/components/ui/TableState.vue'
 import { ApiError } from '@/lib/api'
@@ -27,8 +28,15 @@ import { teamService } from '@/modules/team/service'
 
 const session = useSession()
 const staff = ref<Member[] | null>(null)
+const page = ref(1)
+const total = ref(0)
+const pages = ref(0)
 const roles = ref<RoleOption[]>([])
 const invites = ref<Invitation[]>([])
+const invitePage = ref(1)
+const inviteTotal = ref(0)
+const invitePages = ref(0)
+const canSeeInvites = computed(() => session.can('team.view'))
 const loadError = ref<string | null>(null)
 const canEditGroone = computed(() => session.can('company.edit'))
 const email = ref('')
@@ -36,25 +44,44 @@ const roleId = ref('')
 const busy = ref(false)
 const emailOk = computed(() => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.value.trim()))
 
+/** Carrega a página da equipe Groone. */
+async function loadStaff() {
+  const found = await staffService.list({ page: page.value })
+  staff.value = found.items
+  total.value = found.total
+  pages.value = found.pages
+}
+
+/** Carrega a página dos convites pendentes, para quem vê a equipe. */
+async function loadInvites() {
+  if (!canSeeInvites.value) return
+  const found = await teamService.invitations({ page: invitePage.value })
+  invites.value = found.items
+  inviteTotal.value = found.total
+  invitePages.value = found.pages
+}
+
 /** Carrega a equipe Groone, os papéis internos e os convites. */
 async function load() {
   loadError.value = null
   try {
-    const [staffPage, rolePage, invitationPage] = await Promise.all([
-      staffService.list(),
+    const [rolePage] = await Promise.all([
       session.can('roles.view') ? teamService.roleOptions() : Promise.resolve({ items: [] as RoleOption[], next_cursor: null }),
-      session.can('team.view') ? teamService.invitations() : Promise.resolve({ items: [] as Invitation[], next_cursor: null }),
+      loadStaff(),
+      loadInvites(),
     ])
-    staff.value = staffPage.items.filter((member) => member.status !== 'removed')
     // Os papéis da Company Groone; os predefinidos são dos clientes.
     roles.value = rolePage.items.filter((role) => !role.is_system)
     roleId.value ||= roles.value[0]?.id ?? ''
-    invites.value = invitationPage.items.filter((invitation) => invitation.status === 'pending')
   } catch (error) {
     loadError.value = errorText(error instanceof ApiError ? error.code : 'unknown')
   }
 }
 onMounted(load)
+/** Mostra o erro de uma troca de página num aviso. */
+const pageError = (error: unknown) => toast.error(errorText(error instanceof ApiError ? error.code : 'unknown'))
+watch(page, () => loadStaff().catch(pageError))
+watch(invitePage, () => loadInvites().catch(pageError))
 
 const roleOptions = computed(() => roles.value.map((role) => ({ value: role.id, label: pick(role.name) })))
 /** Nome do papel pelo id. */
@@ -66,7 +93,8 @@ async function invite() {
   busy.value = true
   try {
     const invitation = await staffService.invite(email.value.trim(), roleId.value)
-    invites.value = [invitation, ...invites.value]
+    if (invitePage.value === 1) await loadInvites()
+    else invitePage.value = 1
     toast.success(t('int.staffInvited', { email: invitation.email }))
     email.value = ''
   } catch (error) {
@@ -115,6 +143,7 @@ async function invite() {
           <span class="text-[13px] text-muted-foreground">{{ t('int.expires', { when: formatAgo(invitation.expires_at) }) }}</span>
         </li>
       </ul>
+      <Pagination v-if="invitePages > 1" v-model:page="invitePage" :total="inviteTotal" :pages="invitePages" class="mt-3" />
     </Card>
 
     <DataTable v-if="!loadError" :min="640">
@@ -149,5 +178,6 @@ async function invite() {
         </tr>
       </tbody>
     </DataTable>
+    <Pagination v-if="!loadError" v-model:page="page" :total="total" :pages="pages" />
   </PageBody>
 </template>

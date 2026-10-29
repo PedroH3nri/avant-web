@@ -1,6 +1,7 @@
 <script setup lang="ts">
 /** Painel interno: as pessoas das equipes das Empresas cliente, com busca e filtro por Empresa. */
 import { computed, onMounted, ref, watch } from 'vue'
+import { useDebounceFn } from '@vueuse/core'
 import { Search, Users } from 'lucide-vue-next'
 import LoadError from '@/components/LoadError.vue'
 import PageBody from '@/components/PageBody.vue'
@@ -8,18 +9,24 @@ import PageHeader from '@/components/PageHeader.vue'
 import Avatar from '@/components/ui/Avatar.vue'
 import Badge from '@/components/ui/Badge.vue'
 import DataTable from '@/components/ui/DataTable.vue'
+import Pagination from '@/components/ui/Pagination.vue'
 import Input from '@/components/ui/Input.vue'
 import NativeSelect from '@/components/ui/NativeSelect.vue'
 import Status from '@/components/ui/Status.vue'
 import TableState from '@/components/ui/TableState.vue'
 import { ApiError } from '@/lib/api'
+import { latestCall } from '@/lib/latest'
 import { errorText, formatDate, pick, t } from '@/lib/i18n'
 import { td, th } from '@/lib/table'
-import type { Client, ClientMember } from '@/modules/internal/clients/types'
+import type { ClientMember, ClientOption } from '@/modules/internal/clients/types'
 import { clientService } from '@/modules/internal/clients/service'
 
+const SEARCH_DELAY_MS = 300
 const members = ref<ClientMember[] | null>(null)
-const clients = ref<Client[]>([])
+const page = ref(1)
+const total = ref(0)
+const pages = ref(0)
+const clients = ref<ClientOption[]>([])
 const loadError = ref<string | null>(null)
 const searchText = ref('')
 const clientId = ref('')
@@ -29,14 +36,16 @@ const clientOptions = computed(() => [
   ...clients.value.map((client) => ({ value: client.id, label: client.name })),
 ])
 
+const teamsCall = latestCall()
 /** Busca as pessoas das equipes com o filtro e a busca atuais. */
 async function load() {
   loadError.value = null
-  const params: Record<string, string> = {}
-  if (searchText.value.trim()) params.q = searchText.value.trim()
-  if (clientId.value) params.company_id = clientId.value
   try {
-    members.value = (await clientService.teams(params)).items
+    const found = await teamsCall(() => clientService.teams({ page: page.value, q: searchText.value.trim() || undefined, company_id: clientId.value || undefined }))
+    if (!found) return
+    members.value = found.items
+    total.value = found.total
+    pages.value = found.pages
   } catch (error) {
     loadError.value = errorText(error instanceof ApiError ? error.code : 'unknown')
   }
@@ -45,7 +54,7 @@ async function load() {
 /** Carrega as Empresas cliente do filtro e a primeira página da lista. */
 async function start() {
   try {
-    clients.value = (await clientService.list()).items
+    clients.value = (await clientService.options()).items
   } catch (error) {
     loadError.value = errorText(error instanceof ApiError ? error.code : 'unknown')
     return
@@ -54,12 +63,15 @@ async function start() {
 }
 onMounted(start)
 
-let timer: ReturnType<typeof setTimeout> | undefined
-watch(searchText, () => {
-  clearTimeout(timer)
-  timer = setTimeout(load, 300)
-})
-watch(clientId, load)
+/** Volta para a página 1 com o filtro ou a busca nova, ou recarrega se já estiver nela. */
+function firstPage() {
+  if (page.value === 1) void load()
+  else page.value = 1
+}
+const searchMembers = useDebounceFn(firstPage, SEARCH_DELAY_MS)
+watch(searchText, () => void searchMembers())
+watch(clientId, firstPage)
+watch(page, load)
 
 /** Texto da situação do membro. */
 const statusText = (member: ClientMember) => (member.status === 'active' ? t('team.active') : t('team.suspended'))
@@ -112,5 +124,6 @@ const statusText = (member: ClientMember) => (member.status === 'active' ? t('te
         </tr>
       </tbody>
     </DataTable>
+    <Pagination v-if="!loadError" v-model:page="page" :total="total" :pages="pages" />
   </PageBody>
 </template>

@@ -19,6 +19,7 @@ import MenuContent from '@/components/ui/MenuContent.vue'
 import MenuItem from '@/components/ui/MenuItem.vue'
 import TableState from '@/components/ui/TableState.vue'
 import { ApiError } from '@/lib/api'
+import { latestCall } from '@/lib/latest'
 import { errorText, formatDate, lang, t, type Key } from '@/lib/i18n'
 import { td, th } from '@/lib/table'
 import { cn } from '@/lib/utils'
@@ -55,14 +56,16 @@ const tabs: { key: Tab; label: Key }[] = [
 /** Quantos itens cada aba tem. */
 const counts = computed<Record<Tab, number>>(() => ({ ...tabCounts.value, templates: templates.value?.length ?? 0 }))
 
+const reportsCall = latestCall()
 /** Carrega a página dos relatórios da aba com a busca; se ela ficou vazia, volta uma. */
 async function loadReports() {
   try {
-    const found = await reportService.list({
+    const found = await reportsCall(() => reportService.list({
       page: page.value,
       scope: tab.value === 'mine' || tab.value === 'shared' ? tab.value : undefined,
       q: search.value.trim() || undefined,
-    })
+    }))
+    if (!found) return
     if (found.items.length === 0 && page.value > 1) {
       page.value = Math.max(1, found.pages)
       return

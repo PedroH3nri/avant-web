@@ -1,6 +1,7 @@
 <script setup lang="ts">
 /** Painel interno: buscar pessoas, desativar ou reativar a conta e zerar o 2FA. */
 import { computed, ref, watch } from 'vue'
+import { useDebounceFn } from '@vueuse/core'
 import { toast } from 'vue-sonner'
 import { DropdownMenuRoot, DropdownMenuTrigger } from 'reka-ui'
 import { ArrowLeft, MoreHorizontal, Search } from 'lucide-vue-next'
@@ -11,12 +12,14 @@ import PageHeader from '@/components/PageHeader.vue'
 import Badge from '@/components/ui/Badge.vue'
 import Button from '@/components/ui/Button.vue'
 import DataTable from '@/components/ui/DataTable.vue'
+import Pagination from '@/components/ui/Pagination.vue'
 import Input from '@/components/ui/Input.vue'
 import MenuContent from '@/components/ui/MenuContent.vue'
 import MenuItem from '@/components/ui/MenuItem.vue'
 import Status from '@/components/ui/Status.vue'
 import TableState from '@/components/ui/TableState.vue'
 import { ApiError } from '@/lib/api'
+import { latestCall } from '@/lib/latest'
 import { errorText, formatAgo, formatDate, t } from '@/lib/i18n'
 import { td, th } from '@/lib/table'
 import type { Person } from '@/modules/internal/people/types'
@@ -27,7 +30,11 @@ type Action = 'disable' | 'reset-mfa'
 
 const session = useSession()
 const searchText = ref('')
+const SEARCH_DELAY_MS = 300
 const people = ref<Person[] | null>(null)
+const page = ref(1)
+const total = ref(0)
+const pages = ref(0)
 const loadError = ref<string | null>(null)
 const target = ref<{ person: Person; action: Action } | null>(null)
 const busy = ref(false)
@@ -41,25 +48,35 @@ const open = computed({
 /** Mostra o erro num aviso. */
 const fail = (error: unknown) => toast.error(errorText(error instanceof ApiError ? error.code : 'unknown'))
 
-/** Busca pessoas a partir de 3 caracteres. */
+const peopleCall = latestCall()
+/** Busca a página das pessoas a partir de 3 caracteres. */
 async function search() {
   loadError.value = null
   const term = searchText.value.trim()
   if (term.length < 3) {
     people.value = null
+    total.value = 0
+    pages.value = 0
     return
   }
   try {
-    people.value = (await peopleService.search(term)).items
+    const found = await peopleCall(() => peopleService.search(term, page.value))
+    if (!found) return
+    people.value = found.items
+    total.value = found.total
+    pages.value = found.pages
   } catch (error) {
     loadError.value = errorText(error instanceof ApiError ? error.code : 'unknown')
   }
 }
-let timer: ReturnType<typeof setTimeout> | undefined
-watch(searchText, () => {
-  clearTimeout(timer)
-  timer = setTimeout(search, 300)
-})
+/** Volta para a página 1 com a busca nova, ou busca de novo se já estiver nela. */
+function firstPage() {
+  if (page.value === 1) void search()
+  else page.value = 1
+}
+const searchPeople = useDebounceFn(firstPage, SEARCH_DELAY_MS)
+watch(searchText, () => void searchPeople())
+watch(page, search)
 
 /** Atualiza uma pessoa na lista. */
 function update(userId: string, patch: Partial<Person>) {
@@ -167,6 +184,7 @@ const isMe = (person: Person) => person.user.id === session.me?.user.id
         </tr>
       </tbody>
     </DataTable>
+    <Pagination v-if="people" v-model:page="page" :total="total" :pages="pages" />
   </PageBody>
   <ConfirmDialog
     v-model:open="open"

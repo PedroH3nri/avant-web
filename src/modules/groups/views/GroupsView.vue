@@ -64,7 +64,19 @@ async function load() {
 }
 onMounted(load)
 watch(() => session.me?.active_company_id, load)
-watch(page, load)
+
+/** Troca só a página dos grupos; as listas inteiras já estão carregadas. */
+async function loadGroups() {
+  try {
+    const groupPage = await groupService.list({ page: page.value })
+    groups.value = groupPage.items
+    total.value = groupPage.total
+    pages.value = groupPage.pages
+  } catch (error) {
+    loadError.value = errorText(error instanceof ApiError ? error.code : 'unknown')
+  }
+}
+watch(page, loadGroups)
 
 /** Nome da pessoa pelo id do vínculo. */
 const nameOf = (membershipId: string) => members.value.find((member) => member.id === membershipId)?.user.name ?? '?'

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 /** Painel interno: clientes, cadastro de cliente novo (sem e-mail) e convites de dono pendentes. */
 import { computed, onMounted, ref, watch } from 'vue'
+import { useDebounceFn } from '@vueuse/core'
 import { toast } from 'vue-sonner'
 import { useRouter } from 'vue-router'
 import { Building2, Search, UserSearch } from 'lucide-vue-next'
@@ -13,29 +14,40 @@ import CompanyIcon from '@/components/CompanyIcon.vue'
 import Button from '@/components/ui/Button.vue'
 import Card from '@/components/ui/Card.vue'
 import DataTable from '@/components/ui/DataTable.vue'
+import Pagination from '@/components/ui/Pagination.vue'
 import Field from '@/components/ui/Field.vue'
 import Input from '@/components/ui/Input.vue'
 import SeatBar from '@/components/ui/SeatBar.vue'
 import Status from '@/components/ui/Status.vue'
 import TableState from '@/components/ui/TableState.vue'
 import { ApiError } from '@/lib/api'
+import { latestCall } from '@/lib/latest'
 import { emptyProfile, profileBody, profileOk, STATUS_TONE } from '@/modules/internal/clients/rules'
 import { errorText, formatAgo, t } from '@/lib/i18n'
 import { td, th } from '@/lib/table'
 import type { CompanyStatus } from '@/modules/company/types'
-import type { Client, OwnerInvitation } from '@/modules/internal/clients/types'
+import type { Client, ClientOption, OwnerInvitation } from '@/modules/internal/clients/types'
 import { cn } from '@/lib/utils'
 import { useSession } from '@/stores/session'
 import { clientService } from '@/modules/internal/clients/service'
 
 type Tab = 'all' | CompanyStatus
 
+const SEARCH_DELAY_MS = 300
+
 const session = useSession()
 const canManage = computed(() => session.can('internal.clients.manage'))
 const canSearchPeople = computed(() => session.can('internal.users.manage'))
 const router = useRouter()
 const clients = ref<Client[] | null>(null)
+const page = ref(1)
+const total = ref(0)
+const pages = ref(0)
+const options = ref<ClientOption[]>([])
 const invites = ref<OwnerInvitation[]>([])
+const invitePage = ref(1)
+const inviteTotal = ref(0)
+const invitePages = ref(0)
 const loadError = ref<string | null>(null)
 const searchText = ref('')
 const tab = ref<Tab>('all')
@@ -47,8 +59,8 @@ const profile = ref(emptyProfile())
 const creating = ref(false)
 const seatsOk = computed(() => Number.isInteger(Number(seats.value)) && Number(seats.value) >= 1 && Number(seats.value) <= 10000)
 const formOk = computed(() => name.value.trim().length >= 2 && seatsOk.value && profileOk(profile.value))
-const referrers = computed(() => (clients.value ?? []).map((client) => ({ id: client.id, name: client.name })))
-const clientNames = computed(() => new Map((clients.value ?? []).map((client) => [client.id, client.name])))
+const referrers = computed(() => options.value.map((client) => ({ id: client.id, name: client.name })))
+const clientNames = computed(() => new Map(options.value.map((client) => [client.id, client.name])))
 
 const canceling = ref<OwnerInvitation | null>(null)
 const cancelOpen = computed({
@@ -62,35 +74,71 @@ const busy = ref(false)
 /** Mostra o erro num aviso. */
 const fail = (error: unknown) => toast.error(errorText(error instanceof ApiError ? error.code : 'unknown'))
 
-/** Carrega os clientes e os convites de dono. */
-async function load() {
-  loadError.value = null
+const clientsCall = latestCall()
+/** Carrega a página dos clientes com a aba e a busca. */
+async function loadClients() {
   try {
-    const [clientPage, invitationPage] = await Promise.all([
-      clientService.list({ q: searchText.value.trim() || undefined }),
-      clientService.ownerInvitations(),
-    ])
-    clients.value = clientPage.items
-    invites.value = invitationPage.items.filter((invitation) => invitation.status === 'pending')
+    const found = await clientsCall(() => clientService.list({
+      page: page.value,
+      q: searchText.value.trim() || undefined,
+      status: tab.value === 'all' ? undefined : tab.value,
+    }))
+    if (!found) return
+    clients.value = found.items
+    total.value = found.total
+    pages.value = found.pages
   } catch (error) {
     loadError.value = errorText(error instanceof ApiError ? error.code : 'unknown')
   }
 }
+
+const invitesCall = latestCall()
+/** Carrega a página dos convites de dono; se ela ficou vazia, volta uma. */
+async function loadInvites() {
+  try {
+    const found = await invitesCall(() => clientService.ownerInvitations({ page: invitePage.value }))
+    if (!found) return
+    if (found.items.length === 0 && invitePage.value > 1) {
+      invitePage.value = Math.max(1, found.pages)
+      return
+    }
+    invites.value = found.items
+    inviteTotal.value = found.total
+    invitePages.value = found.pages
+  } catch (error) {
+    fail(error)
+  }
+}
+
+/** Carrega os clientes, a lista leve (abas e nomes) e os convites de dono. */
+async function load() {
+  loadError.value = null
+  try {
+    options.value = (await clientService.options()).items
+  } catch (error) {
+    loadError.value = errorText(error instanceof ApiError ? error.code : 'unknown')
+    return
+  }
+  await Promise.all([loadClients(), loadInvites()])
+}
 onMounted(load)
 
-// A busca é no servidor; espera a pessoa parar de digitar.
-let timer: ReturnType<typeof setTimeout> | undefined
-watch(searchText, () => {
-  clearTimeout(timer)
-  timer = setTimeout(load, 300)
-})
+/** Volta para a página 1 com a aba ou a busca nova, ou recarrega se já estiver nela. */
+function firstPage() {
+  if (page.value === 1) void loadClients()
+  else page.value = 1
+}
+const searchClients = useDebounceFn(firstPage, SEARCH_DELAY_MS)
+watch(searchText, () => void searchClients())
+watch(tab, firstPage)
+watch(page, loadClients)
+watch(invitePage, loadInvites)
 
 const tabs: Tab[] = ['all', 'active', 'pending', 'inactive', 'banned']
 const counts = computed(() => {
-  const list = clients.value ?? []
+  const list = options.value
   return Object.fromEntries(tabs.map((option) => [option, option === 'all' ? list.length : list.filter((client) => client.status === option).length])) as Record<Tab, number>
 })
-const shown = computed(() => (clients.value ?? []).filter((client) => tab.value === 'all' || client.status === tab.value))
 /** Classes da aba, ativa ou não. */
 const tabClass = (on: boolean) =>
   cn(
@@ -112,7 +160,6 @@ async function create() {
   creating.value = true
   try {
     const client = await clientService.create({ name: name.value.trim(), seat_limit: Number(seats.value), profile: profileBody(profile.value) })
-    clients.value = [client, ...(clients.value ?? [])]
     toast.success(t('int.clientCreated', { name: client.name }))
     closeForm()
     await router.push(`/interno/clientes/${client.id}`)
@@ -141,7 +188,7 @@ async function cancelInvite() {
   busy.value = true
   try {
     await clientService.cancelOwnerInvitation(invitation.id)
-    invites.value = invites.value.filter((invite) => invite.id !== invitation.id)
+    await loadInvites()
     canceling.value = null
     toast.success(t('int.canceled'))
   } catch (error) {
@@ -210,6 +257,7 @@ const referrerName = (client: Client) => (client.profile?.referred_by_company_id
           </div>
         </li>
       </ul>
+      <Pagination v-if="invitePages > 1" v-model:page="invitePage" :total="inviteTotal" :pages="invitePages" class="mt-3" />
     </Card>
 
     <template v-if="clients">
@@ -238,15 +286,15 @@ const referrerName = (client: Client) => (client.profile?.referred_by_company_id
         <tbody>
           <TableState
             :cols="5"
-            :empty="!shown.length"
+            :empty="!clients.length"
             :icon="Building2"
-            :title="clients.length ? t('int.none') : t('int.empty')"
-            :desc="clients.length ? t('int.noneSub') : t('int.emptySub')"
+            :title="options.length ? t('int.none') : t('int.empty')"
+            :desc="options.length ? t('int.noneSub') : t('int.emptySub')"
           >
-            <Button v-if="clients.length" variant="outline" size="sm" @click="clearFilters">{{ t('int.clear') }}</Button>
+            <Button v-if="options.length" variant="outline" size="sm" @click="clearFilters">{{ t('int.clear') }}</Button>
             <Button v-else-if="canManage && !adding" size="sm" @click="adding = true">{{ t('int.new') }}</Button>
           </TableState>
-          <tr v-for="client in shown" :key="client.id" class="hover:bg-muted">
+          <tr v-for="client in clients" :key="client.id" class="hover:bg-muted">
             <td :class="td">
               <div class="flex items-center gap-3">
                 <CompanyIcon :name="client.name" :image-url="client.image_url" :size="28" />
@@ -289,6 +337,7 @@ const referrerName = (client: Client) => (client.profile?.referred_by_company_id
           </tr>
         </tbody>
       </DataTable>
+      <Pagination v-model:page="page" :total="total" :pages="pages" />
     </template>
   </PageBody>
   <ConfirmDialog

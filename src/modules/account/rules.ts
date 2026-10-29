@@ -35,13 +35,6 @@ export function keyState(key: Pick<ApiKey, 'revoked_at' | 'expires_at'>, now = D
   return 'active'
 }
 
-/** Ativas primeiro, depois as mais novas. */
-export function sortKeys(keys: ApiKey[], now = Date.now()): ApiKey[] {
-  /** Põe as chaves ativas na frente. */
-  const rank = (apiKey: ApiKey) => (keyState(apiKey, now) === 'active' ? 0 : 1)
-  return [...keys].sort((first, second) => rank(first) - rank(second) || second.created_at.localeCompare(first.created_at))
-}
-
 /** Arquivo de texto com os códigos de recuperação, para a pessoa guardar. */
 export function recoveryFile(codes: string[], title: string): string {
   return [title, '', ...codes, ''].join('\n')
