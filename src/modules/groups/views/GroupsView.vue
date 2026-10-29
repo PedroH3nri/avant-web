@@ -40,7 +40,7 @@ const loose = computed(() => freeMembers(groups.value, members.value))
 async function load() {
   loadError.value = null
   try {
-    const [groupPage, memberPage, invitationPage] = await Promise.all([groupService.list(), teamService.members(), teamService.invitations()])
+    const [groupPage, memberPage, invitationPage] = await Promise.all([groupService.list(), teamService.memberOptions(), teamService.invitations()])
     groups.value = groupPage.items
     members.value = memberPage.items.filter((member) => member.status !== 'removed')
     pendingCount.value = invitationPage.items.filter((invitation) => invitation.status === 'pending').length

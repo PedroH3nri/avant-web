@@ -70,7 +70,7 @@ async function load() {
   }
   if (!session.can('team.view')) return
   try {
-    const members = await teamService.members()
+    const members = await teamService.memberOptions()
     owners.value = Object.fromEntries(members.items.map((member) => [member.user.id, member.user.name]))
   } catch {
     owners.value = {}
