@@ -17,6 +17,15 @@ export interface Items<T> {
   next_cursor: string | null
 }
 
+/** Uma página de uma listagem (10 itens), igual ao ``PageOut`` do avant-api. */
+export interface Page<T> {
+  items: T[]
+  total: number
+  page: number
+  pages: number
+  page_size: number
+}
+
 export interface UserRef {
   id: string
   email: string

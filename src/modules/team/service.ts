@@ -1,14 +1,16 @@
 /** Chamadas da API da equipe: membros, convites, papéis e permissões. */
 
 import { api, type Query } from '@/lib/api'
-import type { Items } from '@/lib/types'
+import type { Items, Page } from '@/lib/types'
 import type { Site } from '@/modules/sites/types'
 import type { Invitation, Member, MemberDetail, Permission, Role } from '@/modules/team/types'
 
 /** Serviço da equipe da Empresa ativa. */
 export const teamService = {
   /** Os membros da Empresa ativa. */
-  members: (query?: Query) => api.get<Items<Member>>('/members', query),
+  members: (query?: Query) => api.get<Page<Member>>('/members', query),
+  /** A equipe inteira (sem os removidos), para seletores e telas que juntam pessoas. */
+  memberOptions: () => api.get<Items<Member>>('/members/options'),
   /** Um membro com papel e permissões diretas. */
   member: (membershipId: string) => api.get<MemberDetail>(`/members/${membershipId}`),
   /** Muda o papel ou a situação de um membro. */
