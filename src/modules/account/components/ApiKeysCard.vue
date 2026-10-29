@@ -3,7 +3,7 @@
  * Chaves de API da Empresa ativa. Quem tem api_keys.manage cria e vê as de todos; sem a
  * permissão, a lista traz só as próprias (de quando a pessoa tinha a permissão).
  */
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
 import { Plus } from 'lucide-vue-next'
 import ApiKeyDialog from '@/modules/account/components/ApiKeyDialog.vue'
@@ -12,6 +12,7 @@ import Button from '@/components/ui/Button.vue'
 import Card from '@/components/ui/Card.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import DataTable from '@/components/ui/DataTable.vue'
+import Pagination from '@/components/ui/Pagination.vue'
 import LoadError from '@/components/LoadError.vue'
 import { keyState, sortKeys, type KeyState } from '@/modules/account/rules'
 import { ApiError } from '@/lib/api'
@@ -24,6 +25,9 @@ import { accountService } from '@/modules/account/service'
 const session = useSession()
 const canManage = computed(() => session.can('api_keys.manage'))
 const keys = ref<ApiKey[] | null>(null)
+const page = ref(1)
+const total = ref(0)
+const pages = ref(0)
 const loadError = ref<string | null>(null)
 const creating = ref(false)
 const revoking = ref<ApiKey | null>(null)
@@ -41,20 +45,29 @@ const tones: Record<KeyState, 'neutral' | 'ochre' | 'bad'> = {
   revoked: 'bad',
 }
 
-/** Carrega as chaves de API, as ativas primeiro. */
+/** Carrega uma página das chaves de API, as ativas primeiro; se ela ficou vazia, volta uma. */
 async function load() {
   loadError.value = null
   try {
-    keys.value = sortKeys((await accountService.apiKeys()).items)
+    const found = await accountService.apiKeys({ page: page.value })
+    if (found.items.length === 0 && page.value > 1) {
+      page.value = Math.max(1, found.pages)
+      return
+    }
+    keys.value = sortKeys(found.items)
+    total.value = found.total
+    pages.value = found.pages
   } catch (error) {
     loadError.value = errorText(error instanceof ApiError ? error.code : 'unknown')
   }
 }
 onMounted(load)
+watch(page, load)
 
-/** Põe a chave recém-criada na lista. */
-function created(key: ApiKey) {
-  keys.value = sortKeys([key, ...(keys.value ?? [])])
+/** Volta para a primeira página, onde a chave recém-criada aparece. */
+function created() {
+  if (page.value === 1) void load()
+  else page.value = 1
 }
 
 /** Revoga a chave escolhida. */
@@ -138,6 +151,7 @@ const permsText = (count: number) => (count === 1 ? t('key.perm1') : t('key.perm
         </tr>
       </tbody>
     </DataTable>
+    <Pagination v-if="keys && keys.length" v-model:page="page" :total="total" :pages="pages" class="mt-3" />
     <template v-if="canManage" #footer>
       <Button @click="creating = true"><Plus />{{ t('key.create') }}</Button>
     </template>

@@ -15,7 +15,8 @@ import TableState from '@/components/ui/TableState.vue'
 import { ApiError } from '@/lib/api'
 import { errorText, pick, t } from '@/lib/i18n'
 import { td, th } from '@/lib/table'
-import type { Member, Permission, Role } from '@/modules/team/types'
+import type { Page } from '@/lib/types'
+import type { Member, Permission, Role, RoleOption } from '@/modules/team/types'
 import { useSession } from '@/stores/session'
 import { teamService } from '@/modules/team/service'
 
@@ -27,6 +28,10 @@ const page = ref(1)
 const total = ref(0)
 const pages = ref(0)
 const roles = ref<Role[]>([])
+const rolePage = ref(1)
+const roleTotal = ref(0)
+const rolePages = ref(0)
+const options = ref<RoleOption[]>([])
 const permissions = ref<Permission[]>([])
 const loaded = ref(false)
 const loadError = ref<string | null>(null)
@@ -39,12 +44,14 @@ const canManage = computed(() => session.can('team.manage'))
 async function load() {
   loadError.value = null
   try {
-    const [rolePage, permissionPage, memberPage] = await Promise.all([
-      teamService.roles(),
+    const [roleList, optionList, permissionPage, memberPage] = await Promise.all([
+      teamService.roles({ page: rolePage.value }),
+      teamService.roleOptions(),
       teamService.permissions(),
       canTeam.value ? teamService.members({ page: page.value }) : Promise.resolve({ items: [] as Member[], total: 0, page: 1, pages: 0, page_size: 10 }),
     ])
-    roles.value = rolePage.items
+    showRoles(roleList)
+    options.value = optionList.items
     permissions.value = permissionPage.items
     members.value = memberPage.items
     total.value = memberPage.total
@@ -58,7 +65,26 @@ onMounted(load)
 watch(() => session.me?.active_company_id, load)
 watch(page, load)
 
-const roleOptions = computed(() => roles.value.map((role) => ({ value: role.id, label: pick(role.name) })))
+/** Guarda a página dos papéis. */
+function showRoles(found: Page<Role>) {
+  roles.value = found.items
+  roleTotal.value = found.total
+  rolePages.value = found.pages
+}
+/** Recarrega a página dos papéis e a lista do seletor; se a página ficou vazia, volta uma. */
+async function loadRoles() {
+  try {
+    const [found, optionList] = await Promise.all([teamService.roles({ page: rolePage.value }), teamService.roleOptions()])
+    options.value = optionList.items
+    if (found.items.length === 0 && rolePage.value > 1) rolePage.value = Math.max(1, found.pages)
+    else showRoles(found)
+  } catch (error) {
+    toast.error(errorText(error instanceof ApiError ? error.code : 'unknown'))
+  }
+}
+watch(rolePage, () => void loadRoles())
+
+const roleOptions = computed(() => options.value.map((role) => ({ value: role.id, label: pick(role.name) })))
 /** Diz se o membro é a própria pessoa. */
 const isMe = (member: Member) => member.user.id === session.me?.user.id
 /** Diz se o papel do membro pode ser trocado por quem está vendo. */
@@ -71,8 +97,7 @@ async function assign(member: Member, roleId: string) {
   try {
     const updated = await teamService.updateMember(member.id, { role_id: roleId })
     members.value = members.value.map((existing) => (existing.id === member.id ? { ...existing, ...updated } : existing))
-    // Contagem de pessoas por papel.
-    roles.value = (await teamService.roles()).items
+    await loadRoles()
     toast.success(t('roles.assigned', { name: member.user.name }))
   } catch (error) {
     toast.error(errorText(error instanceof ApiError ? error.code : 'unknown'))
@@ -145,7 +170,8 @@ async function assign(member: Member, roleId: string) {
           <h2 id="roles-title" class="text-[16px] font-semibold tracking-tight">{{ t('team.roles') }}</h2>
           <p class="mt-1 text-[14px] text-muted-foreground">{{ t('roles.rolesDesc') }}</p>
         </div>
-        <RolesPanel v-model:roles="roles" :permissions="permissions" />
+        <RolesPanel :roles="roles" :permissions="permissions" @changed="loadRoles" />
+        <Pagination v-model:page="rolePage" :total="roleTotal" :pages="rolePages" />
       </section>
     </template>
   </PageBody>
