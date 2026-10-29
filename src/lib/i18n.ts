@@ -1896,7 +1896,6 @@ const dict = {
   'int.audit': ['Atividade', 'Activity', 'Actividad'],
   'int.auditDesc': ['O que mudou na Empresa, de quem é da equipe dela e da Groone.', 'What changed in the company, by its team and by Groone.', 'Qué cambió en la empresa, por su equipo y por Groone.'],
   'int.auditEmpty': ['Nada registrado ainda.', 'Nothing recorded yet.', 'Nada registrado aún.'],
-  'int.more': ['Carregar mais', 'Load more', 'Cargar más'],
   'int.by.member': ['membro', 'member', 'miembro'],
   'int.by.staff': ['Groone', 'Groone', 'Groone'],
   'int.by.api_key': ['chave de API', 'API key', 'clave de API'],

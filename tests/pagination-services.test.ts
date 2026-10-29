@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { api } from '@/lib/api'
 import { accountService } from '@/modules/account/service'
 import { costService } from '@/modules/costs/service'
+import { clientService } from '@/modules/internal/clients/service'
 import { groupService } from '@/modules/groups/service'
 import { networkService } from '@/modules/networks/service'
 import { reportService } from '@/modules/reports/service'
@@ -73,6 +74,26 @@ describe('custos e relatórios em páginas', () => {
     expect(get.mock.calls.map((call) => [call[0], call[1]])).toEqual([
       ['/costs', { page: 2 }],
       ['/reports', { page: 3, scope: 'mine', q: 'receita' }],
+    ])
+  })
+})
+
+describe('clientes do painel interno em páginas', () => {
+  afterEach(() => vi.restoreAllMocks())
+
+  it('pede a página dos clientes, equipes, convites de dono e auditoria', async () => {
+    const get = vi.spyOn(api, 'get').mockResolvedValue({ items: [], total: 0, page: 1, pages: 0, page_size: 10 })
+    await clientService.list({ page: 2, status: 'active' })
+    await clientService.teams({ page: 3 })
+    await clientService.ownerInvitations({ page: 4 })
+    await clientService.audit('c1', { page: 5 })
+    await clientService.options()
+    expect(get.mock.calls.map((call) => [call[0], call[1]])).toEqual([
+      ['/internal/clients', { page: 2, status: 'active' }],
+      ['/internal/teams', { page: 3 }],
+      ['/internal/owner-invitations', { page: 4 }],
+      ['/internal/clients/c1/audit', { page: 5 }],
+      ['/internal/clients/options', undefined],
     ])
   })
 })
