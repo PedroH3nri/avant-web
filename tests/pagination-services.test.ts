@@ -2,6 +2,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { api } from '@/lib/api'
 import { accountService } from '@/modules/account/service'
 import { groupService } from '@/modules/groups/service'
+import { networkService } from '@/modules/networks/service'
+import { siteService } from '@/modules/sites/service'
 import { teamService } from '@/modules/team/service'
 
 describe('listas da equipe em páginas', () => {
@@ -31,5 +33,30 @@ describe('listas da equipe em páginas', () => {
     await teamService.roleOptions()
     await groupService.options()
     expect(get.mock.calls.map((call) => call[0])).toEqual(['/roles/options', '/groups/options'])
+  })
+})
+
+describe('listas do inventário em páginas', () => {
+  afterEach(() => vi.restoreAllMocks())
+
+  it('pede a página das networks, execuções, sites e ad units sem site', async () => {
+    const get = vi.spyOn(api, 'get').mockResolvedValue({ items: [], total: 0, page: 1, pages: 0, page_size: 10 })
+    await networkService.list({ page: 2 })
+    await networkService.syncRuns('n1', { page: 3 })
+    await siteService.list({ page: 4, q: 'blog' })
+    await siteService.unlinked({ page: 5 })
+    expect(get.mock.calls.map((call) => [call[0], call[1]])).toEqual([
+      ['/networks', { page: 2 }],
+      ['/networks/n1/sync-runs', { page: 3 }],
+      ['/sites', { page: 4, q: 'blog' }],
+      ['/ad-units/unlinked', { page: 5 }],
+    ])
+  })
+
+  it('usa as listas inteiras de networks e sites para seletores', async () => {
+    const get = vi.spyOn(api, 'get').mockResolvedValue({ items: [] })
+    await networkService.options()
+    await siteService.options()
+    expect(get.mock.calls.map((call) => call[0])).toEqual(['/networks/options', '/sites/options'])
   })
 })

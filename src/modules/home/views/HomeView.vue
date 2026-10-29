@@ -48,7 +48,7 @@ async function load() {
   try {
     const [companyDetail, networkPage] = await Promise.all([
       companyService.show(),
-      session.can('network.view') ? networkService.list() : Promise.resolve(null),
+      session.can('network.view') ? networkService.options() : Promise.resolve(null),
     ])
     company.value = companyDetail
     networks.value = networkPage?.items ?? null

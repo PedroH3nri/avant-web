@@ -127,8 +127,8 @@ async function load() {
 async function loadExtras() {
   const [roleList, siteList, networkList] = await Promise.allSettled([
     session.can('roles.view') ? teamService.roleOptions() : Promise.reject(new Error('sem permissão')),
-    session.can('sites.view') ? siteService.list() : Promise.reject(new Error('sem permissão')),
-    session.can('network.view') ? networkService.list() : Promise.reject(new Error('sem permissão')),
+    session.can('sites.view') ? siteService.options() : Promise.reject(new Error('sem permissão')),
+    session.can('network.view') ? networkService.options() : Promise.reject(new Error('sem permissão')),
   ])
   roles.value = roleList.status === 'fulfilled' ? roleList.value.items.map((role) => ({ id: role.id, name: pick(role.name) })) : null
   options.value = {

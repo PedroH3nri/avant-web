@@ -47,7 +47,7 @@ async function load() {
   try {
     site.value = await siteService.show(id)
     if (canAssign.value) {
-      const [memberPage, sitePage] = await Promise.all([siteService.members(id), siteService.list()])
+      const [memberPage, sitePage] = await Promise.all([siteService.members(id), siteService.options()])
       people.value = memberPage.items
       others.value = sitePage.items.filter((other) => other.id !== id && other.network_id === site.value?.network_id && other.status === 'active')
     }
