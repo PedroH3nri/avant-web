@@ -18,6 +18,7 @@ import MenuItem from '@/components/ui/MenuItem.vue'
 import Status from '@/components/ui/Status.vue'
 import TableState from '@/components/ui/TableState.vue'
 import { ApiError } from '@/lib/api'
+import { latestCall } from '@/lib/latest'
 import { onEvent } from '@/lib/events'
 import { errorText, formatAgo, formatDate, t } from '@/lib/i18n'
 import { networkName, statusTone } from '@/modules/networks/rules'
@@ -90,10 +91,12 @@ const historyPage = ref(1)
 const historyTotal = ref(0)
 const historyPages = ref(0)
 const historyOpen = computed({ get: () => history.value !== null, set: (value) => !value && (history.value = null) })
+const historyCall = latestCall()
 /** Carrega uma página do histórico de sincronizações da network. */
 async function loadHistory(network: Network) {
   try {
-    const found = await networkService.syncRuns(network.id, { page: historyPage.value })
+    const found = await historyCall(() => networkService.syncRuns(network.id, { page: historyPage.value }))
+    if (!found) return
     if (history.value?.network.id !== network.id) return
     history.value = { network: network, runs: found.items }
     historyTotal.value = found.total

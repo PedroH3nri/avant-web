@@ -27,6 +27,7 @@ import SeatBar from '@/components/ui/SeatBar.vue'
 import Status from '@/components/ui/Status.vue'
 import TableState from '@/components/ui/TableState.vue'
 import { ApiError } from '@/lib/api'
+import { latestCall } from '@/lib/latest'
 import { errorText, formatAgo, formatDate, pick, t } from '@/lib/i18n'
 import { td, th } from '@/lib/table'
 import type { Page } from '@/lib/types'
@@ -100,10 +101,12 @@ const isMe = (member: Member) => member.user.id === session.me?.user.id
 /** Mostra o erro num aviso. */
 const errorToast = (error: unknown) => toast.error(errorText(error instanceof ApiError ? error.code : 'unknown'))
 
+const membersCall = latestCall()
 /** Recarrega só a página da equipe (troca de página ou de busca). */
 async function loadMembers() {
   try {
-    const memberPage = await teamService.members({ page: page.value, q: filter.value.trim() || undefined })
+    const memberPage = await membersCall(() => teamService.members({ page: page.value, q: filter.value.trim() || undefined }))
+    if (!memberPage) return
     members.value = memberPage.items
     total.value = memberPage.total
     pages.value = memberPage.pages

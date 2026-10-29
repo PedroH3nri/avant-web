@@ -19,6 +19,7 @@ import MenuItem from '@/components/ui/MenuItem.vue'
 import Status from '@/components/ui/Status.vue'
 import TableState from '@/components/ui/TableState.vue'
 import { ApiError } from '@/lib/api'
+import { latestCall } from '@/lib/latest'
 import { errorText, formatAgo, formatDate, t } from '@/lib/i18n'
 import { td, th } from '@/lib/table'
 import type { Person } from '@/modules/internal/people/types'
@@ -47,6 +48,7 @@ const open = computed({
 /** Mostra o erro num aviso. */
 const fail = (error: unknown) => toast.error(errorText(error instanceof ApiError ? error.code : 'unknown'))
 
+const peopleCall = latestCall()
 /** Busca a página das pessoas a partir de 3 caracteres. */
 async function search() {
   loadError.value = null
@@ -58,7 +60,8 @@ async function search() {
     return
   }
   try {
-    const found = await peopleService.search(term, page.value)
+    const found = await peopleCall(() => peopleService.search(term, page.value))
+    if (!found) return
     people.value = found.items
     total.value = found.total
     pages.value = found.pages

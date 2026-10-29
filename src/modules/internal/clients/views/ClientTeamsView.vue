@@ -15,6 +15,7 @@ import NativeSelect from '@/components/ui/NativeSelect.vue'
 import Status from '@/components/ui/Status.vue'
 import TableState from '@/components/ui/TableState.vue'
 import { ApiError } from '@/lib/api'
+import { latestCall } from '@/lib/latest'
 import { errorText, formatDate, pick, t } from '@/lib/i18n'
 import { td, th } from '@/lib/table'
 import type { ClientMember, ClientOption } from '@/modules/internal/clients/types'
@@ -35,11 +36,13 @@ const clientOptions = computed(() => [
   ...clients.value.map((client) => ({ value: client.id, label: client.name })),
 ])
 
+const teamsCall = latestCall()
 /** Busca as pessoas das equipes com o filtro e a busca atuais. */
 async function load() {
   loadError.value = null
   try {
-    const found = await clientService.teams({ page: page.value, q: searchText.value.trim() || undefined, company_id: clientId.value || undefined })
+    const found = await teamsCall(() => clientService.teams({ page: page.value, q: searchText.value.trim() || undefined, company_id: clientId.value || undefined }))
+    if (!found) return
     members.value = found.items
     total.value = found.total
     pages.value = found.pages

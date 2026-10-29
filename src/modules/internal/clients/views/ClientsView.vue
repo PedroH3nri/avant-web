@@ -21,6 +21,7 @@ import SeatBar from '@/components/ui/SeatBar.vue'
 import Status from '@/components/ui/Status.vue'
 import TableState from '@/components/ui/TableState.vue'
 import { ApiError } from '@/lib/api'
+import { latestCall } from '@/lib/latest'
 import { emptyProfile, profileBody, profileOk, STATUS_TONE } from '@/modules/internal/clients/rules'
 import { errorText, formatAgo, t } from '@/lib/i18n'
 import { td, th } from '@/lib/table'
@@ -73,14 +74,16 @@ const busy = ref(false)
 /** Mostra o erro num aviso. */
 const fail = (error: unknown) => toast.error(errorText(error instanceof ApiError ? error.code : 'unknown'))
 
+const clientsCall = latestCall()
 /** Carrega a página dos clientes com a aba e a busca. */
 async function loadClients() {
   try {
-    const found = await clientService.list({
+    const found = await clientsCall(() => clientService.list({
       page: page.value,
       q: searchText.value.trim() || undefined,
       status: tab.value === 'all' ? undefined : tab.value,
-    })
+    }))
+    if (!found) return
     clients.value = found.items
     total.value = found.total
     pages.value = found.pages
@@ -89,10 +92,12 @@ async function loadClients() {
   }
 }
 
+const invitesCall = latestCall()
 /** Carrega a página dos convites de dono; se ela ficou vazia, volta uma. */
 async function loadInvites() {
   try {
-    const found = await clientService.ownerInvitations({ page: invitePage.value })
+    const found = await invitesCall(() => clientService.ownerInvitations({ page: invitePage.value }))
+    if (!found) return
     if (found.items.length === 0 && invitePage.value > 1) {
       invitePage.value = Math.max(1, found.pages)
       return
