@@ -10,10 +10,12 @@ import {
   metricInfo,
   seriesColor,
   splitSeries,
+  syncText,
   emptyDraft,
   fieldAvailable,
   fromReport,
   fromTemplate,
+  keepKnownRoles,
   pickSource,
   sampleFor,
   scaleError,
@@ -214,5 +216,18 @@ describe('regras do construtor de relatórios', () => {
     expect(customKey('RPM por requisição')).toBe('rpm_por_requisicao')
     expect(customKey('Ação 2!')).toBe('acao_2')
     expect(customKey('  ')).toBe('')
+  })
+
+  it('não reescreve o número que a pessoa está digitando', () => {
+    expect(syncText('1.', 1)).toBe('1.')
+    expect(syncText('1,50', 1.5)).toBe('1,50')
+    expect(syncText('150', 15)).toBe('15')
+    expect(syncText('', undefined)).toBe('')
+    expect(syncText('3', undefined)).toBe('3')
+  })
+
+  it('tira do salvar os papéis que não existem mais', () => {
+    expect(keepKnownRoles(['p1', 'apagado'], [{ id: 'p1', name: 'Financeiro' }])).toEqual(['p1'])
+    expect(keepKnownRoles(['p1', 'apagado'], null)).toEqual(['p1', 'apagado'])
   })
 })

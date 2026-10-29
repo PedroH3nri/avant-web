@@ -73,6 +73,7 @@ const editingMetric = ref<CustomMetric | null>(null)
 const removingMetric = ref<CustomMetric | null>(null)
 const removingBusy = ref(false)
 let allowLeave = false
+let disposed = false
 let latest = 0
 let retryTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -86,11 +87,17 @@ const stateText = computed(() =>
 
 /** Mensagem de erro da API: a própria, quando ela já explica; senão, a tradução do código. */
 const apiMessage = (error: unknown) =>
-  error instanceof ApiError ? (SPECIFIC.has(error.code) && error.message ? error.message : errorText(error.code)) : errorText('unknown')
+  error instanceof ApiError
+    ? SPECIFIC.has(error.code) && error.message
+      ? error.message
+      : errorText(error.code, { s: Math.max(error.retryAfter ?? 2, 1) })
+    : errorText('unknown')
 
 /** Carrega catálogo, papéis, opções de filtro e o rascunho da rota (novo, salvo ou modelo). */
 async function load() {
   loadError.value = null
+  result.value = null
+  previewError.value = null
   touched.value = false
   try {
     catalog.value = await reportService.catalog()
@@ -138,9 +145,11 @@ function useReport(report: SavedReport) {
 
 /** Roda a prévia; só a resposta do último pedido vale, e o limite de taxa agenda nova tentativa. */
 async function preview() {
-  if (!catalog.value) return
+  if (!catalog.value || disposed) return
   if (retryTimer) clearTimeout(retryTimer)
   if (!draft.value.metrics.length) {
+    latest++
+    previewing.value = false
     result.value = null
     previewError.value = t('report.pickMetric')
     return
@@ -149,11 +158,12 @@ async function preview() {
   previewing.value = true
   try {
     const response = await reportService.query(toQuery(draft.value, session.displayCurrency, catalog.value))
-    if (request !== latest) return
+    if (request !== latest || disposed) return
     result.value = response
     previewError.value = null
   } catch (error) {
-    if (request !== latest) return
+    if (request !== latest || disposed) return
+    result.value = null
     previewError.value = apiMessage(error)
     if (error instanceof ApiError && error.code === 'rate_limited') retryTimer = setTimeout(preview, Math.max(error.retryAfter ?? 2, 1) * 1000)
   } finally {
@@ -321,6 +331,8 @@ watch(
   { immediate: true },
 )
 onBeforeUnmount(() => {
+  disposed = true
+  latest++
   if (retryTimer) clearTimeout(retryTimer)
 })
 </script>
@@ -372,7 +384,7 @@ onBeforeUnmount(() => {
         <div class="grid gap-4 p-4 sm:p-6">
           <div class="flex flex-wrap items-center gap-1.5">
             <span v-for="key in draft.metrics" :key="key" class="inline-flex h-7 items-center gap-1 rounded-full border bg-card pl-1 pr-1 text-[13px]">
-              <MetricStylePopover :label="metricInfo(key, catalog, lang).label" :style="draft.styles[key] ?? {}" :disabled="!editable" @change="(style) => setStyle(key, style)" />
+              <MetricStylePopover :label="metricInfo(key, catalog, lang).label" :metric-style="draft.styles[key] ?? {}" :disabled="!editable" @change="(style) => setStyle(key, style)" />
               <button v-if="editable" type="button" class="rounded-full p-1 hover:bg-accent" :aria-label="t('report.removeField', { name: metricInfo(key, catalog, lang).label })" @click="toggleMetric(key)"><X class="size-3" /></button>
             </span>
             <span v-if="draft.dimensions.length" class="px-1 text-[13px] text-muted-foreground">{{ t('report.by') }}</span>

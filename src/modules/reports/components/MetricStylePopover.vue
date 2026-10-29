@@ -5,21 +5,22 @@ import { PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka
 import Input from '@/components/ui/Input.vue'
 import { t } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
-import { scaleError, seriesColor, SERIES_COLORS } from '@/modules/reports/rules'
+import { scaleError, seriesColor, SERIES_COLORS, syncText } from '@/modules/reports/rules'
 import type { MetricStyle, ScaleMode, SeriesColor } from '@/modules/reports/types'
 
-const props = defineProps<{ label: string; style: MetricStyle; disabled: boolean }>()
+const props = defineProps<{ label: string; metricStyle: MetricStyle; disabled: boolean }>()
 const emit = defineEmits<{ change: [style: MetricStyle] }>()
 const MODES: ScaleMode[] = ['green_red', 'red_green']
-const mode = ref<ScaleMode | null>(props.style.scale?.mode ?? null)
-const from = ref(String(props.style.scale?.from ?? 0))
-const to = ref(String(props.style.scale?.to ?? 100))
+const mode = ref<ScaleMode | null>(props.metricStyle.scale?.mode ?? null)
+const from = ref(String(props.metricStyle.scale?.from ?? 0))
+const to = ref(String(props.metricStyle.scale?.to ?? 100))
 watch(
-  () => props.style,
-  (style) => {
-    mode.value = style.scale?.mode ?? null
-    from.value = String(style.scale?.from ?? 0)
-    to.value = String(style.scale?.to ?? 100)
+  () => props.metricStyle.scale,
+  (scale) => {
+    if (!scale) return
+    if (mode.value !== scale.mode) mode.value = scale.mode
+    from.value = syncText(from.value, scale.from)
+    to.value = syncText(to.value, scale.to)
   },
 )
 /** Texto digitado como número (aceita vírgula). */
@@ -27,21 +28,21 @@ const number = (text: string) => (text.trim() === '' ? Number.NaN : Number(text.
 const error = computed(() => (mode.value ? scaleError({ mode: mode.value, from: number(from.value), to: number(to.value) }) : null))
 /** Gradiente do modo, do verde ao vermelho ou ao contrário. */
 const gradient = (scaleMode: ScaleMode) => `linear-gradient(90deg, hsl(${scaleMode === 'green_red' ? 135 : 0} 75% 45%), hsl(${scaleMode === 'green_red' ? 0 : 135} 75% 45%))`
-const swatch = computed(() => (props.style.scale ? gradient(props.style.scale.mode) : (seriesColor(props.style.color) ?? 'hsl(var(--foreground))')))
+const swatch = computed(() => (props.metricStyle.scale ? gradient(props.metricStyle.scale.mode) : (seriesColor(props.metricStyle.color) ?? 'hsl(var(--foreground))')))
 
 /** Troca a cor e mantém a aparência. */
 function pickColor(color: SeriesColor | undefined) {
-  emit('change', { ...props.style, color })
+  emit('change', { ...props.metricStyle, color })
 }
 
 /** Aplica a aparência só quando os números estão certos; sem modo, tira a aparência. */
 function applyScale() {
   if (!mode.value) {
-    emit('change', { color: props.style.color })
+    emit('change', { color: props.metricStyle.color })
     return
   }
   if (error.value) return
-  emit('change', { ...props.style, scale: { mode: mode.value, from: number(from.value), to: number(to.value) } })
+  emit('change', { ...props.metricStyle, scale: { mode: mode.value, from: number(from.value), to: number(to.value) } })
 }
 watch([mode, from, to], applyScale)
 </script>
@@ -62,10 +63,10 @@ watch([mode, from, to], applyScale)
           <button
             type="button"
             role="radio"
-            :aria-checked="!style.color"
+            :aria-checked="!metricStyle.color"
             :aria-label="t('report.colorDefault')"
             :title="t('report.colorDefault')"
-            :class="cn('size-7 rounded-full bg-foreground', !style.color && 'ring-2 ring-ring ring-offset-2 ring-offset-background')"
+            :class="cn('size-7 rounded-full bg-foreground', !metricStyle.color && 'ring-2 ring-ring ring-offset-2 ring-offset-background')"
             @click="pickColor(undefined)"
           />
           <button
@@ -73,10 +74,10 @@ watch([mode, from, to], applyScale)
             :key="color"
             type="button"
             role="radio"
-            :aria-checked="style.color === color"
+            :aria-checked="metricStyle.color === color"
             :aria-label="t(`report.colors.${color}`)"
             :title="t(`report.colors.${color}`)"
-            :class="cn('size-7 rounded-full', style.color === color && 'ring-2 ring-ring ring-offset-2 ring-offset-background')"
+            :class="cn('size-7 rounded-full', metricStyle.color === color && 'ring-2 ring-ring ring-offset-2 ring-offset-background')"
             :style="{ background: seriesColor(color) }"
             @click="pickColor(color)"
           />

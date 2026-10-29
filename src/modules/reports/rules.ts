@@ -347,3 +347,17 @@ export function customKey(name: string): string {
     .replace(/[^a-z0-9]+/g, '_')
     .replace(/^_+|_+$/g, '')
 }
+
+/** O texto do campo de número: fica como a pessoa digitou enquanto vale o mesmo número. */
+export function syncText(current: string, incoming: number | undefined): string {
+  if (incoming === undefined) return current
+  const typed = current.trim() === '' ? Number.NaN : Number(current.replace(',', '.'))
+  return typed === incoming ? current : String(incoming)
+}
+
+/** Os papéis do relatório que ainda existem; sem a lista de papéis, ficam todos. */
+export function keepKnownRoles(roleIds: string[], roles: { id: string; name: string }[] | null): string[] {
+  if (roles === null) return roleIds
+  const known = new Set(roles.map((role) => role.id))
+  return roleIds.filter((id) => known.has(id))
+}

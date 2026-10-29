@@ -7,6 +7,7 @@ import Field from '@/components/ui/Field.vue'
 import Input from '@/components/ui/Input.vue'
 import { t } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
+import { keepKnownRoles } from '@/modules/reports/rules'
 import type { Visibility } from '@/modules/reports/types'
 
 export interface SaveForm {
@@ -30,7 +31,7 @@ watch(open, (opened) => {
   name.value = props.initial.name
   description.value = props.initial.description ?? ''
   visibility.value = props.initial.visibility
-  roleIds.value = [...props.initial.roleIds]
+  roleIds.value = keepKnownRoles(props.initial.roleIds, props.roles)
 })
 const choices = computed(() => (['private', 'company', 'roles'] as Visibility[]).filter((choice) => choice !== 'roles' || props.roles !== null || visibility.value === 'roles'))
 const invalid = computed(() => !name.value.trim() || (visibility.value === 'roles' && roleIds.value.length === 0))

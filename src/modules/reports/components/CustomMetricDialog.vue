@@ -83,6 +83,7 @@ const input = () => ({
 /** Confere a fórmula na API e, com valores de exemplo, calcula a prévia; só a última resposta vale. */
 async function runCheckNow() {
   if (!formula.value.trim()) {
+    latest++
     check.value = null
     return
   }
