@@ -1,6 +1,7 @@
 <script setup lang="ts">
 /** Relatórios salvos: os que a pessoa vê, com busca, abas, duplicar, exportar, apagar e os modelos. */
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
+import { useDebounceFn } from '@vueuse/core'
 import { useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
 import { DropdownMenuRoot, DropdownMenuSeparator, DropdownMenuTrigger } from 'reka-ui'
@@ -12,6 +13,7 @@ import PageHeader from '@/components/PageHeader.vue'
 import Badge from '@/components/ui/Badge.vue'
 import Button from '@/components/ui/Button.vue'
 import DataTable from '@/components/ui/DataTable.vue'
+import Pagination from '@/components/ui/Pagination.vue'
 import Input from '@/components/ui/Input.vue'
 import MenuContent from '@/components/ui/MenuContent.vue'
 import MenuItem from '@/components/ui/MenuItem.vue'
@@ -27,9 +29,14 @@ import { useSession } from '@/stores/session'
 
 type Tab = 'all' | 'mine' | 'shared' | 'templates'
 
+const SEARCH_DELAY_MS = 300
 const session = useSession()
 const router = useRouter()
 const reports = ref<SavedReport[] | null>(null)
+const page = ref(1)
+const total = ref(0)
+const pages = ref(0)
+const tabCounts = ref({ all: 0, mine: 0, shared: 0 })
 const templates = ref<ReportTemplate[] | null>(null)
 const owners = ref<Record<string, string>>({})
 const loadError = ref<string | null>(null)
@@ -46,24 +53,44 @@ const tabs: { key: Tab; label: Key }[] = [
   { key: 'templates', label: 'report.tabTemplates' },
 ]
 /** Quantos itens cada aba tem. */
-const counts = computed<Record<Tab, number>>(() => {
-  const all = reports.value ?? []
-  const mine = all.filter((report) => report.owner_user_id === myId.value).length
-  return { all: all.length, mine, shared: all.length - mine, templates: templates.value?.length ?? 0 }
-})
-const visible = computed(() => {
-  const term = search.value.trim().toLowerCase()
-  return (reports.value ?? [])
-    .filter((report) => tab.value === 'all' || (tab.value === 'mine') === (report.owner_user_id === myId.value))
-    .filter((report) => report.name.toLowerCase().includes(term))
-})
+const counts = computed<Record<Tab, number>>(() => ({ ...tabCounts.value, templates: templates.value?.length ?? 0 }))
+
+/** Carrega a página dos relatórios da aba com a busca; se ela ficou vazia, volta uma. */
+async function loadReports() {
+  try {
+    const found = await reportService.list({
+      page: page.value,
+      scope: tab.value === 'mine' || tab.value === 'shared' ? tab.value : undefined,
+      q: search.value.trim() || undefined,
+    })
+    if (found.items.length === 0 && page.value > 1) {
+      page.value = Math.max(1, found.pages)
+      return
+    }
+    reports.value = found.items
+    total.value = found.total
+    pages.value = found.pages
+    tabCounts.value = found.counts
+  } catch (error) {
+    loadError.value = errorText(error instanceof ApiError ? error.code : 'unknown')
+  }
+}
+
+/** Volta para a página 1 com a aba ou a busca nova, ou recarrega se já estiver nela. */
+function firstPage() {
+  if (page.value === 1) void loadReports()
+  else page.value = 1
+}
+const searchReports = useDebounceFn(firstPage, SEARCH_DELAY_MS)
+watch(page, loadReports)
+watch(tab, (current) => current !== 'templates' && firstPage())
+watch(search, () => void searchReports())
 
 /** Carrega os relatórios, os modelos e, para quem vê a equipe, o nome dos donos. */
 async function load() {
   loadError.value = null
   try {
-    const [list, models] = await Promise.all([reportService.list(), reportService.templates()])
-    reports.value = list.items
+    const [models] = await Promise.all([reportService.templates(), loadReports()])
     templates.value = models.items
   } catch (error) {
     loadError.value = errorText(error instanceof ApiError ? error.code : 'unknown')
@@ -84,8 +111,9 @@ const ownerName = (report: SavedReport) =>
 /** Faz uma cópia privada e abre a lista com ela no topo. */
 async function duplicate(report: SavedReport) {
   try {
-    const copy = await reportService.duplicate(report.id)
-    reports.value = [copy, ...(reports.value ?? [])]
+    await reportService.duplicate(report.id)
+    if (tab.value === 'shared') tab.value = 'mine'
+    else firstPage()
     toast.success(t('report.duplicated'))
   } catch (error) {
     toast.error(errorText(error instanceof ApiError ? error.code : 'unknown'))
@@ -99,7 +127,7 @@ async function remove() {
   busy.value = true
   try {
     await reportService.remove(report.id)
-    reports.value = (reports.value ?? []).filter((item) => item.id !== report.id)
+    await loadReports()
     removing.value = null
     toast.success(t('report.deleted'))
   } catch (error) {
@@ -167,12 +195,12 @@ onMounted(load)
         <TableState
           :cols="6"
           :loading="!reports && !loadError"
-          :empty="!!reports && visible.length === 0"
+          :empty="!!reports && reports.length === 0"
           :icon="FileChartColumn"
           :title="search ? t('report.noMatch', { term: search }) : t('report.noneTitle')"
           :desc="search ? undefined : t('report.noneDesc')"
         />
-        <tr v-for="report in visible" :key="report.id" class="hover:bg-muted">
+        <tr v-for="report in reports ?? []" :key="report.id" class="hover:bg-muted">
           <td :class="td">
             <RouterLink :to="`/relatorios/${report.id}`" class="font-medium hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{{ report.name }}</RouterLink>
           </td>
@@ -202,6 +230,7 @@ onMounted(load)
         </tr>
       </tbody>
     </DataTable>
+    <Pagination v-if="tab !== 'templates' && reports" v-model:page="page" :total="total" :pages="pages" />
   </PageBody>
   <ConfirmDialog
     :open="!!removing"

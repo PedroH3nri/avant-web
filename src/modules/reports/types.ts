@@ -1,6 +1,6 @@
 /** Formatos da API do domínio reports (iguais ao dto.py dele no avant-api). Datas em ISO 8601 UTC. */
 
-import type { Lang } from '@/lib/types'
+import type { Lang, Page } from '@/lib/types'
 
 export type MetricKind = 'sum' | 'ratio'
 
@@ -196,4 +196,9 @@ export interface CustomMetricCheck {
   variables: string[]
   /** A fórmula calculada sobre a amostra; vazio sem amostra ou sem denominador. */
   value: string | null
+}
+
+/** Uma página dos relatórios salvos com quantos cada aba tem (sem a busca). */
+export interface ReportPage extends Page<SavedReport> {
+  counts: { all: number; mine: number; shared: number }
 }
