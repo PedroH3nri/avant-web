@@ -28,6 +28,9 @@ export interface ClientProfile extends ClientProfileInput {
   fiscal: FiscalData | null
 }
 
+/** O cliente nas listas inteiras (`/internal/clients/options`). */
+export type ClientOption = Pick<Client, 'id' | 'name' | 'status'>
+
 export interface Client {
   id: string
   name: string
