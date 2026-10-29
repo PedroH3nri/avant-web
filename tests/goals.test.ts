@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { goalTone, monthOptions, paceMark, templateValid } from '@/modules/internal/goals/rules'
+import { formatAmount, goalTone, monthOptions, paceMark, parseAmount, templateValid } from '@/modules/internal/goals/rules'
 import type { GoalProgress } from '@/modules/internal/goals/types'
 
 /** Andamento com o que o teste muda. */
@@ -28,10 +28,27 @@ describe('regras das metas', () => {
   })
 
   it('aceita só 12 valores de zero para cima', () => {
-    expect(templateValid(Array(12).fill('1000'))).toBe(true)
-    expect(templateValid(Array(11).fill('1000'))).toBe(false)
-    expect(templateValid([...Array(11).fill('1000'), '-1'])).toBe(false)
-    expect(templateValid([...Array(11).fill('1000'), 'abc'])).toBe(false)
-    expect(templateValid([...Array(11).fill('1000'), '1.234,50'])).toBe(true)
+    expect(templateValid(Array(12).fill('1000'), 'pt')).toBe(true)
+    expect(templateValid(Array(11).fill('1000'), 'pt')).toBe(false)
+    expect(templateValid([...Array(11).fill('1000'), '-1'], 'pt')).toBe(false)
+    expect(templateValid([...Array(11).fill('1000'), 'abc'], 'pt')).toBe(false)
+    expect(templateValid([...Array(11).fill('1000'), '1.234,50'], 'pt')).toBe(true)
+  })
+
+  it('lê o valor pelo jeito de escrever número do idioma', () => {
+    expect(parseAmount('50.000', 'pt')).toBe(50000)
+    expect(parseAmount('1.234,50', 'pt')).toBe(1234.5)
+    expect(parseAmount('1234,5', 'es')).toBe(1234.5)
+    expect(parseAmount('1,000', 'en')).toBe(1000)
+    expect(parseAmount('1,234.50', 'en')).toBe(1234.5)
+    expect(parseAmount('1000', 'pt')).toBe(1000)
+    expect(parseAmount('1.234,567', 'pt')).toBeNaN()
+    expect(parseAmount('1000.50', 'pt')).toBeNaN()
+    expect(parseAmount('1,0000', 'en')).toBeNaN()
+  })
+
+  it('mostra o valor da API no jeito do idioma', () => {
+    expect(formatAmount('15000.00', 'pt')).toBe('15000,00')
+    expect(formatAmount('15000.00', 'en')).toBe('15000.00')
   })
 })

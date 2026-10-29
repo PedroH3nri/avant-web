@@ -1,5 +1,6 @@
 /** Regras de tela das metas: a cor do andamento, os meses para escolher e os valores do modelo. */
 
+import type { Lang } from '@/lib/types'
 import type { GoalProgress } from '@/modules/internal/goals/types'
 
 const MONTHS_IN_YEAR = 12
@@ -32,15 +33,25 @@ export function paceMark(month: string, today: string): number {
   return (todayDay - 1) / days
 }
 
-/** O valor digitado como número: aceita "1.234,50" e "1234.50"; texto inválido vira NaN. */
-export function parseAmount(text: string): number {
+/** O valor digitado como número, no jeito do idioma (PT/ES "1.234,50"; EN "1,234.50"), com até 2
+ * casas; o que foge do formato vira NaN em vez de virar outro número. */
+export function parseAmount(text: string, lang: Lang): number {
   const clean = text.trim()
-  if (!clean) return Number.NaN
-  const normalized = clean.includes(',') ? clean.replace(/\./g, '').replace(',', '.') : clean
-  return /^\d+(\.\d+)?$/.test(normalized) ? Number(normalized) : Number.NaN
+  const [group, decimal] = lang === 'en' ? [',', '.'] : ['.', ',']
+  /** O separador pronto para a expressão regular (o ponto precisa de barra). */
+  const escape = (mark: string) => (mark === '.' ? '\\.' : mark)
+  const grouped = new RegExp(`^\\d{1,3}(${escape(group)}\\d{3})+(${escape(decimal)}\\d{1,2})?$`)
+  const plain = new RegExp(`^\\d+(${escape(decimal)}\\d{1,2})?$`)
+  if (!grouped.test(clean) && !plain.test(clean)) return Number.NaN
+  return Number(clean.split(group).join('').replace(decimal, '.'))
+}
+
+/** O valor da API (texto com ponto) no jeito de escrever do idioma, para editar. */
+export function formatAmount(value: string, lang: Lang): string {
+  return lang === 'en' ? value : value.replace('.', ',')
 }
 
 /** Os valores do modelo: 12 números de zero para cima. */
-export function templateValid(months: string[]): boolean {
-  return months.length === MONTHS_IN_YEAR && months.every((value) => Number.isFinite(parseAmount(value)) && parseAmount(value) >= 0)
+export function templateValid(months: string[], lang: Lang): boolean {
+  return months.length === MONTHS_IN_YEAR && months.every((value) => Number.isFinite(parseAmount(value, lang)))
 }

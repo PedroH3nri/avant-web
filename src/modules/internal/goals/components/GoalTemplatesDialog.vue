@@ -9,9 +9,9 @@ import Dialog from '@/components/ui/Dialog.vue'
 import Field from '@/components/ui/Field.vue'
 import Input from '@/components/ui/Input.vue'
 import { ApiError } from '@/lib/api'
-import { errorText, locale, t } from '@/lib/i18n'
+import { errorText, lang, locale, t } from '@/lib/i18n'
 import { formatMetric, toNumber } from '@/lib/metrics'
-import { parseAmount, templateValid } from '@/modules/internal/goals/rules'
+import { formatAmount, parseAmount, templateValid } from '@/modules/internal/goals/rules'
 import { goalService } from '@/modules/internal/goals/service'
 import type { GoalTemplate } from '@/modules/internal/goals/types'
 
@@ -32,7 +32,7 @@ const monthNames = computed(() =>
   Array.from({ length: MONTHS_IN_YEAR }, (_, index) => new Intl.DateTimeFormat(locale.value, { month: 'short', timeZone: 'UTC' }).format(new Date(Date.UTC(2026, index, 1)))),
 )
 const formOpen = computed(() => creating.value || editing.value !== null)
-const valid = computed(() => !!name.value.trim() && Number(year.value) >= 2020 && Number(year.value) <= 2100 && templateValid(months.value))
+const valid = computed(() => !!name.value.trim() && Number(year.value) >= 2020 && Number(year.value) <= 2100 && templateValid(months.value, lang.value))
 watch(open, (opened) => {
   if (!opened) close()
 })
@@ -43,7 +43,7 @@ function start(template: GoalTemplate | null) {
   creating.value = template === null
   name.value = template?.name ?? ''
   year.value = String(template?.year ?? props.year)
-  months.value = template ? template.months.map((value) => value.replace('.', ',')) : Array.from({ length: MONTHS_IN_YEAR }, () => '')
+  months.value = template ? template.months.map((value) => formatAmount(value, lang.value)) : Array.from({ length: MONTHS_IN_YEAR }, () => '')
   companyGoal.value = template?.is_company_goal ?? false
   removing.value = null
 }
@@ -58,7 +58,7 @@ function close() {
 async function save() {
   if (!valid.value) return
   busy.value = true
-  const input = { name: name.value.trim(), year: Number(year.value), months: months.value.map((value) => String(parseAmount(value))), is_company_goal: companyGoal.value }
+  const input = { name: name.value.trim(), year: Number(year.value), months: months.value.map((value) => parseAmount(value, lang.value).toFixed(2)), is_company_goal: companyGoal.value }
   try {
     if (editing.value) await goalService.updateTemplate(editing.value.id, input)
     else await goalService.createTemplate(input)
@@ -104,7 +104,7 @@ const yearTotal = (template: GoalTemplate) => formatMetric(template.months.reduc
         <div class="grid grid-cols-3 gap-2 sm:grid-cols-6">
           <label v-for="(label, index) in monthNames" :key="label" class="grid gap-1 text-[12px] text-muted-foreground">
             {{ label }}
-            <Input v-model="months[index]" inputmode="decimal" class="h-9 px-2 text-right tnum" :invalid="!!months[index] && !Number.isFinite(parseAmount(months[index] ?? ''))" />
+            <Input v-model="months[index]" inputmode="decimal" class="h-9 px-2 text-right tnum" :invalid="!!months[index] && !Number.isFinite(parseAmount(months[index] ?? '', lang))" />
           </label>
         </div>
       </fieldset>
