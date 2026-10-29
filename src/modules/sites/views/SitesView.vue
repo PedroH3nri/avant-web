@@ -20,6 +20,7 @@ import NativeSelect from '@/components/ui/NativeSelect.vue'
 import Status from '@/components/ui/Status.vue'
 import TableState from '@/components/ui/TableState.vue'
 import { ApiError } from '@/lib/api'
+import { latestCall } from '@/lib/latest'
 import { errorText, formatAgo, formatDate, t } from '@/lib/i18n'
 import { networkName } from '@/modules/networks/rules'
 import { approval } from '@/modules/sites/rules'
@@ -56,16 +57,18 @@ const assignedOnly = computed(() => session.me?.site_scope === 'assigned' && !se
 
 const filtering = computed(() => !!searchText.value.trim() || !!networkId.value || archived.value)
 
+const sitesCall = latestCall()
 /** Carrega a página dos sites com os filtros e a busca. */
 async function loadSites() {
   loadError.value = null
   try {
-    const found = await siteService.list({
+    const found = await sitesCall(() => siteService.list({
       page: page.value,
       network_id: networkId.value || undefined,
       include_archived: archived.value || undefined,
       q: searchText.value.trim() || undefined,
-    })
+    }))
+    if (!found) return
     sites.value = found.items
     total.value = found.total
     pages.value = found.pages
@@ -74,10 +77,13 @@ async function loadSites() {
   }
 }
 
+const unlinkedCall = latestCall()
 /** Carrega a página dos ad units sem site e todos os sites, que o seletor de site usa. */
 async function loadUnlinked() {
   try {
-    const [found, siteList] = await Promise.all([siteService.unlinked({ page: unlinkedPage.value }), siteService.options()])
+    const result = await unlinkedCall(() => Promise.all([siteService.unlinked({ page: unlinkedPage.value }), siteService.options()]))
+    if (!result) return
+    const [found, siteList] = result
     if (found.items.length === 0 && unlinkedPage.value > 1) {
       unlinkedPage.value = Math.max(1, found.pages)
       return
