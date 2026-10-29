@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Toaster, toast } from 'sonner'
-import { Check, ChevronsUpDown, Copy, Loader2, LogOut, Plus, RefreshCw, Search, X, AlertTriangle, ArrowLeft, MoreHorizontal, Lock, Mail, ExternalLink, Home, Users, Network, Settings, ShieldCheck, Menu, BarChart3, Eye, FileText, Wallet, Target, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { Check, ChevronsUpDown, Copy, Loader2, LogOut, Plus, RefreshCw, Search, X, AlertTriangle, ArrowLeft, MoreHorizontal, Lock, Mail, ExternalLink, Home, Users, Network, Settings, ShieldCheck, Menu, BarChart3, Eye, FileText, Wallet, Target } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -363,41 +363,33 @@ const INTERNAL_RAIL: RailGroup[] = [
   { key: 'comissoes', label: 'Comissões', icon: Wallet, items: [{ id: 'comissoes', label: 'Comissões da equipe' }, { id: 'minhacomissao', label: 'Minha comissão' }] },
   { key: 'equipegroone', label: 'Equipe', icon: ShieldCheck, items: [{ id: 'papelcomissao', label: 'Papéis da Equipe Groone' }] },
 ]
-const RAIL_STORAGE = 'avant-proto-rail-open'
-
-/** Sidebar em trilho: um ícone por grupo e, ao lado, o painel com os itens do grupo escolhido. */
+/** Sidebar em trilho: um ícone por grupo; passar o mouse abre, por cima da página, o painel com os itens do grupo. */
 function RailSidebar({ screen, go }: { screen: Screen; go: (s: Screen) => void }) {
   const internal = INTERNAL_SCREENS.includes(screen)
   const groups = internal ? INTERNAL_RAIL : CLIENT_RAIL
   const owner = groups.find((group) => group.items.some((entry) => entry.id === screen || entry.also?.includes(screen))) ?? groups[0]
-  const [picked, setPicked] = useState<string | null>(null)
   const [hovered, setHovered] = useState<string | null>(null)
-  const [open, setOpen] = useState(() => { try { return localStorage.getItem(RAIL_STORAGE) === 'open' } catch { return false } })
+  const [lastShown, setLastShown] = useState(owner.key)
   const closing = useRef<ReturnType<typeof setTimeout> | null>(null)
-  useEffect(() => { setPicked(null); setHovered(null) }, [screen])
-  const shown = groups.find((group) => group.key === (hovered ?? picked)) ?? owner
-  const floating = !open && hovered !== null
+  useEffect(() => { setHovered(null) }, [screen])
+  const open = hovered !== null
+  const shown = groups.find((group) => group.key === (hovered ?? lastShown)) ?? owner
   /** Abre o painel do grupo sob o mouse, cancelando um fechamento pendente. */
-  const hover = (key: string) => { if (closing.current) clearTimeout(closing.current); setHovered(key) }
-  /** Fecha o painel flutuante com um pequeno atraso, para dar tempo de o mouse chegar nele. */
-  const leave = () => { closing.current = setTimeout(() => setHovered(null), 180) }
-  const keep = (value: boolean) => { setOpen(value); try { localStorage.setItem(RAIL_STORAGE, value ? 'open' : 'closed') } catch { /* sem armazenamento */ } }
-  const choose = (group: RailGroup) => {
-    if (group.items.length === 1 || !open) { go(group.items[0].id); return }
-    setPicked(group.key)
-  }
+  const hover = (key: string) => { if (closing.current) clearTimeout(closing.current); setHovered(key); setLastShown(key) }
+  /** Fecha o painel com um pequeno atraso, para dar tempo de o mouse chegar nele. */
+  const leave = () => { closing.current = setTimeout(() => setHovered(null), 200) }
   return (
     <div className="relative flex h-full" onMouseLeave={leave}>
-      <div className="flex w-[72px] shrink-0 flex-col items-center border-r bg-sidebar py-3">
+      <div className="relative z-10 flex w-[72px] shrink-0 flex-col items-center border-r bg-sidebar py-3">
         <button onClick={() => go(internal ? 'interno' : 'inicio')} aria-label="Avant, início" className="rounded-md p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><Mark size={28} /></button>
         <nav className="mt-4 grid w-full gap-1 px-1.5" aria-label="Grupos do menu">
           {groups.map((group) => {
             const Icon = group.icon
             const current = owner.key === group.key
-            const showing = (open || floating) && shown.key === group.key
+            const showing = open && shown.key === group.key
             return (
-              <button key={group.key} onClick={() => choose(group)} onMouseEnter={() => hover(group.key)} onFocus={() => hover(group.key)} aria-current={current ? 'page' : undefined} aria-expanded={group.items.length > 1 ? showing : undefined} title={group.label}
-                className={cn('flex flex-col items-center gap-1 rounded-md py-2 text-[10.5px] font-medium leading-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+              <button key={group.key} onClick={() => go(group.items[0].id)} onMouseEnter={() => hover(group.key)} onFocus={() => hover(group.key)} aria-current={current ? 'page' : undefined} aria-expanded={group.items.length > 1 ? showing : undefined} title={group.label}
+                className={cn('flex flex-col items-center gap-1 rounded-md py-2 text-[10.5px] font-medium leading-none transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                   current ? 'bg-secondary text-foreground' : showing ? 'bg-accent text-foreground' : 'text-muted-foreground hover:bg-accent hover:text-foreground')}>
                 <Icon className="h-[18px] w-[18px]" />{group.label}
               </button>
@@ -405,24 +397,26 @@ function RailSidebar({ screen, go }: { screen: Screen; go: (s: Screen) => void }
           })}
         </nav>
         <div className="mt-auto grid w-full gap-1 px-1.5">
-          <button onClick={() => keep(!open)} title={open ? 'Soltar o painel (abre ao passar o mouse)' : 'Fixar o painel aberto'} aria-label={open ? 'Soltar o painel' : 'Fixar o painel aberto'} className="flex justify-center rounded-md py-2 text-muted-foreground hover:bg-accent hover:text-foreground">{open ? <PanelLeftClose className="h-[18px] w-[18px]" /> : <PanelLeftOpen className="h-[18px] w-[18px]" />}</button>
-          <button onClick={() => go(internal ? 'inicio' : 'interno')} title={internal ? 'Voltar ao painel do cliente' : 'Painel interno'} className="flex flex-col items-center gap-1 rounded-md py-2 text-[10.5px] font-medium leading-none text-muted-foreground hover:bg-accent hover:text-foreground">
+          <button onClick={() => go(internal ? 'inicio' : 'interno')} onMouseEnter={leave} title={internal ? 'Voltar ao painel do cliente' : 'Painel interno'} className="flex flex-col items-center gap-1 rounded-md py-2 text-[10.5px] font-medium leading-none text-muted-foreground hover:bg-accent hover:text-foreground">
             {internal ? <ArrowLeft className="h-[18px] w-[18px]" /> : <ShieldCheck className="h-[18px] w-[18px]" />}{internal ? 'Cliente' : 'Interno'}
           </button>
           <div className="mt-1 flex justify-center"><Avatar name="Pedro Henrique" size={30} /></div>
         </div>
       </div>
-      {(open || floating) && (
-        <div onMouseEnter={() => hovered && hover(hovered)} className={cn('flex w-[220px] shrink-0 flex-col border-r bg-sidebar', floating && 'absolute inset-y-0 left-[72px] z-30 shadow-xl animate-in fade-in-0 slide-in-from-left-2 duration-150')}>
-          <div className="flex h-14 items-center border-b px-4"><span className="text-[14px] font-semibold tracking-tight">{shown.label}</span>{internal && <Badge>Interno</Badge>}</div>
-          <nav className="grid gap-0.5 p-3" aria-label={shown.label}>
-            {shown.items.map((entry) => {
-              const active = entry.id === screen || !!entry.also?.includes(screen)
-              return <button key={entry.id} onClick={() => go(entry.id)} aria-current={active ? 'page' : undefined} className={cn('flex h-9 w-full items-center rounded-md px-2.5 text-left text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', active ? 'bg-secondary font-medium text-foreground' : 'text-muted-foreground hover:bg-accent hover:text-foreground')}>{entry.label}</button>
-            })}
-          </nav>
-        </div>
-      )}
+      <div
+        onMouseEnter={() => hovered && hover(hovered)}
+        aria-hidden={!open}
+        className={cn('absolute inset-y-0 left-[72px] flex w-[228px] flex-col border-r bg-sidebar shadow-[8px_0_24px_-12px_rgba(0,0,0,0.18)] transition-[opacity,transform] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none',
+          open ? 'translate-x-0 opacity-100 duration-300' : 'pointer-events-none -translate-x-3 opacity-0 duration-200')}
+      >
+        <div className="flex h-14 items-center gap-2 border-b px-4"><span className="text-[14px] font-semibold tracking-tight">{shown.label}</span>{internal && <Badge>Interno</Badge>}</div>
+        <nav className="grid gap-0.5 p-3" aria-label={shown.label}>
+          {shown.items.map((entry) => {
+            const active = entry.id === screen || !!entry.also?.includes(screen)
+            return <button key={entry.id} tabIndex={open ? 0 : -1} onClick={() => go(entry.id)} aria-current={active ? 'page' : undefined} className={cn('flex h-9 w-full items-center rounded-md px-2.5 text-left text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', active ? 'bg-secondary font-medium text-foreground' : 'text-muted-foreground hover:bg-accent hover:text-foreground')}>{entry.label}</button>
+          })}
+        </nav>
+      </div>
     </div>
   )
 }
@@ -2936,8 +2930,8 @@ const COUNTS_BY: Record<CountsBy, { label: string; start: string }> = {
   network: { label: 'Network', start: 'quando uma network que tinha saído volta, com o cliente ainda na Groone' },
   site: { label: 'Site', start: 'na aprovação do site no GAM ou quando ele volta' },
 }
-type CommissionStatus = 'draft' | 'validated' | 'paid'
-const COMMISSION_STATUS: Record<CommissionStatus, [string, 'neutral' | 'ochre' | 'ok']> = { draft: ['Em aberto', 'ochre'], validated: ['Validada', 'neutral'], paid: ['Paga', 'ok'] }
+type CommissionStatus = 'draft' | 'validated' | 'issued' | 'paid'
+const COMMISSION_STATUS: Record<CommissionStatus, [string, 'neutral' | 'ochre' | 'ok']> = { draft: ['Em aberto', 'ochre'], validated: ['Validada', 'neutral'], issued: ['Emitida', 'ok'], paid: ['Paga', 'ok'] }
 const MY_WINDOWS = [
   { what: 'Receitas da Vó', kind: 'Cliente', start: '08/10/2026', end: '06/11/2026', percent: 5, month: 412.35 },
   { what: 'Portal Tech News', kind: 'Cliente', start: '15/10/2026', end: '13/11/2026', percent: 5, month: 188.9 },
@@ -2946,7 +2940,7 @@ const MY_WINDOWS = [
 const MY_HISTORY: { month: string; base: number; commission: number; deduction: number; status: CommissionStatus }[] = [
   { month: 'Outubro 2026', base: 13953, commission: 697.65, deduction: 0, status: 'draft' },
   { month: 'Setembro 2026', base: 11820, commission: 591.0, deduction: 23.4, status: 'validated' },
-  { month: 'Agosto 2026', base: 10410, commission: 520.5, deduction: 18.9, status: 'paid' },
+  { month: 'Agosto 2026', base: 10410, commission: 520.5, deduction: 18.9, status: 'issued' },
 ]
 const TEAM: { name: string; role: string; revshare: number; commission: number; deduction: number; status: CommissionStatus }[] = [
   { name: 'Lucas Prado', role: 'Comercial externo', revshare: 14210, commission: 697.65, deduction: 0, status: 'draft' },
@@ -3117,7 +3111,7 @@ function MyCommissionScreen() {
               ['Comissão do mês', money.format(month), 'Em aberto até o fechamento'],
               ['Deduções do GAM', '—', 'Entram no fechamento, dia 15/11'],
               ['Clientes com prazo aberto', '2', 'Prazos que geram comissão hoje'],
-              ['Setembro', money.format(591 - 23.4), 'Validada · paga com a folha'],
+              ['Setembro', money.format(591 - 23.4), 'Validada · falta emitir'],
             ].map(([label, value, hint]) => (
               <div key={label} className="bg-card p-4"><div className="text-[13px] font-medium text-muted-foreground">{label}</div><div className="mt-1 text-[22px] font-semibold tracking-tight tnum">{value}</div><div className="mt-1 text-[12px] text-muted-foreground">{hint}</div></div>
             ))}
@@ -3186,7 +3180,7 @@ function TeamCommissionsScreen() {
               ['Comissões do mês', money.format(total), 'Em aberto até 15/11'],
               ['Pessoas recebendo', String(team.length), 'Em papéis com comissão'],
               ['Batendo a meta', `${team.filter((item) => item.revshare >= (personGoal(STAFF_ROLES.find((role) => role.name === item.role)!) ?? Infinity) * ((DAY_OF_MONTH - 1) / DAYS_IN_MONTH)).length} de ${team.length}`, 'No ritmo de hoje'],
-              ['Setembro', money.format(2380.4), 'Validado · falta marcar como pago'],
+              ['Setembro', money.format(2380.4), 'Validado · falta marcar como emitido'],
             ].map(([label, value, hint]) => (
               <div key={label} className="bg-card p-4"><div className="text-[13px] font-medium text-muted-foreground">{label}</div><div className="mt-1 text-[22px] font-semibold tracking-tight tnum">{value}</div><div className="mt-1 text-[12px] text-muted-foreground">{hint}</div></div>
             ))}
@@ -3219,7 +3213,7 @@ function TeamCommissionsScreen() {
         </Table>
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-card px-4 py-3 text-[14px]">
           <span className="text-muted-foreground">Setembro está validado (US$ 2.380,40 para 5 pessoas).</span>
-          <Button variant="outline" onClick={() => { setTeam(team); toast.success('Setembro marcado como pago') }}>Marcar setembro como pago</Button>
+          <Button variant="outline" onClick={() => { setTeam(team); toast.success('Setembro marcado como emitido', { description: 'Fica como paga quando a invoice for paga.' }) }}>Marcar setembro como emitido</Button>
         </div>
       </Body>
     </>
