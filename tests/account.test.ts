@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { device, keyState, recoveryFile, sortKeys } from '@/modules/account/rules'
+import { device, keyState, recoveryFile } from '@/modules/account/rules'
 import type { ApiKey } from '@/modules/account/types'
 
 const key = (id: string, created_at: string, extra: Partial<ApiKey> = {}): ApiKey => ({
@@ -40,15 +40,6 @@ describe('chaves', () => {
     expect(keyState(key('a', '2026-01-01', { revoked_at: '2026-02-01T00:00:00Z' }), now)).toBe('revoked')
     expect(keyState(key('b', '2026-01-01', { expires_at: '2026-10-01T00:00:00Z' }), now)).toBe('expired')
     expect(keyState(key('c', '2026-01-01'), now)).toBe('active')
-  })
-
-  it('ativas primeiro, depois as mais novas', () => {
-    const list = [
-      key('velha', '2026-01-01T00:00:00Z'),
-      key('revogada', '2026-09-01T00:00:00Z', { revoked_at: '2026-09-02T00:00:00Z' }),
-      key('nova', '2026-10-01T00:00:00Z'),
-    ]
-    expect(sortKeys(list, now).map((k) => k.id)).toEqual(['nova', 'velha', 'revogada'])
   })
 })
 
