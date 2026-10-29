@@ -36,6 +36,7 @@ import type { Invitation, Member, RoleOption } from '@/modules/team/types'
 import TeamTabs from '@/modules/team/components/TeamTabs.vue'
 import { useSession } from '@/stores/session'
 import { companyService } from '@/modules/company/service'
+import { inviteTaken } from '@/modules/team/rules'
 import { teamService } from '@/modules/team/service'
 
 const SEARCH_DELAY_MS = 300
@@ -150,10 +151,11 @@ watch(roleOptions, (options) => {
   if (!options.some((opt) => opt.value === inviteRole.value)) inviteRole.value = options[0]?.value ?? ''
 })
 const emailOk = computed(() => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.value.trim()))
-const dupe = computed(() => {
-  const typed = email.value.trim().toLowerCase()
-  return members.value.some((member) => member.user.email.toLowerCase() === typed) || invites.value.some((invite) => invite.email.toLowerCase() === typed)
-})
+// E-mails que o servidor recusou por já estarem na equipe ou convidados (fora da página na tela).
+const refused = ref<string[]>([])
+const dupe = computed(() =>
+  inviteTaken(email.value, { members: members.value.map((member) => member.user.email), invites: invites.value.map((invite) => invite.email) }, refused.value),
+)
 
 /** Envia o convite para o email com o papel escolhido. */
 async function sendInvite() {
@@ -166,7 +168,8 @@ async function sendInvite() {
     toast.success(t('team.sent', { email: invitation.email }), { description: t('team.sentSub') })
     email.value = ''
   } catch (error) {
-    errorToast(error)
+    if (error instanceof ApiError && error.code === 'already_member') refused.value = [...refused.value, email.value.trim()]
+    else errorToast(error)
   } finally {
     sending.value = false
   }

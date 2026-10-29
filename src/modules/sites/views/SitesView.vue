@@ -78,12 +78,11 @@ async function loadSites() {
 }
 
 const unlinkedCall = latestCall()
-/** Carrega a página dos ad units sem site e todos os sites, que o seletor de site usa. */
+/** Carrega a página dos ad units sem site; se ela ficou vazia, volta uma. */
 async function loadUnlinked() {
   try {
-    const result = await unlinkedCall(() => Promise.all([siteService.unlinked({ page: unlinkedPage.value }), siteService.options()]))
-    if (!result) return
-    const [found, siteList] = result
+    const found = await unlinkedCall(() => siteService.unlinked({ page: unlinkedPage.value }))
+    if (!found) return
     if (found.items.length === 0 && unlinkedPage.value > 1) {
       unlinkedPage.value = Math.max(1, found.pages)
       return
@@ -91,7 +90,6 @@ async function loadUnlinked() {
     unlinked.value = found.items
     unlinkedTotal.value = found.total
     unlinkedPages.value = found.pages
-    allSites.value = siteList.items
   } catch (error) {
     toast.error(errorText(error instanceof ApiError ? error.code : 'unknown'))
   }
@@ -109,7 +107,10 @@ onMounted(async () => {
     networks.value = (await networkService.options().catch(() => ({ items: [] as Network[] }))).items
   }
   await loadSites()
-  if (canAssign.value) await loadUnlinked()
+  if (!canAssign.value) return
+  // Todos os sites, uma vez: o seletor de site dos ad units sem site.
+  allSites.value = (await siteService.options().catch(() => ({ items: [] as SiteListItem[] }))).items
+  await loadUnlinked()
 })
 watch([networkId, archived], firstPage)
 watch(searchText, () => void searchSites())

@@ -64,13 +64,13 @@ const fail = (error: unknown) => toast.error(errorText(error instanceof ApiError
 /** Envia a imagem nova do cliente e recarrega a página com a auditoria. */
 async function saveImage(file: File) {
   await clientService.setImage(id.value, file)
-  await load()
+  await reload()
 }
 
 /** Tira a imagem do cliente e recarrega a página com a auditoria. */
 async function removeImage() {
   await clientService.removeImage(id.value)
-  await load()
+  await reload()
 }
 
 /** Carrega o cliente e a auditoria. */
@@ -94,6 +94,15 @@ onMounted(async () => {
     // sem a lista, a indicação aparece pelo id
   }
 })
+
+/** Depois de uma ação: o cliente de novo e a auditoria na página 1, onde a entrada nova aparece. */
+async function reload() {
+  if (auditPage.value === 1) return load()
+  auditPage.value = 1
+  const detail = await clientService.show(id.value)
+  client.value = detail
+  seats.value = String(detail.seat_limit)
+}
 
 /** Guarda a página da auditoria. */
 function showAudit(found: Page<AuditEntry>) {
@@ -154,7 +163,7 @@ async function setStatus() {
     await clientService.setStatus(current.id, status)
     nextStatus.value = null
     toast.success(t('int.situationChanged'))
-    await load()
+    await reload()
   } catch (error) {
     fail(error)
   } finally {
@@ -170,7 +179,7 @@ async function sendInvite() {
   try {
     ownerInvite.value = await clientService.inviteOwner(current.id)
     toast.success(t('int.inviteSent', { email: ownerInvite.value.email }))
-    await load()
+    await reload()
   } catch (error) {
     fail(error)
   } finally {
@@ -237,7 +246,7 @@ async function changeOwner() {
     await clientService.changeOwner(current.id, ownerPick.value)
     ownerOpen.value = false
     toast.success(t('int.ownerChanged'))
-    await load()
+    await reload()
   } catch (error) {
     fail(error)
   } finally {

@@ -14,7 +14,7 @@ import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import DataTable from '@/components/ui/DataTable.vue'
 import Pagination from '@/components/ui/Pagination.vue'
 import LoadError from '@/components/LoadError.vue'
-import { keyState, sortKeys, type KeyState } from '@/modules/account/rules'
+import { keyState, type KeyState } from '@/modules/account/rules'
 import { ApiError } from '@/lib/api'
 import { errorText, formatAgo, formatDate, t } from '@/lib/i18n'
 import { td, th } from '@/lib/table'
@@ -54,7 +54,7 @@ async function load() {
       page.value = Math.max(1, found.pages)
       return
     }
-    keys.value = sortKeys(found.items)
+    keys.value = found.items
     total.value = found.total
     pages.value = found.pages
   } catch (error) {

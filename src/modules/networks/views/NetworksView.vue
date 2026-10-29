@@ -109,8 +109,9 @@ async function loadHistory(network: Network) {
 /** Abre o histórico de sincronizações da network na primeira página. */
 async function openHistory(network: Network) {
   history.value = { network: network, runs: null }
-  historyPage.value = 1
-  await loadHistory(network)
+  // Fora da página 1, a troca de página já busca (pelo watch); assim sai uma busca só.
+  if (historyPage.value !== 1) historyPage.value = 1
+  else await loadHistory(network)
 }
 watch(historyPage, () => history.value && loadHistory(history.value.network))
 /** Tom do selo de uma sincronização. */
