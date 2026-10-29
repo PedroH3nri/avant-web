@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Toaster, toast } from 'sonner'
-import { Check, ChevronsUpDown, Copy, Loader2, LogOut, Plus, RefreshCw, Search, X, AlertTriangle, ArrowLeft, MoreHorizontal, Lock, Mail, ExternalLink, Home, Users, Network, Settings, ShieldCheck, Menu, BarChart3, Eye, FileText, Wallet, Target } from 'lucide-react'
+import { Check, ChevronsUpDown, Copy, Loader2, LogOut, Plus, RefreshCw, Search, X, AlertTriangle, ArrowLeft, MoreHorizontal, Lock, Mail, ExternalLink, Home, Users, Network, Settings, ShieldCheck, Menu, BarChart3, Eye, FileText, Wallet, Target, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -46,7 +46,7 @@ const SCREENS = [
   ['comissoes', 'Painel interno · Comissões da equipe'],
 ] as const
 type Screen = (typeof SCREENS)[number][0]
-const INTERNAL_SCREENS: Screen[] = ['interno', 'papelcomissao', 'minhacomissao', 'comissoes']
+const INTERNAL_SCREENS: Screen[] = ['interno', 'cliente', 'contratos', 'resultados', 'papelcomissao', 'minhacomissao', 'comissoes']
 const isScreen = (s: string): s is Screen => SCREENS.some(([k]) => k === s)
 type T = (k: Key) => string
 
@@ -346,12 +346,87 @@ function CompanySwitcher({ t, internal, image }: { t: T; internal: boolean; imag
   )
 }
 
+
+/* ---------- sidebar em trilho com painel (avant-web#91) ---------- */
+
+type RailGroup = { key: string; label: string; icon: typeof Home; items: { id: Screen; label: string; also?: Screen[] }[] }
+const CLIENT_RAIL: RailGroup[] = [
+  { key: 'inicio', label: 'Início', icon: Home, items: [{ id: 'inicio', label: 'Dashboard' }] },
+  { key: 'relatorios', label: 'Relatórios', icon: BarChart3, items: [{ id: 'desempenho', label: 'Ad Manager' }, { id: 'visitas', label: 'Page Views' }, { id: 'relatorios', label: 'Relatórios', also: ['construtor'] }] },
+  { key: 'financeiro', label: 'Financeiro', icon: Wallet, items: [{ id: 'resultado', label: 'Resultado' }, { id: 'custos', label: 'Custos' }] },
+  { key: 'inventario', label: 'Inventário', icon: Network, items: [{ id: 'networks', label: 'Networks do GAM', also: ['conectar'] }] },
+  { key: 'equipe', label: 'Equipe', icon: Users, items: [{ id: 'equipe', label: 'Membros', also: ['membro'] }, { id: 'grupos', label: 'Grupos', also: ['grupo', 'grupoinativo'] }] },
+  { key: 'empresa', label: 'Empresa', icon: Settings, items: [{ id: 'configuracoes', label: 'Configurações' }, { id: 'fiscais', label: 'Dados fiscais' }] },
+]
+const INTERNAL_RAIL: RailGroup[] = [
+  { key: 'clientes', label: 'Clientes', icon: Users, items: [{ id: 'interno', label: 'Clientes', also: ['cliente'] }, { id: 'contratos', label: 'Contratos' }, { id: 'resultados', label: 'Resultado dos clientes' }] },
+  { key: 'comissoes', label: 'Comissões', icon: Wallet, items: [{ id: 'comissoes', label: 'Comissões da equipe' }, { id: 'minhacomissao', label: 'Minha comissão' }] },
+  { key: 'equipegroone', label: 'Equipe', icon: ShieldCheck, items: [{ id: 'papelcomissao', label: 'Papéis da Equipe Groone' }] },
+]
+const RAIL_STORAGE = 'avant-proto-rail-open'
+
+/** Sidebar em trilho: um ícone por grupo e, ao lado, o painel com os itens do grupo escolhido. */
+function RailSidebar({ screen, go }: { screen: Screen; go: (s: Screen) => void }) {
+  const internal = INTERNAL_SCREENS.includes(screen)
+  const groups = internal ? INTERNAL_RAIL : CLIENT_RAIL
+  const owner = groups.find((group) => group.items.some((entry) => entry.id === screen || entry.also?.includes(screen))) ?? groups[0]
+  const [picked, setPicked] = useState<string | null>(null)
+  const [open, setOpen] = useState(() => { try { return localStorage.getItem(RAIL_STORAGE) !== 'closed' } catch { return true } })
+  useEffect(() => { setPicked(null) }, [screen])
+  const shown = groups.find((group) => group.key === picked) ?? owner
+  const keep = (value: boolean) => { setOpen(value); try { localStorage.setItem(RAIL_STORAGE, value ? 'open' : 'closed') } catch { /* sem armazenamento */ } }
+  const choose = (group: RailGroup) => {
+    if (group.items.length === 1) { go(group.items[0].id); return }
+    setPicked(group.key)
+    if (!open) keep(true)
+  }
+  return (
+    <div className="flex h-full">
+      <div className="flex w-[72px] shrink-0 flex-col items-center border-r bg-sidebar py-3">
+        <button onClick={() => go(internal ? 'interno' : 'inicio')} aria-label="Avant, início" className="rounded-md p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><Mark size={28} /></button>
+        <nav className="mt-4 grid w-full gap-1 px-1.5" aria-label="Grupos do menu">
+          {groups.map((group) => {
+            const Icon = group.icon
+            const current = owner.key === group.key
+            const showing = open && shown.key === group.key
+            return (
+              <button key={group.key} onClick={() => choose(group)} aria-current={current ? 'page' : undefined} aria-expanded={group.items.length > 1 ? showing : undefined} title={group.label}
+                className={cn('flex flex-col items-center gap-1 rounded-md py-2 text-[10.5px] font-medium leading-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                  current ? 'bg-secondary text-foreground' : showing ? 'bg-accent text-foreground' : 'text-muted-foreground hover:bg-accent hover:text-foreground')}>
+                <Icon className="h-[18px] w-[18px]" />{group.label}
+              </button>
+            )
+          })}
+        </nav>
+        <div className="mt-auto grid w-full gap-1 px-1.5">
+          <button onClick={() => keep(!open)} title={open ? 'Recolher o painel' : 'Abrir o painel'} aria-label={open ? 'Recolher o painel' : 'Abrir o painel'} className="flex justify-center rounded-md py-2 text-muted-foreground hover:bg-accent hover:text-foreground">{open ? <PanelLeftClose className="h-[18px] w-[18px]" /> : <PanelLeftOpen className="h-[18px] w-[18px]" />}</button>
+          <button onClick={() => go(internal ? 'inicio' : 'interno')} title={internal ? 'Voltar ao painel do cliente' : 'Painel interno'} className="flex flex-col items-center gap-1 rounded-md py-2 text-[10.5px] font-medium leading-none text-muted-foreground hover:bg-accent hover:text-foreground">
+            {internal ? <ArrowLeft className="h-[18px] w-[18px]" /> : <ShieldCheck className="h-[18px] w-[18px]" />}{internal ? 'Cliente' : 'Interno'}
+          </button>
+          <div className="mt-1 flex justify-center"><Avatar name="Pedro Henrique" size={30} /></div>
+        </div>
+      </div>
+      {open && (
+        <div className="flex w-[220px] shrink-0 flex-col border-r bg-sidebar">
+          <div className="flex h-14 items-center border-b px-4"><span className="text-[14px] font-semibold tracking-tight">{shown.label}</span>{internal && <Badge>Interno</Badge>}</div>
+          <nav className="grid gap-0.5 p-3" aria-label={shown.label}>
+            {shown.items.map((entry) => {
+              const active = entry.id === screen || !!entry.also?.includes(screen)
+              return <button key={entry.id} onClick={() => go(entry.id)} aria-current={active ? 'page' : undefined} className={cn('flex h-9 w-full items-center rounded-md px-2.5 text-left text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', active ? 'bg-secondary font-medium text-foreground' : 'text-muted-foreground hover:bg-accent hover:text-foreground')}>{entry.label}</button>
+            })}
+          </nav>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function Shell({ t, lang, setLang, screen, go, image, children }: { t: T; lang: Lang; setLang: (l: Lang) => void; screen: Screen; go: (s: Screen) => void; image: string | null; children: React.ReactNode }) {
   const [open, setOpen] = useState(false)
   const nav = (s: Screen) => { setOpen(false); go(s) }
   return (
     <div className="flex flex-1">
-      <aside className="sticky top-11 hidden h-[calc(100dvh-2.75rem)] w-[248px] shrink-0 self-start border-r lg:block"><SidebarContent t={t} screen={screen} go={go} /></aside>
+      <aside className="sticky top-11 hidden h-[calc(100dvh-2.75rem)] shrink-0 self-start lg:block"><RailSidebar screen={screen} go={go} /></aside>
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent side="left" className="w-[272px] p-0 [&>button:first-child]:hidden">
           <SheetTitle className="sr-only">Menu</SheetTitle>
