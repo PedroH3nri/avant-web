@@ -3,7 +3,7 @@
 import { computed, type Component } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { DropdownMenuRoot, DropdownMenuTrigger } from 'reka-ui'
-import { Building2, ChartLine, ChevronsUpDown, Eye, FileChartColumn, Receipt, Scale, FileSignature, Globe, LayoutDashboard, LogOut, Network, ShieldCheck, UserRound, Users, UsersRound } from 'lucide-vue-next'
+import { Building2, ChartLine, ChevronsUpDown, Eye, FileChartColumn, Receipt, Target, Scale, FileSignature, Globe, LayoutDashboard, LogOut, Network, ShieldCheck, UserRound, Users, UsersRound } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 import Avatar from '@/components/ui/Avatar.vue'
 import Mark from '@/components/ui/Mark.vue'
@@ -48,6 +48,7 @@ const GROUPS: Group[] = [
       { to: '/relatorios', key: 'nav.reports', icon: FileChartColumn },
       { to: '/resultado', key: 'nav.results', icon: Scale },
       { to: '/interno/resultados', key: 'int.results', icon: Scale, internal: true },
+      { to: '/interno/metas', key: 'goals.title', icon: Target, internal: true },
     ],
   },
   {
