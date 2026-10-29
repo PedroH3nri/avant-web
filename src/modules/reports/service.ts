@@ -1,6 +1,6 @@
 /** Chamadas da API de métricas, relatórios salvos e métricas personalizadas. */
 
-import { API, api } from '@/lib/api'
+import { API, api, type Query } from '@/lib/api'
 import type { Items, Lang } from '@/lib/types'
 import type {
   CustomMetric,
@@ -8,6 +8,7 @@ import type {
   CustomMetricCheckInput,
   CustomMetricInput,
   MetricCatalog,
+  ReportPage,
   ReportResult,
   ReportTemplate,
   SavedReport,
@@ -20,8 +21,8 @@ export const reportService = {
   catalog: () => api.get<MetricCatalog>('/metrics/catalog'),
   /** Roda uma consulta sem salvar. */
   query: (body: unknown) => api.post<ReportResult>('/reports/query', body),
-  /** Os relatórios salvos que a pessoa vê. */
-  list: () => api.get<Pick<Items<SavedReport>, 'items'>>('/reports'),
+  /** Uma página dos relatórios salvos que a pessoa vê, com a aba (`scope`), a busca (`q`) e as contagens. */
+  list: (query?: Query) => api.get<ReportPage>('/reports', query),
   /** Um relatório salvo. */
   get: (id: string) => api.get<SavedReport>(`/reports/${id}`),
   /** Salva um relatório novo. */

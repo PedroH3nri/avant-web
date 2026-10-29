@@ -1,8 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { api } from '@/lib/api'
 import { accountService } from '@/modules/account/service'
+import { costService } from '@/modules/costs/service'
 import { groupService } from '@/modules/groups/service'
 import { networkService } from '@/modules/networks/service'
+import { reportService } from '@/modules/reports/service'
 import { siteService } from '@/modules/sites/service'
 import { teamService } from '@/modules/team/service'
 
@@ -58,5 +60,19 @@ describe('listas do inventário em páginas', () => {
     await networkService.options()
     await siteService.options()
     expect(get.mock.calls.map((call) => call[0])).toEqual(['/networks/options', '/sites/options'])
+  })
+})
+
+describe('custos e relatórios em páginas', () => {
+  afterEach(() => vi.restoreAllMocks())
+
+  it('pede a página dos custos e dos relatórios com a aba e a busca', async () => {
+    const get = vi.spyOn(api, 'get').mockResolvedValue({ items: [], total: 0, page: 1, pages: 0, page_size: 10 })
+    await costService.list({ page: 2 })
+    await reportService.list({ page: 3, scope: 'mine', q: 'receita' })
+    expect(get.mock.calls.map((call) => [call[0], call[1]])).toEqual([
+      ['/costs', { page: 2 }],
+      ['/reports', { page: 3, scope: 'mine', q: 'receita' }],
+    ])
   })
 })
