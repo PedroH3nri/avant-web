@@ -12,6 +12,7 @@ import PageHeader from '@/components/PageHeader.vue'
 import Badge from '@/components/ui/Badge.vue'
 import Button from '@/components/ui/Button.vue'
 import DataTable from '@/components/ui/DataTable.vue'
+import Pagination from '@/components/ui/Pagination.vue'
 import Dialog from '@/components/ui/Dialog.vue'
 import Field from '@/components/ui/Field.vue'
 import Input from '@/components/ui/Input.vue'
@@ -36,6 +37,9 @@ const SAMPLE_REVENUE = 9000
 
 const session = useSession()
 const costs = ref<Cost[] | null>(null)
+const page = ref(1)
+const total = ref(0)
+const pages = ref(0)
 const currencies = ref<Currency[]>([])
 const loadError = ref<string | null>(null)
 const editing = ref<Cost | null>(null)
@@ -54,18 +58,25 @@ const currencyOptions = computed(() =>
 )
 const formulaReady = computed(() => form.value.kind !== 'formula' || check.value?.valid === true)
 
-/** Carrega os custos e as moedas que já têm cotação. */
+/** Carrega a página dos custos e as moedas que já têm cotação. */
 async function load() {
   loadError.value = null
   try {
-    const [page, list] = await Promise.all([costService.list(), currencyService.list()])
-    costs.value = page.items
+    const [found, list] = await Promise.all([costService.list({ page: page.value }), currencyService.list()])
     currencies.value = list
+    if (found.items.length === 0 && page.value > 1) {
+      page.value = Math.max(1, found.pages)
+      return
+    }
+    costs.value = found.items
+    total.value = found.total
+    pages.value = found.pages
   } catch (error) {
     loadError.value = errorText(error instanceof ApiError ? error.code : 'unknown')
   }
 }
 onMounted(load)
+watch(page, load)
 
 /** Confere a fórmula na API e calcula com valores de exemplo, para a prévia. */
 const checkFormula = useDebounceFn(async () => {
@@ -102,20 +113,16 @@ async function save() {
   if (!body.value) return
   busy.value = true
   try {
-    const saved = editing.value ? await costService.update(editing.value.id, body.value) : await costService.create(body.value)
+    if (editing.value) await costService.update(editing.value.id, body.value)
+    else await costService.create(body.value)
     toast.success(editing.value ? t('cost.saved') : t('cost.created'))
     formOpen.value = false
-    costs.value = [saved, ...(costs.value ?? []).filter((cost) => cost.id !== saved.id)].sort(byMonth)
+    await load()
   } catch (error) {
     toast.error(errorText(error instanceof ApiError ? error.code : 'unknown'))
   } finally {
     busy.value = false
   }
-}
-
-/** Ordem da lista: mês mais novo primeiro, depois o nome. */
-function byMonth(first: Cost, second: Cost): number {
-  return second.start_month.localeCompare(first.start_month) || first.name.localeCompare(second.name)
 }
 
 const removeOpen = computed({
@@ -132,7 +139,7 @@ async function confirmRemove() {
   busy.value = true
   try {
     await costService.remove(current.id)
-    costs.value = (costs.value ?? []).filter((cost) => cost.id !== current.id)
+    await load()
     removing.value = null
     toast.success(t('cost.deleted'))
   } catch (error) {
@@ -209,6 +216,7 @@ const kindClass = (on: boolean) =>
         </tr>
       </tbody>
     </DataTable>
+    <Pagination v-if="!loadError" v-model:page="page" :total="total" :pages="pages" />
   </PageBody>
 
   <Dialog v-model:open="formOpen" :title="editing ? t('cost.edit') : t('cost.new')" :desc="t('cost.formDesc')" class="max-w-[540px]">

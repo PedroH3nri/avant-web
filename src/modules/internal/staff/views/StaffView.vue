@@ -20,14 +20,14 @@ import TableState from '@/components/ui/TableState.vue'
 import { ApiError } from '@/lib/api'
 import { errorText, formatAgo, formatDate, pick, t } from '@/lib/i18n'
 import { td, th } from '@/lib/table'
-import type { Invitation, Member, Role } from '@/modules/team/types'
+import type { Invitation, Member, RoleOption } from '@/modules/team/types'
 import { useSession } from '@/stores/session'
 import { staffService } from '@/modules/internal/staff/service'
 import { teamService } from '@/modules/team/service'
 
 const session = useSession()
 const staff = ref<Member[] | null>(null)
-const roles = ref<Role[]>([])
+const roles = ref<RoleOption[]>([])
 const invites = ref<Invitation[]>([])
 const loadError = ref<string | null>(null)
 const canEditGroone = computed(() => session.can('company.edit'))
@@ -42,7 +42,7 @@ async function load() {
   try {
     const [staffPage, rolePage, invitationPage] = await Promise.all([
       staffService.list(),
-      session.can('roles.view') ? teamService.roles() : Promise.resolve({ items: [] as Role[], next_cursor: null }),
+      session.can('roles.view') ? teamService.roleOptions() : Promise.resolve({ items: [] as RoleOption[], next_cursor: null }),
       session.can('team.view') ? teamService.invitations() : Promise.resolve({ items: [] as Invitation[], next_cursor: null }),
     ])
     staff.value = staffPage.items.filter((member) => member.status !== 'removed')

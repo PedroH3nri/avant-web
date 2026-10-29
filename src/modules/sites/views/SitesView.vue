@@ -1,6 +1,7 @@
 <script setup lang="ts">
 /** Lista de sites e de ad units sem site, com cadastro manual. */
 import { computed, onMounted, ref, watch } from 'vue'
+import { useDebounceFn } from '@vueuse/core'
 import { useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
 import { Globe, Search } from 'lucide-vue-next'
@@ -12,6 +13,7 @@ import Button from '@/components/ui/Button.vue'
 import Card from '@/components/ui/Card.vue'
 import Checkbox from '@/components/ui/Checkbox.vue'
 import DataTable from '@/components/ui/DataTable.vue'
+import Pagination from '@/components/ui/Pagination.vue'
 import Field from '@/components/ui/Field.vue'
 import Input from '@/components/ui/Input.vue'
 import NativeSelect from '@/components/ui/NativeSelect.vue'
@@ -29,13 +31,21 @@ import { useSession } from '@/stores/session'
 import { networkService } from '@/modules/networks/service'
 import { siteService } from '@/modules/sites/service'
 
+const SEARCH_DELAY_MS = 300
 const session = useSession()
 const router = useRouter()
 const canConnect = computed(() => session.can('network.connect'))
 const canManage = computed(() => session.can('sites.manage'))
 const sites = ref<SiteListItem[] | null>(null)
+const page = ref(1)
+const total = ref(0)
+const pages = ref(0)
+const allSites = ref<SiteListItem[]>([])
 const networks = ref<Network[]>([])
 const unlinked = ref<AdUnit[] | null>(null)
+const unlinkedPage = ref(1)
+const unlinkedTotal = ref(0)
+const unlinkedPages = ref(0)
 const loadError = ref<string | null>(null)
 const view = ref<'sites' | 'unlinked'>('sites')
 const searchText = ref('')
@@ -44,38 +54,61 @@ const archived = ref(false)
 const canAssign = computed(() => session.can('sites.assign'))
 const assignedOnly = computed(() => session.me?.site_scope === 'assigned' && !session.can('sites.assign'))
 
-/** Carrega os sites. */
+const filtering = computed(() => !!searchText.value.trim() || !!networkId.value || archived.value)
+
+/** Carrega a página dos sites com os filtros e a busca. */
 async function loadSites() {
   loadError.value = null
   try {
-    sites.value = (
-      await siteService.list({
-        network_id: networkId.value || undefined,
-        include_archived: archived.value || undefined,
-      })
-    ).items
+    const found = await siteService.list({
+      page: page.value,
+      network_id: networkId.value || undefined,
+      include_archived: archived.value || undefined,
+      q: searchText.value.trim() || undefined,
+    })
+    sites.value = found.items
+    total.value = found.total
+    pages.value = found.pages
   } catch (error) {
     loadError.value = errorText(error instanceof ApiError ? error.code : 'unknown')
   }
 }
 
-/** Carrega os ad units ativos sem site. */
+/** Carrega a página dos ad units sem site e todos os sites, que o seletor de site usa. */
 async function loadUnlinked() {
   try {
-    unlinked.value = (await siteService.adUnits({ unlinked: true, status: 'active' })).items
+    const [found, siteList] = await Promise.all([siteService.unlinked({ page: unlinkedPage.value }), siteService.options()])
+    if (found.items.length === 0 && unlinkedPage.value > 1) {
+      unlinkedPage.value = Math.max(1, found.pages)
+      return
+    }
+    unlinked.value = found.items
+    unlinkedTotal.value = found.total
+    unlinkedPages.value = found.pages
+    allSites.value = siteList.items
   } catch (error) {
     toast.error(errorText(error instanceof ApiError ? error.code : 'unknown'))
   }
 }
 
+/** Volta para a página 1 com os filtros novos, ou recarrega se já estiver nela. */
+function firstPage() {
+  if (page.value === 1) void loadSites()
+  else page.value = 1
+}
+const searchSites = useDebounceFn(firstPage, SEARCH_DELAY_MS)
+
 onMounted(async () => {
   if (session.can('network.view')) {
-    networks.value = (await networkService.list().catch(() => ({ items: [] as Network[] }))).items
+    networks.value = (await networkService.options().catch(() => ({ items: [] as Network[] }))).items
   }
   await loadSites()
   if (canAssign.value) await loadUnlinked()
 })
-watch([networkId, archived], loadSites)
+watch([networkId, archived], firstPage)
+watch(searchText, () => void searchSites())
+watch(page, loadSites)
+watch(unlinkedPage, loadUnlinked)
 
 /** Nome da network pelo id. */
 const netName = (id: string | null) => {
@@ -94,7 +127,7 @@ async function addSite() {
   saving.value = true
   try {
     const site = await siteService.create(domain.value.trim())
-    sites.value = [...(sites.value ?? []), site].sort((first, second) => first.domain.localeCompare(second.domain))
+    firstPage()
     toast.success(t('sites.added', { domain: site.domain }))
     domain.value = ''
     adding.value = false
@@ -105,17 +138,13 @@ async function addSite() {
   }
 }
 const networkOptions = computed(() => [{ value: '', label: t('sites.allNetworks') }, ...networks.value.map((network) => ({ value: network.id, label: networkName(network) }))])
-const shown = computed(() => {
-  const term = searchText.value.trim().toLowerCase()
-  return (sites.value ?? []).filter((site) => !term || site.domain.toLowerCase().includes(term))
-})
 
 // Ligar ad unit sem site
 const choice = ref<Record<string, string>>({})
 /** Sites da mesma network que podem receber o ad unit. */
 const siteOptionsFor = (adUnit: AdUnit) => [
   { value: '', label: t('sites.choose') },
-  ...(sites.value ?? []).filter((site) => site.network_id === adUnit.network_id && site.status === 'active').map((site) => ({ value: site.id, label: site.domain })),
+  ...allSites.value.filter((site) => site.network_id === adUnit.network_id && site.status === 'active').map((site) => ({ value: site.id, label: site.domain })),
 ]
 /** Liga o ad unit ao site escolhido. */
 async function link(adUnit: AdUnit) {
@@ -123,7 +152,7 @@ async function link(adUnit: AdUnit) {
   if (!siteId) return
   try {
     await siteService.linkAdUnit(adUnit.id, { site_id: siteId })
-    toast.success(t('sites.linked', { unit: adUnit.name, site: sites.value?.find((site) => site.id === siteId)?.domain ?? '' }))
+    toast.success(t('sites.linked', { unit: adUnit.name, site: allSites.value.find((site) => site.id === siteId)?.domain ?? '' }))
     await Promise.all([loadUnlinked(), loadSites()])
   } catch (error) {
     toast.error(errorText(error instanceof ApiError ? error.code : 'unknown'))
@@ -163,10 +192,10 @@ const tab = (on: boolean) =>
     <div class="flex flex-wrap items-center gap-3">
       <div v-if="canAssign" class="flex rounded-md border bg-card p-0.5" role="tablist" :aria-label="t('sites.title')">
         <button type="button" role="tab" :aria-selected="view === 'sites'" :class="tab(view === 'sites')" @click="view = 'sites'">
-          {{ t('sites.tab.sites') }} <span class="text-muted-foreground tnum">{{ sites?.length ?? '' }}</span>
+          {{ t('sites.tab.sites') }} <span class="text-muted-foreground tnum">{{ sites ? total : '' }}</span>
         </button>
         <button type="button" role="tab" :aria-selected="view === 'unlinked'" :class="tab(view === 'unlinked')" @click="view = 'unlinked'">
-          {{ t('sites.tab.unlinked') }} <span class="text-muted-foreground tnum">{{ unlinked?.length ?? '' }}</span>
+          {{ t('sites.tab.unlinked') }} <span class="text-muted-foreground tnum">{{ unlinked ? unlinkedTotal : '' }}</span>
         </button>
       </div>
       <template v-if="view === 'sites'">
@@ -194,17 +223,17 @@ const tab = (on: boolean) =>
           <TableState
             :cols="networks.length ? 5 : 4"
             :loading="!sites"
-            :empty="!!sites && shown.length === 0"
+            :empty="!!sites && sites.length === 0"
             :icon="Globe"
-            :title="sites?.length ? undefined : t('sites.empty')"
-            :desc="sites?.length ? t('sites.noMatch') : assignedOnly ? t('sites.emptyAssigned') : t('sites.emptySub')"
+            :title="filtering ? undefined : t('sites.empty')"
+            :desc="filtering ? t('sites.noMatch') : assignedOnly ? t('sites.emptyAssigned') : t('sites.emptySub')"
           >
-            <template v-if="!sites?.length">
+            <template v-if="!filtering">
               <Button v-if="canConnect" size="sm" @click="router.push('/networks/conectar')">{{ t('net.connect') }}</Button>
               <Button v-if="canManage && !adding" size="sm" variant="outline" @click="adding = true">{{ t('sites.add') }}</Button>
             </template>
           </TableState>
-          <tr v-for="site in shown" :key="site.id" class="hover:bg-muted">
+          <tr v-for="site in sites ?? []" :key="site.id" class="hover:bg-muted">
             <td :class="td">
               <RouterLink :to="`/sites/${site.id}`" class="font-medium hover:underline focus-visible:underline focus-visible:outline-none">{{ site.domain }}</RouterLink>
               <Badge v-if="site.status === 'archived'" class="ml-2">{{ t('sites.archivedBadge') }}</Badge>
@@ -220,6 +249,7 @@ const tab = (on: boolean) =>
           </tr>
         </tbody>
       </DataTable>
+      <Pagination v-if="!loadError" v-model:page="page" :total="total" :pages="pages" />
     </template>
 
     <template v-else>
@@ -251,6 +281,7 @@ const tab = (on: boolean) =>
           </tr>
         </tbody>
       </DataTable>
+      <Pagination v-model:page="unlinkedPage" :total="unlinkedTotal" :pages="unlinkedPages" />
     </template>
   </PageBody>
 </template>

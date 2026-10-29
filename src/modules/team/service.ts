@@ -3,7 +3,7 @@
 import { api, type Query } from '@/lib/api'
 import type { Items, Page } from '@/lib/types'
 import type { Site } from '@/modules/sites/types'
-import type { Invitation, Member, MemberDetail, Permission, Role } from '@/modules/team/types'
+import type { Invitation, Member, MemberDetail, Permission, Role, RoleOption } from '@/modules/team/types'
 
 /** Serviço da equipe da Empresa ativa. */
 export const teamService = {
@@ -23,16 +23,18 @@ export const teamService = {
   memberSites: (membershipId: string) => api.get<Items<Site>>(`/members/${membershipId}/sites`),
   /** Troca a lista inteira de sites atribuídos ao membro. */
   assignSites: (membershipId: string, siteIds: string[]) => api.put<Items<Site>>(`/members/${membershipId}/sites`, { site_ids: siteIds }),
-  /** Os convites pendentes. */
-  invitations: () => api.get<Items<Invitation>>('/invitations'),
+  /** Uma página dos convites pendentes, do que vence por último ao que vence primeiro. */
+  invitations: (query?: Query) => api.get<Page<Invitation>>('/invitations', query),
   /** Convida alguém para a equipe. */
   invite: (email: string, roleId: string | null) => api.post<Invitation>('/invitations', { email, role_id: roleId }),
   /** Reenvia um convite com link novo. */
   resendInvitation: (invitationId: string) => api.post<Invitation>(`/invitations/${invitationId}/resend`),
   /** Cancela um convite pendente. */
   cancelInvitation: (invitationId: string) => api.delete(`/invitations/${invitationId}`),
-  /** Os papéis da Empresa ativa. */
-  roles: () => api.get<Items<Role>>('/roles'),
+  /** Uma página dos papéis da Empresa ativa, com as permissões de cada um. */
+  roles: (query?: Query) => api.get<Page<Role>>('/roles', query),
+  /** Todos os papéis, só com o que os seletores precisam. */
+  roleOptions: () => api.get<Items<RoleOption>>('/roles/options'),
   /** Cria um papel personalizado. */
   createRole: (body: unknown) => api.post<Role>('/roles', body),
   /** Muda um papel personalizado. */
