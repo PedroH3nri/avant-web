@@ -6,7 +6,6 @@ import { Menu } from 'lucide-vue-next'
 import CompanySwitcher from '@/components/CompanySwitcher.vue'
 import LangSwitch from '@/components/LangSwitch.vue'
 import SidebarNav from '@/components/SidebarNav.vue'
-import BrandSignature from '@/components/BrandSignature.vue'
 import Button from '@/components/ui/Button.vue'
 import { t } from '@/lib/i18n'
 
@@ -36,7 +35,6 @@ const open = ref(false)
         <LangSwitch class="ml-auto w-[132px]" />
       </header>
       <RouterView />
-      <footer class="mt-auto flex justify-center px-4 py-6 opacity-80"><BrandSignature /></footer>
     </div>
   </div>
 </template>

@@ -37,6 +37,13 @@
     --warn-soft: 45 100% 92%;
     --bad: 358 75% 47%;
     --bad-soft: 0 100% 97%;
+    --series-lime: #12c93a;
+    --series-cyan: #00b4d8;
+    --series-magenta: #e91eb5;
+    --series-violet: #7c4dff;
+    --series-orange: #ff6d00;
+    --series-yellow: #e6b800;
+    --series-red: #f0143c;
     --radius: 0.375rem;
   }
   @media (prefers-color-scheme: dark) {
@@ -73,6 +80,13 @@
       --warn-soft: 38 60% 14%;
       --bad: 358 90% 66%;
       --bad-soft: 358 50% 14%;
+      --series-lime: #39ff14;
+      --series-cyan: #00e5ff;
+      --series-magenta: #ff2bd6;
+      --series-violet: #9d7bff;
+      --series-orange: #ff8a1f;
+      --series-yellow: #ffe600;
+      --series-red: #ff3b5c;
       color-scheme: dark;
     }
   }
@@ -109,6 +123,13 @@
     --warn-soft: 38 60% 14%;
     --bad: 358 90% 66%;
     --bad-soft: 358 50% 14%;
+    --series-lime: #39ff14;
+    --series-cyan: #00e5ff;
+    --series-magenta: #ff2bd6;
+    --series-violet: #9d7bff;
+    --series-orange: #ff8a1f;
+    --series-yellow: #ffe600;
+    --series-red: #ff3b5c;
     color-scheme: dark;
   }
 }

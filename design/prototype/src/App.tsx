@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Toaster, toast } from 'sonner'
-import { Check, ChevronsUpDown, Copy, Loader2, LogOut, Plus, RefreshCw, Search, X, AlertTriangle, ArrowLeft, MoreHorizontal, Lock, Mail, ExternalLink, Home, Users, Network, Settings, ShieldCheck, Menu, BarChart3, Eye } from 'lucide-react'
+import { Check, ChevronsUpDown, Copy, Loader2, LogOut, Plus, RefreshCw, Search, X, AlertTriangle, ArrowLeft, MoreHorizontal, Lock, Mail, ExternalLink, Home, Users, Network, Settings, ShieldCheck, Menu, BarChart3, Eye, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -10,6 +10,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { cn } from '@/lib/utils'
 import { translate, type Key, type Lang } from './i18n'
 import { Mark, SeatBar, SeatDot, SeatStrip, type SeatState } from './tiles'
@@ -22,6 +23,8 @@ const SCREENS = [
   ['inicio', 'Início'],
   ['desempenho', 'Desempenho'],
   ['visitas', 'Page Views'],
+  ['relatorios', 'Relatórios'],
+  ['construtor', 'Relatórios · Construtor'],
   ['resultado', 'Resultado'],
   ['custos', 'Custos'],
   ['equipe', 'Equipe'],
@@ -247,6 +250,7 @@ const NAV: { id: Screen; key: Key; icon: typeof Home }[] = [
   { id: 'inicio', key: 'nav.home', icon: Home },
   { id: 'desempenho', key: 'nav.performance', icon: BarChart3 },
   { id: 'visitas', key: 'nav.pageViews', icon: Eye },
+  { id: 'relatorios', key: 'nav.reports', icon: FileText },
   { id: 'equipe', key: 'nav.team', icon: Users },
   { id: 'networks', key: 'nav.networks', icon: Network },
   { id: 'configuracoes', key: 'nav.settings', icon: Settings },
@@ -604,14 +608,14 @@ function PerformanceScreen() {
 const PV_HOURS = Array.from({ length: 24 }, (_, h) => Math.round(120000 + 70000 * Math.cos(((h - 6) / 24) * 2 * Math.PI)))
 const PV_COUNTRIES = [['Brasil', 2032211], ['Portugal', 365906], ['Estados Unidos', 244283], ['Angola', 101881], ['Sem país', 40730]] as const
 
-function Bars({ items }: { items: readonly (readonly [string, number])[] }) {
+function Bars({ items, color }: { items: readonly (readonly [string, number])[]; color?: string }) {
   const max = Math.max(...items.map(([, v]) => v)) || 1
   return (
     <ul className="grid gap-2">
       {items.map(([label, v]) => (
         <li key={label} className="grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)_auto] items-center gap-3 text-[13px]">
           <span className="truncate">{label}</span>
-          <span className="h-2 rounded-full bg-muted"><span className="block h-2 rounded-full bg-foreground" style={{ width: `${(v / max) * 100}%` }} /></span>
+          <span className="h-2 rounded-full bg-muted"><span className="block h-2 rounded-full bg-foreground" style={{ width: `${(v / max) * 100}%`, background: color }} /></span>
           <span className="tnum text-right">{int.format(v)}</span>
         </li>
       ))}
@@ -1998,6 +2002,834 @@ function CompanyImageCard({ name, image, setImage, staff }: { name: string; imag
   )
 }
 
+/* ---------- Relatórios (construtor como o do HubSpot) ---------- */
+
+type Kind = 'money' | 'int' | 'pct'
+type Source = 'gam' | 'visits'
+type FieldDef = { key: string; label: string; kind: Kind; sources: Source[]; hint?: string }
+const R_METRICS: FieldDef[] = [
+  { key: 'revenue', label: 'Receita', kind: 'money', sources: ['gam'] },
+  { key: 'impressions', label: 'Impressões', kind: 'int', sources: ['gam'] },
+  { key: 'clicks', label: 'Cliques', kind: 'int', sources: ['gam'] },
+  { key: 'ad_requests', label: 'Requisições', kind: 'int', sources: ['gam'] },
+  { key: 'ecpm', label: 'eCPM', kind: 'money', sources: ['gam'] },
+  { key: 'ctr', label: 'CTR', kind: 'pct', sources: ['gam'] },
+  { key: 'active_view', label: 'Visibilidade', kind: 'pct', sources: ['gam'] },
+  { key: 'fill_rate', label: 'Taxa de preenchimento', kind: 'pct', sources: ['gam'] },
+  { key: 'page_views', label: 'Page views', kind: 'int', sources: ['visits'] },
+  { key: 'page_rpm', label: 'RPM por página', kind: 'money', sources: ['gam', 'visits'], hint: 'Receita do GAM ÷ page views × 1.000' },
+]
+type DimDef = { key: string; label: string; only?: Source; hint?: string }
+const R_DIMENSIONS: DimDef[] = [
+  { key: 'date', label: 'Data' },
+  { key: 'week', label: 'Semana' },
+  { key: 'month', label: 'Mês' },
+  { key: 'site', label: 'Site' },
+  { key: 'network', label: 'Network' },
+  { key: 'country', label: 'País' },
+  { key: 'device', label: 'Dispositivo', only: 'gam', hint: 'Não existe nas page views' },
+  { key: 'ad_unit', label: 'Ad unit', only: 'gam', hint: 'Não existe nas page views' },
+  { key: 'hour', label: 'Hora', only: 'visits', hint: 'Só com page views' },
+]
+const DIM_VALUES: Record<string, string[]> = {
+  site: ['blogexemplo.com', 'receitas.blogexemplo.com', 'viagens.blogexemplo.com'],
+  network: ['Blog Exemplo Principal', 'Blog Exemplo Receitas'],
+  country: ['Brasil', 'Portugal', 'Estados Unidos', 'Angola', 'Moçambique'],
+  device: ['Celular', 'Computador', 'Tablet'],
+  ad_unit: ['topo_728x90', 'lateral_300x250', 'meio_artigo', 'rodape_fixo', 'intersticial'],
+  hour: Array.from({ length: 24 }, (_, h) => `${String(h).padStart(2, '0')}h`),
+  week: ['29/09', '06/10', '13/10', '20/10'],
+  month: ['Agosto', 'Setembro', 'Outubro'],
+}
+
+type CustomDef = { key: string; name: string; formula: string; kind: Kind; decimals: number; description?: string }
+const INITIAL_CUSTOMS: CustomDef[] = [
+  { key: 'rpm_por_requisicao', name: 'RPM por requisição', formula: 'revenue / ad_requests * 1000', kind: 'money', decimals: 2, description: 'Quanto cada mil requisições rendem.' },
+]
+
+type ChartKind = 'table' | 'line' | 'bar' | 'area' | 'pie' | 'kpi' | 'funnel'
+const CHARTS: { key: ChartKind; label: string; rule: string }[] = [
+  { key: 'table', label: 'Tabela', rule: 'Qualquer combinação' },
+  { key: 'line', label: 'Linha', rule: '1 dimensão, ou 2 com uma métrica' },
+  { key: 'bar', label: 'Barras', rule: '1 dimensão, ou 2 com uma métrica' },
+  { key: 'area', label: 'Área', rule: '1 dimensão, ou 2 com uma métrica' },
+  { key: 'pie', label: 'Pizza', rule: '1 métrica e 1 dimensão' },
+  { key: 'kpi', label: 'KPI', rule: '1 métrica e nenhuma dimensão' },
+  { key: 'funnel', label: 'Funil', rule: '2 ou mais métricas e nenhuma dimensão' },
+]
+function chartAllowed(chart: ChartKind, metrics: number, dims: number) {
+  if (chart === 'line' || chart === 'bar' || chart === 'area') return dims === 1 || (dims === 2 && metrics === 1)
+  if (chart === 'pie') return metrics === 1 && dims === 1
+  if (chart === 'kpi') return metrics === 1 && dims === 0
+  if (chart === 'funnel') return metrics >= 2 && dims === 0
+  return true
+}
+
+type Visibility = 'private' | 'company' | 'roles'
+type ScaleMode = 'green_red' | 'red_green'
+type MetricStyle = { color?: string; scale?: { mode: ScaleMode; from: number; to: number } }
+const NEON = [
+  { key: 'lime', label: 'Verde neon', value: '#39FF14' },
+  { key: 'cyan', label: 'Ciano', value: '#00E5FF' },
+  { key: 'magenta', label: 'Magenta', value: '#FF2BD6' },
+  { key: 'violet', label: 'Violeta', value: '#8B5CFF' },
+  { key: 'orange', label: 'Laranja', value: '#FF7A00' },
+  { key: 'yellow', label: 'Amarelo', value: '#FFE600' },
+  { key: 'red', label: 'Vermelho', value: '#FF1744' },
+]
+const SCALES: { key: ScaleMode; label: string; desc: string }[] = [
+  { key: 'green_red', label: 'Começa verde, fica vermelho', desc: 'Para o que é melhor baixo, como custo.' },
+  { key: 'red_green', label: 'Começa vermelho, fica verde', desc: 'Para o que é melhor alto, como receita.' },
+]
+function scaleHue(scale: NonNullable<MetricStyle['scale']>, value: number) {
+  const span = scale.to - scale.from
+  const ratio = span === 0 ? (value >= scale.to ? 1 : 0) : Math.min(1, Math.max(0, (value - scale.from) / span))
+  return scale.mode === 'green_red' ? 135 * (1 - ratio) : 135 * ratio
+}
+type RFilter = { field: string; values: string[] }
+type ReportDraft = {
+  id: string | null; name: string; description: string; metrics: string[]; dims: string[]; filters: RFilter[]
+  period: PeriodKey; compare: boolean; chart: ChartKind; stacked: boolean; limit: number
+  visibility: Visibility; roles: string[]; owner: string; updated: string
+  styles: Record<string, MetricStyle>
+}
+const ME = 'Pedro Henrique'
+const blank = (): ReportDraft => ({ id: null, name: 'Relatório sem nome', description: '', metrics: ['revenue'], dims: ['date'], filters: [], period: 'last_30_days', compare: false, chart: 'line', stacked: false, limit: 100, visibility: 'private', roles: [], owner: ME, updated: 'Agora', styles: {} })
+const INITIAL_REPORTS: ReportDraft[] = [
+  { ...blank(), id: 'r1', name: 'Receita por site', metrics: ['revenue', 'impressions', 'ecpm'], dims: ['site'], chart: 'table', visibility: 'company', updated: 'Hoje, 10:12', styles: { ecpm: { scale: { mode: 'red_green', from: 2, to: 4.5 } } } },
+  { ...blank(), id: 'r2', name: 'RPM por requisição no mês', metrics: ['custom.rpm_por_requisicao', 'ecpm'], dims: ['date'], period: 'this_month', chart: 'line', compare: true, visibility: 'private', updated: 'Ontem, 18:40', styles: { 'custom.rpm_por_requisicao': { color: '#FF2BD6' }, ecpm: { color: '#00E5FF' } } },
+  { ...blank(), id: 'r3', name: 'Top ad units', metrics: ['revenue'], dims: ['ad_unit'], chart: 'bar', limit: 5, visibility: 'roles', roles: ['Gestor de tráfego'], owner: 'Ana Souza', updated: '24/10/2026' },
+  { ...blank(), id: 'r4', name: 'Receita do mês', metrics: ['revenue'], dims: [], period: 'this_month', chart: 'kpi', compare: true, visibility: 'company', owner: 'João Lima', updated: '20/10/2026', styles: { revenue: { scale: { mode: 'red_green', from: 2000, to: 5000 } } } },
+]
+const TEMPLATES: (Omit<ReportDraft, 'id' | 'owner' | 'updated'> & { key: string; desc: string })[] = [
+  { ...blank(), key: 'revenue_by_site', name: 'Receita por site', desc: 'Receita, impressões e eCPM de cada site nos últimos 30 dias.', metrics: ['revenue', 'impressions', 'ecpm'], dims: ['site'], chart: 'table' },
+  { ...blank(), key: 'ecpm_by_day', name: 'eCPM por dia', desc: 'Como o eCPM andou dia a dia.', metrics: ['ecpm'], dims: ['date'], chart: 'line' },
+  { ...blank(), key: 'top_ad_units', name: 'Top ad units', desc: 'Os 10 ad units que mais renderam.', metrics: ['revenue', 'impressions'], dims: ['ad_unit'], chart: 'bar', limit: 10 },
+  { ...blank(), key: 'revenue_by_country', name: 'Receita por país', desc: 'De onde vem a receita.', metrics: ['revenue'], dims: ['country'], chart: 'pie' },
+  { ...blank(), key: 'page_rpm_by_site', name: 'RPM por página por site', desc: 'Quanto cada mil page views rendem em cada site.', metrics: ['page_rpm', 'page_views', 'revenue'], dims: ['site'], chart: 'table' },
+  { ...blank(), key: 'page_views_by_hour', name: 'Page views por hora', desc: 'Os horários de mais visita, ontem.', metrics: ['page_views'], dims: ['hour'], period: 'yesterday', chart: 'line' },
+]
+const VIS_LABEL: Record<Visibility, string> = { private: 'Só eu', company: 'Empresa inteira', roles: 'Papéis escolhidos' }
+const CHART_LABEL = Object.fromEntries(CHARTS.map((c) => [c.key, c.label])) as Record<ChartKind, string>
+
+function metricDef(key: string, customs: CustomDef[]): { label: string; kind: Kind; custom: boolean } {
+  if (key.startsWith('custom.')) {
+    const c = customs.find((x) => `custom.${x.key}` === key)
+    return { label: c?.name ?? key, kind: c?.kind ?? 'int', custom: true }
+  }
+  const m = R_METRICS.find((x) => x.key === key)!
+  return { label: m.label, kind: m.kind, custom: false }
+}
+function metricSources(key: string, customs: CustomDef[]): Source[] {
+  if (!key.startsWith('custom.')) return R_METRICS.find((m) => m.key === key)?.sources ?? ['gam']
+  const c = customs.find((x) => `custom.${x.key}` === key)
+  const vars = c ? formulaVars(c.formula) : []
+  return vars.some((v) => v === 'page_views') ? ['gam', 'visits'] : ['gam']
+}
+function usesVisits(metrics: string[], customs: CustomDef[]) { return metrics.some((m) => metricSources(m, customs).includes('visits')) }
+function onlyVisits(metrics: string[], customs: CustomDef[]) { return metrics.length > 0 && metrics.every((m) => metricSources(m, customs).every((s) => s === 'visits')) }
+
+function hash(text: string) { let h = 7; for (const ch of text) h = (h * 31 + ch.charCodeAt(0)) % 100003; return h }
+function sampleValue(metric: string, row: string, kind: Kind) {
+  const f = 0.55 + (hash(metric + row) % 900) / 1000
+  if (kind === 'pct') return 30 + f * 40
+  if (kind === 'money') return metric.includes('rpm') || metric === 'ecpm' ? 2 + f * 3 : 4200 * f
+  return Math.round(182000 * f)
+}
+const TIME_DIMS = ['date', 'week', 'month', 'hour']
+const SPLIT_COLORS = ['#00E5FF', '#FF2BD6', '#39FF14', '#FF7A00', '#8B5CFF', '#FFE600', '#FF1744']
+const MAX_SERIES = 10
+function dimValues(draft: ReportDraft, dim: string) {
+  const days = PERIODS.find(([k]) => k === draft.period)![2]
+  const values = dim === 'date' ? series(days, 1, 1).map((p) => p.day) : DIM_VALUES[dim] ?? []
+  const filter = draft.filters.find((f) => f.field === dim)
+  return (filter ? values.filter((v) => filter.values.includes(v)) : values).slice(0, TIME_DIMS.includes(dim) ? undefined : draft.limit)
+}
+/** O eixo do gráfico (a dimensão de tempo, se houver) e a que divide em séries. */
+function axisSplit(draft: ReportDraft): { axis: string | null; split: string | null } {
+  if (draft.dims.length < 2) return { axis: draft.dims[0] ?? null, split: null }
+  const time = draft.dims.find((d) => TIME_DIMS.includes(d))
+  const axis = time ?? draft.dims[0]
+  return { axis, split: draft.dims.find((d) => d !== axis) ?? null }
+}
+/** A chave de uma combinação, na ordem das dimensões escolhidas. */
+function comboKey(draft: ReportDraft, values: Record<string, string>) { return draft.dims.map((d) => values[d]).join(' · ') }
+function dimRows(draft: ReportDraft) {
+  const { axis } = axisSplit(draft)
+  return axis ? dimValues(draft, axis) : ['Total']
+}
+/** Todas as combinações das dimensões, como a API devolve (uma linha por combinação). */
+function comboRows(draft: ReportDraft): Record<string, string>[] {
+  return draft.dims.reduce<Record<string, string>[]>((rows, dim) => rows.flatMap((row) => dimValues(draft, dim).map((v) => ({ ...row, [dim]: v }))), [{}])
+}
+
+function formulaVars(formula: string) { return [...new Set(formula.match(/custom\.[a-z0-9_]+|[a-z_][a-z0-9_]*/g) ?? [])] }
+function checkFormula(formula: string, customs: CustomDef[], self?: string): string | null {
+  if (!formula.trim()) return 'Escreva uma fórmula.'
+  const known = new Set([...R_METRICS.map((m) => m.key), ...customs.filter((c) => c.key !== self).map((c) => `custom.${c.key}`)])
+  let depth = 0
+  let expectOperand = true
+  const re = /\s*(custom\.[a-z0-9_]+|[a-z_][a-z0-9_]*|\d+(?:[.,]\d+)?|[-+*/()]|\S)/gy
+  let match: RegExpExecArray | null
+  while ((match = re.exec(formula))) {
+    const token = match[1]
+    const at = match.index + match[0].length - token.length + 1
+    if (/^[a-z_]|^custom\./.test(token)) {
+      if (!known.has(token)) return `Métrica desconhecida "${token}" na posição ${at}.`
+      if (!expectOperand) return `Falta um operador antes de "${token}" na posição ${at}.`
+      expectOperand = false
+    } else if (/^\d/.test(token)) {
+      if (!expectOperand) return `Falta um operador antes de "${token}" na posição ${at}.`
+      expectOperand = false
+    } else if (token === '(') {
+      if (!expectOperand) return `Falta um operador antes de "(" na posição ${at}.`
+      depth++
+    } else if (token === ')') {
+      if (expectOperand || depth === 0) return `Parêntese ")" sobrando na posição ${at}.`
+      depth--
+    } else if ('+-*/'.includes(token)) {
+      if (expectOperand && token !== '-') return `Falta uma métrica antes de "${token}" na posição ${at}.`
+      expectOperand = true
+    } else return `Caractere "${token}" não é aceito (posição ${at}).`
+    if (re.lastIndex >= formula.length) break
+  }
+  if (depth > 0) return 'Falta fechar um parêntese.'
+  if (expectOperand) return 'A fórmula termina num operador.'
+  return null
+}
+function evaluate(formula: string, values: Record<string, string>): number | null {
+  try {
+    const expr = formula.replace(/custom\.[a-z0-9_]+|[a-z_][a-z0-9_]*/g, (v) => {
+      const n = Number((values[v] ?? '').replace(',', '.'))
+      return values[v] && Number.isFinite(n) ? `(${n})` : 'NaN'
+    }).replace(/(\d),(\d)/g, '$1.$2')
+    const result = Function(`"use strict";return (${expr})`)() as number
+    return Number.isFinite(result) ? result : null
+  } catch { return null }
+}
+
+function ReportsScreen({ reports, setReports, open, openTemplate }: { reports: ReportDraft[]; setReports: (r: ReportDraft[]) => void; open: (id: string | null) => void; openTemplate: (key: string) => void }) {
+  const [tab, setTab] = useState<'all' | 'mine' | 'shared' | 'templates'>('all')
+  const [query, setQuery] = useState('')
+  const [removing, setRemoving] = useState<ReportDraft | null>(null)
+  const visible = reports
+    .filter((r) => tab === 'all' || (tab === 'mine' ? r.owner === ME : r.owner !== ME))
+    .filter((r) => r.name.toLowerCase().includes(query.trim().toLowerCase()))
+  const counts = { all: reports.length, mine: reports.filter((r) => r.owner === ME).length, shared: reports.filter((r) => r.owner !== ME).length, templates: TEMPLATES.length }
+  const duplicate = (r: ReportDraft) => {
+    const copy = { ...r, id: `r${Date.now()}`, name: `${r.name} (cópia)`, owner: ME, visibility: 'private' as Visibility, roles: [], updated: 'Agora' }
+    setReports([copy, ...reports])
+    toast.success('Cópia criada', { description: 'A cópia é sua e começa privada.' })
+  }
+  const tabs = [['all', 'Todos'], ['mine', 'Meus'], ['shared', 'Compartilhados comigo'], ['templates', 'Modelos da Groone']] as const
+  return (
+    <>
+      <PageHeader title="Relatórios" sub="Monte relatórios com as métricas do GAM, das page views e as suas, salve e compartilhe com a equipe."
+        actions={<Button onClick={() => open(null)} className="h-9"><Plus className="h-4 w-4" />Criar relatório</Button>} />
+      <Body>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap gap-1 rounded-md border bg-background p-0.5" role="tablist" aria-label="Filtro">
+            {tabs.map(([k, l]) => (
+              <button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)} className={cn('h-8 rounded-[4px] px-3 text-[13px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', tab === k ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground')}>
+                {l}<span className="ml-1.5 tnum text-muted-foreground">{counts[k]}</span>
+              </button>
+            ))}
+          </div>
+          {tab !== 'templates' && (
+            <div className="relative w-full sm:w-[280px]">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar pelo nome" aria-label="Buscar relatório" className="h-9 pl-9" />
+            </div>
+          )}
+        </div>
+        {tab === 'templates' ? (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {TEMPLATES.map((tpl) => (
+              <section key={tpl.key} className="flex flex-col rounded-lg border bg-card p-5">
+                <div className="flex items-center gap-2"><Badge>{CHART_LABEL[tpl.chart]}</Badge></div>
+                <h2 className="mt-3 text-[16px] font-semibold tracking-tight">{tpl.name}</h2>
+                <p className="mt-1 flex-1 text-[14px] text-muted-foreground">{tpl.desc}</p>
+                <Button variant="outline" className="mt-4 h-9 self-start" onClick={() => openTemplate(tpl.key)}>Usar modelo</Button>
+              </section>
+            ))}
+          </div>
+        ) : visible.length === 0 ? (
+          <Card pad><p className="text-[14px] text-muted-foreground">{query ? `Nenhum relatório com "${query}".` : 'Nenhum relatório aqui ainda. Comece por um modelo da Groone.'}</p></Card>
+        ) : (
+          <Table min={760}>
+            <thead><tr><th className={th}>Nome</th><th className={th}>Visualização</th><th className={th}>Dono</th><th className={th}>Quem vê</th><th className={th}>Alterado</th><th className={cn(th, 'w-12')}><span className="sr-only">Ações</span></th></tr></thead>
+            <tbody>
+              {visible.map((r) => {
+                const editable = r.owner === ME
+                return (
+                  <tr key={r.id} className="hover:bg-muted">
+                    <td className={td}><button onClick={() => open(r.id)} className="text-left font-medium hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{r.name}</button></td>
+                    <td className={td}><Badge>{CHART_LABEL[r.chart]}</Badge></td>
+                    <td className={cn(td, 'whitespace-nowrap')}><span className="flex items-center gap-2"><Avatar name={r.owner} size={22} />{r.owner === ME ? 'Você' : r.owner}</span></td>
+                    <td className={cn(td, 'whitespace-nowrap text-muted-foreground')}>{r.visibility === 'private' && <Lock className="mr-1.5 inline h-3.5 w-3.5" />}{r.visibility === 'roles' ? r.roles.join(', ') : VIS_LABEL[r.visibility]}</td>
+                    <td className={cn(td, 'whitespace-nowrap text-muted-foreground')}>{r.updated}</td>
+                    <td className={td}>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" aria-label={`Ações de ${r.name}`}><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuItem onSelect={() => open(r.id)}>Abrir</DropdownMenuItem>
+                          <DropdownMenuItem onSelect={() => duplicate(r)}>Duplicar</DropdownMenuItem>
+                          <DropdownMenuItem onSelect={() => toast('Exportando CSV…')}>Exportar CSV</DropdownMenuItem>
+                          <DropdownMenuItem onSelect={() => toast('Exportando XLSX…')}>Exportar XLSX</DropdownMenuItem>
+                          {editable && (<><DropdownMenuSeparator /><DropdownMenuItem className="text-bad focus:text-bad" onSelect={() => setRemoving(r)}>Apagar</DropdownMenuItem></>)}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </Table>
+        )}
+      </Body>
+      <Dialog open={!!removing} onOpenChange={(o) => !o && setRemoving(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Apagar "{removing?.name}"?</DialogTitle><DialogDescription>Quem tem acesso deixa de ver o relatório. Não dá para desfazer.</DialogDescription></DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRemoving(null)}>Cancelar</Button>
+            <Button variant="destructive" onClick={() => { setReports(reports.filter((r) => r.id !== removing?.id)); setRemoving(null); toast.success('Relatório apagado') }}>Apagar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  )
+}
+
+function ReportChart({ draft, customs }: { draft: ReportDraft; customs: CustomDef[] }) {
+  const rows = dimRows(draft)
+  const metrics = draft.metrics.map((m) => ({ key: m, ...metricDef(m, customs) }))
+  if (!metrics.length) return <p className="py-16 text-center text-[14px] text-muted-foreground">Escolha pelo menos uma métrica na lista da esquerda.</p>
+  if (!chartAllowed(draft.chart, metrics.length, draft.dims.length)) return <p className="py-16 text-center text-[14px] text-muted-foreground">{CHART_LABEL[draft.chart]} pede: {CHARTS.find((c) => c.key === draft.chart)!.rule.toLowerCase()}.</p>
+  const first = metrics[0]
+  const value = (m: string, row: string, kind: Kind) => sampleValue(m, row, kind)
+  const colorOf = (key: string) => draft.styles[key]?.color
+  if (draft.chart === 'kpi') {
+    const now = value(first.key, 'total', first.kind)
+    const scale = draft.styles[first.key]?.scale
+    const kpiColor = scale ? `hsl(${scaleHue(scale, now)} 75% 42%)` : colorOf(first.key)
+    return (
+      <div className="py-10 text-center">
+        <div className="text-[13px] font-medium text-muted-foreground">{first.label}</div>
+        <div className="mt-2 text-[44px] font-semibold tracking-[-0.04em] tnum" style={{ color: kpiColor }}>{fmt(first.kind, now)}</div>
+        {draft.compare && <div className="mt-2"><Delta now={now} before={value(first.key, 'prev', first.kind)} /></div>}
+      </div>
+    )
+  }
+  if (draft.chart === 'funnel') {
+    const values = metrics.map((m, i) => Math.round(value(m.key, 'total', 'int') / (i + 1) ** 1.6))
+    return (
+      <ul className="grid gap-2 py-4">
+        {metrics.map((m, i) => (
+          <li key={m.key} className="grid grid-cols-[140px_1fr_auto] items-center gap-3 text-[13px]">
+            <span className="truncate">{m.label}</span>
+            <span className="flex justify-center"><span className="block h-8 rounded-sm bg-foreground" style={{ width: `${(values[i] / values[0]) * 100}%`, opacity: colorOf(m.key) ? 1 : 1 - i * 0.15, background: colorOf(m.key) }} /></span>
+            <span className="w-24 text-right tnum">{int.format(values[i])}{i > 0 && <span className="block text-[12px] text-muted-foreground">{pct.format((values[i] / values[i - 1]) * 100)}%</span>}</span>
+          </li>
+        ))}
+      </ul>
+    )
+  }
+  if (draft.chart === 'pie') {
+    const values = rows.map((r) => value(first.key, r, first.kind))
+    const total = values.reduce((a, b) => a + b, 0) || 1
+    let angle = -Math.PI / 2
+    const arcs = values.map((v, i) => {
+      const start = angle
+      angle += (v / total) * Math.PI * 2
+      const large = angle - start > Math.PI ? 1 : 0
+      const p = (a: number, r: number) => `${100 + r * Math.cos(a)},${100 + r * Math.sin(a)}`
+      return <path key={rows[i]} d={`M${p(start, 90)}A90,90 0 ${large} 1 ${p(angle, 90)}L${p(angle, 52)}A52,52 0 ${large} 0 ${p(start, 52)}Z`} className="fill-foreground stroke-card" strokeWidth={2} style={{ opacity: 1 - i * (0.7 / rows.length), fill: colorOf(first.key) }} />
+    })
+    return (
+      <div className="flex flex-wrap items-center justify-center gap-8 py-4">
+        <svg viewBox="0 0 200 200" className="h-[200px] w-[200px]" role="img" aria-label={`${first.label} por ${draft.dims[0]}`}>{arcs}</svg>
+        <ul className="grid gap-1.5 text-[13px]">
+          {rows.map((r, i) => <li key={r} className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-sm bg-foreground" style={{ opacity: 1 - i * (0.7 / rows.length), background: colorOf(first.key) }} /><span className="min-w-0 flex-1 truncate">{r}</span><span className="tnum text-muted-foreground">{pct.format((values[i] / total) * 100)}%</span></li>)}
+        </ul>
+      </div>
+    )
+  }
+  const { axis, split } = axisSplit(draft)
+  if (split && axis && (draft.chart === 'line' || draft.chart === 'area' || draft.chart === 'bar')) {
+    const axisValues = dimValues(draft, axis)
+    const splitValues = dimValues(draft, split).slice(0, MAX_SERIES)
+    const valueAt = (a: string, b: string) => value(first.key, comboKey(draft, { [axis]: a, [split]: b }), first.kind)
+    const lines = splitValues.map((b) => axisValues.map((a) => valueAt(a, b)))
+    const W = 960, H = 260, L = 56, R = 12, T = 12, B = 26
+    const top = Math.max(...lines.flat()) * 1.1 || 1
+    const y = (v: number) => T + (H - T - B) * (1 - v / top)
+    const step = Math.max(1, Math.ceil(axisValues.length / 8))
+    const splitLabel = R_DIMENSIONS.find((d) => d.key === split)?.label
+    const legend = (
+      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 text-[13px] text-muted-foreground">
+        <span className="font-medium text-foreground">{first.label} por {splitLabel?.toLowerCase()}:</span>
+        {splitValues.map((b, i) => <span key={b} className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm" style={{ background: SPLIT_COLORS[i % SPLIT_COLORS.length] }} />{b}</span>)}
+      </div>
+    )
+    if (draft.chart === 'bar') {
+      const group = (W - L - R) / axisValues.length
+      const barWidth = Math.max(2, (group * 0.8) / splitValues.length)
+      return (
+        <div>
+          <svg viewBox={`0 0 ${W} ${H}`} className="h-[260px] w-full" role="img" aria-label={`${first.label} por ${axis} e ${split}`}>
+            {[0, 0.5, 1].map((f) => <g key={f}><line x1={L} x2={W - R} y1={y(top * f)} y2={y(top * f)} className="stroke-border" /><text x={L - 8} y={y(top * f) + 4} textAnchor="end" className="fill-muted-foreground text-[11px] tnum">{compact(first.kind, top * f)}</text></g>)}
+            {axisValues.map((a, i) => (
+              <g key={a}>
+                {splitValues.map((b, s) => <rect key={b} x={L + i * group + group * 0.1 + s * barWidth} y={y(lines[s][i])} width={barWidth - 1} height={y(0) - y(lines[s][i])} rx={1.5} style={{ fill: SPLIT_COLORS[s % SPLIT_COLORS.length] }} />)}
+                {i % step === 0 && <text x={L + i * group + group / 2} y={H - 8} textAnchor="middle" className="fill-muted-foreground text-[11px] tnum">{a}</text>}
+              </g>
+            ))}
+          </svg>
+          {legend}
+        </div>
+      )
+    }
+    const x = (i: number) => L + (axisValues.length === 1 ? (W - L - R) / 2 : (i * (W - L - R)) / (axisValues.length - 1))
+    const path = (vals: number[]) => vals.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join('')
+    return (
+      <div>
+        <svg viewBox={`0 0 ${W} ${H}`} className="h-[260px] w-full" role="img" aria-label={`${first.label} por ${axis} e ${split}`}>
+          {[0, 0.5, 1].map((f) => <g key={f}><line x1={L} x2={W - R} y1={y(top * f)} y2={y(top * f)} className="stroke-border" /><text x={L - 8} y={y(top * f) + 4} textAnchor="end" className="fill-muted-foreground text-[11px] tnum">{compact(first.kind, top * f)}</text></g>)}
+          {axisValues.map((a, i) => i % step === 0 && <text key={a} x={x(i)} y={H - 8} textAnchor="middle" className="fill-muted-foreground text-[11px] tnum">{a}</text>)}
+          {lines.map((vals, s) => (
+            <g key={splitValues[s]}>
+              {draft.chart === 'area' && <path d={`${path(vals)}L${x(vals.length - 1)},${y(0)}L${x(0)},${y(0)}Z`} style={{ fill: SPLIT_COLORS[s % SPLIT_COLORS.length], fillOpacity: 0.1 }} />}
+              <path d={path(vals)} fill="none" strokeWidth={2.25} strokeLinejoin="round" style={{ stroke: SPLIT_COLORS[s % SPLIT_COLORS.length] }} />
+            </g>
+          ))}
+        </svg>
+        {legend}
+      </div>
+    )
+  }
+  if (draft.chart === 'bar') {
+    return <div className="py-2"><Bars color={colorOf(first.key)} items={rows.map((r) => [r, Math.round(value(first.key, r, first.kind))] as const)} /></div>
+  }
+  if (draft.chart === 'line' || draft.chart === 'area') {
+    const W = 960, H = 240, L = 56, R = 12, T = 12, B = 26
+    const all = metrics.map((m) => rows.map((r) => value(m.key, r, m.kind)))
+    const max = Math.max(...all.flat()) * 1.1 || 1
+    const x = (i: number) => L + (rows.length === 1 ? (W - L - R) / 2 : (i * (W - L - R)) / (rows.length - 1))
+    const y = (v: number) => T + (H - T - B) * (1 - v / max)
+    const path = (vals: number[]) => vals.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join('')
+    const step = Math.max(1, Math.ceil(rows.length / 8))
+    return (
+      <div>
+        <svg viewBox={`0 0 ${W} ${H}`} className="h-[240px] w-full" role="img" aria-label="Gráfico do relatório">
+          {[0, 0.5, 1].map((f) => <g key={f}><line x1={L} x2={W - R} y1={y(max * f)} y2={y(max * f)} className="stroke-border" /><text x={L - 8} y={y(max * f) + 4} textAnchor="end" className="fill-muted-foreground text-[11px] tnum">{compact(first.kind, max * f)}</text></g>)}
+          {rows.map((r, i) => i % step === 0 && <text key={r} x={x(i)} y={H - 8} textAnchor="middle" className="fill-muted-foreground text-[11px] tnum">{r}</text>)}
+          {all.map((vals, s) => (
+            <g key={metrics[s].key} style={{ opacity: colorOf(metrics[s].key) ? 1 : 1 - s * 0.3 }}>
+              {draft.chart === 'area' && <path d={`${path(vals)}L${x(vals.length - 1)},${y(0)}L${x(0)},${y(0)}Z`} className="fill-foreground/[0.08]" style={colorOf(metrics[s].key) ? { fill: colorOf(metrics[s].key), fillOpacity: 0.14 } : undefined} />}
+              <path d={path(vals)} fill="none" className="stroke-foreground" strokeWidth={colorOf(metrics[s].key) ? 2.5 : 2} strokeDasharray={s && !colorOf(metrics[s].key) ? '5 4' : undefined} strokeLinejoin="round" style={{ stroke: colorOf(metrics[s].key) }} />
+            </g>
+          ))}
+        </svg>
+        {metrics.length > 1 && <div className="mt-2 flex flex-wrap gap-4 text-[13px] text-muted-foreground">{metrics.map((m, s) => <span key={m.key} className="flex items-center gap-1.5"><span className={cn('w-4 border-t-2 border-foreground', s && !colorOf(m.key) && 'border-dashed')} style={{ opacity: colorOf(m.key) ? 1 : 1 - s * 0.3, borderColor: colorOf(m.key) }} />{m.label}</span>)}</div>}
+      </div>
+    )
+  }
+  return null
+}
+
+function ReportTable({ draft, customs }: { draft: ReportDraft; customs: CustomDef[] }) {
+  const rows = comboRows(draft)
+  const metrics = draft.metrics.map((m) => ({ key: m, ...metricDef(m, customs) }))
+  if (!metrics.length) return null
+  const shown = rows.slice(0, 30)
+  return (
+    <>
+    <Table min={480}>
+      <thead><tr>{draft.dims.map((d) => <th key={d} className={th}>{R_DIMENSIONS.find((x) => x.key === d)?.label}</th>)}{metrics.map((m) => <th key={m.key} className={cn(th, 'text-right')}>{m.label}</th>)}</tr></thead>
+      <tbody>
+        {shown.map((row) => (
+          <tr key={comboKey(draft, row) || 'total'} className="hover:bg-muted">
+            {draft.dims.map((d) => <td key={d} className={cn(td, 'whitespace-nowrap font-medium')}>{row[d]}</td>)}
+            {metrics.map((m) => {
+              const v = sampleValue(m.key, draft.dims.length ? comboKey(draft, row) : 'Total', m.kind)
+              const scale = draft.styles[m.key]?.scale
+              return <td key={m.key} className={cn(td, 'text-right tnum whitespace-nowrap')} style={scale ? { background: `hsl(${scaleHue(scale, v)} 80% 45% / 0.18)` } : undefined}>{fmt(m.kind, v)}</td>
+            })}
+          </tr>
+        ))}
+      </tbody>
+    </Table>
+    {rows.length > shown.length && <p className="text-[13px] text-muted-foreground">Mostrando {shown.length} de {rows.length} linhas. A exportação traz todas.</p>}
+    </>
+  )
+}
+
+function PanelTitle({ children, action }: { children: React.ReactNode; action?: React.ReactNode }) {
+  return <div className="flex items-center justify-between px-4 pb-1.5 pt-4"><h3 className="text-[12px] font-medium uppercase tracking-wide text-muted-foreground">{children}</h3>{action}</div>
+}
+
+function FieldItem({ label, picked, disabled, hint, badge, onClick }: { label: string; picked: boolean; disabled?: boolean; hint?: string; badge?: string; onClick: () => void }) {
+  return (
+    <button onClick={onClick} disabled={disabled} title={disabled ? hint : undefined} aria-pressed={picked}
+      className={cn('flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+        picked ? 'bg-secondary font-medium' : 'hover:bg-accent', disabled && 'cursor-not-allowed opacity-45 hover:bg-transparent')}>
+      <span className={cn('flex h-4 w-4 shrink-0 items-center justify-center rounded-[4px] border', picked && 'border-primary bg-primary text-primary-foreground')}>{picked && <Check className="h-3 w-3" />}</span>
+      <span className="min-w-0 flex-1 truncate">{label}</span>
+      {badge && <span className="text-[11px] text-muted-foreground">{badge}</span>}
+      {disabled && hint && <span className="sr-only">{hint}</span>}
+    </button>
+  )
+}
+
+function CustomMetricDialog({ open, onOpenChange, customs, onSave }: { open: boolean; onOpenChange: (o: boolean) => void; customs: CustomDef[]; onSave: (c: CustomDef) => void }) {
+  const [name, setName] = useState('')
+  const [formula, setFormula] = useState('')
+  const [kind, setKind] = useState<Kind>('money')
+  const [decimals, setDecimals] = useState('2')
+  const [sample, setSample] = useState<Record<string, string>>({ revenue: '1250', ad_requests: '480000', page_views: '96000', impressions: '310000' })
+  const [cursor, setCursor] = useState(0)
+  useEffect(() => { if (open) { setName(''); setFormula(''); setKind('money'); setDecimals('2') } }, [open])
+  const error = formula ? checkFormula(formula, customs) : null
+  const vars = formula && !error ? formulaVars(formula).filter((v) => !v.startsWith('custom.')) : []
+  const nested = formula && !error ? formulaVars(formula).filter((v) => v.startsWith('custom.')) : []
+  const resolved = (text: string): string => text.replace(/custom\.[a-z0-9_]+/g, (key) => `(${resolved(customs.find((c) => `custom.${c.key}` === key)?.formula ?? 'NaN')})`)
+  const preview = formula && !error ? evaluate(resolved(formula), sample) : null
+  const word = /[a-z_.0-9]*$/.exec(formula.slice(0, cursor))?.[0] ?? ''
+  const options = word.length >= 1
+    ? [...R_METRICS.map((m) => ({ key: m.key, label: m.label })), ...customs.map((c) => ({ key: `custom.${c.key}`, label: c.name }))].filter((o) => o.key.includes(word) || o.label.toLowerCase().includes(word)).slice(0, 6)
+    : []
+  const complete = (key: string) => {
+    const before = formula.slice(0, cursor - word.length)
+    const next = `${before}${key} ${formula.slice(cursor)}`
+    setFormula(next)
+    setCursor(before.length + key.length + 1)
+  }
+  const key = name.trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '')
+  const canSave = !!name.trim() && !!formula && !error
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[92dvh] overflow-y-auto sm:max-w-[760px]">
+        <DialogHeader>
+          <DialogTitle>Nova métrica</DialogTitle>
+          <DialogDescription>Uma conta sobre as métricas que já existem. Ela fica disponível para toda a Empresa.</DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_280px]">
+        <div className="grid content-start gap-5">
+          <Field id="cm-name" label="Nome" hint={key ? `Na fórmula de outras métricas: custom.${key}` : undefined}>
+            <Input id="cm-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="RPM por requisição" maxLength={80} />
+          </Field>
+          <div className="grid gap-2">
+            <Label htmlFor="cm-formula" className="text-[13px] font-medium text-muted-foreground">Fórmula</Label>
+            <div className="relative">
+              <Textarea id="cm-formula" value={formula} rows={3} spellCheck={false} placeholder="revenue / ad_requests * 1000"
+                onChange={(e) => { setFormula(e.target.value); setCursor(e.target.selectionStart) }}
+                onKeyUp={(e) => setCursor(e.currentTarget.selectionStart)} onClick={(e) => setCursor(e.currentTarget.selectionStart)}
+                aria-invalid={!!error} aria-describedby="cm-formula-msg" className={cn('font-mono text-[13px]', error && 'border-bad focus-visible:ring-bad')} />
+              {options.length > 0 && (
+                <ul className="absolute inset-x-0 top-full z-10 mt-1 overflow-hidden rounded-md border bg-popover py-1 shadow-md" role="listbox" aria-label="Métricas">
+                  {options.map((o) => (
+                    <li key={o.key}><button type="button" onMouseDown={(e) => { e.preventDefault(); complete(o.key) }} className="flex w-full items-center justify-between gap-3 px-3 py-1.5 text-left text-[13px] hover:bg-accent"><span>{o.label}</span><Code>{o.key}</Code></button></li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            <p id="cm-formula-msg" className={cn('text-[13px]', error ? 'text-bad' : 'text-muted-foreground')}>
+              {error ?? (formula ? <span className="inline-flex items-center gap-1.5 text-ok"><Check className="h-3.5 w-3.5" />Fórmula válida</span> : 'Use + − × ÷ e parênteses. Comece a digitar o nome de uma métrica.')}
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <Field id="cm-kind" label="Formato">
+              <Select value={kind} onValueChange={(v) => setKind(v as Kind)}>
+                <SelectTrigger id="cm-kind" className="h-9"><SelectValue /></SelectTrigger>
+                <SelectContent><SelectItem value="money">Dinheiro</SelectItem><SelectItem value="int">Número</SelectItem><SelectItem value="pct">Porcentagem</SelectItem></SelectContent>
+              </Select>
+            </Field>
+            <Field id="cm-dec" label="Casas decimais"><Input id="cm-dec" type="number" min={0} max={6} value={decimals} onChange={(e) => setDecimals(e.target.value)} className="h-9" /></Field>
+          </div>
+        </div>
+          <section className="self-start rounded-lg border bg-muted p-4">
+            <h3 className="text-[14px] font-semibold">Prévia</h3>
+            <p className="mt-1 text-[13px] text-muted-foreground">Informe valores de exemplo para conferir a conta. O cálculo é feito pelo Avant, igual ao dos relatórios.</p>
+            {vars.length ? (
+              <div className="mt-3 grid gap-2">
+                {vars.map((v) => (
+                  <label key={v} className="grid grid-cols-[1fr_140px] items-center gap-3 text-[13px]">
+                    <span>{R_METRICS.find((m) => m.key === v)?.label} <Code>{v}</Code></span>
+                    <Input value={sample[v] ?? ''} inputMode="decimal" onChange={(e) => setSample({ ...sample, [v]: e.target.value })} className="h-8 text-right tnum" aria-label={`Valor de ${v}`} />
+                  </label>
+                ))}
+                {nested.length > 0 && <p className="text-[12px] text-muted-foreground">{nested.join(', ')} é calculada a partir desses valores.</p>}
+                <div className="mt-2 flex items-baseline justify-between border-t pt-3">
+                  <span className="text-[13px] text-muted-foreground">Resultado</span>
+                  <span className="text-[20px] font-semibold tnum">{preview === null ? '—' : kind === 'pct' ? `${pct.format(preview * 100)}%` : kind === 'money' ? brl.format(preview) : new Intl.NumberFormat('pt-BR', { maximumFractionDigits: Number(decimals) || 0 }).format(preview)}</span>
+                </div>
+                {preview === null && <p className="text-[12px] text-muted-foreground">Sem resultado: falta um valor ou a conta divide por zero.</p>}
+              </div>
+            ) : <p className="mt-3 text-[13px] text-muted-foreground">Os campos aparecem quando a fórmula estiver válida.</p>}
+          </section>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+          <Button disabled={!canSave} onClick={() => onSave({ key, name: name.trim(), formula: formula.trim(), kind, decimals: Number(decimals) || 0 })}>Criar métrica</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function SaveDialog({ open, onOpenChange, draft, onSave }: { open: boolean; onOpenChange: (o: boolean) => void; draft: ReportDraft; onSave: (d: Pick<ReportDraft, 'name' | 'description' | 'visibility' | 'roles'>) => void }) {
+  const [name, setName] = useState(draft.name)
+  const [description, setDescription] = useState(draft.description)
+  const [visibility, setVisibility] = useState<Visibility>(draft.visibility)
+  const [roles, setRoles] = useState<string[]>(draft.roles)
+  useEffect(() => { if (open) { setName(draft.name); setDescription(draft.description); setVisibility(draft.visibility); setRoles(draft.roles) } }, [open, draft])
+  const invalid = !name.trim() || (visibility === 'roles' && roles.length === 0)
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[480px]">
+        <DialogHeader><DialogTitle>Salvar relatório</DialogTitle><DialogDescription>Cada pessoa vê só os dados dos sites que pode ver, mesmo num relatório compartilhado.</DialogDescription></DialogHeader>
+        <div className="grid gap-4">
+          <Field id="rs-name" label="Nome"><Input id="rs-name" value={name} onChange={(e) => setName(e.target.value)} maxLength={120} /></Field>
+          <Field id="rs-desc" label="Descrição (opcional)"><Textarea id="rs-desc" value={description} onChange={(e) => setDescription(e.target.value)} rows={2} maxLength={500} /></Field>
+          <div className="grid gap-2">
+            <span className="text-[13px] font-medium text-muted-foreground">Quem vê</span>
+            <RadioGroup value={visibility} onValueChange={(v) => setVisibility(v as Visibility)} className="gap-2">
+              {([['private', 'Só eu', 'Ninguém mais vê, nem o dono da Empresa.'], ['company', 'Empresa inteira', 'Todos que podem ver relatórios.'], ['roles', 'Papéis escolhidos', 'Só quem tem um dos papéis.']] as const).map(([v, l, d]) => (
+                <label key={v} className={cn('flex cursor-pointer items-start gap-3 rounded-md border p-3', visibility === v && 'border-primary')}>
+                  <RadioGroupItem value={v} className="mt-0.5" />
+                  <span><span className="block text-[14px] font-medium">{l}</span><span className="block text-[13px] text-muted-foreground">{d}</span></span>
+                </label>
+              ))}
+            </RadioGroup>
+            {visibility === 'roles' && (
+              <div className="grid gap-1.5 pl-1 pt-1">
+                {ROLES.map((r) => (
+                  <label key={r.name} className="flex items-center gap-2 text-[14px]">
+                    <input type="checkbox" checked={roles.includes(r.name)} onChange={(e) => setRoles(e.target.checked ? [...roles, r.name] : roles.filter((x) => x !== r.name))} className="h-4 w-4 accent-[hsl(var(--primary))]" />
+                    {r.name}
+                  </label>
+                ))}
+                {roles.length === 0 && <p className="text-[13px] text-bad">Escolha pelo menos um papel.</p>}
+              </div>
+            )}
+            <p className="text-[13px] text-muted-foreground">Você e quem pode criar relatórios conseguem editar.</p>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+          <Button disabled={invalid} onClick={() => onSave({ name: name.trim(), description, visibility, roles: visibility === 'roles' ? roles : [] })}>Salvar</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function MetricStylePopover({ label, kind, style, disabled, onChange }: { label: string; kind: Kind; style: MetricStyle; disabled: boolean; onChange: (s: MetricStyle) => void }) {
+  const scale = style.scale
+  const swatch = scale ? `linear-gradient(90deg, hsl(${scale.mode === 'green_red' ? 135 : 0} 75% 45%), hsl(${scale.mode === 'green_red' ? 0 : 135} 75% 45%))` : style.color
+  const unit = kind === 'money' ? 'R$' : kind === 'pct' ? '%' : ''
+  return (
+    <Popover>
+      <PopoverTrigger disabled={disabled} className="inline-flex h-6 items-center gap-1.5 rounded-full px-2 hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:hover:bg-transparent">
+        <span className="h-3 w-3 rounded-full border" style={{ background: swatch ?? 'hsl(var(--foreground))' }} aria-hidden="true" />{label}
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-[300px]">
+        <h3 className="text-[14px] font-semibold">{label}</h3>
+        <div className="mt-3 text-[12px] font-medium text-muted-foreground">Cor</div>
+        <div className="mt-2 flex flex-wrap gap-2" role="radiogroup" aria-label="Cor">
+          <button role="radio" aria-checked={!style.color} aria-label="Padrão" title="Padrão" onClick={() => onChange({ ...style, color: undefined })} className={cn('h-7 w-7 rounded-full border-2 bg-foreground', !style.color ? 'ring-2 ring-ring ring-offset-2 ring-offset-background' : 'border-transparent')} />
+          {NEON.map((c) => (
+            <button key={c.key} role="radio" aria-checked={style.color === c.value} aria-label={c.label} title={c.label} onClick={() => onChange({ ...style, color: c.value })}
+              className={cn('h-7 w-7 rounded-full', style.color === c.value && 'ring-2 ring-ring ring-offset-2 ring-offset-background')} style={{ background: c.value, boxShadow: `0 0 10px ${c.value}80` }} />
+          ))}
+        </div>
+        <div className="mt-4 text-[12px] font-medium text-muted-foreground">Aparência pelo valor</div>
+        <div className="mt-2 grid gap-1.5">
+          <label className="flex items-center gap-2 text-[13px]"><input type="radio" name={`scale-${label}`} checked={!scale} onChange={() => onChange({ ...style, scale: undefined })} className="accent-[hsl(var(--primary))]" />Nenhuma</label>
+          {SCALES.map((m) => (
+            <label key={m.key} className="flex items-start gap-2 text-[13px]">
+              <input type="radio" name={`scale-${label}`} checked={scale?.mode === m.key} onChange={() => onChange({ ...style, scale: { mode: m.key, from: scale?.from ?? 0, to: scale?.to ?? 100 } })} className="mt-0.5 accent-[hsl(var(--primary))]" />
+              <span><span className="flex items-center gap-2">{m.label}<span className="h-2 w-10 rounded-full" style={{ background: `linear-gradient(90deg, hsl(${m.key === 'green_red' ? 135 : 0} 75% 45%), hsl(${m.key === 'green_red' ? 0 : 135} 75% 45%))` }} /></span><span className="block text-[12px] text-muted-foreground">{m.desc}</span></span>
+            </label>
+          ))}
+        </div>
+        {scale && (
+          <div className="mt-3 grid grid-cols-2 gap-3">
+            <Field id={`from-${label}`} label={`${scale.mode === 'green_red' ? 'Verde' : 'Vermelho'} até ${unit}`.trim()}>
+              <Input id={`from-${label}`} inputMode="decimal" value={scale.from} onChange={(e) => onChange({ ...style, scale: { ...scale, from: Number(e.target.value.replace(',', '.')) || 0 } })} className="h-8 tnum" />
+            </Field>
+            <Field id={`to-${label}`} label={`${scale.mode === 'green_red' ? 'Vermelho' : 'Verde'} a partir de ${unit}`.trim()}>
+              <Input id={`to-${label}`} inputMode="decimal" value={scale.to} onChange={(e) => onChange({ ...style, scale: { ...scale, to: Number(e.target.value.replace(',', '.')) || 0 } })} className="h-8 tnum" />
+            </Field>
+            <p className="col-span-2 text-[12px] text-muted-foreground">Entre os dois valores a cor passa aos poucos. Vale na tabela e no KPI.</p>
+          </div>
+        )}
+      </PopoverContent>
+    </Popover>
+  )
+}
+
+function ReportBuilderScreen({ initial, customs, setCustoms, onBack, onSave }: { initial: ReportDraft; customs: CustomDef[]; setCustoms: (c: CustomDef[]) => void; onBack: () => void; onSave: (d: ReportDraft) => void }) {
+  const [draft, setDraft] = useState<ReportDraft>(initial)
+  const [search, setSearch] = useState('')
+  const [creating, setCreating] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [dirty, setDirty] = useState(initial.id === null)
+  const editable = draft.owner === ME
+  const update = (patch: Partial<ReportDraft>) => { setDraft((d) => ({ ...d, ...patch })); setDirty(true) }
+  const toggle = (list: string[], key: string) => (list.includes(key) ? list.filter((x) => x !== key) : [...list, key])
+  const matches = (label: string, key: string) => !search.trim() || label.toLowerCase().includes(search.toLowerCase()) || key.includes(search.toLowerCase())
+  const visits = usesVisits(draft.metrics, customs)
+  const visitsOnly = onlyVisits(draft.metrics, customs)
+  const dimDisabled = (d: DimDef) => (d.only === 'gam' && visits) || (d.only === 'visits' && !visitsOnly)
+  const setMetrics = (metrics: string[]) => {
+    const nextVisits = usesVisits(metrics, customs)
+    const nextOnly = onlyVisits(metrics, customs)
+    const dims = draft.dims.filter((key) => { const d = R_DIMENSIONS.find((x) => x.key === key)!; return !((d.only === 'gam' && nextVisits) || (d.only === 'visits' && !nextOnly)) })
+    update({ metrics, dims, chart: chartAllowed(draft.chart, metrics.length, dims.length) ? draft.chart : 'table' })
+  }
+  const setDims = (dims: string[]) => update({ dims, chart: chartAllowed(draft.chart, draft.metrics.length, dims.length) ? draft.chart : 'table' })
+  const filterable = draft.dims.filter((d) => DIM_VALUES[d] && d !== 'hour')
+  const [filterField, setFilterField] = useState('site')
+  return (
+    <div className="flex min-h-[calc(100dvh-2.75rem)] flex-col bg-background">
+      <header className="sticky top-11 z-20 flex flex-wrap items-center gap-3 border-b bg-background px-4 py-3">
+        <Button variant="ghost" size="sm" onClick={onBack} className="-ml-1"><ArrowLeft className="h-4 w-4" />Relatórios</Button>
+        <span className="h-5 w-px bg-border" aria-hidden="true" />
+        <input value={draft.name} onChange={(e) => update({ name: e.target.value })} aria-label="Nome do relatório" disabled={!editable} maxLength={120}
+          className="min-w-0 flex-1 rounded-md bg-transparent px-2 py-1 text-[18px] font-semibold tracking-tight hover:bg-accent focus-visible:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:hover:bg-transparent" />
+        <span className="hidden text-[13px] text-muted-foreground sm:inline">{draft.id === null ? 'Ainda não salvo' : dirty ? 'Alterações não salvas' : `Salvo · ${VIS_LABEL[draft.visibility]}`}</span>
+        <div className="ml-auto flex flex-wrap gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild><Button variant="outline" className="h-9">Exportar<ChevronsUpDown className="h-4 w-4" /></Button></DropdownMenuTrigger>
+            <DropdownMenuContent align="end"><DropdownMenuItem onSelect={() => toast('Exportando CSV…')}>CSV</DropdownMenuItem><DropdownMenuItem onSelect={() => toast('Exportando XLSX…')}>XLSX (Excel)</DropdownMenuItem></DropdownMenuContent>
+          </DropdownMenu>
+          {draft.id !== null && <Button variant="outline" className="h-9" onClick={() => { onSave({ ...draft, id: null, name: `${draft.name} (cópia)`, owner: ME, visibility: 'private', roles: [] }); toast.success('Cópia salva', { description: 'A cópia é sua e começa privada.' }) }}><Copy className="h-4 w-4" />Salvar como cópia</Button>}
+          {editable && <Button className="h-9" disabled={!draft.metrics.length} onClick={() => setSaving(true)}>Salvar</Button>}
+        </div>
+      </header>
+      {!editable && <div className="border-b bg-muted px-4 py-2 text-[13px] text-muted-foreground">Relatório de {draft.owner}. Você pode ver, exportar e salvar uma cópia sua.</div>}
+      <div className="grid flex-1 lg:grid-cols-[264px_minmax(0,1fr)_300px]">
+        <aside className="border-b lg:border-b-0 lg:border-r" aria-label="Campos">
+          <div className="p-3 pb-0">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar campos" aria-label="Buscar campos" className="h-9 pl-9" />
+            </div>
+          </div>
+          <PanelTitle>Métricas</PanelTitle>
+          <div className="grid gap-0.5 px-2">
+            {R_METRICS.filter((m) => matches(m.label, m.key)).map((m) => (
+              <FieldItem key={m.key} label={m.label} picked={draft.metrics.includes(m.key)} disabled={!editable} badge={m.sources.includes('visits') ? 'visitas' : undefined} onClick={() => setMetrics(toggle(draft.metrics, m.key))} />
+            ))}
+          </div>
+          <PanelTitle action={<Button variant="ghost" size="sm" className="h-7 px-2 text-[13px]" onClick={() => setCreating(true)}><Plus className="h-3.5 w-3.5" />Nova</Button>}>Minhas métricas</PanelTitle>
+          <div className="grid gap-0.5 px-2">
+            {customs.filter((c) => matches(c.name, c.key)).map((c) => (
+              <FieldItem key={c.key} label={c.name} picked={draft.metrics.includes(`custom.${c.key}`)} disabled={!editable} badge="ƒ" onClick={() => setMetrics(toggle(draft.metrics, `custom.${c.key}`))} />
+            ))}
+            {customs.length === 0 && <p className="px-2.5 py-1.5 text-[13px] text-muted-foreground">Crie contas como receita ÷ requisições.</p>}
+          </div>
+          <PanelTitle>Dimensões</PanelTitle>
+          <div className="grid gap-0.5 px-2 pb-4">
+            {R_DIMENSIONS.filter((d) => matches(d.label, d.key)).map((d) => (
+              <FieldItem key={d.key} label={d.label} picked={draft.dims.includes(d.key)} disabled={!editable || dimDisabled(d)} hint={d.hint} badge={dimDisabled(d) ? d.hint : undefined} onClick={() => setDims(toggle(draft.dims, d.key))} />
+            ))}
+          </div>
+        </aside>
+        <main className="min-w-0 bg-muted">
+          <div className="grid gap-4 p-4 sm:p-6">
+            <div className="flex flex-wrap items-center gap-1.5">
+              {draft.metrics.map((m) => (
+                <span key={m} className="inline-flex h-7 items-center gap-1 rounded-full border bg-card pl-1 pr-1 text-[13px]">
+                  <MetricStylePopover label={metricDef(m, customs).label} kind={metricDef(m, customs).kind} style={draft.styles[m] ?? {}} disabled={!editable}
+                    onChange={(style) => update({ styles: { ...draft.styles, [m]: style } })} />
+                  {editable && <button onClick={() => setMetrics(draft.metrics.filter((x) => x !== m))} aria-label={`Tirar ${metricDef(m, customs).label}`} className="rounded-full p-1 hover:bg-accent"><X className="h-3 w-3" /></button>}
+                </span>
+              ))}
+              {editable && draft.metrics.length > 0 && <span className="px-1 text-[12px] text-muted-foreground">Clique numa métrica para escolher a cor e a aparência.</span>}
+              {draft.dims.length > 0 && <span className="px-1 text-[13px] text-muted-foreground">por</span>}
+              {draft.dims.map((d) => <span key={d} className="inline-flex h-7 items-center gap-1 rounded-full border border-dashed bg-card pl-3 pr-1 text-[13px]">{R_DIMENSIONS.find((x) => x.key === d)?.label}{editable && <button onClick={() => setDims(draft.dims.filter((x) => x !== d))} aria-label="Tirar dimensão" className="rounded-full p-1 hover:bg-accent"><X className="h-3 w-3" /></button>}</span>)}
+            </div>
+            {draft.chart !== 'table' && (
+              <Card pad footerNote={`${PERIODS.find(([k]) => k === draft.period)![1]}${draft.compare ? ', comparando com o período anterior' : ''} · em R$, a sua moeda · só os sites que você vê`}>
+                <ReportChart draft={draft} customs={customs} />
+              </Card>
+            )}
+            {draft.chart !== 'table' && draft.chart !== 'kpi' && <h2 className="text-[14px] font-semibold">Dados</h2>}
+            {draft.chart === 'table' && <p className="text-[13px] text-muted-foreground">{PERIODS.find(([k]) => k === draft.period)![1]} · em R$, a sua moeda · só os sites que você vê</p>}
+            {draft.chart !== 'kpi' && <ReportTable draft={draft} customs={customs} />}
+          </div>
+        </main>
+        <aside className="border-t lg:border-l lg:border-t-0" aria-label="Configuração">
+          <PanelTitle>Visualização</PanelTitle>
+          <div className="grid grid-cols-2 gap-1.5 px-4">
+            {CHARTS.map((c) => {
+              const ok = chartAllowed(c.key, draft.metrics.length, draft.dims.length)
+              return (
+                <button key={c.key} disabled={!ok || !editable} onClick={() => update({ chart: c.key })} aria-pressed={draft.chart === c.key} title={ok ? undefined : c.rule}
+                  className={cn('rounded-md border px-2.5 py-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', draft.chart === c.key ? 'border-primary bg-secondary' : 'hover:bg-accent', !ok && 'cursor-not-allowed opacity-50 hover:bg-transparent')}>
+                  <span className="block text-[13px] font-medium">{c.label}</span>
+                  {!ok && <span className="block text-[11px] leading-tight text-muted-foreground">{c.rule}</span>}
+                </button>
+              )
+            })}
+          </div>
+          {draft.dims.length === 2 && draft.metrics.length > 1 && <p className="mx-4 mt-2 text-[12px] text-muted-foreground">Com duas dimensões, linha, barras e área usam uma métrica só. A tabela mostra todas.</p>}
+          {draft.dims.length > 2 && <p className="mx-4 mt-2 text-[12px] text-muted-foreground">Com mais de duas dimensões, só a tabela.</p>}
+          {(draft.chart === 'bar' || draft.chart === 'area') && (
+            <label className="mx-4 mt-3 flex items-center gap-2 text-[13px]"><input type="checkbox" checked={draft.stacked} onChange={(e) => update({ stacked: e.target.checked })} className="h-4 w-4 accent-[hsl(var(--primary))]" disabled={!editable} />Empilhar as séries</label>
+          )}
+          <PanelTitle>Período</PanelTitle>
+          <div className="grid gap-2 px-4">
+            <Select value={draft.period} onValueChange={(v) => update({ period: v as PeriodKey })} disabled={!editable}>
+              <SelectTrigger className="h-9" aria-label="Período"><SelectValue /></SelectTrigger>
+              <SelectContent>{PERIODS.map(([k, l]) => <SelectItem key={k} value={k}>{l}</SelectItem>)}<SelectItem value="custom" disabled>Datas fixas…</SelectItem></SelectContent>
+            </Select>
+            <label className="flex items-center gap-2 text-[13px]"><input type="checkbox" checked={draft.compare} onChange={(e) => update({ compare: e.target.checked })} className="h-4 w-4 accent-[hsl(var(--primary))]" disabled={!editable} />Comparar com o período anterior</label>
+          </div>
+          <PanelTitle>Filtros</PanelTitle>
+          <div className="grid gap-2 px-4">
+            {draft.filters.map((f) => (
+              <div key={f.field} className="rounded-md border p-2.5 text-[13px]">
+                <div className="flex items-center justify-between"><span className="font-medium">{R_DIMENSIONS.find((d) => d.key === f.field)?.label} é</span>{editable && <button onClick={() => update({ filters: draft.filters.filter((x) => x.field !== f.field) })} aria-label="Tirar filtro" className="rounded p-1 hover:bg-accent"><X className="h-3 w-3" /></button>}</div>
+                <div className="mt-1.5 grid gap-1">
+                  {DIM_VALUES[f.field].map((v) => (
+                    <label key={v} className="flex items-center gap-2"><input type="checkbox" className="h-3.5 w-3.5 accent-[hsl(var(--primary))]" checked={f.values.includes(v)} disabled={!editable}
+                      onChange={(e) => update({ filters: draft.filters.map((x) => x.field === f.field ? { ...x, values: e.target.checked ? [...x.values, v] : x.values.filter((y) => y !== v) } : x) })} /><span className="truncate">{v}</span></label>
+                  ))}
+                </div>
+              </div>
+            ))}
+            {editable && (
+              <div className="flex gap-2">
+                <Select value={filterField} onValueChange={setFilterField}>
+                  <SelectTrigger className="h-9 flex-1" aria-label="Campo do filtro"><SelectValue /></SelectTrigger>
+                  <SelectContent>{['site', 'network', 'country', 'device', 'ad_unit'].filter((k) => !draft.filters.some((f) => f.field === k) && !(visits && (k === 'device' || k === 'ad_unit'))).map((k) => <SelectItem key={k} value={k}>{R_DIMENSIONS.find((d) => d.key === k)?.label}</SelectItem>)}</SelectContent>
+                </Select>
+                <Button variant="outline" className="h-9" onClick={() => !draft.filters.some((f) => f.field === filterField) && update({ filters: [...draft.filters, { field: filterField, values: DIM_VALUES[filterField].slice(0, 1) }] })}><Plus className="h-4 w-4" />Filtro</Button>
+              </div>
+            )}
+            {filterable.length === 0 && draft.filters.length === 0 && <p className="text-[12px] text-muted-foreground">Filtre por site, network, país, dispositivo ou ad unit.</p>}
+          </div>
+          <PanelTitle>Linhas</PanelTitle>
+          <div className="grid gap-2 px-4 pb-6">
+            <Select value={String(draft.limit)} onValueChange={(v) => update({ limit: Number(v) })} disabled={!editable}>
+              <SelectTrigger className="h-9" aria-label="Limite de linhas"><SelectValue /></SelectTrigger>
+              <SelectContent>{[5, 10, 25, 100, 1000].map((n) => <SelectItem key={n} value={String(n)}>{n === 1000 ? 'Até 1.000 linhas' : `Top ${n}`}</SelectItem>)}</SelectContent>
+            </Select>
+            <p className="text-[12px] text-muted-foreground">Ordenado pela primeira métrica, do maior para o menor.</p>
+          </div>
+        </aside>
+      </div>
+      <CustomMetricDialog open={creating} onOpenChange={setCreating} customs={customs}
+        onSave={(c) => { setCustoms([...customs, c]); setMetrics([...draft.metrics, `custom.${c.key}`]); setCreating(false); toast.success('Métrica criada', { description: `${c.name} já está no relatório.` }) }} />
+      <SaveDialog open={saving} onOpenChange={setSaving} draft={draft}
+        onSave={(patch) => { const saved = { ...draft, ...patch, id: draft.id ?? `r${Date.now()}`, updated: 'Agora' }; setDraft(saved); setDirty(false); setSaving(false); onSave(saved); toast.success('Relatório salvo') }} />
+    </div>
+  )
+}
+
 export default function App() {
   const initial = typeof location !== 'undefined' && isScreen(location.hash.slice(1)) ? (location.hash.slice(1) as Screen) : 'equipe'
   const [screen, setScreen] = useState<Screen>(initial)
@@ -2008,6 +2840,15 @@ export default function App() {
   const [groups, setGroups] = useState(INITIAL_GROUPS)
   const [groupId, setGroupId] = useState('trafego')
   const [image, setImage] = useState<string | null>(null)
+  const [reports, setReports] = useState(INITIAL_REPORTS)
+  const [customs, setCustoms] = useState(INITIAL_CUSTOMS)
+  const [draft, setDraft] = useState<ReportDraft>(() => ({ ...INITIAL_REPORTS[1] }))
+  const openReport = (id: string | null) => { setDraft(id ? { ...reports.find((r) => r.id === id)! } : blank()); go('construtor') }
+  const openTemplate = (key: string) => { const { key: _key, desc: _desc, ...tpl } = TEMPLATES.find((x) => x.key === key)!; setDraft({ ...tpl, id: null, owner: ME, updated: 'Agora' }); go('construtor') }
+  const saveReport = (saved: ReportDraft) => {
+    const report = saved.id ? saved : { ...saved, id: `r${Date.now()}`, updated: 'Agora' }
+    setReports(reports.some((r) => r.id === report.id) ? reports.map((r) => (r.id === report.id ? report : r)) : [report, ...reports])
+  }
   const openGroup = (id: string) => { setGroupId(id); go(id === 'parcerias' ? 'grupoinativo' : 'grupo') }
   const t: T = (k) => translate(lang, k)
 
@@ -2030,7 +2871,7 @@ export default function App() {
   useEffect(() => { document.documentElement.lang = lang === 'pt' ? 'pt-BR' : lang }, [lang])
 
   const a = ACCENTS.find((x) => x.id === accent)!
-  const auth = screen === 'login' || screen === 'convite'
+  const auth = screen === 'login' || screen === 'convite' || screen === 'construtor'
   const body = (() => {
     switch (screen) {
       case 'login': return <Login t={t} go={go} />
@@ -2038,6 +2879,8 @@ export default function App() {
       case 'inicio': return <HomeScreen t={t} go={go} members={members} />
       case 'desempenho': return <PerformanceScreen />
       case 'visitas': return <PageViewsScreen />
+      case 'relatorios': return <ReportsScreen reports={reports} setReports={setReports} open={openReport} openTemplate={openTemplate} />
+      case 'construtor': return <ReportBuilderScreen key={`${draft.id}-${draft.name}`} initial={draft} customs={customs} setCustoms={setCustoms} onBack={() => go('relatorios')} onSave={saveReport} />
       case 'resultado': return <ResultScreen go={go} />
       case 'custos': return <CostsScreen />
       case 'equipe': return <TeamScreen t={t} go={go} members={members} setMembers={setMembers} groupCount={groups.length} />

@@ -35,6 +35,8 @@ function router() {
       { path: '/', component: Blank },
       { path: '/equipe', component: Blank },
       { path: '/papeis', component: Blank },
+      { path: '/relatorios', component: Blank },
+      { path: '/relatorios/:id', component: Blank },
       { path: '/interno', component: Blank, meta: { internal: true } },
       { path: '/interno/pessoas', component: Blank, meta: { internal: true } },
       { path: '/interno/clientes/:id', component: Blank, meta: { internal: true } },
@@ -73,7 +75,7 @@ describe('SidebarNav', () => {
     await r.push('/interno')
     const w = mount(SidebarNav, { global: { plugins: [r] } })
     const before = labels(w)
-    expect(before).toEqual(['Dashboard', 'Clientes', 'Equipes', 'Networks do GAM', 'Contratos', 'Sites', 'Ad Manager', 'Page Views', 'Resultado', 'Resultado dos clientes', 'Equipe Groone', 'Papéis e permissões', 'Custos'])
+    expect(before).toEqual(['Dashboard', 'Clientes', 'Equipes', 'Networks do GAM', 'Contratos', 'Sites', 'Ad Manager', 'Page Views', 'Relatórios', 'Resultado', 'Resultado dos clientes', 'Equipe Groone', 'Papéis e permissões', 'Custos'])
     expect(w.findAll('nav div').map((d) => d.text())).toEqual(['Clientes', 'Relatórios', 'Empresa'])
 
     session.set(me('c', ['sites.view']))
@@ -99,7 +101,7 @@ describe('SidebarNav', () => {
     const r = router()
     await r.push('/interno')
     const w = mount(SidebarNav, { global: { plugins: [r] } })
-    expect(labels(w)).toEqual(['Dashboard', 'Clientes', 'Equipes', 'Networks do GAM', 'Contratos', 'Sites', 'Ad Manager', 'Page Views', 'Resultado', 'Resultado dos clientes', 'Equipe Groone', 'Papéis e permissões', 'Custos'])
+    expect(labels(w)).toEqual(['Dashboard', 'Clientes', 'Equipes', 'Networks do GAM', 'Contratos', 'Sites', 'Ad Manager', 'Page Views', 'Relatórios', 'Resultado', 'Resultado dos clientes', 'Equipe Groone', 'Papéis e permissões', 'Custos'])
     // Equipes, para a equipe Groone, são as equipes dos clientes, nunca a própria.
     await w.findAll('nav a').find((a) => a.text() === 'Equipes')!.trigger('click')
     await flushPromises()
@@ -113,7 +115,7 @@ describe('SidebarNav', () => {
     const r = router()
     await r.push('/')
     const w = mount(SidebarNav, { global: { plugins: [r] } })
-    expect(labels(w)).toEqual(['Dashboard', 'Equipes', 'Networks do GAM', 'Sites', 'Ad Manager', 'Page Views', 'Resultado', 'Papéis e permissões', 'Custos'])
+    expect(labels(w)).toEqual(['Dashboard', 'Equipes', 'Networks do GAM', 'Sites', 'Ad Manager', 'Page Views', 'Relatórios', 'Resultado', 'Papéis e permissões', 'Custos'])
     expect(w.findAll('nav div').map((d) => d.text())).toEqual(['Clientes', 'Relatórios', 'Empresa'])
     expect(w.text()).not.toContain('Equipe Groone')
   })
@@ -137,5 +139,14 @@ describe('SidebarNav', () => {
       expect(current()).toBe(label)
       expect(w.findAll('nav [aria-current="page"]')).toHaveLength(1)
     }
+  })
+
+  it('acende Relatórios na lista e dentro de um relatório', async () => {
+    const session = useSession()
+    session.set(me('c', ['reports.view']))
+    const testRouter = router()
+    await testRouter.push('/relatorios/123')
+    const wrapper = mount(SidebarNav, { global: { plugins: [testRouter] } })
+    expect(wrapper.find('nav [aria-current="page"]').text()).toBe('Relatórios')
   })
 })
