@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /** Lista de networks com sincronização, histórico e desconexão. */
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
 import { DropdownMenuRoot, DropdownMenuSeparator, DropdownMenuTrigger } from 'reka-ui'
@@ -11,6 +11,7 @@ import PageBody from '@/components/PageBody.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import Button from '@/components/ui/Button.vue'
 import DataTable from '@/components/ui/DataTable.vue'
+import Pagination from '@/components/ui/Pagination.vue'
 import Dialog from '@/components/ui/Dialog.vue'
 import MenuContent from '@/components/ui/MenuContent.vue'
 import MenuItem from '@/components/ui/MenuItem.vue'
@@ -28,6 +29,9 @@ import { networkService } from '@/modules/networks/service'
 const session = useSession()
 const router = useRouter()
 const networks = ref<Network[] | null>(null)
+const page = ref(1)
+const total = ref(0)
+const pages = ref(0)
 const loadError = ref<string | null>(null)
 const canConnect = computed(() => session.can('network.connect'))
 const canSync = computed(() => session.can('network.sync'))
@@ -38,19 +42,27 @@ const lost = computed(() => (networks.value ?? []).filter((network) => network.s
 async function load() {
   loadError.value = null
   try {
-    networks.value = (await networkService.list()).items
+    const found = await networkService.list({ page: page.value })
+    networks.value = found.items
+    total.value = found.total
+    pages.value = found.pages
   } catch (error) {
     loadError.value = errorText(error instanceof ApiError ? error.code : 'unknown')
   }
 }
 onMounted(load)
+watch(page, load)
 
 // O worker avisa quando termina um teste ou importação.
 onEvent('network.updated', async ({ network_id }) => {
   try {
-    const network = await networkService.show(network_id)
     const list = networks.value ?? []
-    networks.value = list.some((existing) => existing.id === network.id) ? list.map((existing) => (existing.id === network.id ? network : existing)) : [...list, network]
+    if (!list.some((existing) => existing.id === network_id)) {
+      if (page.value === 1) await load()
+      return
+    }
+    const network = await networkService.show(network_id)
+    networks.value = list.map((existing) => (existing.id === network.id ? network : existing))
   } catch {
     // a próxima carga da tela traz o estado certo
   }
@@ -74,18 +86,30 @@ async function sync(network: Network) {
 
 // Histórico
 const history = ref<{ network: Network; runs: SyncRun[] | null } | null>(null)
+const historyPage = ref(1)
+const historyTotal = ref(0)
+const historyPages = ref(0)
 const historyOpen = computed({ get: () => history.value !== null, set: (value) => !value && (history.value = null) })
-/** Abre o histórico de sincronizações da network. */
-async function openHistory(network: Network) {
-  history.value = { network: network, runs: null }
+/** Carrega uma página do histórico de sincronizações da network. */
+async function loadHistory(network: Network) {
   try {
-    const runs = (await networkService.syncRuns(network.id, 30)).items
-    if (history.value?.network.id === network.id) history.value = { network: network, runs }
+    const found = await networkService.syncRuns(network.id, { page: historyPage.value })
+    if (history.value?.network.id !== network.id) return
+    history.value = { network: network, runs: found.items }
+    historyTotal.value = found.total
+    historyPages.value = found.pages
   } catch (error) {
     errorToast(error)
     history.value = null
   }
 }
+/** Abre o histórico de sincronizações da network na primeira página. */
+async function openHistory(network: Network) {
+  history.value = { network: network, runs: null }
+  historyPage.value = 1
+  await loadHistory(network)
+}
+watch(historyPage, () => history.value && loadHistory(history.value.network))
 /** Tom do selo de uma sincronização. */
 const runTone = (syncRun: SyncRun) => (syncRun.status === 'ok' ? 'ok' : syncRun.status === 'failed' ? 'bad' : 'warn')
 /** Resumo de uma sincronização: o erro ou o que mudou. */
@@ -183,6 +207,7 @@ async function disconnect() {
           </tr>
         </tbody>
       </DataTable>
+      <Pagination v-model:page="page" :total="total" :pages="pages" />
     </template>
 
     <Dialog v-model:open="historyOpen" :title="t('net.history')" :desc="history ? networkName(history.network) : ''" class="max-w-[640px]">
@@ -198,6 +223,7 @@ async function disconnect() {
           <span v-if="runDetail(run)" :class="['text-[13px]', run.status === 'failed' ? 'text-bad' : 'text-muted-foreground']">{{ runDetail(run) }}</span>
         </li>
       </ul>
+      <Pagination v-if="history?.runs?.length" v-model:page="historyPage" :total="historyTotal" :pages="historyPages" class="mt-3" />
     </Dialog>
 
     <ConfirmDialog

@@ -59,7 +59,7 @@ async function load() {
     const [roles, perms, sites, mine, groupPage] = await Promise.all([
       session.can('roles.view') ? teamService.roleOptions() : empty<RoleOption>(),
       session.can('roles.view') ? teamService.permissions() : empty<Permission>(),
-      canSeeSites.value ? siteService.list() : empty<SiteListItem>(),
+      canSeeSites.value ? siteService.options() : empty<SiteListItem>(),
       teamService.memberSites(id),
       canSeeGroups.value ? groupService.options() : empty<Group>(),
     ])
