@@ -8,6 +8,7 @@ import Checkbox from '@/components/ui/Checkbox.vue'
 import Dialog from '@/components/ui/Dialog.vue'
 import Field from '@/components/ui/Field.vue'
 import Input from '@/components/ui/Input.vue'
+import Pagination from '@/components/ui/Pagination.vue'
 import { ApiError } from '@/lib/api'
 import { errorText, lang, locale, t } from '@/lib/i18n'
 import { formatMetric, toNumber } from '@/lib/metrics'
@@ -16,7 +17,7 @@ import { goalService } from '@/modules/internal/goals/service'
 import type { GoalTemplate } from '@/modules/internal/goals/types'
 
 const open = defineModel<boolean>('open', { default: false })
-const props = defineProps<{ templates: GoalTemplate[]; year: number }>()
+const props = defineProps<{ year: number }>()
 const emit = defineEmits<{ changed: [] }>()
 const MONTHS_IN_YEAR = 12
 const editing = ref<GoalTemplate | null>(null)
@@ -27,6 +28,10 @@ const months = ref<string[]>([])
 const companyGoal = ref(false)
 const busy = ref(false)
 const removing = ref<string | null>(null)
+const templates = ref<GoalTemplate[]>([])
+const page = ref(1)
+const total = ref(0)
+const pages = ref(0)
 
 const monthNames = computed(() =>
   Array.from({ length: MONTHS_IN_YEAR }, (_, index) => new Intl.DateTimeFormat(locale.value, { month: 'short', timeZone: 'UTC' }).format(new Date(Date.UTC(2026, index, 1)))),
@@ -34,8 +39,32 @@ const monthNames = computed(() =>
 const formOpen = computed(() => creating.value || editing.value !== null)
 const valid = computed(() => !!name.value.trim() && Number(year.value) >= 2020 && Number(year.value) <= 2100 && templateValid(months.value, lang.value))
 watch(open, (opened) => {
-  if (!opened) close()
+  if (opened) void loadPage()
+  else close()
 })
+watch(page, () => void loadPage())
+
+/** Carrega a página dos modelos; se ela ficou vazia, volta uma. */
+async function loadPage() {
+  try {
+    const found = await goalService.templatePage({ page: page.value })
+    if (found.items.length === 0 && page.value > 1) {
+      page.value = Math.max(1, found.pages)
+      return
+    }
+    templates.value = found.items
+    total.value = found.total
+    pages.value = found.pages
+  } catch (error) {
+    toast.error(errorText(error instanceof ApiError ? error.code : 'unknown'))
+  }
+}
+
+/** Recarrega a página e avisa a tela, que usa a lista inteira no seletor. */
+async function changed() {
+  await loadPage()
+  emit('changed')
+}
 
 /** Abre o formulário vazio ou com o modelo. */
 function start(template: GoalTemplate | null) {
@@ -64,7 +93,7 @@ async function save() {
     else await goalService.createTemplate(input)
     toast.success(t('goals.templateSaved'))
     close()
-    emit('changed')
+    await changed()
   } catch (error) {
     toast.error(error instanceof ApiError && error.code === 'company_goal_taken' ? errorText('company_goal_taken') : errorText(error instanceof ApiError ? error.code : 'unknown'))
   } finally {
@@ -82,7 +111,7 @@ async function remove(template: GoalTemplate) {
     await goalService.deleteTemplate(template.id)
     removing.value = null
     toast.success(t('goals.templateDeleted'))
-    emit('changed')
+    await changed()
   } catch (error) {
     toast.error(errorText(error instanceof ApiError ? error.code : 'unknown'))
   }
@@ -121,6 +150,7 @@ const yearTotal = (template: GoalTemplate) => formatMetric(template.months.reduc
         <Button variant="ghost" size="sm" class="text-bad" @click="remove(template)">{{ removing === template.id ? t('goals.confirmDelete') : t('common.delete') }}</Button>
       </li>
     </ul>
+    <Pagination v-if="!formOpen && pages > 1" v-model:page="page" :total="total" :pages="pages" class="mt-3" />
     <template #footer>
       <template v-if="formOpen">
         <Button variant="outline" @click="close">{{ t('common.cancel') }}</Button>

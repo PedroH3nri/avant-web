@@ -1,13 +1,15 @@
 /** Chamadas da API das metas da equipe Groone. */
 
-import { api } from '@/lib/api'
-import type { Items } from '@/lib/types'
+import { api, type Query } from '@/lib/api'
+import type { Items, Page } from '@/lib/types'
 import type { GoalMode, GoalTemplate, GoalTemplateInput, PersonGoal, RoleGoal, TeamGoals } from '@/modules/internal/goals/types'
 
 /** Serviço das metas. */
 export const goalService = {
-  /** Os modelos de meta. */
-  templates: () => api.get<Pick<Items<GoalTemplate>, 'items'>>('/internal/goal-templates'),
+  /** Todos os modelos de meta, para o seletor da meta do papel. */
+  templates: () => api.get<Pick<Items<GoalTemplate>, 'items'>>('/internal/goal-templates/options'),
+  /** Uma página dos modelos de meta, do ano mais novo para o mais velho. */
+  templatePage: (query?: Query) => api.get<Page<GoalTemplate>>('/internal/goal-templates', query),
   /** Cadastra um modelo de meta. */
   createTemplate: (input: GoalTemplateInput) => api.post<GoalTemplate>('/internal/goal-templates', input),
   /** Troca um modelo de meta. */

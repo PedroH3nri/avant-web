@@ -169,5 +169,5 @@ const percent = (person: PersonGoal) =>
       </DataTable>
     </section>
   </PageBody>
-  <GoalTemplatesDialog v-model:open="templatesOpen" :templates="templates" :year="Number(month.slice(0, 4))" @changed="load" />
+  <GoalTemplatesDialog v-model:open="templatesOpen" :year="Number(month.slice(0, 4))" @changed="load" />
 </template>
