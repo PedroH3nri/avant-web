@@ -11,20 +11,29 @@ import { t } from '@/lib/i18n'
 import { useNavigation, type NavGroup } from '@/lib/navigation'
 import { cn } from '@/lib/utils'
 
+const OPEN_DELAY_MS = 120
+const SWITCH_DELAY_MS = 250
 const CLOSE_DELAY_MS = 200
 const hovered = ref<string | null>(null)
 const { session, route, ready, groups, active, groupActive, openLink, account, logout } = useNavigation(() => (hovered.value = null))
 const lastShown = ref<string | null>(null)
 let closing: ReturnType<typeof setTimeout> | null = null
+let switching: ReturnType<typeof setTimeout> | null = null
 
 const open = computed(() => hovered.value !== null)
 const shown = computed(() => groups.value.find((section) => section.id === (hovered.value ?? lastShown.value)) ?? null)
 watch(() => route.path, () => (hovered.value = null))
-onBeforeUnmount(() => closing && clearTimeout(closing))
+onBeforeUnmount(cancel)
 
-/** Abre o painel do grupo, cancelando um fechamento pendente; grupo de um item só não tem painel. */
-function hover(section: NavGroup) {
+/** Cancela a troca e o fechamento que ainda estão esperando. */
+function cancel() {
   if (closing) clearTimeout(closing)
+  if (switching) clearTimeout(switching)
+}
+
+/** Mostra o painel do grupo na hora; grupo de um item só não tem painel. */
+function show(section: NavGroup) {
+  cancel()
   if (section.items.length < 2) {
     hovered.value = null
     return
@@ -33,13 +42,16 @@ function hover(section: NavGroup) {
   lastShown.value = section.id
 }
 
-/** Mantém o painel aberto enquanto o mouse está nele. */
-function keep() {
-  if (closing) clearTimeout(closing)
+/** Abre o painel do grupo sob o mouse depois de uma pequena espera, para o mouse que só passa por cima não trocar os itens. */
+function hover(section: NavGroup) {
+  cancel()
+  if (section.id === hovered.value) return
+  switching = setTimeout(() => show(section), open.value ? SWITCH_DELAY_MS : OPEN_DELAY_MS)
 }
 
 /** Fecha o painel com um pequeno atraso, para dar tempo de o mouse chegar nele. */
 function leave() {
+  if (switching) clearTimeout(switching)
   closing = setTimeout(() => (hovered.value = null), CLOSE_DELAY_MS)
 }
 
@@ -52,7 +64,7 @@ function blur(event: FocusEvent) {
 /** Classes do botão do grupo no trilho: ativo, com o painel aberto ou parado. */
 const railItem = (section: NavGroup) =>
   cn(
-    'flex w-full flex-col items-center gap-1 rounded-md py-2 text-[10.5px] font-medium leading-none transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-[18px]',
+    'flex w-full flex-col items-center gap-1.5 rounded-md py-2.5 text-[12px] font-medium leading-none transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-[18px]',
     groupActive(section) ? 'bg-secondary text-foreground' : open.value && shown.value?.id === section.id ? 'bg-accent text-foreground' : 'text-muted-foreground hover:bg-accent hover:text-foreground',
   )
 /** Classes do link no painel, ativo ou não. */
@@ -65,7 +77,7 @@ const panelItem = (on: boolean) =>
 
 <template>
   <div class="relative flex h-full" @mouseleave="leave" @focusout="blur" @keydown.esc="hovered = null">
-    <div class="relative z-10 flex w-[72px] shrink-0 flex-col items-center border-r bg-sidebar py-3">
+    <div class="relative z-10 flex w-[88px] shrink-0 flex-col items-center border-r bg-sidebar py-3">
       <RouterLink to="/" class="rounded-md p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" @mouseenter="leave">
         <Mark :size="28" /><span class="sr-only">Avant</span>
       </RouterLink>
@@ -77,7 +89,7 @@ const panelItem = (on: boolean) =>
             :aria-current="groupActive(section) ? 'page' : undefined"
             :class="railItem(section)"
             @mouseenter="hover(section)"
-            @focus="hover(section)"
+            @focus="show(section)"
             @click="openLink($event, section.items[0]!.to)"
           >
             <component :is="section.icon" />{{ t(section.label) }}
@@ -90,7 +102,7 @@ const panelItem = (on: boolean) =>
             aria-controls="rail-panel"
             :class="railItem(section)"
             @mouseenter="hover(section)"
-            @focus="hover(section)"
+            @focus="show(section)"
             @click="openLink(null, section.items[0]!.to)"
           >
             <component :is="section.icon" />{{ t(section.label) }}
@@ -119,11 +131,11 @@ const panelItem = (on: boolean) =>
       :inert="!open || undefined"
       :class="
         cn(
-          'absolute inset-y-0 left-[72px] flex w-[228px] flex-col border-r bg-sidebar shadow-[8px_0_24px_-12px_rgba(0,0,0,0.18)] transition-[opacity,transform] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none',
+          'absolute inset-y-0 left-[88px] flex w-[248px] flex-col border-r bg-sidebar shadow-[8px_0_24px_-12px_rgba(0,0,0,0.18)] transition-[opacity,transform] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none',
           open ? 'translate-x-0 opacity-100 duration-300' : 'pointer-events-none -translate-x-3 opacity-0 duration-200',
         )
       "
-      @mouseenter="keep"
+      @mouseenter="cancel"
     >
       <template v-if="shown">
         <div class="flex h-14 shrink-0 items-center border-b px-4 text-[14px] font-semibold tracking-tight">{{ t(shown.label) }}</div>

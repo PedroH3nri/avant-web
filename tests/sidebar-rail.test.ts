@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { createMemoryHistory, createRouter } from 'vue-router'
@@ -55,8 +55,19 @@ const railLabels = (wrapper: ReturnType<typeof mount>) => wrapper.findAll('nav[a
 /** Os rótulos dos itens no painel. */
 const panelLabels = (wrapper: ReturnType<typeof mount>) => wrapper.findAll('#rail-panel a').map((link) => link.text())
 
+/** Passa o mouse no grupo e espera a troca do painel. */
+async function hoverAndWait(entry: { trigger: (event: string) => Promise<void> }) {
+  await entry.trigger('mouseenter')
+  vi.advanceTimersByTime(300)
+  await flushPromises()
+}
+
 describe('SidebarRail', () => {
-  beforeEach(() => setActivePinia(createPinia()))
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    vi.useFakeTimers()
+  })
+  afterEach(() => vi.useRealTimers())
 
   it('mostra um ícone por grupo e acende o grupo da tela', async () => {
     const session = useSession()
@@ -76,11 +87,11 @@ describe('SidebarRail', () => {
     await testRouter.push('/interno')
     const wrapper = mount(SidebarRail, { global: { plugins: [testRouter] } })
     const [, clients, reports] = wrapper.findAll('nav[aria-label="Menu principal"] > *')
-    await clients!.trigger('mouseenter')
+    await hoverAndWait(clients!)
     expect(wrapper.find('#rail-panel').attributes('aria-hidden')).toBe('false')
     expect(panelLabels(wrapper)).toEqual(['Clientes', 'Equipes', 'Networks do GAM', 'Contratos', 'Sites'])
     expect(wrapper.find('#rail-panel [aria-current="page"]').text()).toBe('Clientes')
-    await reports!.trigger('mouseenter')
+    await hoverAndWait(reports!)
     expect(panelLabels(wrapper)).toEqual(['Ad Manager', 'Page Views', 'Relatórios', 'Resultado', 'Resultado dos clientes', 'Metas', 'Minha comissão', 'Comissões'])
   })
 
@@ -91,12 +102,12 @@ describe('SidebarRail', () => {
     await testRouter.push('/interno')
     const wrapper = mount(SidebarRail, { global: { plugins: [testRouter] } })
     const [dashboard, clients] = wrapper.findAll('nav[aria-label="Menu principal"] > *')
-    await clients!.trigger('mouseenter')
+    await hoverAndWait(clients!)
     await wrapper.findAll('#rail-panel a').find((link) => link.text() === 'Contratos')!.trigger('click')
     await flushPromises()
     expect(testRouter.currentRoute.value.path).toBe('/interno/contratos')
     expect(wrapper.find('#rail-panel').attributes('aria-hidden')).toBe('true')
-    await dashboard!.trigger('mouseenter')
+    await hoverAndWait(dashboard!)
     expect(wrapper.find('#rail-panel').attributes('aria-hidden')).toBe('true')
   })
 
@@ -110,5 +121,23 @@ describe('SidebarRail', () => {
     await company.trigger('click')
     await flushPromises()
     expect(testRouter.currentRoute.value.path).toBe('/interno/equipe')
+  })
+
+  it('passar o mouse rápido por outro grupo não troca os itens do painel', async () => {
+    const session = useSession()
+    session.set(me('g', ['*']))
+    const testRouter = router()
+    await testRouter.push('/interno')
+    const wrapper = mount(SidebarRail, { global: { plugins: [testRouter] } })
+    const [, clients, reports] = wrapper.findAll('nav[aria-label="Menu principal"] > *')
+    await clients!.trigger('mouseenter')
+    expect(wrapper.find('#rail-panel').attributes('aria-hidden')).toBe('true')
+    await hoverAndWait(clients!)
+    await reports!.trigger('mouseenter')
+    vi.advanceTimersByTime(100)
+    await clients!.trigger('mouseenter')
+    vi.advanceTimersByTime(300)
+    await flushPromises()
+    expect(panelLabels(wrapper)[0]).toBe('Clientes')
   })
 })

@@ -15,7 +15,7 @@ const open = ref(false)
 
 <template>
   <div class="flex min-h-full">
-    <aside class="sticky top-0 z-30 hidden h-dvh w-[72px] shrink-0 self-start lg:block">
+    <aside class="sticky top-0 z-30 hidden h-dvh w-[88px] shrink-0 self-start lg:block">
       <SidebarRail />
     </aside>
     <DialogRoot v-model:open="open">
