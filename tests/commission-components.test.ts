@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
-import { ApiError } from '@/lib/api'
 import { lang } from '@/lib/i18n'
 import type { ClientDetail } from '@/modules/internal/clients/types'
 import type { PersonMonth } from '@/modules/internal/commissions/types'
@@ -10,14 +9,13 @@ const perms = vi.hoisted(() => ({ value: new Set<string>() }))
 const staffOptions = vi.hoisted(() => vi.fn())
 const managerChange = vi.hoisted(() => vi.fn())
 const team = vi.hoisted(() => vi.fn())
-const issue = vi.hoisted(() => vi.fn())
 const toastError = vi.hoisted(() => vi.fn())
 const settings = vi.hoisted(() => vi.fn())
 
 vi.mock('@/stores/session', () => ({ useSession: () => ({ can: (wanted: string) => perms.value.has(wanted), me: null }) }))
 vi.mock('@/modules/internal/staff/service', () => ({ staffService: { options: staffOptions } }))
 vi.mock('@/modules/internal/clients/service', () => ({ clientService: { managerChange, update: vi.fn() } }))
-vi.mock('@/modules/internal/commissions/service', () => ({ commissionService: { team, issue, settings, person: vi.fn() } }))
+vi.mock('@/modules/internal/commissions/service', () => ({ commissionService: { team, settings, person: vi.fn() } }))
 vi.mock('vue-sonner', () => ({ toast: Object.assign(vi.fn(), { error: toastError, success: vi.fn() }) }))
 
 import AccountManagerCard from '@/modules/internal/commissions/components/AccountManagerCard.vue'
@@ -114,7 +112,7 @@ describe('card do responsável Groone', () => {
   })
 })
 
-describe('emitir todas', () => {
+describe('comissões da equipe', () => {
   const person = (id: string, name: string): PersonMonth => ({
     user: { id, name, email: `${id}@groone.com`, locale: 'pt', image_url: null },
     role_name: 'Externo',
@@ -126,20 +124,13 @@ describe('emitir todas', () => {
     vi.clearAllMocks()
   })
 
-  it('segue quando uma falha e diz quem ficou e por quê', async () => {
-    perms.value = new Set(['internal.commissions.view'])
-    perms.value.add('internal.commissions.manage')
+  it('não emite mais pela tela: a emissão vem da invoice de cada pessoa', async () => {
+    perms.value = new Set(['internal.commissions.view', 'internal.commissions.manage'])
     settings.mockResolvedValue({ starts_on: '2026-09-01' })
     team.mockResolvedValue({ items: [person('ana', 'Ana'), person('bia', 'Bia')] })
-    issue.mockResolvedValueOnce({ days: 3 }).mockRejectedValueOnce(new ApiError(422, 'invalid_input', 'o mês dessa pessoa ainda não fechou'))
     const view = mount(TeamCommissionsView, { attachTo: document.body })
     await flushPromises()
-    const issueAll = view.findAll('button').find((button) => button.text().includes('Marcar todas como emitidas'))!
-    await issueAll.trigger('click')
-    await flushPromises()
-    expect(issue).toHaveBeenCalledTimes(2)
-    const [message] = toastError.mock.calls[0] as [string]
-    expect(message).toContain('1 emitidos')
-    expect(message).toContain('Bia')
+    expect(view.text()).toContain('Ana')
+    expect(view.findAll('button').some((button) => button.text().includes('emitidas'))).toBe(false)
   })
 })

@@ -17,7 +17,7 @@ describe('menu do painel', () => {
   beforeAll(() => (lang.value = 'pt'))
 
   it('mostra os mesmos itens para a equipe Groone, sem filtrar por permissão', () => {
-    expect(labels(true)).toEqual(['Dashboard', 'Clientes', 'Equipes', 'Networks do GAM', 'Contratos', 'Sites', 'Ad Manager', 'Page Views', 'Relatórios', 'Resultado', 'Resultado dos clientes', 'Metas', 'Minha comissão', 'Comissões', 'Equipe Groone', 'Papéis da equipe', 'Custos'])
+    expect(labels(true)).toEqual(['Dashboard', 'Clientes', 'Equipes', 'Networks do GAM', 'Contratos', 'Sites', 'Ad Manager', 'Page Views', 'Relatórios', 'Resultado', 'Resultado dos clientes', 'Metas', 'Minha comissão', 'Minhas invoices', 'Comissões', 'Invoices', 'Equipe Groone', 'Papéis da equipe', 'Custos'])
     expect(headers(true)).toEqual(['Clientes', 'Relatórios', 'Comissões', 'Empresa'])
   })
 

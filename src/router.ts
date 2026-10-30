@@ -51,6 +51,10 @@ const routes: RouteRecordRaw[] = [
       { path: 'interno/papeis', component: () => import('@/modules/internal/commissions/views/StaffRolesView.vue'), meta: { internal: true, permission: 'internal.commissions.view' } },
       { path: 'interno/minha-comissao', component: () => import('@/modules/internal/commissions/views/MyCommissionView.vue'), meta: { internal: true } },
       { path: 'interno/comissoes', component: () => import('@/modules/internal/commissions/views/TeamCommissionsView.vue'), meta: { internal: true, permission: 'internal.commissions.view' } },
+      { path: 'interno/minhas-invoices', component: () => import('@/modules/internal/invoices/views/MyInvoicesView.vue'), meta: { internal: true } },
+      { path: 'interno/invoices', component: () => import('@/modules/internal/invoices/views/InvoicesView.vue'), meta: { internal: true, permission: 'internal.invoices.view' } },
+      { path: 'interno/invoices/:id', component: () => import('@/modules/internal/invoices/views/InvoiceView.vue'), meta: { internal: true } },
+      { path: 'interno/servicos-de-invoice', component: () => import('@/modules/internal/invoices/views/InvoiceServicesView.vue'), meta: { internal: true } },
       {
         path: 'interno/contratos',
         component: () => import('@/modules/internal/contracts/views/ContractsView.vue'),
