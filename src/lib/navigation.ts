@@ -45,6 +45,14 @@ export const NAV_GROUPS: NavGroup[] = [
       { to: '/resultado', key: 'nav.results', icon: Scale },
       { to: '/interno/resultados', key: 'int.results', icon: Scale, internal: true },
       { to: '/interno/metas', key: 'goals.title', icon: Target, internal: true },
+    ],
+  },
+  {
+    id: 'commissions',
+    key: 'nav.groupCommissions',
+    label: 'nav.groupCommissions',
+    icon: Wallet,
+    items: [
       { to: '/interno/minha-comissao', key: 'com.nav.mine', icon: Wallet, internal: true },
       { to: '/interno/comissoes', key: 'com.nav.team', icon: Coins, internal: true },
     ],
