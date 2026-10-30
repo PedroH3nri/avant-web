@@ -1,5 +1,6 @@
 /** Chamadas da API dos clientes no painel interno. */
 
+import type { ManagerChange } from '@/modules/internal/commissions/types'
 import { api, type Query } from '@/lib/api'
 import type { Items, Page } from '@/lib/types'
 import type { AuditEntry, Client, ClientDetail, ClientMember, ClientOption, OwnerInvitation } from '@/modules/internal/clients/types'
@@ -16,8 +17,8 @@ export const clientService = {
   create: (body: unknown) => api.post<Client>('/internal/clients', body),
   /** Muda nome, vagas ou cadastro de um cliente. */
   update: (companyId: string, body: unknown) => api.patch<Client>(`/internal/clients/${companyId}`, body),
-  /** O papel de cada prazo de comissão aberto do responsável de hoje, para o aviso da troca. */
-  managerWindows: (companyId: string) => api.get<{ role_ids: string[] }>(`/internal/clients/${companyId}/manager-windows`),
+  /** O que trocar o responsável para ``userId`` faria com os prazos de comissão; não muda nada. */
+  managerChange: (companyId: string, userId: string) => api.get<ManagerChange>(`/internal/clients/${companyId}/manager-change`, { user_id: userId }),
   /** Troca a imagem de um cliente pelo arquivo escolhido. */
   setImage: (companyId: string, file: File) => api.putFile<Client>(`/internal/clients/${companyId}/image`, file),
   /** Tira a imagem de um cliente. */

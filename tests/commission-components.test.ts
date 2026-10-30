@@ -8,7 +8,7 @@ import type { Member } from '@/modules/team/types'
 
 const perms = vi.hoisted(() => ({ value: new Set<string>() }))
 const staffOptions = vi.hoisted(() => vi.fn())
-const managerWindows = vi.hoisted(() => vi.fn())
+const managerChange = vi.hoisted(() => vi.fn())
 const team = vi.hoisted(() => vi.fn())
 const issue = vi.hoisted(() => vi.fn())
 const toastError = vi.hoisted(() => vi.fn())
@@ -16,7 +16,7 @@ const settings = vi.hoisted(() => vi.fn())
 
 vi.mock('@/stores/session', () => ({ useSession: () => ({ can: (wanted: string) => perms.value.has(wanted), me: null }) }))
 vi.mock('@/modules/internal/staff/service', () => ({ staffService: { options: staffOptions } }))
-vi.mock('@/modules/internal/clients/service', () => ({ clientService: { managerWindows, update: vi.fn() } }))
+vi.mock('@/modules/internal/clients/service', () => ({ clientService: { managerChange, update: vi.fn() } }))
 vi.mock('@/modules/internal/commissions/service', () => ({ commissionService: { team, issue, settings, person: vi.fn() } }))
 vi.mock('vue-sonner', () => ({ toast: Object.assign(vi.fn(), { error: toastError, success: vi.fn() }) }))
 
@@ -45,7 +45,9 @@ const client = {
 describe('card do responsável Groone', () => {
   beforeEach(() => {
     staffOptions.mockResolvedValue({ items: [member('ana', 'Ana', 'r1'), member('bia', 'Bia', 'r1'), member('caio', 'Caio', 'r2')] })
-    managerWindows.mockResolvedValue({ role_ids: ['r1'] })
+    managerChange.mockImplementation(async (_company: string, userId: string) =>
+      userId === 'bia' ? { continues: 1, stops: 0, arrives: 0 } : { continues: 0, stops: 1, arrives: 2 },
+    )
   })
   afterEach(() => {
     document.body.innerHTML = ''
@@ -63,6 +65,7 @@ describe('card do responsável Groone', () => {
     select.dispatchEvent(new Event('change'))
     await flushPromises()
     expect(document.body.textContent).toContain('param hoje')
+    expect(document.body.textContent).toContain('2 prazos sem responsável passam para Caio')
     select.value = 'bia'
     select.dispatchEvent(new Event('change'))
     await flushPromises()
@@ -71,7 +74,7 @@ describe('card do responsável Groone', () => {
 
   it('sem a resposta dos prazos, não afirma que nada muda', async () => {
     perms.value = new Set(['internal.clients.manage', 'internal.commissions.manage'])
-    managerWindows.mockRejectedValueOnce(new Error('fora do ar'))
+    managerChange.mockRejectedValue(new Error('fora do ar'))
     const card = mount(AccountManagerCard, { props: { client }, attachTo: document.body })
     await flushPromises()
     await card.get('button').trigger('click')
@@ -80,6 +83,7 @@ describe('card do responsável Groone', () => {
     select.value = 'caio'
     select.dispatchEvent(new Event('change'))
     await flushPromises()
+    expect(document.querySelector('#account-manager')).not.toBeNull()
     expect(document.body.textContent).not.toContain('não muda comissão')
   })
 
