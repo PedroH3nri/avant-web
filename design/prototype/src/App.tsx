@@ -1291,6 +1291,7 @@ function ClientScreen({ go }: { go: (s: Screen) => void }) {
         <Card title="Contato" footer={<Button size="sm" variant="outline">Editar</Button>}>
           <dl className="-my-2 divide-y">{row('Nome', 'Caio Prado')}{row('E-mail', 'contato@technoticias.com')}{row('Telefone', <span className="tnum">+55 11 98888-7777</span>)}{row('Idioma', 'Português')}{row('Convite', sent ? <Status tone="ochre">Enviado {sent}</Status> : <span className="text-muted-foreground">Ainda não enviado</span>)}</dl>
         </Card>
+        <AccountManagerCard />
         <Card title="Indicação" footer={<Button size="sm" variant="outline">Editar</Button>}>
           <dl className="-my-2 divide-y">{row('Indicado por', 'Blog Exemplo')}{row('Comissão', <span className="tnum">2%</span>)}{row('Observações', <span className="text-muted-foreground">Veio do evento de setembro.</span>)}</dl>
         </Card>
@@ -2913,44 +2914,64 @@ function ReportBuilderScreen({ initial, customs, setCustoms, onBack, onSave }: {
 
 /* ---------- Comissão e metas da equipe Groone (core#73, core#109) ---------- */
 
-type CountsBy = 'client' | 'network' | 'site'
-type StaffRole = { id: string; name: string; earns: boolean; countsBy: CountsBy; percent: number; offsetDays: number; durationDays: number | null; transferTo: string | null; goal: string | null; goalMode: GoalMode; people: string[] }
+type CommissionKind = 'created' | 'reactivated'
+type CommissionTarget = 'client' | 'network' | 'site'
+type CommissionRule = { id: string; kind: CommissionKind; target: CommissionTarget; percent: number; offsetDays: number; durationDays: number | null; transferTo: string | null }
+type StaffRole = { id: string; name: string; rules: CommissionRule[]; goal: string | null; goalMode: GoalMode; people: string[] }
 const STAFF_GOALS: GoalTemplate[] = [
   { id: 'externo', name: 'Comercial externo 2026', months: [12000, 12000, 12500, 12500, 13000, 13000, 14000, 14000, 15000, 15000, 16000, 18000] },
   { id: 'interno', name: 'Comercial interno 2026', months: [12000, 12000, 12000, 13000, 13000, 13000, 14000, 14000, 14000, 15000, 16000, 18000] },
 ]
 const COMPANY_GOAL: GoalTemplate = { id: 'groone', name: 'Faturamento Groone 2026', months: [380000, 380000, 400000, 400000, 420000, 420000, 440000, 440000, 460000, 480000, 520000, 560000] }
 const STAFF_ROLES: StaffRole[] = [
-  { id: 'externo', name: 'Comercial externo', earns: true, countsBy: 'client', percent: 5, offsetDays: 7, durationDays: 30, transferTo: 'interno', goal: 'externo', goalMode: 'per_member', people: ['Lucas Prado', 'Marina Alves'] },
-  { id: 'interno', name: 'Comercial interno', earns: true, countsBy: 'site', percent: 3, offsetDays: 0, durationDays: 90, transferTo: null, goal: 'interno', goalMode: 'split', people: ['Pedro Henrique', 'Júlia Santos', 'Rafael Souza'] },
-  { id: 'financeiro', name: 'Financeiro', earns: false, countsBy: 'client', percent: 0, offsetDays: 0, durationDays: null, transferTo: null, goal: null, goalMode: 'per_member', people: ['Beatriz Lima'] },
+  { id: 'externo', name: 'Comercial externo', goal: 'externo', goalMode: 'per_member', people: ['Lucas Prado', 'Marina Alves'],
+    rules: [{ id: 'r1', kind: 'created', target: 'client', percent: 5, offsetDays: 7, durationDays: 30, transferTo: 'interno' }] },
+  { id: 'interno', name: 'Comercial interno', goal: 'interno', goalMode: 'split', people: ['Pedro Henrique', 'Júlia Santos', 'Rafael Souza'],
+    rules: [
+      { id: 'r2', kind: 'reactivated', target: 'client', percent: 10, offsetDays: 0, durationDays: 90, transferTo: null },
+      { id: 'r3', kind: 'reactivated', target: 'network', percent: 5, offsetDays: 0, durationDays: 30, transferTo: null },
+      { id: 'r4', kind: 'created', target: 'site', percent: 3, offsetDays: 0, durationDays: 90, transferTo: null },
+    ] },
+  { id: 'financeiro', name: 'Financeiro', goal: null, goalMode: 'per_member', people: ['Beatriz Lima'], rules: [] },
 ]
-const COUNTS_BY: Record<CountsBy, { label: string; start: string }> = {
-  client: { label: 'Cliente', start: 'no cadastro do cliente ou quando ele volta para a Groone' },
-  network: { label: 'Network', start: 'quando uma network que tinha saído volta, com o cliente ainda na Groone' },
-  site: { label: 'Site', start: 'na aprovação do site no GAM ou quando ele volta' },
+const KINDS: Record<CommissionKind, { label: string; hint: string }> = {
+  created: { label: 'Cadastro', hint: 'Conta a partir da data em que o item foi cadastrado.' },
+  reactivated: { label: 'Reativação', hint: 'Conta quando o item volta depois de 30 dias ou mais inativo.' },
 }
+const TARGETS: Record<CommissionTarget, { label: string; created: string; reactivated: string }> = {
+  client: { label: 'Cliente', created: 'Cadastro do cliente. Conta a receita de todas as networks dele.', reactivated: 'O cliente volta para a Groone com as networks dele.' },
+  network: { label: 'Network', created: 'Uma network nova num cliente que já está na Groone.', reactivated: 'Uma network que tinha saído volta, com o cliente ainda na Groone.' },
+  site: { label: 'Site', created: 'Cadastro do site, do GAM ou à mão.', reactivated: 'Um site inativo ou arquivado volta.' },
+}
+/** Nome da regra, como "Reativação de network". */
+const ruleName = (rule: Pick<CommissionRule, 'kind' | 'target'>) => `${KINDS[rule.kind].label} ${rule.target === 'client' ? 'do cliente' : rule.target === 'network' ? 'de network' : 'de site'}`
 type CommissionStatus = 'draft' | 'validated' | 'issued' | 'paid'
 const COMMISSION_STATUS: Record<CommissionStatus, [string, 'neutral' | 'ochre' | 'ok']> = { draft: ['Em aberto', 'ochre'], validated: ['Validada', 'neutral'], issued: ['Emitida', 'ok'], paid: ['Paga', 'ok'] }
 const MY_WINDOWS = [
-  { what: 'Receitas da Vó', kind: 'Cliente', start: '08/10/2026', end: '06/11/2026', percent: 5, month: 412.35 },
-  { what: 'Portal Tech News', kind: 'Cliente', start: '15/10/2026', end: '13/11/2026', percent: 5, month: 188.9 },
-  { what: 'Viagem Fácil', kind: 'Cliente', start: '21/09/2026', end: '20/10/2026', percent: 5, month: 96.4 },
+  { what: 'Receitas da Vó', target: 'Cliente', rule: 'Cadastro do cliente', start: '08/10/2026', end: '06/11/2026', percent: 5, month: 412.35 },
+  { what: 'Portal Tech News', target: 'Cliente', rule: 'Cadastro do cliente', start: '15/10/2026', end: '13/11/2026', percent: 5, month: 188.9 },
+  { what: 'Viagem Fácil', target: 'Cliente', rule: 'Cadastro do cliente', start: '21/09/2026', end: '20/10/2026', percent: 5, month: 96.4 },
 ]
-const MY_HISTORY: { month: string; base: number; commission: number; deduction: number; status: CommissionStatus }[] = [
-  { month: 'Outubro 2026', base: 13953, commission: 697.65, deduction: 0, status: 'draft' },
-  { month: 'Setembro 2026', base: 11820, commission: 591.0, deduction: 23.4, status: 'validated' },
-  { month: 'Agosto 2026', base: 10410, commission: 520.5, deduction: 18.9, status: 'issued' },
+const MY_HISTORY: { month: string; base: number; commission: number; deduction: number; adjustment: number; status: CommissionStatus }[] = [
+  { month: 'Outubro 2026', base: 13953, commission: 697.65, deduction: 0, adjustment: 0, status: 'draft' },
+  { month: 'Setembro 2026', base: 11820, commission: 591.0, deduction: 23.4, adjustment: 40, status: 'validated' },
+  { month: 'Agosto 2026', base: 10410, commission: 520.5, deduction: 18.9, adjustment: 0, status: 'issued' },
 ]
-const TEAM: { name: string; role: string; revshare: number; commission: number; deduction: number; status: CommissionStatus }[] = [
-  { name: 'Lucas Prado', role: 'Comercial externo', revshare: 14210, commission: 697.65, deduction: 0, status: 'draft' },
-  { name: 'Marina Alves', role: 'Comercial externo', revshare: 16890, commission: 812.2, deduction: 0, status: 'draft' },
-  { name: 'Pedro Henrique', role: 'Comercial interno', revshare: 4980, commission: 402.1, deduction: 0, status: 'draft' },
-  { name: 'Júlia Santos', role: 'Comercial interno', revshare: 5640, commission: 455.3, deduction: 0, status: 'draft' },
-  { name: 'Rafael Souza', role: 'Comercial interno', revshare: 3210, commission: 260.85, deduction: 0, status: 'draft' },
+type TeamRow = { name: string; role: string; revshare: number; commission: number; deduction: number; adjustment: number; status: CommissionStatus }
+const TEAM: TeamRow[] = [
+  { name: 'Lucas Prado', role: 'Comercial externo', revshare: 14210, commission: 591.0, deduction: 23.4, adjustment: 0, status: 'validated' },
+  { name: 'Marina Alves', role: 'Comercial externo', revshare: 16890, commission: 812.2, deduction: 31.1, adjustment: 0, status: 'validated' },
+  { name: 'Pedro Henrique', role: 'Comercial interno', revshare: 4980, commission: 402.1, deduction: 12.8, adjustment: 0, status: 'issued' },
+  { name: 'Júlia Santos', role: 'Comercial interno', revshare: 5640, commission: 455.3, deduction: 14.0, adjustment: 0, status: 'validated' },
+  { name: 'Rafael Souza', role: 'Comercial interno', revshare: 3210, commission: 260.85, deduction: 9.5, adjustment: 0, status: 'validated' },
+]
+const PERSON_WINDOWS = [
+  { what: 'Receitas da Vó', rule: 'Cadastro do cliente', days: '08/09 a 30/09', base: 6120, percent: 5, commission: 306, deduction: 12.4 },
+  { what: 'Viagem Fácil', rule: 'Cadastro do cliente', days: '21/09 a 30/09', base: 5700, percent: 5, commission: 285, deduction: 11.0 },
 ]
 const DAY_OF_MONTH = 28
 const DAYS_IN_MONTH = 31
+const money = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'USD' })
 
 /** A meta do mês de uma pessoa pelo papel: o valor inteiro ou dividido entre quem tem o papel. */
 function personGoal(role: StaffRole) {
@@ -2986,64 +3007,143 @@ function GoalBar({ done, goal, label }: { done: number; goal: number; label: str
   )
 }
 
+/** Escolha em cartões, com título e explicação. */
+function ChoiceCards<V extends string>({ name, value, options, onChange }: { name: string; value: V; options: { value: V; title: string; hint: string; disabled?: string }[]; onChange: (value: V) => void }) {
+  return (
+    <div role="radiogroup" aria-label={name} className={cn('grid gap-2', options.length === 3 ? 'sm:grid-cols-3' : 'sm:grid-cols-2')}>
+      {options.map((option) => (
+        <label key={option.value} className={cn('rounded-md border p-3', option.disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer', value === option.value && 'border-foreground')}>
+          <span className="flex items-center gap-2 text-[14px] font-medium"><input type="radio" name={name} checked={value === option.value} disabled={!!option.disabled} onChange={() => onChange(option.value)} className="accent-[hsl(var(--foreground))]" />{option.title}</span>
+          <span className="mt-1 block text-[12px] text-muted-foreground">{option.disabled ?? option.hint}</span>
+        </label>
+      ))}
+    </div>
+  )
+}
+
+/** Modal de uma regra de comissão: tipo, o que conta, percentual, prazos e transferência. */
+function RuleDialog({ open, onOpenChange, role, roles, rule, onSave }: { open: boolean; onOpenChange: (open: boolean) => void; role: StaffRole; roles: StaffRole[]; rule: CommissionRule | null; onSave: (rule: CommissionRule) => void }) {
+  const [kind, setKind] = useState<CommissionKind>(rule?.kind ?? 'created')
+  const [target, setTarget] = useState<CommissionTarget>(rule?.target ?? 'client')
+  const [percent, setPercent] = useState(rule ? pctShort.format(rule.percent) : '')
+  const [offset, setOffset] = useState(String(rule?.offsetDays ?? 0))
+  const [noEnd, setNoEnd] = useState(rule ? rule.durationDays === null : false)
+  const [duration, setDuration] = useState(rule?.durationDays ? String(rule.durationDays) : '30')
+  const [transfer, setTransfer] = useState(rule?.transferTo ?? 'none')
+  const taken = (k: CommissionKind, tg: CommissionTarget) => role.rules.some((item) => item.kind === k && item.target === tg && item.id !== rule?.id)
+  const percentNumber = Number(percent.replace(',', '.'))
+  const percentErr = percent !== '' && (Number.isNaN(percentNumber) || percentNumber < 0.01 || percentNumber > 100) ? 'Use um número entre 0,01 e 100.' : ''
+  const durationNumber = Number(duration)
+  const durationErr = !noEnd && (!Number.isInteger(durationNumber) || durationNumber < 1 || durationNumber > 3650) ? 'De 1 a 3.650 dias.' : ''
+  const offsetNumber = Number(offset)
+  const offsetErr = !Number.isInteger(offsetNumber) || offsetNumber < 0 || offsetNumber > 365 ? 'De 0 a 365 dias.' : ''
+  const duplicate = taken(kind, target)
+  const valid = percent !== '' && !percentErr && !durationErr && !offsetErr && !duplicate
+  const canTransfer = target === 'client'
+  const start = 1 + (offsetErr ? 0 : offsetNumber)
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[680px]">
+        <DialogHeader><DialogTitle>{rule ? 'Editar regra de comissão' : 'Nova regra de comissão'}</DialogTitle><DialogDescription>{role.name} · a base é sempre o revshare da Groone. Cada evento tem uma regra só neste papel.</DialogDescription></DialogHeader>
+        <div className="grid gap-5">
+          <div className="grid gap-2">
+            <span className="text-[13px] font-medium text-muted-foreground">Tipo de comissão</span>
+            <ChoiceCards name="Tipo de comissão" value={kind} onChange={setKind} options={(Object.keys(KINDS) as CommissionKind[]).map((key) => ({ value: key, title: KINDS[key].label, hint: KINDS[key].hint }))} />
+          </div>
+          <div className="grid gap-2">
+            <span className="text-[13px] font-medium text-muted-foreground">Contar por</span>
+            <ChoiceCards name="Contar por" value={target} onChange={(value) => { setTarget(value); if (value !== 'client') setTransfer('none') }}
+              options={(Object.keys(TARGETS) as CommissionTarget[]).map((key) => ({ value: key, title: TARGETS[key].label, hint: TARGETS[key][kind], disabled: taken(kind, key) ? `Este papel já tem ${ruleName({ kind, target: key }).toLowerCase()}.` : undefined }))} />
+          </div>
+          {kind === 'reactivated' && (
+            <div className="flex gap-3 rounded-md border bg-muted p-3 text-[13px]"><RefreshCw className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" /><span>Só conta como reativação se o {TARGETS[target].label.toLowerCase()} ficou <span className="font-medium">30 dias ou mais inativo</span>. {target === 'network' ? 'A network que volta junto com o cliente conta pela regra de reativação do cliente.' : target === 'client' ? 'As networks que voltam com ele entram nesta mesma comissão.' : ''}</span></div>
+          )}
+          <div className="grid items-start gap-4 sm:grid-cols-3">
+            <Field id="rule-percent" label="Percentual" error={percentErr}>
+              <div className="relative"><Input id="rule-percent" inputMode="decimal" value={percent} onChange={(e) => setPercent(e.target.value)} className="h-9 pr-8 tnum" placeholder="5" aria-invalid={!!percentErr} /><span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[14px] text-muted-foreground">%</span></div>
+            </Field>
+            <Field id="rule-offset" label="Dias de espera" hint="Depois do evento, antes de contar." error={offsetErr}><Input id="rule-offset" inputMode="numeric" value={offset} onChange={(e) => setOffset(e.target.value)} className="h-9 tnum" /></Field>
+            <Field id="rule-duration" label="Dias recebendo" error={durationErr}>
+              <Input id="rule-duration" inputMode="numeric" value={noEnd ? '' : duration} disabled={noEnd} placeholder={noEnd ? 'Sem prazo' : ''} onChange={(e) => setDuration(e.target.value)} className="h-9 tnum" />
+              <label className="flex items-center gap-2 text-[13px] text-muted-foreground"><input type="checkbox" checked={noEnd} onChange={(e) => setNoEnd(e.target.checked)} className="accent-[hsl(var(--foreground))]" />Sem prazo</label>
+            </Field>
+          </div>
+          <Field id="rule-transfer" label="No fim do prazo, o cliente passa para" hint={canTransfer ? 'A pessoa desse papel com menos clientes. O que já foi gerado fica com quem gerou.' : 'Só quando conta por cliente.'}>
+            <Select value={transfer} onValueChange={setTransfer} disabled={!canTransfer || noEnd}>
+              <SelectTrigger id="rule-transfer" className="h-9 sm:w-[320px]"><SelectValue /></SelectTrigger>
+              <SelectContent><SelectItem value="none">Continua com a mesma pessoa</SelectItem>{roles.filter((item) => item.id !== role.id).map((item) => <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>)}</SelectContent>
+            </Select>
+          </Field>
+          <div className="rounded-md border p-3 text-[13px]">
+            <span className="font-medium">Exemplo: </span>
+            {kind === 'created' ? `${TARGETS[target].label.toLowerCase()} cadastrado em 01/11` : `${TARGETS[target].label.toLowerCase()} que volta em 01/11, depois de 45 dias inativo`} → {percent && !percentErr ? pctText(percentNumber) : '–'} sobre o revshare da Groone de {String(start).padStart(2, '0')}/11 {noEnd ? 'sem data para acabar' : `por ${durationErr ? '–' : durationNumber} dias`}{canTransfer && transfer !== 'none' && !noEnd ? `, e depois o cliente passa para ${roles.find((item) => item.id === transfer)?.name}` : ''}.
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+          <Button disabled={!valid} onClick={() => onSave({ id: rule?.id ?? `r${Date.now()}`, kind, target, percent: percentNumber, offsetDays: offsetNumber, durationDays: noEnd ? null : durationNumber, transferTo: canTransfer && !noEnd && transfer !== 'none' ? transfer : null })}>Salvar regra</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 function RoleCommissionScreen() {
   const [roles, setRoles] = useState(STAFF_ROLES)
-  const [editing, setEditing] = useState<StaffRole>(STAFF_ROLES[0])
+  const [roleId, setRoleId] = useState(STAFF_ROLES[1].id)
   const [goalsOpen, setGoalsOpen] = useState(false)
-  const update = (patch: Partial<StaffRole>) => setEditing({ ...editing, ...patch })
+  const [dialog, setDialog] = useState<{ rule: CommissionRule | null } | null>(null)
+  const [removing, setRemoving] = useState<CommissionRule | null>(null)
+  const editing = roles.find((role) => role.id === roleId)!
+  const update = (patch: Partial<StaffRole>) => setRoles(roles.map((role) => (role.id === roleId ? { ...role, ...patch } : role)))
   const goal = personGoal(editing)
   const template = STAFF_GOALS.find((item) => item.id === editing.goal)
-  const save = () => { setRoles(roles.map((role) => (role.id === editing.id ? editing : role))); toast.success('Papel salvo', { description: 'As regras novas valem para os prazos em andamento a partir de amanhã.' }) }
+  const saveRule = (rule: CommissionRule) => {
+    const exists = editing.rules.some((item) => item.id === rule.id)
+    update({ rules: exists ? editing.rules.map((item) => (item.id === rule.id ? rule : item)) : [...editing.rules, rule] })
+    setDialog(null)
+    toast.success(exists ? 'Regra salva' : 'Regra criada', { description: exists ? 'Vale para os prazos em andamento a partir de amanhã; dias já calculados não mudam.' : `${ruleName(rule)} · ${pctText(rule.percent)}` })
+  }
   return (
     <>
       <PageHeader title="Papéis da Equipe Groone" sub="Cada papel diz o que a pessoa pode fazer e, para quem recebe comissão, como ela ganha e qual é a meta." />
       <Body className="lg:grid-cols-[280px_minmax(0,1fr)]">
         <nav className="grid content-start gap-1" aria-label="Papéis">
           {roles.map((role) => (
-            <button key={role.id} onClick={() => setEditing(role)} aria-current={editing.id === role.id ? 'page' : undefined}
-              className={cn('rounded-md border bg-card px-3 py-2.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', editing.id === role.id ? 'border-foreground' : 'hover:bg-accent')}>
+            <button key={role.id} onClick={() => setRoleId(role.id)} aria-current={roleId === role.id ? 'page' : undefined}
+              className={cn('rounded-md border bg-card px-3 py-2.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', roleId === role.id ? 'border-foreground' : 'hover:bg-accent')}>
               <span className="block text-[14px] font-medium">{role.name}</span>
-              <span className="block text-[13px] text-muted-foreground">{role.people.length} {role.people.length === 1 ? 'pessoa' : 'pessoas'} · {role.earns ? `${pctText(role.percent)} por ${COUNTS_BY[role.countsBy].label.toLowerCase()}` : 'sem comissão'}</span>
+              <span className="block text-[13px] text-muted-foreground">{role.people.length} {role.people.length === 1 ? 'pessoa' : 'pessoas'} · {role.rules.length ? `${role.rules.length} ${role.rules.length === 1 ? 'regra' : 'regras'} de comissão` : 'sem comissão'}</span>
             </button>
           ))}
         </nav>
         <div className="grid content-start gap-6">
-          <Card title={`Comissão · ${editing.name}`} desc="A base é sempre o revshare da Groone dos clientes de que a pessoa é responsável. As deduções do GAM recebem o mesmo percentual e saem da comissão no fechamento, dia 15."
-            footer={<Button onClick={save}>Salvar papel</Button>} footerNote="Mudanças valem do dia seguinte em diante; dias já calculados e meses fechados não mudam.">
-            <label className="flex items-center gap-2.5 text-[14px] font-medium"><input type="checkbox" checked={editing.earns} onChange={(e) => update({ earns: e.target.checked })} className="size-4 accent-[hsl(var(--foreground))]" />Recebe comissão</label>
-            {editing.earns && (
-              <div className="mt-5 grid gap-5">
-                <div className="grid gap-2">
-                  <span className="text-[13px] font-medium text-muted-foreground">Contar por</span>
-                  <div className="grid gap-2 sm:grid-cols-3">
-                    {(Object.keys(COUNTS_BY) as CountsBy[]).map((key) => (
-                      <label key={key} className={cn('cursor-pointer rounded-md border p-3', editing.countsBy === key && 'border-foreground')}>
-                        <span className="flex items-center gap-2 text-[14px] font-medium"><input type="radio" checked={editing.countsBy === key} onChange={() => update({ countsBy: key, transferTo: key === 'client' ? editing.transferTo : null })} className="accent-[hsl(var(--foreground))]" />{COUNTS_BY[key].label}</span>
-                        <span className="mt-1 block text-[12px] text-muted-foreground">Começa {COUNTS_BY[key].start}.</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-                <div className="grid items-start gap-4 sm:grid-cols-3">
-                  <Field id="role-percent" label="Percentual"><Input id="role-percent" inputMode="decimal" value={String(editing.percent).replace('.', ',')} onChange={(e) => update({ percent: Number(e.target.value.replace(',', '.')) || 0 })} className="h-9 tnum" /></Field>
-                  <Field id="role-offset" label="Dias para começar a contar"><Input id="role-offset" inputMode="numeric" value={editing.offsetDays} onChange={(e) => update({ offsetDays: Number(e.target.value) || 0 })} className="h-9 tnum" /></Field>
-                  <Field id="role-duration" label="Dias recebendo" hint="Vazio: sem prazo"><Input id="role-duration" inputMode="numeric" value={editing.durationDays ?? ''} onChange={(e) => update({ durationDays: e.target.value ? Number(e.target.value) : null })} className="h-9 tnum" /></Field>
-                </div>
-                {editing.countsBy === 'client' && (
-                  <Field id="role-transfer" label="No fim do prazo, o cliente passa para" hint="A pessoa desse papel com menos clientes vinculados.">
-                    <Select value={editing.transferTo ?? 'none'} onValueChange={(value) => update({ transferTo: value === 'none' ? null : value })}>
-                      <SelectTrigger id="role-transfer" className="h-9 sm:w-[280px]"><SelectValue /></SelectTrigger>
-                      <SelectContent><SelectItem value="none">Continua com a mesma pessoa</SelectItem>{roles.filter((role) => role.id !== editing.id).map((role) => <SelectItem key={role.id} value={role.id}>{role.name}</SelectItem>)}</SelectContent>
-                    </Select>
-                  </Field>
-                )}
-                <div className="rounded-md border bg-muted p-4 text-[14px]">
-                  <span className="font-medium">Exemplo: </span>
-                  cliente cadastrado em 01/11 por alguém deste papel → comissão de {pctText(editing.percent)} sobre o revshare da Groone de {editing.offsetDays ? `${String(1 + editing.offsetDays).padStart(2, '0')}/11` : '01/11'} {editing.durationDays ? `por ${editing.durationDays} dias` : 'sem data para acabar'}
-                  {editing.transferTo ? `, e depois o cliente passa para ${roles.find((role) => role.id === editing.transferTo)?.name}.` : '.'}
-                  <span className="mt-1 block text-muted-foreground">Num mês com US$ 1.000 de revshare e US$ 50 de dedução: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'USD' }).format(1000 * editing.percent / 100)} − {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'USD' }).format(50 * editing.percent / 100)} = <span className="text-foreground tnum">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'USD' }).format(950 * editing.percent / 100)}</span>.</span>
-                </div>
-              </div>
+          <Card title={`Comissão · ${editing.name}`}
+            desc="Uma regra por evento. A base é o revshare da Groone; as deduções do GAM recebem o mesmo percentual e saem no fechamento, dia 15."
+            footerNote="Mudanças valem do dia seguinte em diante; dias já calculados e meses fechados não mudam."
+            footer={<Button size="sm" onClick={() => setDialog({ rule: null })} disabled={editing.rules.length === 6}><Plus className="h-4 w-4" />Nova regra</Button>}>
+            {editing.rules.length === 0 ? (
+              <p className="text-[14px] text-muted-foreground">Este papel não recebe comissão. Crie uma regra para começar.</p>
+            ) : (
+              <Table min={720}>
+                <thead><tr><th className={th}>Regra</th><th className={cn(th, 'text-right')}>Percentual</th><th className={cn(th, 'text-right')}>Espera</th><th className={cn(th, 'text-right')}>Recebendo</th><th className={th}>No fim</th><th className={cn(th, 'w-12')}><span className="sr-only">Ações</span></th></tr></thead>
+                <tbody>
+                  {editing.rules.map((rule) => (
+                    <tr key={rule.id} className="hover:bg-muted">
+                      <td className={td}><div className="font-medium">{ruleName(rule)}</div><div className="text-[12px] text-muted-foreground">{TARGETS[rule.target][rule.kind]}</div></td>
+                      <td className={cn(td, 'text-right tnum')}>{pctText(rule.percent)}</td>
+                      <td className={cn(td, 'text-right tnum whitespace-nowrap')}>{rule.offsetDays ? `${rule.offsetDays} dias` : '–'}</td>
+                      <td className={cn(td, 'text-right tnum whitespace-nowrap')}>{rule.durationDays ? `${rule.durationDays} dias` : 'Sem prazo'}</td>
+                      <td className={cn(td, 'whitespace-nowrap text-muted-foreground')}>{rule.transferTo ? `Passa para ${roles.find((role) => role.id === rule.transferTo)?.name}` : 'Fica com a pessoa'}</td>
+                      <td className={td}>
+                        <DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" aria-label={`Ações da regra ${ruleName(rule)}`}><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
+                          <DropdownMenuContent align="end"><DropdownMenuItem onSelect={() => setDialog({ rule })}>Editar</DropdownMenuItem><DropdownMenuItem className="text-bad" onSelect={() => setRemoving(rule)}>Apagar</DropdownMenuItem></DropdownMenuContent>
+                        </DropdownMenu>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </Table>
             )}
           </Card>
           <Card title="Meta mensal" desc="Mostra o desempenho de cada pessoa no mês. Não muda a comissão: ela é paga mesmo sem bater a meta.">
@@ -3071,6 +3171,12 @@ function RoleCommissionScreen() {
           </Card>
         </div>
       </Body>
+      {dialog && <RuleDialog key={dialog.rule?.id ?? 'new'} open onOpenChange={(open) => !open && setDialog(null)} role={editing} roles={roles} rule={dialog.rule} onSave={saveRule} />}
+      <Dialog open={!!removing} onOpenChange={(open) => !open && setRemoving(null)}>
+        <DialogContent><DialogHeader><DialogTitle>Apagar {removing ? ruleName(removing).toLowerCase() : ''}?</DialogTitle><DialogDescription>Os prazos abertos por esta regra param de gerar comissão amanhã. O que já foi calculado fica.</DialogDescription></DialogHeader>
+          <DialogFooter><Button variant="outline" onClick={() => setRemoving(null)}>Cancelar</Button><Button variant="destructive" onClick={() => { update({ rules: editing.rules.filter((item) => item.id !== removing?.id) }); setRemoving(null); toast('Regra apagada') }}>Apagar</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
       <Dialog open={goalsOpen} onOpenChange={setGoalsOpen}>
         <DialogContent className="sm:max-w-[640px]">
           <DialogHeader><DialogTitle>Modelos de meta</DialogTitle><DialogDescription>Um valor por mês, em dólar. O mesmo modelo pode ser usado por vários papéis.</DialogDescription></DialogHeader>
@@ -3091,15 +3197,17 @@ function RoleCommissionScreen() {
   )
 }
 
+/** Total do mês: comissão menos a dedução do GAM e os descontos lançados. */
+const monthTotal = (row: { commission: number; deduction: number; adjustment: number }) => row.commission - row.deduction - row.adjustment
+
 function MyCommissionScreen() {
   const role = STAFF_ROLES[0]
   const goal = personGoal(role) ?? 0
   const done = 14210
   const month = MY_WINDOWS.reduce((sum, item) => sum + item.month, 0)
-  const money = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'USD' })
   return (
     <>
-      <PageHeader title="Minha comissão" sub={`Lucas Prado · ${role.name} · ${pctText(role.percent)} por cliente, por ${role.durationDays} dias`}
+      <PageHeader title="Minha comissão" sub={`Lucas Prado · ${role.name} · ${role.rules.map((rule) => `${ruleName(rule).toLowerCase()} ${pctText(rule.percent)}`).join(', ')}`}
         actions={<Select defaultValue="10"><SelectTrigger className="h-9 w-[180px]" aria-label="Mês"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="10">Outubro 2026</SelectItem><SelectItem value="9">Setembro 2026</SelectItem><SelectItem value="8">Agosto 2026</SelectItem></SelectContent></Select>} />
       <Body>
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
@@ -3110,8 +3218,8 @@ function MyCommissionScreen() {
             {[
               ['Comissão do mês', money.format(month), 'Em aberto até o fechamento'],
               ['Deduções do GAM', '—', 'Entram no fechamento, dia 15/11'],
-              ['Clientes com prazo aberto', '2', 'Prazos que geram comissão hoje'],
-              ['Setembro', money.format(591 - 23.4), 'Validada · falta emitir'],
+              ['Prazos abertos', '2', 'Geram comissão hoje'],
+              ['Setembro', money.format(591 - 23.4 - 40), 'Validada · falta emitir'],
             ].map(([label, value, hint]) => (
               <div key={label} className="bg-card p-4"><div className="text-[13px] font-medium text-muted-foreground">{label}</div><div className="mt-1 text-[22px] font-semibold tracking-tight tnum">{value}</div><div className="mt-1 text-[12px] text-muted-foreground">{hint}</div></div>
             ))}
@@ -3119,14 +3227,15 @@ function MyCommissionScreen() {
         </div>
         <section className="grid gap-3">
           <h2 className="text-[16px] font-semibold tracking-tight">Prazos</h2>
-          <Table min={720}>
-            <thead><tr><th className={th}>Cliente</th><th className={th}>Começou</th><th className={th}>Termina</th><th className={cn(th, 'text-right')}>Percentual</th><th className={cn(th, 'text-right')}>Comissão no mês</th></tr></thead>
+          <Table min={820}>
+            <thead><tr><th className={th}>Alvo</th><th className={th}>Regra</th><th className={th}>Começou</th><th className={th}>Termina</th><th className={cn(th, 'text-right')}>Percentual</th><th className={cn(th, 'text-right')}>Comissão no mês</th></tr></thead>
             <tbody>
               {MY_WINDOWS.map((item) => {
                 const ended = item.end === '20/10/2026'
                 return (
                   <tr key={item.what} className="hover:bg-muted">
-                    <td className={td}><span className="font-medium">{item.what}</span></td>
+                    <td className={td}><span className="font-medium">{item.what}</span><span className="block text-[12px] text-muted-foreground">{item.target}</span></td>
+                    <td className={cn(td, 'whitespace-nowrap')}>{item.rule}</td>
                     <td className={cn(td, 'tnum whitespace-nowrap')}>{item.start}</td>
                     <td className={cn(td, 'whitespace-nowrap')}>{ended ? <Status tone="neutral">Terminou em {item.end}</Status> : <span className="tnum">{item.end}</span>}</td>
                     <td className={cn(td, 'text-right tnum')}>{pctText(item.percent)}</td>
@@ -3139,8 +3248,8 @@ function MyCommissionScreen() {
         </section>
         <section className="grid gap-3">
           <h2 className="text-[16px] font-semibold tracking-tight">Histórico</h2>
-          <Table min={720}>
-            <thead><tr><th className={th}>Mês</th><th className={cn(th, 'text-right')}>Revshare da Groone</th><th className={cn(th, 'text-right')}>Comissão</th><th className={cn(th, 'text-right')}>Dedução</th><th className={cn(th, 'text-right')}>Total</th><th className={th}>Situação</th></tr></thead>
+          <Table min={820}>
+            <thead><tr><th className={th}>Mês</th><th className={cn(th, 'text-right')}>Revshare da Groone</th><th className={cn(th, 'text-right')}>Comissão</th><th className={cn(th, 'text-right')}>Dedução do GAM</th><th className={cn(th, 'text-right')}>Descontos</th><th className={cn(th, 'text-right')}>Total</th><th className={th}>Situação</th></tr></thead>
             <tbody>
               {MY_HISTORY.map((item) => (
                 <tr key={item.month} className="hover:bg-muted">
@@ -3148,7 +3257,8 @@ function MyCommissionScreen() {
                   <td className={cn(td, 'text-right tnum')}>{money.format(item.base)}</td>
                   <td className={cn(td, 'text-right tnum')}>{money.format(item.commission)}</td>
                   <td className={cn(td, 'text-right tnum text-muted-foreground')}>{item.status === 'draft' ? 'dia 15/11' : `− ${money.format(item.deduction)}`}</td>
-                  <td className={cn(td, 'text-right tnum font-medium')}>{money.format(item.commission - item.deduction)}</td>
+                  <td className={cn(td, 'text-right tnum text-muted-foreground')} title={item.adjustment ? 'Desconto retroativo de network banida' : undefined}>{item.adjustment ? `− ${money.format(item.adjustment)}` : '–'}</td>
+                  <td className={cn(td, 'text-right tnum font-medium')}>{money.format(monthTotal(item))}</td>
                   <td className={td}><Status tone={COMMISSION_STATUS[item.status][1]}>{COMMISSION_STATUS[item.status][0]}</Status></td>
                 </tr>
               ))}
@@ -3160,63 +3270,137 @@ function MyCommissionScreen() {
   )
 }
 
+/** Modal do desconto manual na comissão de uma pessoa. */
+function AdjustmentDialog({ person, onClose, onSave }: { person: TeamRow | null; onClose: () => void; onSave: (amount: number) => void }) {
+  const [amount, setAmount] = useState('')
+  const [reason, setReason] = useState('')
+  const value = Number(amount.replace('.', '').replace(',', '.'))
+  const amountErr = amount !== '' && (Number.isNaN(value) || value <= 0) ? 'Use um valor maior que zero.' : ''
+  const valid = amount !== '' && !amountErr && reason.trim().length > 0
+  return (
+    <Dialog open={!!person} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent>
+        <DialogHeader><DialogTitle>Lançar desconto · {person?.name}</DialogTitle><DialogDescription>Sai da comissão de setembro, que ainda não foi emitida. Fica registrado com o motivo e quem lançou.</DialogDescription></DialogHeader>
+        <div className="grid gap-4">
+          <Field id="adj-amount" label="Valor do desconto (US$)" error={amountErr}><Input id="adj-amount" inputMode="decimal" className="h-9 max-w-[200px] tnum" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="40,00" aria-invalid={!!amountErr} /></Field>
+          <Field id="adj-reason" label="Motivo"><Textarea id="adj-reason" rows={3} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Desconto retroativo do GAM: network 22334455 banida por tráfego inválido." /></Field>
+        </div>
+        <DialogFooter><Button variant="outline" onClick={onClose}>Cancelar</Button><Button disabled={!valid} onClick={() => onSave(value)}>Lançar desconto</Button></DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 function TeamCommissionsScreen() {
   const [team, setTeam] = useState(TEAM)
-  const money = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'USD' })
+  const [detail, setDetail] = useState<TeamRow | null>(null)
+  const [adjusting, setAdjusting] = useState<TeamRow | null>(null)
   const companyDone = 412_800
   const companyGoal = COMPANY_GOAL.months[CURRENT_MONTH]
-  const total = team.reduce((sum, item) => sum + item.commission - item.deduction, 0)
+  const total = team.reduce((sum, item) => sum + monthTotal(item), 0)
+  const toIssue = team.filter((item) => item.status === 'validated')
+  const issue = (names: string[]) => { setTeam(team.map((item) => (names.includes(item.name) ? { ...item, status: 'issued' as const } : item))); toast.success(names.length === 1 ? `Setembro de ${names[0]} emitido` : `Setembro emitido para ${names.length} pessoas`, { description: 'Fica como paga quando a invoice for paga.' }) }
   return (
     <>
       <PageHeader title="Comissões da equipe" sub="Comissão e meta de cada pessoa da Equipe Groone, mês a mês. O mês fecha no dia 15 do mês seguinte, depois das deduções do GAM."
-        actions={<Select defaultValue="10"><SelectTrigger className="h-9 w-[180px]" aria-label="Mês"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="10">Outubro 2026</SelectItem><SelectItem value="9">Setembro 2026</SelectItem></SelectContent></Select>} />
+        actions={<Select defaultValue="9"><SelectTrigger className="h-9 w-[180px]" aria-label="Mês"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="10">Outubro 2026</SelectItem><SelectItem value="9">Setembro 2026</SelectItem></SelectContent></Select>} />
       <Body>
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
-          <Card title="Meta da Groone em outubro" desc="Faturamento somado de todos os clientes, até ontem. Não passa para ninguém da equipe.">
+          <Card title="Meta da Groone em setembro" desc="Revshare da Groone somado de todos os clientes. Não passa para ninguém da equipe.">
             <GoalBar done={companyDone} goal={companyGoal} label="Meta da Groone" />
           </Card>
           <div className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border bg-border">
             {[
-              ['Comissões do mês', money.format(total), 'Em aberto até 15/11'],
+              ['Comissões do mês', money.format(total), 'Fechado em 15/10, com as deduções'],
               ['Pessoas recebendo', String(team.length), 'Em papéis com comissão'],
-              ['Batendo a meta', `${team.filter((item) => item.revshare >= (personGoal(STAFF_ROLES.find((role) => role.name === item.role)!) ?? Infinity) * ((DAY_OF_MONTH - 1) / DAYS_IN_MONTH)).length} de ${team.length}`, 'No ritmo de hoje'],
-              ['Setembro', money.format(2380.4), 'Validado · falta marcar como emitido'],
+              ['Para emitir', String(toIssue.length), 'Validadas, ainda não emitidas'],
+              ['Descontos lançados', money.format(team.reduce((sum, item) => sum + item.adjustment, 0)), 'Lançados à mão no mês'],
             ].map(([label, value, hint]) => (
               <div key={label} className="bg-card p-4"><div className="text-[13px] font-medium text-muted-foreground">{label}</div><div className="mt-1 text-[22px] font-semibold tracking-tight tnum">{value}</div><div className="mt-1 text-[12px] text-muted-foreground">{hint}</div></div>
             ))}
           </div>
         </div>
-        <Table min={900}>
-          <thead><tr><th className={th}>Pessoa</th><th className={th}>Papel</th><th className={th}>Meta do mês</th><th className={cn(th, 'text-right')}>Comissão</th><th className={cn(th, 'text-right')}>Dedução</th><th className={cn(th, 'text-right')}>Total</th><th className={th}>Situação</th></tr></thead>
+        <Table min={960}>
+          <thead><tr><th className={th}>Pessoa</th><th className={th}>Papel</th><th className={cn(th, 'text-right')}>Comissão</th><th className={cn(th, 'text-right')}>Dedução do GAM</th><th className={cn(th, 'text-right')}>Descontos</th><th className={cn(th, 'text-right')}>Total</th><th className={th}>Situação</th><th className={cn(th, 'w-12')}><span className="sr-only">Ações</span></th></tr></thead>
           <tbody>
-            {team.map((item) => {
-              const role = STAFF_ROLES.find((entry) => entry.name === item.role)!
-              const goal = personGoal(role) ?? 0
-              const share = goal ? item.revshare / goal : 0
-              const ahead = share >= (DAY_OF_MONTH - 1) / DAYS_IN_MONTH
-              return (
-                <tr key={item.name} className="hover:bg-muted">
-                  <td className={td}><span className="flex items-center gap-2.5 font-medium"><Avatar name={item.name} size={26} />{item.name}</span></td>
-                  <td className={cn(td, 'whitespace-nowrap text-muted-foreground')}>{item.role}</td>
-                  <td className={cn(td, 'min-w-[220px]')}>
-                    <div className="flex items-center justify-between text-[13px] tnum"><span>{usd0.format(item.revshare)} de {usd0.format(goal)}</span><span className={ahead ? 'text-ok' : 'text-ochre'}>{pctText(Math.round(share * 1000) / 10)}</span></div>
-                    <div className="mt-1.5 h-1.5 rounded-full bg-secondary"><div className={cn('h-1.5 rounded-full', ahead ? 'bg-ok' : 'bg-ochre')} style={{ width: `${Math.min(share, 1) * 100}%` }} /></div>
-                  </td>
-                  <td className={cn(td, 'text-right tnum')}>{money.format(item.commission)}</td>
-                  <td className={cn(td, 'text-right tnum text-muted-foreground')}>dia 15/11</td>
-                  <td className={cn(td, 'text-right tnum font-medium')}>{money.format(item.commission - item.deduction)}</td>
-                  <td className={td}><Status tone={COMMISSION_STATUS[item.status][1]}>{COMMISSION_STATUS[item.status][0]}</Status></td>
-                </tr>
-              )
-            })}
+            {team.map((item) => (
+              <tr key={item.name} className="hover:bg-muted">
+                <td className={td}><button onClick={() => setDetail(item)} className="flex items-center gap-2.5 font-medium hover:underline"><Avatar name={item.name} size={26} />{item.name}</button></td>
+                <td className={cn(td, 'whitespace-nowrap text-muted-foreground')}>{item.role}</td>
+                <td className={cn(td, 'text-right tnum')}>{money.format(item.commission)}</td>
+                <td className={cn(td, 'text-right tnum text-muted-foreground')}>− {money.format(item.deduction)}</td>
+                <td className={cn(td, 'text-right tnum text-muted-foreground')}>{item.adjustment ? `− ${money.format(item.adjustment)}` : '–'}</td>
+                <td className={cn(td, 'text-right tnum font-medium')}>{money.format(monthTotal(item))}</td>
+                <td className={td}><Status tone={COMMISSION_STATUS[item.status][1]}>{COMMISSION_STATUS[item.status][0]}</Status></td>
+                <td className={td}>
+                  <DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" aria-label={`Ações de ${item.name}`}><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onSelect={() => setDetail(item)}>Ver prazos</DropdownMenuItem>
+                      <DropdownMenuItem disabled={item.status !== 'validated'} onSelect={() => setAdjusting(item)}>Lançar desconto</DropdownMenuItem>
+                      <DropdownMenuItem disabled={item.status !== 'validated'} onSelect={() => issue([item.name])}>Marcar como emitida</DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </td>
+              </tr>
+            ))}
           </tbody>
         </Table>
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-card px-4 py-3 text-[14px]">
-          <span className="text-muted-foreground">Setembro está validado (US$ 2.380,40 para 5 pessoas).</span>
-          <Button variant="outline" onClick={() => { setTeam(team); toast.success('Setembro marcado como emitido', { description: 'Fica como paga quando a invoice for paga.' }) }}>Marcar setembro como emitido</Button>
-        </div>
+        {toIssue.length > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-card px-4 py-3 text-[14px]">
+            <span className="text-muted-foreground">{toIssue.length} {toIssue.length === 1 ? 'pessoa tem' : 'pessoas têm'} setembro validado e ainda não emitido ({money.format(toIssue.reduce((sum, item) => sum + monthTotal(item), 0))}).</span>
+            <Button variant="outline" onClick={() => issue(toIssue.map((item) => item.name))}>Marcar todas como emitidas</Button>
+          </div>
+        )}
       </Body>
+      <Sheet open={!!detail} onOpenChange={(open) => !open && setDetail(null)}>
+        <SheetContent className="w-full overflow-y-auto sm:max-w-[640px]">
+          <SheetTitle>{detail?.name} · setembro</SheetTitle>
+          <p className="mt-1 text-[14px] text-muted-foreground">{detail?.role} · {detail ? COMMISSION_STATUS[detail.status][0].toLowerCase() : ''}</p>
+          <div className="mt-5 grid gap-3">
+            {PERSON_WINDOWS.map((item) => (
+              <div key={item.what} className="rounded-md border p-3 text-[14px]">
+                <div className="flex items-center justify-between gap-3"><span className="font-medium">{item.what}</span><span className="tnum font-medium">{money.format(item.commission - item.deduction)}</span></div>
+                <div className="mt-1 text-[13px] text-muted-foreground">{item.rule} · {item.days} · {pctText(item.percent)}</div>
+                <div className="mt-2 grid grid-cols-3 gap-2 text-[12px] text-muted-foreground tnum"><span>Base {money.format(item.base)}</span><span>Comissão {money.format(item.commission)}</span><span>Dedução − {money.format(item.deduction)}</span></div>
+              </div>
+            ))}
+          </div>
+        </SheetContent>
+      </Sheet>
+      <AdjustmentDialog key={adjusting?.name ?? 'none'} person={adjusting} onClose={() => setAdjusting(null)}
+        onSave={(amount) => { setTeam(team.map((item) => (item.name === adjusting?.name ? { ...item, adjustment: item.adjustment + amount } : item))); toast.success('Desconto lançado', { description: `${money.format(amount)} na comissão de setembro de ${adjusting?.name}.` }); setAdjusting(null) }} />
     </>
+  )
+}
+
+/** Card do responsável Groone do cliente, com a troca e o aviso do que acontece com a comissão. */
+function AccountManagerCard() {
+  const people = [...STAFF_ROLES.flatMap((role) => role.people.map((name) => ({ name, role: role.name })))]
+  const [current, setCurrent] = useState(people[0])
+  const [open, setOpen] = useState(false)
+  const [picked, setPicked] = useState(people[1].name)
+  const next = people.find((person) => person.name === picked)!
+  const sameRole = next.role === current.role
+  return (
+    <Card title="Responsável Groone" desc="Quem recebe a comissão deste cliente." footer={<Button size="sm" variant="outline" onClick={() => setOpen(true)}>Trocar responsável</Button>} footerNote="Só quem administra as comissões troca o responsável.">
+      <div className="flex items-center gap-3"><Avatar name={current.name} /><div><div className="text-[14px] font-medium">{current.name}</div><div className="text-[13px] text-muted-foreground">{current.role} · 2 prazos abertos neste cliente</div></div></div>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Trocar o responsável</DialogTitle><DialogDescription>Tech Notícias · hoje com {current.name}.</DialogDescription></DialogHeader>
+          <Field id="am-person" label="Novo responsável">
+            <Select value={picked} onValueChange={setPicked}>
+              <SelectTrigger id="am-person" className="h-9"><SelectValue /></SelectTrigger>
+              <SelectContent>{people.filter((person) => person.name !== current.name).map((person) => <SelectItem key={person.name} value={person.name}>{person.name} · {person.role}</SelectItem>)}</SelectContent>
+            </Select>
+          </Field>
+          <div className={cn('flex gap-3 rounded-md border p-3 text-[13px]', sameRole ? 'bg-muted' : 'border-ochre/40 bg-ochre/10')}>
+            <AlertTriangle className={cn('mt-0.5 h-4 w-4 shrink-0', sameRole ? 'text-muted-foreground' : 'text-ochre')} />
+            <span>{sameRole ? `${next.name} é do mesmo papel: os 2 prazos abertos continuam com ${next.name.split(' ')[0]}, até a mesma data de fim.` : `${next.name} é de outro papel (${next.role}): os 2 prazos abertos param hoje.`} O que {current.name.split(' ')[0]} já gerou fica com {current.name.split(' ')[0]}.</span>
+          </div>
+          <DialogFooter><Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button><Button onClick={() => { setCurrent(next); setOpen(false); toast.success('Responsável trocado', { description: sameRole ? 'Os prazos abertos seguem com a pessoa nova.' : 'Os prazos abertos pararam hoje.' }) }}>Trocar</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </Card>
   )
 }
 
