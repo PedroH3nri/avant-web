@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Toaster, toast } from 'sonner'
-import { Check, ChevronsUpDown, Copy, Loader2, Plus, RefreshCw, Search, X, AlertTriangle, ArrowLeft, MoreHorizontal, Lock, Mail, ExternalLink, Home, Users, Network, Settings, ShieldCheck, Menu, BarChart3, Wallet } from 'lucide-react'
+import { Check, ChevronsUpDown, Copy, Loader2, Plus, RefreshCw, Search, X, AlertTriangle, ArrowLeft, MoreHorizontal, Lock, Mail, ExternalLink, Home, Users, Network, Settings, ShieldCheck, Menu, BarChart3, Wallet, Download, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -44,9 +44,13 @@ const SCREENS = [
   ['papelcomissao', 'Painel interno · Papel com comissão e meta'],
   ['minhacomissao', 'Painel interno · Minha comissão'],
   ['comissoes', 'Painel interno · Comissões da equipe'],
+  ['minhasinvoices', 'Painel interno · Minhas invoices'],
+  ['invoice', 'Painel interno · Invoice'],
+  ['invoices', 'Painel interno · Invoices da equipe'],
+  ['servicosinvoice', 'Painel interno · Serviços de invoice'],
 ] as const
 type Screen = (typeof SCREENS)[number][0]
-const INTERNAL_SCREENS: Screen[] = ['interno', 'cliente', 'contratos', 'resultados', 'papelcomissao', 'minhacomissao', 'comissoes']
+const INTERNAL_SCREENS: Screen[] = ['interno', 'cliente', 'contratos', 'resultados', 'papelcomissao', 'minhacomissao', 'comissoes', 'minhasinvoices', 'invoice', 'invoices', 'servicosinvoice']
 const isScreen = (s: string): s is Screen => SCREENS.some(([k]) => k === s)
 type T = (k: Key) => string
 
@@ -299,7 +303,7 @@ const CLIENT_RAIL: RailGroup[] = [
 ]
 const INTERNAL_RAIL: RailGroup[] = [
   { key: 'clientes', label: 'Clientes', icon: Users, items: [{ id: 'interno', label: 'Clientes', also: ['cliente'] }, { id: 'contratos', label: 'Contratos' }, { id: 'resultados', label: 'Resultado dos clientes' }] },
-  { key: 'comissoes', label: 'Comissões', icon: Wallet, items: [{ id: 'comissoes', label: 'Comissões da equipe' }, { id: 'minhacomissao', label: 'Minha comissão' }] },
+  { key: 'comissoes', label: 'Comissões', icon: Wallet, items: [{ id: 'minhacomissao', label: 'Minha comissão' }, { id: 'minhasinvoices', label: 'Minhas invoices' }, { id: 'comissoes', label: 'Comissões da equipe' }, { id: 'invoices', label: 'Invoices', also: ['servicosinvoice', 'invoice'] }] },
   { key: 'equipegroone', label: 'Equipe', icon: ShieldCheck, items: [{ id: 'papelcomissao', label: 'Papéis da Equipe Groone' }] },
 ]
 const RAIL_WIDTH = 88
@@ -3230,7 +3234,7 @@ function MyCommissionScreen() {
               ['Comissão do mês', money.format(month), 'Em aberto até o fechamento'],
               ['Deduções do GAM', '—', 'Entram no fechamento, dia 15/11'],
               ['Prazos abertos', '2', 'Geram comissão hoje'],
-              ['Setembro', money.format(591 - 23.4 - 40), 'Validada · falta emitir'],
+              ['Setembro', money.format(591 - 23.4 - 40), 'Validada · crie a invoice'],
             ].map(([label, value, hint]) => (
               <div key={label} className="bg-card p-4"><div className="text-[13px] font-medium text-muted-foreground">{label}</div><div className="mt-1 text-[22px] font-semibold tracking-tight tnum">{value}</div><div className="mt-1 text-[12px] text-muted-foreground">{hint}</div></div>
             ))}
@@ -3310,7 +3314,6 @@ function TeamCommissionsScreen() {
   const companyGoal = COMPANY_GOAL.months[CURRENT_MONTH]
   const total = team.reduce((sum, item) => sum + monthTotal(item), 0)
   const toIssue = team.filter((item) => item.status === 'validated')
-  const issue = (names: string[]) => { setTeam(team.map((item) => (names.includes(item.name) ? { ...item, status: 'issued' as const } : item))); toast.success(names.length === 1 ? `Setembro de ${names[0]} emitido` : `Setembro emitido para ${names.length} pessoas`, { description: 'Fica como paga quando a invoice for paga.' }) }
   return (
     <>
       <PageHeader title="Comissões da equipe" sub="Comissão e meta de cada pessoa da Equipe Groone, mês a mês. O mês fecha no dia 15 do mês seguinte, depois das deduções do GAM."
@@ -3324,7 +3327,7 @@ function TeamCommissionsScreen() {
             {[
               ['Comissões do mês', money.format(total), 'Fechado em 15/10, com as deduções'],
               ['Pessoas recebendo', String(team.length), 'Em papéis com comissão'],
-              ['Para emitir', String(toIssue.length), 'Validadas, ainda não emitidas'],
+              ['Sem invoice', String(toIssue.length), 'Validadas, esperando a invoice'],
               ['Descontos lançados', money.format(team.reduce((sum, item) => sum + item.adjustment, 0)), 'Lançados à mão no mês'],
             ].map(([label, value, hint]) => (
               <div key={label} className="bg-card p-4"><div className="text-[13px] font-medium text-muted-foreground">{label}</div><div className="mt-1 text-[22px] font-semibold tracking-tight tnum">{value}</div><div className="mt-1 text-[12px] text-muted-foreground">{hint}</div></div>
@@ -3348,7 +3351,6 @@ function TeamCommissionsScreen() {
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem onSelect={() => setDetail(item)}>Ver prazos</DropdownMenuItem>
                       <DropdownMenuItem disabled={item.status !== 'validated'} onSelect={() => setAdjusting(item)}>Lançar desconto</DropdownMenuItem>
-                      <DropdownMenuItem disabled={item.status !== 'validated'} onSelect={() => issue([item.name])}>Marcar como emitida</DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </td>
@@ -3358,8 +3360,7 @@ function TeamCommissionsScreen() {
         </Table>
         {toIssue.length > 0 && (
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-card px-4 py-3 text-[14px]">
-            <span className="text-muted-foreground">{toIssue.length} {toIssue.length === 1 ? 'pessoa tem' : 'pessoas têm'} setembro validado e ainda não emitido ({money.format(toIssue.reduce((sum, item) => sum + monthTotal(item), 0))}).</span>
-            <Button variant="outline" onClick={() => issue(toIssue.map((item) => item.name))}>Marcar todas como emitidas</Button>
+            <span className="text-muted-foreground">{toIssue.length} {toIssue.length === 1 ? 'pessoa tem' : 'pessoas têm'} setembro validado e ainda sem invoice. A comissão passa a emitida quando a pessoa cria a invoice ({money.format(toIssue.reduce((sum, item) => sum + monthTotal(item), 0))}).</span>
           </div>
         )}
       </Body>
@@ -3380,6 +3381,431 @@ function TeamCommissionsScreen() {
       </Sheet>
       <AdjustmentDialog key={adjusting?.name ?? 'none'} person={adjusting} onClose={() => setAdjusting(null)}
         onSave={(amount) => { setTeam(team.map((item) => (item.name === adjusting?.name ? { ...item, adjustment: item.adjustment + amount } : item))); toast.success('Desconto lançado', { description: `${money.format(amount)} na comissão de setembro de ${adjusting?.name}.` }); setAdjusting(null) }} />
+    </>
+  )
+}
+
+/* ---------- painel interno: invoices da equipe (avant-core#156) ---------- */
+
+type InvoiceStatus = 'draft' | 'issued' | 'paid'
+type InvoiceLine = { id: string; title: string; description: string; amount: number; locked: boolean }
+type Payee = { docType: string; docNumber: string; legalName: string; phone: string; address: string; bank: string; swift: string; account: string; routing: string }
+type ProtoInvoice = { id: number; number: string; owner: string; role: string; month: string; status: InvoiceStatus; lines: InvoiceLine[]; created: string; issued?: string; paid?: string; returned?: { by: string; at: string; reason: string }; payee?: Payee }
+type InvoiceService = { id: string; title: string; description: string }
+
+const INVOICE_STATUS: Record<InvoiceStatus, [string, 'ochre' | 'neutral' | 'ok']> = { draft: ['Rascunho', 'ochre'], issued: ['Emitida', 'neutral'], paid: ['Paga', 'ok'] }
+const ME_STAFF = 'Lucas Prado'
+/** Quem paga a invoice: os dados da GroOne, os mesmos do Genius. */
+const GROONE_PAYER = { name: 'GROONE, LLC', ein: '30-1462306', address: '1191 E Newport Center Dr 103, Deerfield Beach, FL 33442' }
+const PERSON_DOCUMENTS = ['Brasil · CPF', 'Argentina · CUIL/DNI', 'Chile · RUT', 'Colômbia · CC', 'México · CURP/RFC', 'Peru · DNI', 'Portugal · NIF', 'Espanha · NIF/DNI', 'Estados Unidos · SSN/ITIN', 'Reino Unido · NINO']
+const INITIAL_PAYEE: Payee = { docType: 'Brasil · CPF', docNumber: '123.456.789-09', legalName: 'Lucas Prado de Almeida', phone: '+55 11 98888-0000', address: 'Rua Exemplo, 200, Campinas, SP', bank: 'Banco Exemplo', swift: 'EXMPBRSP', account: '98765-4', routing: '0001' }
+const INITIAL_SERVICES: InvoiceService[] = [
+  { id: 's1', title: 'Account Management', description: 'Monthly follow-up of the client portfolio.' },
+  { id: 's2', title: 'Client Prospecting', description: 'Meetings and proposals with new publishers.' },
+  { id: 's3', title: 'Technical Support', description: 'Ad unit and tag adjustments on client sites.' },
+  { id: 's4', title: 'Training', description: 'Training sessions for clients or the team.' },
+]
+/** Linhas travadas da comissão de um mês, em inglês e com os textos do Genius; a dedução e os descontos só entram quando há valor. */
+const commissionLines = (month: string, commission: number, deduction: number, adjustment: number): InvoiceLine[] => [
+  { id: `c-${month}`, title: 'New Client Acquisition Commission', description: 'Percentage-based earnings from the company revenue share on clients acquired by the employee.', amount: commission, locked: true },
+  ...(deduction ? [{ id: `d-${month}`, title: 'Commission Adjustment — Google Policy Deductions', description: 'Proportional deductions applied to commission earnings due to invalid traffic on acquired client networks.', amount: -deduction, locked: true }] : []),
+  ...(adjustment ? [{ id: `a-${month}`, title: 'Commission Adjustment — Discounts', description: 'Discounts applied by Groone to commission earnings during the period.', amount: -adjustment, locked: true }] : []),
+]
+const INITIAL_INVOICES: ProtoInvoice[] = [
+  { id: 1184, number: 'INV-001184-7c2e', owner: 'Marina Alves', role: 'Comercial externo', month: 'Setembro 2026', status: 'issued', created: '16/10/2026', issued: '16/10/2026', payee: { ...INITIAL_PAYEE, legalName: 'Marina Alves', docNumber: '987.654.321-00' },
+    lines: [...commissionLines('Setembro', 812.2, 31.1, 0), { id: 'm1', title: 'Account Management', description: '12 clients in the portfolio.', amount: 300, locked: false }] },
+  { id: 1185, number: 'INV-001185-a91f', owner: 'Pedro Henrique', role: 'Comercial interno', month: 'Setembro 2026', status: 'issued', created: '17/10/2026', issued: '17/10/2026', payee: { ...INITIAL_PAYEE, legalName: 'Pedro Henrique', docNumber: '111.222.333-44' },
+    lines: [...commissionLines('Setembro', 402.1, 12.8, 0)] },
+  { id: 1186, number: 'INV-001186-03bd', owner: 'Júlia Santos', role: 'Comercial interno', month: 'Setembro 2026', status: 'draft', created: '17/10/2026', returned: { by: 'Pedro Henrique', at: '20/10/2026', reason: 'O treinamento foi de 2 horas, não 20. Corrija o valor e emita de novo.' },
+    lines: [...commissionLines('Setembro', 455.3, 14.0, 0), { id: 'j1', title: 'Training', description: 'Onboarding training for new clients, 20 hours.', amount: 2000, locked: false }] },
+  { id: 1102, number: 'INV-001102-e45a', owner: ME_STAFF, role: 'Comercial externo', month: 'Agosto 2026', status: 'paid', created: '15/09/2026', issued: '15/09/2026', paid: '25/09/2026', payee: INITIAL_PAYEE,
+    lines: [...commissionLines('Agosto', 520.5, 18.9, 0), { id: 'l1', title: 'Client Prospecting', description: '4 meetings with recipe publishers.', amount: 150, locked: false }] },
+  { id: 1103, number: 'INV-001103-5d10', owner: 'Marina Alves', role: 'Comercial externo', month: 'Agosto 2026', status: 'paid', created: '15/09/2026', issued: '16/09/2026', paid: '25/09/2026', payee: { ...INITIAL_PAYEE, legalName: 'Marina Alves', docNumber: '987.654.321-00' },
+    lines: [...commissionLines('Agosto', 744.0, 28.3, 0)] },
+  { id: 1021, number: 'INV-001021-b7e3', owner: ME_STAFF, role: 'Comercial externo', month: 'Julho 2026', status: 'paid', created: '15/08/2026', issued: '15/08/2026', paid: '26/08/2026', payee: INITIAL_PAYEE,
+    lines: [...commissionLines('Julho', 488.2, 15.0, 0)] },
+]
+/** Total da invoice: a soma das linhas. */
+const invoiceTotal = (invoice: ProtoInvoice) => invoice.lines.reduce((sum, line) => sum + line.amount, 0)
+/** Converte o texto do valor, com vírgula ou ponto, em número. */
+const parseMoney = (text: string) => Number(text.replace(/\./g, '').replace(',', '.'))
+
+type InvoiceState = { invoices: ProtoInvoice[]; setInvoices: (invoices: ProtoInvoice[]) => void; services: InvoiceService[]; setServices: (services: InvoiceService[]) => void; payee: Payee; setPayee: (payee: Payee) => void; open: (id: number, from: 'mine' | 'all') => void; go: (s: Screen) => void }
+
+/** Modal com os dados de quem recebe, os mesmos dos dados fiscais do cliente. */
+function PayeeDialog({ open, onOpenChange, payee, onSave }: { open: boolean; onOpenChange: (open: boolean) => void; payee: Payee; onSave: (payee: Payee) => void }) {
+  const [form, setForm] = useState(payee)
+  const set = (key: keyof Payee) => (event: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, [key]: event.target.value })
+  const valid = Object.values(form).every((value) => value.trim().length > 0)
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[640px]">
+        <DialogHeader><DialogTitle>Dados de recebimento</DialogTitle><DialogDescription>Os seus dados como pessoa física: quem recebe é sempre você, nunca uma empresa. Entram na invoice quando ela é emitida; mudar depois não altera invoices já emitidas.</DialogDescription></DialogHeader>
+        <div className="grid gap-4 md:grid-cols-2">
+          <Field id="py-type" label="Documento de pessoa física"><Select value={form.docType} onValueChange={(value) => setForm({ ...form, docType: value })}><SelectTrigger id="py-type" className="h-9"><SelectValue /></SelectTrigger><SelectContent>{PERSON_DOCUMENTS.map((document) => <SelectItem key={document} value={document}>{document}</SelectItem>)}</SelectContent></Select></Field>
+          <Field id="py-doc" label="Número do documento"><Input id="py-doc" className="h-9 tnum" value={form.docNumber} onChange={set('docNumber')} /></Field>
+          <Field id="py-name" label="Nome completo"><Input id="py-name" className="h-9" value={form.legalName} onChange={set('legalName')} /></Field>
+          <Field id="py-phone" label="Telefone com DDI"><Input id="py-phone" className="h-9 tnum" value={form.phone} onChange={set('phone')} /></Field>
+          <div className="md:col-span-2"><Field id="py-addr" label="Endereço"><Input id="py-addr" className="h-9" value={form.address} onChange={set('address')} /></Field></div>
+          <Field id="py-bank" label="Banco"><Input id="py-bank" className="h-9" value={form.bank} onChange={set('bank')} /></Field>
+          <Field id="py-swift" label="SWIFT"><Input id="py-swift" className="h-9 font-mono uppercase" value={form.swift} onChange={set('swift')} /></Field>
+          <Field id="py-account" label="Conta"><Input id="py-account" className="h-9 tnum" value={form.account} onChange={set('account')} /></Field>
+          <Field id="py-routing" label="Agência ou routing number"><Input id="py-routing" className="h-9 tnum" value={form.routing} onChange={set('routing')} /></Field>
+        </div>
+        <DialogFooter><Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button><Button disabled={!valid} onClick={() => { onSave(form); onOpenChange(false); toast.success('Dados de recebimento salvos') }}>Salvar</Button></DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+/** Minhas invoices: a lista da pessoa, a criação do mês e os dados de recebimento. */
+function MyInvoicesScreen({ state }: { state: InvoiceState }) {
+  const { invoices, setInvoices, payee, setPayee, open } = state
+  const mine = invoices.filter((invoice) => invoice.owner === ME_STAFF)
+  const pending = mine.some((invoice) => invoice.month === 'Setembro 2026') ? [] : [{ month: 'Setembro 2026', lines: commissionLines('Setembro', 591, 23.4, 40) }]
+  const [creating, setCreating] = useState(false)
+  const [editingPayee, setEditingPayee] = useState(false)
+  const create = () => {
+    const id = Math.max(...invoices.map((invoice) => invoice.id)) + 1
+    const invoice: ProtoInvoice = { id, number: `INV-${String(id).padStart(6, '0')}-4f8a`, owner: ME_STAFF, role: 'Comercial externo', month: pending[0].month, status: 'draft', created: '30/10/2026', lines: pending[0].lines }
+    setInvoices([invoice, ...invoices])
+    setCreating(false)
+    toast.success('Invoice criada', { description: 'A comissão de setembro entrou na invoice e ficou como emitida.' })
+    open(id, 'mine')
+  }
+  return (
+    <>
+      <PageHeader title="Minhas invoices" sub="Uma invoice por mês. Ao criar, a comissão validada do mês entra nela; você pode somar serviços antes de emitir."
+        actions={<Button onClick={() => setCreating(true)} disabled={pending.length === 0}><Plus className="h-4 w-4" />Nova invoice</Button>} />
+      <Body>
+        {pending.length > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-card px-4 py-3 text-[14px]">
+            <span>A comissão de setembro foi validada em 15/10: <span className="font-medium tnum">{money.format(pending[0].lines.reduce((sum, line) => sum + line.amount, 0))}</span>. Crie a invoice para receber.</span>
+            <Button size="sm" onClick={() => setCreating(true)}>Criar invoice de setembro</Button>
+          </div>
+        )}
+        <Table min={720}>
+          <thead><tr><th className={th}>Número</th><th className={th}>Mês</th><th className={cn(th, 'text-right')}>Total</th><th className={th}>Situação</th><th className={th}>Criada</th><th className={th}>Paga</th></tr></thead>
+          <tbody>
+            {mine.map((invoice) => (
+              <tr key={invoice.id} className="cursor-pointer hover:bg-muted" onClick={() => open(invoice.id, 'mine')}>
+                <td className={td}><button className="font-mono text-[13px] font-medium hover:underline">{invoice.number}</button></td>
+                <td className={cn(td, 'whitespace-nowrap')}>{invoice.month}</td>
+                <td className={cn(td, 'text-right tnum font-medium')}>{money.format(invoiceTotal(invoice))}</td>
+                <td className={td}><Status tone={INVOICE_STATUS[invoice.status][1]}>{INVOICE_STATUS[invoice.status][0]}</Status></td>
+                <td className={cn(td, 'tnum text-muted-foreground')}>{invoice.created}</td>
+                <td className={cn(td, 'tnum text-muted-foreground')}>{invoice.paid ?? '–'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </Table>
+        <Card title="Dados de recebimento" desc="Seus dados como pessoa física: quem recebe é sempre você. Copiados para a invoice quando você emite."
+          footer={<Button size="sm" variant="outline" onClick={() => setEditingPayee(true)}>Editar</Button>} footerNote="Só você vê e muda estes dados.">
+          <dl className="grid gap-x-6 gap-y-3 text-[14px] sm:grid-cols-2 lg:grid-cols-3">
+            {[['Nome', payee.legalName], [payee.docType, payee.docNumber], ['Telefone', payee.phone], ['Endereço', payee.address], ['Banco', `${payee.bank} · SWIFT ${payee.swift}`], ['Conta', `${payee.account} · agência ${payee.routing}`]].map(([label, value]) => (
+              <div key={label}><dt className="text-[13px] text-muted-foreground">{label}</dt><dd className="mt-0.5 font-medium">{value}</dd></div>
+            ))}
+          </dl>
+        </Card>
+      </Body>
+      <Dialog open={creating} onOpenChange={setCreating}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Nova invoice</DialogTitle><DialogDescription>Só aparecem os meses com comissão validada e sem invoice.</DialogDescription></DialogHeader>
+          <Field id="inv-month" label="Mês"><Select defaultValue="Setembro 2026"><SelectTrigger id="inv-month" className="h-9"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="Setembro 2026">Setembro 2026</SelectItem></SelectContent></Select></Field>
+          {pending[0] && (
+            <div className="grid divide-y rounded-md border text-[14px]">
+              {pending[0].lines.map((line) => (
+                <div key={line.id} className="p-3">
+                  <div className="flex items-center justify-between gap-3"><span className="flex items-center gap-2 font-medium"><Lock className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />{line.title}</span><span className="tnum font-medium whitespace-nowrap">{money.format(line.amount)}</span></div>
+                  <div className="mt-1 text-[13px] text-muted-foreground">{line.description}</div>
+                </div>
+              ))}
+            </div>
+          )}
+          <p className="text-[13px] text-muted-foreground">Ao criar, a comissão de setembro passa a emitida e fica presa a esta invoice. Se você excluir o rascunho, ela volta a validada.</p>
+          <DialogFooter><Button variant="outline" onClick={() => setCreating(false)}>Cancelar</Button><Button onClick={create}>Criar invoice</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <PayeeDialog key={String(editingPayee)} open={editingPayee} onOpenChange={setEditingPayee} payee={payee} onSave={setPayee} />
+    </>
+  )
+}
+
+/** Modal de uma linha de serviço: o serviço do catálogo, a descrição e o valor livre. */
+function ServiceLineDialog({ open, onOpenChange, services, line, onSave }: { open: boolean; onOpenChange: (open: boolean) => void; services: InvoiceService[]; line: InvoiceLine | null; onSave: (line: InvoiceLine) => void }) {
+  const [serviceId, setServiceId] = useState(services.find((service) => service.title === line?.title)?.id ?? services[0]?.id ?? '')
+  const [description, setDescription] = useState(line?.description ?? '')
+  const [amount, setAmount] = useState(line ? String(line.amount).replace('.', ',') : '')
+  const value = parseMoney(amount)
+  const amountErr = amount !== '' && (Number.isNaN(value) || value <= 0) ? 'Use um valor maior que zero.' : ''
+  const service = services.find((item) => item.id === serviceId)
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader><DialogTitle>{line ? 'Editar serviço' : 'Adicionar serviço'}</DialogTitle><DialogDescription>O nome e o valor ficam copiados na invoice. Mudar ou excluir o serviço do catálogo depois não altera esta invoice.</DialogDescription></DialogHeader>
+        <div className="grid gap-4">
+          <Field id="sl-service" label="Serviço" hint={service?.description}>
+            <Select value={serviceId} onValueChange={setServiceId}><SelectTrigger id="sl-service" className="h-9"><SelectValue /></SelectTrigger><SelectContent>{services.map((item) => <SelectItem key={item.id} value={item.id}>{item.title}</SelectItem>)}</SelectContent></Select>
+          </Field>
+          <Field id="sl-desc" label="Descrição em inglês (opcional)"><Textarea id="sl-desc" rows={2} value={description} onChange={(event) => setDescription(event.target.value)} placeholder="What was done this month." /></Field>
+          <Field id="sl-amount" label="Valor (US$)" error={amountErr}><Input id="sl-amount" inputMode="decimal" className="h-9 max-w-[200px] tnum" value={amount} onChange={(event) => setAmount(event.target.value)} placeholder="300,00" aria-invalid={!!amountErr} /></Field>
+        </div>
+        <DialogFooter><Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button><Button disabled={!service || amount === '' || !!amountErr} onClick={() => service && onSave({ id: line?.id ?? `l${Date.now()}`, title: service.title, description: description.trim(), amount: value, locked: false })}>{line ? 'Salvar' : 'Adicionar'}</Button></DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+/** Tela da invoice: o documento como sai no PDF e as ações de cada situação. */
+function InvoiceScreen({ state, id, from }: { state: InvoiceState; id: number; from: 'mine' | 'all' }) {
+  const { invoices, setInvoices, services, payee, go } = state
+  const invoice = invoices.find((item) => item.id === id) ?? invoices[0]
+  const [lineDialog, setLineDialog] = useState<{ line: InvoiceLine | null } | null>(null)
+  const [confirm, setConfirm] = useState<'issue' | 'delete' | 'pay' | 'return' | null>(null)
+  const [reason, setReason] = useState('')
+  const owner = from === 'mine' && invoice.owner === ME_STAFF
+  const editable = owner && invoice.status === 'draft'
+  const shownPayee = invoice.payee ?? (invoice.owner === ME_STAFF ? payee : null)
+  const update = (changes: Partial<ProtoInvoice>) => setInvoices(invoices.map((item) => (item.id === invoice.id ? { ...item, ...changes } : item)))
+  const total = invoiceTotal(invoice)
+  const first = invoice.owner.split(' ')[0]
+  const act = () => {
+    if (confirm === 'issue') { update({ status: 'issued', issued: '30/10/2026', payee, returned: undefined }); toast.success('Invoice emitida', { description: 'O financeiro foi avisado. Daqui em diante ela não muda mais.' }) }
+    if (confirm === 'delete') { setInvoices(invoices.filter((item) => item.id !== invoice.id)); toast.success('Rascunho excluído', { description: 'A comissão de setembro voltou a validada.' }); go('minhasinvoices') }
+    if (confirm === 'pay') { update({ status: 'paid', paid: '30/10/2026' }); toast.success('Pagamento confirmado', { description: `A comissão de ${invoice.month.split(' ')[0].toLowerCase()} de ${first} ficou como paga.` }) }
+    if (confirm === 'return') { update({ status: 'draft', payee: undefined, issued: undefined, returned: { by: 'Pedro Henrique', at: '30/10/2026', reason: reason.trim() } }); toast.success('Invoice devolvida para rascunho', { description: `${first} recebeu um e-mail com o motivo.` }) }
+    setConfirm(null)
+    setReason('')
+  }
+  const confirmText = {
+    issue: ['Emitir a invoice?', `Seus dados de recebimento e as linhas ficam copiados na invoice. Depois de emitida, ela não muda mais; só o financeiro pode devolver para rascunho.`, 'Emitir'],
+    delete: ['Excluir o rascunho?', 'A comissão de setembro volta a validada e você pode criar a invoice de novo.', 'Excluir rascunho'],
+    pay: ['Confirmar o pagamento?', `A invoice e a comissão de ${invoice.month.split(' ')[0].toLowerCase()} de ${first} ficam como pagas. Depois de paga, a invoice não muda e não volta para rascunho.`, 'Confirmar pagamento'],
+    return: ['Devolver para rascunho', `${first} recebe um e-mail com o motivo e pode corrigir os serviços. A comissão continua presa a esta invoice.`, 'Devolver'],
+  } as const
+  const actions = (
+    <>
+      <Button variant="outline" onClick={() => toast.success('PDF baixado', { description: `${invoice.number}.pdf` })}><Download className="h-4 w-4" />Baixar PDF</Button>
+      {editable && <Button variant="outline" onClick={() => setConfirm('delete')}><Trash2 className="h-4 w-4" />Excluir rascunho</Button>}
+      {editable && <Button onClick={() => setConfirm('issue')}>Emitir invoice</Button>}
+      {from === 'all' && invoice.status === 'issued' && <Button variant="outline" onClick={() => setConfirm('return')}>Devolver para rascunho</Button>}
+      {from === 'all' && invoice.status === 'issued' && <Button onClick={() => setConfirm('pay')}>Confirmar pagamento</Button>}
+    </>
+  )
+  return (
+    <>
+      <PageHeader title={invoice.number} sub={`${invoice.owner} · ${invoice.month}`} actions={actions}
+        back={<button onClick={() => go(from === 'mine' ? 'minhasinvoices' : 'invoices')} className="mb-2 inline-flex items-center gap-1 text-[13px] text-muted-foreground hover:text-foreground"><ArrowLeft className="h-3.5 w-3.5" />{from === 'mine' ? 'Minhas invoices' : 'Invoices'}</button>} />
+      <Body className="lg:grid-cols-[minmax(0,1fr)_280px] lg:items-start">
+        <div className="grid gap-4">
+          {invoice.status === 'draft' && invoice.returned && (
+            <div className="flex gap-3 rounded-lg border border-ochre/40 bg-ochre/10 p-4 text-[14px]">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-ochre" />
+              <div><div className="font-medium">Devolvida por {invoice.returned.by} em {invoice.returned.at}</div><div className="mt-1 text-muted-foreground">{invoice.returned.reason}</div></div>
+            </div>
+          )}
+          <section className="overflow-hidden rounded-lg border bg-card">
+            <div className="grid gap-8 p-6 sm:p-10">
+              <div className="flex flex-wrap items-start justify-between gap-6">
+                <div className="flex items-center gap-2.5"><Mark size={32} /><span className="text-[18px] font-semibold tracking-tight">Avant</span></div>
+                <div className="text-right">
+                  <div className="text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Invoice</div>
+                  <div className="mt-1 font-mono text-[15px] font-medium">{invoice.number}</div>
+                  <div className="mt-1"><Status tone={INVOICE_STATUS[invoice.status][1]}>{INVOICE_STATUS[invoice.status][0]}</Status></div>
+                </div>
+              </div>
+              <div className="grid gap-6 text-[14px] sm:grid-cols-3">
+                <div>
+                  <div className="text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">De</div>
+                  <div className="mt-2 grid gap-0.5"><span className="font-medium">{GROONE_PAYER.name}</span><span className="text-muted-foreground">EIN {GROONE_PAYER.ein}</span><span className="text-muted-foreground">{GROONE_PAYER.address}</span></div>
+                </div>
+                <div>
+                  <div className="text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Para · recebedor</div>
+                  {shownPayee ? (
+                    <div className="mt-2 grid gap-0.5"><span className="font-medium">{shownPayee.legalName}</span><span className="text-muted-foreground">{invoice.role}</span><span className="text-muted-foreground">Pessoa física · {shownPayee.docType} {shownPayee.docNumber}</span><span className="text-muted-foreground">{shownPayee.address}</span><span className="text-muted-foreground">{shownPayee.phone}</span></div>
+                  ) : <div className="mt-2 grid gap-0.5"><span className="font-medium">{invoice.owner}</span><span className="text-muted-foreground">{invoice.role}</span><span className="text-muted-foreground">Os dados de recebimento entram quando a invoice for emitida.</span></div>}
+                  {invoice.status === 'draft' && shownPayee && <div className="mt-2 text-[12px] text-muted-foreground">Dados atuais; ficam copiados na emissão.</div>}
+                </div>
+                <div className="grid content-start gap-2">
+                  {[['Mês', invoice.month], ['Criada', invoice.created], ['Emitida', invoice.issued ?? '–'], ['Paga', invoice.paid ?? '–']].map(([label, value]) => (
+                    <div key={label} className="flex justify-between gap-4"><span className="text-muted-foreground">{label}</span><span className="tnum">{value}</span></div>
+                  ))}
+                </div>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse text-left text-[14px]">
+                  <thead><tr><th className={cn(th, 'px-0')}>Descrição</th><th className={cn(th, 'px-0 text-right')}>Valor</th>{editable && <th className={cn(th, 'w-12 px-0')}><span className="sr-only">Ações</span></th>}</tr></thead>
+                  <tbody>
+                    {invoice.lines.map((line) => (
+                      <tr key={line.id}>
+                        <td className={cn(td, 'px-0')}>
+                          <div className="flex items-center gap-2 font-medium">{line.locked && <Lock className="h-3.5 w-3.5 text-muted-foreground" aria-label="Linha travada" />}{line.title}</div>
+                          {line.description && <div className="mt-0.5 text-[13px] text-muted-foreground">{line.description}</div>}
+                        </td>
+                        <td className={cn(td, 'px-0 text-right tnum whitespace-nowrap')}>{money.format(line.amount)}</td>
+                        {editable && (
+                          <td className={cn(td, 'px-0 text-right')}>
+                            {line.locked ? <span className="sr-only">Travada</span> : (
+                              <DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" aria-label={`Ações de ${line.title}`}><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onSelect={() => setLineDialog({ line })}>Editar</DropdownMenuItem>
+                                  <DropdownMenuItem className="text-bad" onSelect={() => update({ lines: invoice.lines.filter((item) => item.id !== line.id) })}>Remover</DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            )}
+                          </td>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot><tr><td className="px-0 pt-4 text-[14px] font-medium">Total</td><td className="px-0 pt-4 text-right text-[20px] font-semibold tracking-tight tnum">{money.format(total)}</td>{editable && <td />}</tr></tfoot>
+                </table>
+              </div>
+              {editable && <div><Button size="sm" variant="outline" onClick={() => setLineDialog({ line: null })}><Plus className="h-4 w-4" />Adicionar serviço</Button></div>}
+              {shownPayee && invoice.status !== 'draft' && (
+                <div className="grid gap-1 rounded-md bg-muted p-4 text-[13px]">
+                  <div className="font-medium">Pagamento</div>
+                  <div className="text-muted-foreground">{shownPayee.bank} · SWIFT {shownPayee.swift} · conta {shownPayee.account} · agência {shownPayee.routing}</div>
+                </div>
+              )}
+              <div className="flex items-center justify-center gap-2 border-t pt-6 text-[12px] text-muted-foreground"><Mark size={16} />Avant by GroOne</div>
+            </div>
+          </section>
+        </div>
+        <Card title="Como funciona" className="lg:sticky lg:top-20">
+          <ol className="grid gap-3 text-[13px] text-muted-foreground">
+            <li><span className="font-medium text-foreground">Rascunho.</span> A comissão do mês entra travada. Quem é dono soma serviços e edita.</li>
+            <li><span className="font-medium text-foreground">Emitida.</span> Linhas e dados de recebimento ficam copiados e não mudam. O financeiro pode devolver para rascunho com um motivo, que vai por e-mail.</li>
+            <li><span className="font-medium text-foreground">Paga.</span> O financeiro confirma; a comissão também fica paga. Não volta mais.</li>
+          </ol>
+        </Card>
+      </Body>
+      {lineDialog && (
+        <ServiceLineDialog key={lineDialog.line?.id ?? 'new'} open onOpenChange={(open) => !open && setLineDialog(null)} services={services} line={lineDialog.line}
+          onSave={(line) => { update({ lines: invoice.lines.some((item) => item.id === line.id) ? invoice.lines.map((item) => (item.id === line.id ? line : item)) : [...invoice.lines, line] }); setLineDialog(null) }} />
+      )}
+      <Dialog open={!!confirm} onOpenChange={(open) => { if (!open) { setConfirm(null); setReason('') } }}>
+        <DialogContent>
+          {confirm && (
+            <>
+              <DialogHeader><DialogTitle>{confirmText[confirm][0]}</DialogTitle><DialogDescription>{confirmText[confirm][1]}</DialogDescription></DialogHeader>
+              {confirm === 'return' && <Field id="ret-reason" label="Motivo"><Textarea id="ret-reason" rows={3} value={reason} onChange={(event) => setReason(event.target.value)} placeholder="O valor do treinamento está errado." /></Field>}
+              {confirm === 'issue' && <div className="flex justify-between rounded-md bg-muted p-3 text-[14px]"><span>Total</span><span className="font-semibold tnum">{money.format(total)}</span></div>}
+              <DialogFooter><Button variant="outline" onClick={() => { setConfirm(null); setReason('') }}>Cancelar</Button><Button variant={confirm === 'delete' ? 'destructive' : 'default'} disabled={confirm === 'return' && !reason.trim()} onClick={act}>{confirmText[confirm][2]}</Button></DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
+  )
+}
+
+/** Invoices: todas as da equipe, para o financeiro devolver ou confirmar o pagamento. */
+function InvoicesScreen({ state }: { state: InvoiceState }) {
+  const { invoices, open, go } = state
+  const [status, setStatus] = useState<'all' | InvoiceStatus>('all')
+  const [month, setMonth] = useState('all')
+  const months = [...new Set(invoices.map((invoice) => invoice.month))]
+  const rows = invoices.filter((invoice) => (status === 'all' || invoice.status === status) && (month === 'all' || invoice.month === month))
+  const issued = invoices.filter((invoice) => invoice.status === 'issued')
+  return (
+    <>
+      <PageHeader title="Invoices" sub="Invoices da Equipe Groone. Emitida espera o pagamento; o financeiro devolve para rascunho quando algo está errado."
+        actions={<Button variant="outline" onClick={() => go('servicosinvoice')}>Serviços</Button>} />
+      <Body>
+        <div className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border bg-border lg:grid-cols-4">
+          {[
+            ['Para pagar', money.format(issued.reduce((sum, invoice) => sum + invoiceTotal(invoice), 0)), `${issued.length} emitidas`],
+            ['Em rascunho', String(invoices.filter((invoice) => invoice.status === 'draft').length), 'Ainda com quem criou'],
+            ['Pagas em setembro', money.format(invoices.filter((invoice) => invoice.paid?.endsWith('09/2026')).reduce((sum, invoice) => sum + invoiceTotal(invoice), 0)), 'Invoices de agosto'],
+            ['Sem invoice', '2', 'Comissão de setembro validada'],
+          ].map(([label, value, hint]) => (
+            <div key={label} className="bg-card p-4"><div className="text-[13px] font-medium text-muted-foreground">{label}</div><div className="mt-1 text-[22px] font-semibold tracking-tight tnum">{value}</div><div className="mt-1 text-[12px] text-muted-foreground">{hint}</div></div>
+          ))}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Select value={status} onValueChange={(value) => setStatus(value as typeof status)}><SelectTrigger className="h-9 w-[180px]" aria-label="Situação"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Todas as situações</SelectItem><SelectItem value="draft">Rascunho</SelectItem><SelectItem value="issued">Emitida</SelectItem><SelectItem value="paid">Paga</SelectItem></SelectContent></Select>
+          <Select value={month} onValueChange={setMonth}><SelectTrigger className="h-9 w-[180px]" aria-label="Mês"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Todos os meses</SelectItem>{months.map((item) => <SelectItem key={item} value={item}>{item}</SelectItem>)}</SelectContent></Select>
+        </div>
+        <Table min={860}>
+          <thead><tr><th className={th}>Número</th><th className={th}>Pessoa</th><th className={th}>Mês</th><th className={cn(th, 'text-right')}>Total</th><th className={th}>Situação</th><th className={th}>Emitida</th><th className={th}>Paga</th></tr></thead>
+          <tbody>
+            {rows.map((invoice) => (
+              <tr key={invoice.id} className="cursor-pointer hover:bg-muted" onClick={() => open(invoice.id, 'all')}>
+                <td className={td}><button className="font-mono text-[13px] font-medium hover:underline">{invoice.number}</button></td>
+                <td className={td}><span className="flex items-center gap-2.5"><Avatar name={invoice.owner} size={24} /><span className="whitespace-nowrap">{invoice.owner}</span></span></td>
+                <td className={cn(td, 'whitespace-nowrap')}>{invoice.month}</td>
+                <td className={cn(td, 'text-right tnum font-medium')}>{money.format(invoiceTotal(invoice))}</td>
+                <td className={td}><Status tone={INVOICE_STATUS[invoice.status][1]}>{INVOICE_STATUS[invoice.status][0]}</Status>{invoice.status === 'draft' && invoice.returned && <span className="ml-2"><Badge tone="ochre">Devolvida</Badge></span>}</td>
+                <td className={cn(td, 'tnum text-muted-foreground')}>{invoice.issued ?? '–'}</td>
+                <td className={cn(td, 'tnum text-muted-foreground')}>{invoice.paid ?? '–'}</td>
+              </tr>
+            ))}
+            {rows.length === 0 && <tr><td colSpan={7} className="px-4 py-10 text-center text-[14px] text-muted-foreground">Nenhuma invoice com esses filtros.</td></tr>}
+          </tbody>
+        </Table>
+      </Body>
+    </>
+  )
+}
+
+/** Catálogo de serviços que a equipe soma nas invoices; mudar aqui não altera invoices existentes. */
+function InvoiceServicesScreen({ state }: { state: InvoiceState }) {
+  const { services, setServices, invoices, go } = state
+  const [editing, setEditing] = useState<InvoiceService | null | 'new'>(null)
+  const [removing, setRemoving] = useState<InvoiceService | null>(null)
+  const [title, setTitle] = useState('')
+  const [description, setDescription] = useState('')
+  const uses = (service: InvoiceService) => invoices.filter((invoice) => invoice.lines.some((line) => line.title === service.title)).length
+  const startEdit = (service: InvoiceService | 'new') => { setEditing(service); setTitle(service === 'new' ? '' : service.title); setDescription(service === 'new' ? '' : service.description) }
+  const duplicate = services.some((service) => service.title.toLowerCase() === title.trim().toLowerCase() && (editing === 'new' || service.id !== editing?.id))
+  const save = () => {
+    if (editing === 'new') setServices([...services, { id: `s${Date.now()}`, title: title.trim(), description: description.trim() }])
+    else if (editing) setServices(services.map((service) => (service.id === editing.id ? { ...service, title: title.trim(), description: description.trim() } : service)))
+    toast.success(editing === 'new' ? 'Serviço criado' : 'Serviço salvo', { description: editing === 'new' ? undefined : 'As invoices que já usam o serviço continuam com o nome antigo.' })
+    setEditing(null)
+  }
+  return (
+    <>
+      <PageHeader title="Serviços de invoice" sub="O que a equipe pode cobrar além da comissão. O valor é livre em cada invoice."
+        back={<button onClick={() => go('invoices')} className="mb-2 inline-flex items-center gap-1 text-[13px] text-muted-foreground hover:text-foreground"><ArrowLeft className="h-3.5 w-3.5" />Invoices</button>}
+        actions={<Button onClick={() => startEdit('new')}><Plus className="h-4 w-4" />Novo serviço</Button>} />
+      <Body>
+        <Table min={640}>
+          <thead><tr><th className={th}>Serviço</th><th className={th}>Descrição</th><th className={cn(th, 'text-right')}>Em invoices</th><th className={cn(th, 'w-12')}><span className="sr-only">Ações</span></th></tr></thead>
+          <tbody>
+            {services.map((service) => (
+              <tr key={service.id} className="hover:bg-muted">
+                <td className={cn(td, 'font-medium whitespace-nowrap')}>{service.title}</td>
+                <td className={cn(td, 'text-muted-foreground')}>{service.description || '–'}</td>
+                <td className={cn(td, 'text-right tnum')}>{uses(service)}</td>
+                <td className={td}>
+                  <DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" aria-label={`Ações de ${service.title}`}><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
+                    <DropdownMenuContent align="end"><DropdownMenuItem onSelect={() => startEdit(service)}>Editar</DropdownMenuItem><DropdownMenuItem className="text-bad" onSelect={() => setRemoving(service)}>Excluir</DropdownMenuItem></DropdownMenuContent>
+                  </DropdownMenu>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </Table>
+        <p className="text-[13px] text-muted-foreground">Só quem tem a permissão de serviços de invoice cria, edita e exclui. Nome e descrição em inglês, como toda a invoice. Cada invoice guarda a própria cópia do nome e do valor.</p>
+      </Body>
+      <Dialog open={editing !== null} onOpenChange={(open) => !open && setEditing(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{editing === 'new' ? 'Novo serviço' : 'Editar serviço'}</DialogTitle><DialogDescription>{editing === 'new' ? 'Aparece para a equipe ao adicionar um serviço na invoice.' : 'Vale para as próximas invoices. As que já usam o serviço não mudam.'}</DialogDescription></DialogHeader>
+          <div className="grid gap-4">
+            <Field id="sv-title" label="Nome em inglês" error={duplicate && 'Já existe um serviço com esse nome.'}><Input id="sv-title" className="h-9" value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Account Management" /></Field>
+            <Field id="sv-desc" label="Descrição em inglês (opcional)"><Textarea id="sv-desc" rows={2} value={description} onChange={(event) => setDescription(event.target.value)} /></Field>
+          </div>
+          <DialogFooter><Button variant="outline" onClick={() => setEditing(null)}>Cancelar</Button><Button disabled={!title.trim() || duplicate} onClick={save}>Salvar</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={!!removing} onOpenChange={(open) => !open && setRemoving(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Excluir {removing?.title}?</DialogTitle><DialogDescription>Some do catálogo para as próximas invoices. {removing && uses(removing) > 0 ? `As ${uses(removing)} invoices que já usam o serviço continuam iguais.` : 'Nenhuma invoice usa este serviço.'}</DialogDescription></DialogHeader>
+          <DialogFooter><Button variant="outline" onClick={() => setRemoving(null)}>Cancelar</Button><Button variant="destructive" onClick={() => { setServices(services.filter((service) => service.id !== removing?.id)); toast.success('Serviço excluído'); setRemoving(null) }}>Excluir</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }
@@ -3428,6 +3854,10 @@ export default function App() {
   const [reports, setReports] = useState(INITIAL_REPORTS)
   const [customs, setCustoms] = useState(INITIAL_CUSTOMS)
   const [draft, setDraft] = useState<ReportDraft>(() => ({ ...INITIAL_REPORTS[1] }))
+  const [invoices, setInvoices] = useState(INITIAL_INVOICES)
+  const [services, setServices] = useState(INITIAL_SERVICES)
+  const [payee, setPayee] = useState(INITIAL_PAYEE)
+  const [invoiceView, setInvoiceView] = useState<{ id: number; from: 'mine' | 'all' }>({ id: 1186, from: 'all' })
   const openReport = (id: string | null) => { setDraft(id ? { ...reports.find((r) => r.id === id)! } : blank()); go('construtor') }
   const openTemplate = (key: string) => { const { key: _key, desc: _desc, ...tpl } = TEMPLATES.find((x) => x.key === key)!; setDraft({ ...tpl, id: null, owner: ME, updated: 'Agora' }); go('construtor') }
   const saveReport = (saved: ReportDraft) => {
@@ -3456,6 +3886,7 @@ export default function App() {
   useEffect(() => { document.documentElement.lang = lang === 'pt' ? 'pt-BR' : lang }, [lang])
 
   const a = ACCENTS.find((x) => x.id === accent)!
+  const invoiceState: InvoiceState = { invoices, setInvoices, services, setServices, payee, setPayee, go, open: (id, from) => { setInvoiceView({ id, from }); go('invoice') } }
   const auth = screen === 'login' || screen === 'convite' || screen === 'construtor'
   const body = (() => {
     switch (screen) {
@@ -3485,6 +3916,10 @@ export default function App() {
       case 'papelcomissao': return <RoleCommissionScreen />
       case 'minhacomissao': return <MyCommissionScreen />
       case 'comissoes': return <TeamCommissionsScreen />
+      case 'minhasinvoices': return <MyInvoicesScreen state={invoiceState} />
+      case 'invoice': return <InvoiceScreen key={invoiceView.id} state={invoiceState} id={invoiceView.id} from={invoiceView.from} />
+      case 'invoices': return <InvoicesScreen state={invoiceState} />
+      case 'servicosinvoice': return <InvoiceServicesScreen state={invoiceState} />
     }
   })()
 

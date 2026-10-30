@@ -25,7 +25,6 @@ export const commissionService = {
   /** Os prazos de uma pessoa com o que geraram no mês. */
   person: (userId: string, month: string) => api.get<Items<WindowMonth>>(`/internal/commissions/people/${userId}`, { month }),
   /** Marca o mês fechado da pessoa como emitido. */
-  issue: (userId: string, month: string) => api.post<{ days: number }>(`/internal/commissions/people/${userId}/issue`, { month }),
   /** Lança um desconto na comissão do mês da pessoa. */
   adjust: (userId: string, month: string, amount: string, reason: string) =>
     api.post(`/internal/commissions/people/${userId}/adjustments`, { month, amount, reason }),
