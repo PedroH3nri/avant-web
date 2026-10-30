@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { activeByRole, adjustmentValid, discount, emptyRuleForm, eventOf, formatDay, localToday, managerChange, newRuleForm, personGoalAmount, ruleBody, ruleErrors, splitEvent, takenEvents, toIssue, windowState } from '@/modules/internal/commissions/rules'
+import { activeByRole, adjustmentValid, windowsChange, discount, emptyRuleForm, eventOf, formatDay, localToday, newRuleForm, personGoalAmount, ruleBody, ruleErrors, splitEvent, takenEvents, toIssue, windowState } from '@/modules/internal/commissions/rules'
 import type { CommissionStatus } from '@/modules/internal/commissions/types'
 
 describe('regras de comissão no papel', () => {
@@ -28,12 +28,6 @@ describe('regras de comissão no papel', () => {
   it('o evento que o papel já tem fica fora, menos o da própria regra', () => {
     const rules = [{ id: 'a', event: 'client_created' as const }, { id: 'b', event: 'site_created' as const }]
     expect([...takenEvents(rules, 'a')]).toEqual(['site_created'])
-  })
-
-  it('troca de responsável: mesmo papel continua, outro papel para', () => {
-    expect(managerChange('r1', 'r1')).toBe('continues')
-    expect(managerChange('r1', 'r2')).toBe('stops')
-    expect(managerChange(null, 'r2')).toBe('first')
   })
 })
 
@@ -102,5 +96,15 @@ describe('correções da revisão', () => {
     const counts = activeByRole([member('r1', 'active'), member('r1', 'suspended'), member('r1', 'active'), member('r2', 'active'), member(null, 'active')])
     expect(counts.get('r1')).toBe(2)
     expect(counts.get('r2')).toBe(1)
+  })
+})
+
+describe('pendências da revisão', () => {
+  it('a troca de responsável segue os papéis dos prazos abertos', () => {
+    expect(windowsChange(null, [], 'r1')).toBe('first')
+    expect(windowsChange('u1', ['r1'], 'r1')).toBe('continues')
+    expect(windowsChange('u1', ['r1'], 'r2')).toBe('stops')
+    expect(windowsChange('u1', ['r1', 'r2'], 'r2')).toBe('mixed')
+    expect(windowsChange('u1', [], 'r2')).toBe('none')
   })
 })

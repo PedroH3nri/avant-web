@@ -18,12 +18,14 @@ const props = defineProps<{ person: PersonMonth | null; month: string }>()
 const emit = defineEmits<{ saved: [] }>()
 const amount = ref('')
 const reason = ref('')
+const reasonTouched = ref(false)
 const busy = ref(false)
 
 watch(open, (opened) => {
   if (!opened) return
   amount.value = ''
   reason.value = ''
+  reasonTouched.value = false
 })
 
 const amountError = computed(() => {
@@ -54,12 +56,13 @@ async function save() {
   <Dialog v-model:open="open" :title="t('com.adjust.title', { name: person?.user.name ?? '' })" :desc="t('com.adjust.desc')">
     <form id="commission-adjustment" class="grid gap-4" novalidate @submit.prevent="save">
       <Field id="adj-amount" :label="t('com.adjust.amount')" :error="amountError && t('com.adjust.amountErr')">
-        <Input id="adj-amount" v-model="amount" inputmode="decimal" class="max-w-[200px] tnum" placeholder="40,00" :invalid="amountError" />
+        <Input id="adj-amount" v-model="amount" inputmode="decimal" class="max-w-[200px] tnum" :placeholder="t('com.adjust.placeholder')" :invalid="amountError" />
       </Field>
-      <Field id="adj-reason" :label="t('com.adjust.reason')">
+      <Field id="adj-reason" :label="t('com.adjust.reason')" :error="reasonTouched && reason.trim() === '' && t('com.adjust.reasonErr')">
         <textarea
           id="adj-reason"
           v-model="reason"
+          @blur="reasonTouched = true"
           maxlength="500"
           rows="3"
           class="w-full rounded-md border border-input bg-background px-3 py-2 text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
