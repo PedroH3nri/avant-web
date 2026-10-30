@@ -3395,6 +3395,9 @@ type InvoiceService = { id: string; title: string; description: string }
 
 const INVOICE_STATUS: Record<InvoiceStatus, [string, 'ochre' | 'neutral' | 'ok']> = { draft: ['Rascunho', 'ochre'], issued: ['Emitida', 'neutral'], paid: ['Paga', 'ok'] }
 const ME_STAFF = 'Lucas Prado'
+/** Quem paga a invoice: os dados da GroOne, os mesmos do Genius. */
+const GROONE_PAYER = { name: 'GROONE, LLC', ein: '30-1462306', address: '1191 E Newport Center Dr 103, Deerfield Beach, FL 33442' }
+const PERSON_DOCUMENTS = ['Brasil · CPF', 'Argentina · CUIL/DNI', 'Chile · RUT', 'Colômbia · CC', 'México · CURP/RFC', 'Peru · DNI', 'Portugal · NIF', 'Espanha · NIF/DNI', 'Estados Unidos · SSN/ITIN', 'Reino Unido · NINO']
 const INITIAL_PAYEE: Payee = { docType: 'Brasil · CPF', docNumber: '123.456.789-09', legalName: 'Lucas Prado de Almeida', phone: '+55 11 98888-0000', address: 'Rua Exemplo, 200, Campinas, SP', bank: 'Banco Exemplo', swift: 'EXMPBRSP', account: '98765-4', routing: '0001' }
 const INITIAL_SERVICES: InvoiceService[] = [
   { id: 's1', title: 'Gestão de contas', description: 'Acompanhamento mensal de clientes da carteira.' },
@@ -3436,11 +3439,11 @@ function PayeeDialog({ open, onOpenChange, payee, onSave }: { open: boolean; onO
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[640px]">
-        <DialogHeader><DialogTitle>Dados de recebimento</DialogTitle><DialogDescription>Os mesmos dados fiscais que os clientes preenchem. Entram na invoice quando ela é emitida; mudar depois não altera invoices já emitidas.</DialogDescription></DialogHeader>
+        <DialogHeader><DialogTitle>Dados de recebimento</DialogTitle><DialogDescription>Os seus dados como pessoa física: quem recebe é sempre você, nunca uma empresa. Entram na invoice quando ela é emitida; mudar depois não altera invoices já emitidas.</DialogDescription></DialogHeader>
         <div className="grid gap-4 md:grid-cols-2">
-          <Field id="py-type" label="Tipo de documento"><Input id="py-type" className="h-9" value={form.docType} onChange={set('docType')} /></Field>
+          <Field id="py-type" label="Documento de pessoa física"><Select value={form.docType} onValueChange={(value) => setForm({ ...form, docType: value })}><SelectTrigger id="py-type" className="h-9"><SelectValue /></SelectTrigger><SelectContent>{PERSON_DOCUMENTS.map((document) => <SelectItem key={document} value={document}>{document}</SelectItem>)}</SelectContent></Select></Field>
           <Field id="py-doc" label="Número do documento"><Input id="py-doc" className="h-9 tnum" value={form.docNumber} onChange={set('docNumber')} /></Field>
-          <Field id="py-name" label="Nome completo ou razão social"><Input id="py-name" className="h-9" value={form.legalName} onChange={set('legalName')} /></Field>
+          <Field id="py-name" label="Nome completo"><Input id="py-name" className="h-9" value={form.legalName} onChange={set('legalName')} /></Field>
           <Field id="py-phone" label="Telefone com DDI"><Input id="py-phone" className="h-9 tnum" value={form.phone} onChange={set('phone')} /></Field>
           <div className="md:col-span-2"><Field id="py-addr" label="Endereço"><Input id="py-addr" className="h-9" value={form.address} onChange={set('address')} /></Field></div>
           <Field id="py-bank" label="Banco"><Input id="py-bank" className="h-9" value={form.bank} onChange={set('bank')} /></Field>
@@ -3495,7 +3498,7 @@ function MyInvoicesScreen({ state }: { state: InvoiceState }) {
             ))}
           </tbody>
         </Table>
-        <Card title="Dados de recebimento" desc="Copiados para a invoice quando você emite. Sem eles, a invoice não pode ser emitida."
+        <Card title="Dados de recebimento" desc="Seus dados como pessoa física: quem recebe é sempre você. Copiados para a invoice quando você emite."
           footer={<Button size="sm" variant="outline" onClick={() => setEditingPayee(true)}>Editar</Button>} footerNote="Só você vê e muda estes dados.">
           <dl className="grid gap-x-6 gap-y-3 text-[14px] sm:grid-cols-2 lg:grid-cols-3">
             {[['Nome', payee.legalName], [payee.docType, payee.docNumber], ['Telefone', payee.phone], ['Endereço', payee.address], ['Banco', `${payee.bank} · SWIFT ${payee.swift}`], ['Conta', `${payee.account} · agência ${payee.routing}`]].map(([label, value]) => (
@@ -3609,14 +3612,14 @@ function InvoiceScreen({ state, id, from }: { state: InvoiceState; id: number; f
               <div className="grid gap-6 text-[14px] sm:grid-cols-3">
                 <div>
                   <div className="text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">De</div>
-                  {shownPayee ? (
-                    <div className="mt-2 grid gap-0.5"><span className="font-medium">{shownPayee.legalName}</span><span className="text-muted-foreground">{shownPayee.docType} {shownPayee.docNumber}</span><span className="text-muted-foreground">{shownPayee.address}</span><span className="text-muted-foreground">{shownPayee.phone}</span></div>
-                  ) : <div className="mt-2 text-muted-foreground">Entra quando a invoice for emitida.</div>}
-                  {invoice.status === 'draft' && shownPayee && <div className="mt-2 text-[12px] text-muted-foreground">Dados atuais; ficam copiados na emissão.</div>}
+                  <div className="mt-2 grid gap-0.5"><span className="font-medium">{GROONE_PAYER.name}</span><span className="text-muted-foreground">EIN {GROONE_PAYER.ein}</span><span className="text-muted-foreground">{GROONE_PAYER.address}</span></div>
                 </div>
                 <div>
-                  <div className="text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Para</div>
-                  <div className="mt-2 grid gap-0.5"><span className="font-medium">Groone LLC</span><span className="text-muted-foreground">Equipe Groone · {invoice.role}</span></div>
+                  <div className="text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Para · recebedor</div>
+                  {shownPayee ? (
+                    <div className="mt-2 grid gap-0.5"><span className="font-medium">{shownPayee.legalName}</span><span className="text-muted-foreground">{invoice.role}</span><span className="text-muted-foreground">Pessoa física · {shownPayee.docType} {shownPayee.docNumber}</span><span className="text-muted-foreground">{shownPayee.address}</span><span className="text-muted-foreground">{shownPayee.phone}</span></div>
+                  ) : <div className="mt-2 grid gap-0.5"><span className="font-medium">{invoice.owner}</span><span className="text-muted-foreground">{invoice.role}</span><span className="text-muted-foreground">Os dados de recebimento entram quando a invoice for emitida.</span></div>}
+                  {invoice.status === 'draft' && shownPayee && <div className="mt-2 text-[12px] text-muted-foreground">Dados atuais; ficam copiados na emissão.</div>}
                 </div>
                 <div className="grid content-start gap-2">
                   {[['Mês', invoice.month], ['Criada', invoice.created], ['Emitida', invoice.issued ?? '–'], ['Paga', invoice.paid ?? '–']].map(([label, value]) => (
