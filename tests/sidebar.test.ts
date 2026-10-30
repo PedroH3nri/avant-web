@@ -1,153 +1,54 @@
-import { beforeEach, describe, expect, it } from 'vitest'
-import { mount, flushPromises } from '@vue/test-utils'
-import { createPinia, setActivePinia } from 'pinia'
-import { createMemoryHistory, createRouter } from 'vue-router'
-import { defineComponent } from 'vue'
-import SidebarNav from '@/components/SidebarNav.vue'
-import { useSession } from '@/stores/session'
-import type { Me } from '@/lib/types'
+import { beforeAll, describe, expect, it } from 'vitest'
+import { lang, t } from '@/lib/i18n'
+import { linkActive, visibleGroups, type NavItem } from '@/lib/navigation'
 
-const Blank = defineComponent({ template: '<div />' })
+/** Os rótulos de todos os itens do menu, na ordem. */
+const labels = (staff: boolean) => visibleGroups(staff).flatMap((section) => section.items.map((link) => t(link.key)))
+/** Os títulos dos grupos com título. */
+const headers = (staff: boolean) => visibleGroups(staff).flatMap((section) => (section.key ? [t(section.key)] : []))
+/** Os itens ativos no caminho; as telas internas começam com /interno. */
+const activeLabels = (staff: boolean, path: string) =>
+  visibleGroups(staff)
+    .flatMap((section) => section.items)
+    .filter((link: NavItem) => linkActive(link, path, path.startsWith('/interno')))
+    .map((link) => t(link.key))
 
-function me(active: string, permissions: string[]): Me {
-  return {
-    user: { id: 'u', email: 'ana@groone.com', name: 'Ana Lima', locale: 'pt', image_url: null },
-    companies: [
-      { id: 'g', name: 'Groone', slug: 'groone', is_owner: false, is_internal: true, image_url: null },
-      { id: 'c', name: 'Cliente', slug: 'cliente', is_owner: true, is_internal: false, image_url: null },
-    ],
-    active_company_id: active,
-    permissions,
-    site_scope: 'all',
-    is_staff: true,
-    mfa_enabled: true,
-    mfa_setup_required: false,
-    display_currency: 'USD',
-    theme: 'system',
-    accent: 'default',
-  }
-}
+describe('menu do painel', () => {
+  beforeAll(() => (lang.value = 'pt'))
 
-function router() {
-  return createRouter({
-    history: createMemoryHistory(),
-    routes: [
-      { path: '/', component: Blank },
-      { path: '/equipe', component: Blank },
-      { path: '/papeis', component: Blank },
-      { path: '/relatorios', component: Blank },
-      { path: '/relatorios/:id', component: Blank },
-      { path: '/interno', component: Blank, meta: { internal: true } },
-      { path: '/interno/pessoas', component: Blank, meta: { internal: true } },
-      { path: '/interno/clientes/:id', component: Blank, meta: { internal: true } },
-      { path: '/interno/contratos', component: Blank, meta: { internal: true } },
-      { path: '/interno/papeis', component: Blank, meta: { internal: true } },
-    ],
-  })
-}
-
-const labels = (w: ReturnType<typeof mount>) => w.findAll('nav a').map((a) => a.text())
-
-describe('SidebarNav', () => {
-  beforeEach(() => setActivePinia(createPinia()))
-
-  it('mostra os mesmos itens em qualquer rota', async () => {
-    const session = useSession()
-    session.set(me('c', ['*']))
-    const r = router()
-    await r.push('/')
-    const w = mount(SidebarNav, { global: { plugins: [r] } })
-    const onClient = labels(w)
-    expect(onClient).toContain('Equipes')
-    expect(onClient).toContain('Clientes')
-
-    // Entrar no painel interno troca a Empresa ativa para a Groone, mas não o menu.
-    session.set(me('g', ['internal.clients.view', 'internal.users.manage', 'internal.staff.manage', 'internal.networks.assign']))
-    await r.push('/interno/pessoas')
-    await flushPromises()
-    expect(labels(w)).toEqual(onClient)
-    expect(w.find('[aria-current="page"]').text()).toBe('Clientes')
+  it('mostra os mesmos itens para a equipe Groone, sem filtrar por permissão', () => {
+    expect(labels(true)).toEqual(['Dashboard', 'Clientes', 'Equipes', 'Networks do GAM', 'Contratos', 'Sites', 'Ad Manager', 'Page Views', 'Relatórios', 'Resultado', 'Resultado dos clientes', 'Metas', 'Minha comissão', 'Comissões', 'Equipe Groone', 'Papéis da equipe', 'Custos'])
+    expect(headers(true)).toEqual(['Clientes', 'Relatórios', 'Empresa'])
   })
 
-  it('não esconde itens por permissão nem troca os grupos ao clicar em Dashboard', async () => {
-    const session = useSession()
-    session.set(me('g', ['internal.clients.view']))
-    const r = router()
-    await r.push('/interno')
-    const w = mount(SidebarNav, { global: { plugins: [r] } })
-    const before = labels(w)
-    expect(before).toEqual(['Dashboard', 'Clientes', 'Equipes', 'Networks do GAM', 'Contratos', 'Sites', 'Ad Manager', 'Page Views', 'Relatórios', 'Resultado', 'Resultado dos clientes', 'Metas', 'Minha comissão', 'Comissões', 'Equipe Groone', 'Papéis da equipe', 'Custos'])
-    expect(w.findAll('nav div').map((d) => d.text())).toEqual(['Clientes', 'Relatórios', 'Empresa'])
-
-    session.set(me('c', ['sites.view']))
-    await r.push('/')
-    await flushPromises()
-    expect(labels(w)).toEqual(before)
-    expect(w.find('nav [aria-current="page"]').text()).toBe('Dashboard')
+  it('quem não é da equipe Groone não vê os itens internos', () => {
+    expect(labels(false)).toEqual(['Dashboard', 'Equipes', 'Networks do GAM', 'Sites', 'Ad Manager', 'Page Views', 'Relatórios', 'Resultado', 'Papéis e permissões', 'Custos'])
+    expect(headers(false)).toEqual(['Clientes', 'Relatórios', 'Empresa'])
+    expect(labels(false)).not.toContain('Equipe Groone')
   })
 
-  it('não tem botão de Configurações: a Empresa se configura pela Equipe', async () => {
-    const session = useSession()
-    session.set(me('c', ['*']))
-    const testRouter = router()
-    await testRouter.push('/')
-    const wrapper = mount(SidebarNav, { global: { plugins: [testRouter] } })
-    expect(wrapper.findAll('a').map((link) => link.text())).not.toContain('Configurações')
+  it('não tem item de Configurações: a Empresa se configura pela Equipe', () => {
+    expect(labels(true)).not.toContain('Configurações')
+    expect(labels(false)).not.toContain('Configurações')
   })
 
-  it('equipe Groone sem Empresa cliente tem os mesmos links, todos clicáveis', async () => {
-    const session = useSession()
-    const m = me('g', ['*'])
-    session.set({ ...m, companies: m.companies.filter((c) => c.is_internal) })
-    const r = router()
-    await r.push('/interno')
-    const w = mount(SidebarNav, { global: { plugins: [r] } })
-    expect(labels(w)).toEqual(['Dashboard', 'Clientes', 'Equipes', 'Networks do GAM', 'Contratos', 'Sites', 'Ad Manager', 'Page Views', 'Relatórios', 'Resultado', 'Resultado dos clientes', 'Metas', 'Minha comissão', 'Comissões', 'Equipe Groone', 'Papéis da equipe', 'Custos'])
-    // Equipes, para a equipe Groone, são as equipes dos clientes, nunca a própria.
-    await w.findAll('nav a').find((a) => a.text() === 'Equipes')!.trigger('click')
-    await flushPromises()
-    expect(r.currentRoute.value.path).toBe('/interno/equipes')
+  it('Equipes, para a equipe Groone, são as equipes dos clientes, nunca a própria', () => {
+    const team = visibleGroups(true)
+      .flatMap((section) => section.items)
+      .find((link) => link.key === 'nav.team')
+    expect(team?.to).toBe('/interno/equipes')
   })
 
-  it('quem não é da equipe Groone não vê o grupo interno', async () => {
-    const session = useSession()
-    const m = me('c', ['*'])
-    session.set({ ...m, companies: m.companies.filter((c) => !c.is_internal), is_staff: false })
-    const r = router()
-    await r.push('/')
-    const w = mount(SidebarNav, { global: { plugins: [r] } })
-    expect(labels(w)).toEqual(['Dashboard', 'Equipes', 'Networks do GAM', 'Sites', 'Ad Manager', 'Page Views', 'Relatórios', 'Resultado', 'Papéis e permissões', 'Custos'])
-    expect(w.findAll('nav div').map((d) => d.text())).toEqual(['Clientes', 'Relatórios', 'Empresa'])
-    expect(w.text()).not.toContain('Equipe Groone')
-  })
-
-  it('telas sem item próprio acendem o item de onde se chega', async () => {
-    const session = useSession()
-    session.set(me('c', ['*']))
-    const r = router()
-    const w = mount(SidebarNav, { global: { plugins: [r] } })
-    const current = () => w.find('nav [aria-current="page"]').text()
+  it('telas sem item próprio acendem o item de onde se chega, e só ele', () => {
     const cases: [string, string][] = [
+      ['/', 'Dashboard'],
       ['/interno/papeis', 'Papéis da equipe'],
       ['/interno', 'Clientes'],
       ['/interno/clientes/c', 'Clientes'],
       ['/interno/pessoas', 'Clientes'],
       ['/interno/contratos', 'Contratos'],
+      ['/relatorios/123', 'Relatórios'],
     ]
-    for (const [path, label] of cases) {
-      await r.push(path)
-      await flushPromises()
-      expect(current()).toBe(label)
-      expect(w.findAll('nav [aria-current="page"]')).toHaveLength(1)
-    }
-  })
-
-  it('acende Relatórios na lista e dentro de um relatório', async () => {
-    const session = useSession()
-    session.set(me('c', ['reports.view']))
-    const testRouter = router()
-    await testRouter.push('/relatorios/123')
-    const wrapper = mount(SidebarNav, { global: { plugins: [testRouter] } })
-    expect(wrapper.find('nav [aria-current="page"]').text()).toBe('Relatórios')
+    for (const [path, label] of cases) expect(activeLabels(true, path)).toEqual([label])
   })
 })

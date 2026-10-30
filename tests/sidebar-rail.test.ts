@@ -45,6 +45,7 @@ function router() {
       { path: '/interno/contratos', component: Blank, meta: { internal: true } },
       { path: '/interno/papeis', component: Blank, meta: { internal: true } },
       { path: '/interno/equipe', component: Blank, meta: { internal: true } },
+      { path: '/interno/metas', component: Blank, meta: { internal: true } },
     ],
   })
 }
@@ -139,5 +140,38 @@ describe('SidebarRail', () => {
     vi.advanceTimersByTime(300)
     await flushPromises()
     expect(panelLabels(wrapper)[0]).toBe('Clientes')
+  })
+
+  it('no toque, tocar no grupo abre o painel em vez de ir para o primeiro item', async () => {
+    const session = useSession()
+    session.set(me('g', ['*']))
+    const testRouter = router()
+    await testRouter.push('/')
+    const wrapper = mount(SidebarRail, { global: { plugins: [testRouter] } })
+    const clients = wrapper.findAll('nav[aria-label="Menu principal"] > *')[1]!
+    await wrapper.find('div').trigger('pointerdown', { pointerType: 'touch' })
+    await clients.trigger('click')
+    await flushPromises()
+    expect(testRouter.currentRoute.value.path).toBe('/')
+    expect(wrapper.find('#rail-panel').attributes('aria-hidden')).toBe('false')
+    expect(panelLabels(wrapper)[0]).toBe('Clientes')
+  })
+
+  it('na gaveta do celular, o painel fica ao lado do trilho e o toque no grupo troca os itens', async () => {
+    const session = useSession()
+    session.set(me('g', ['*']))
+    const testRouter = router()
+    await testRouter.push('/interno/contratos')
+    const wrapper = mount(SidebarRail, { props: { drawer: true }, global: { plugins: [testRouter] } })
+    const drawerPanel = () => wrapper.findAll('#rail-panel-drawer a').map((link) => link.text())
+    expect(wrapper.find('#rail-panel-drawer').attributes('aria-hidden')).toBe('false')
+    expect(drawerPanel()[0]).toBe('Clientes')
+    await wrapper.findAll('nav[aria-label="Menu principal"] > *')[2]!.trigger('click')
+    expect(testRouter.currentRoute.value.path).toBe('/interno/contratos')
+    expect(drawerPanel()[0]).toBe('Ad Manager')
+    await wrapper.findAll('#rail-panel-drawer a').find((link) => link.text() === 'Metas')!.trigger('click')
+    await flushPromises()
+    expect(testRouter.currentRoute.value.path).toBe('/interno/metas')
+    expect(wrapper.emitted('navigate')).toBeTruthy()
   })
 })
