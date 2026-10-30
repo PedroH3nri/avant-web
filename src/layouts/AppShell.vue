@@ -21,7 +21,7 @@ const open = ref(false)
       <DialogPortal>
         <DialogOverlay class="fixed inset-0 z-40 bg-black/40 data-[state=open]:animate-in data-[state=open]:fade-in-0" />
         <DialogContent
-          class="fixed inset-y-0 left-0 z-50 w-[336px] max-w-[92vw] border-r bg-sidebar shadow-lg data-[state=open]:animate-in data-[state=open]:slide-in-from-left"
+          class="fixed inset-y-0 left-0 z-50 max-w-[92vw] border-r bg-sidebar shadow-lg data-[state=open]:animate-in data-[state=open]:slide-in-from-left"
         >
           <DialogTitle class="sr-only">{{ t('nav.menu') }}</DialogTitle>
           <SidebarRail drawer @navigate="open = false" />
