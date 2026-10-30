@@ -3002,7 +3002,7 @@ function ReportBuilderScreen({ initial, customs, setCustoms, onBack, onSave }: {
             ))}
           </div>
         </aside>
-        <main className="min-w-0 bg-muted">
+        <main className="order-3 min-w-0 bg-muted lg:order-2">
           <div className="grid gap-4 p-4 sm:p-6">
             <div className="flex flex-wrap items-center gap-1.5">
               {draft.metrics.map((m) => (
@@ -3026,7 +3026,7 @@ function ReportBuilderScreen({ initial, customs, setCustoms, onBack, onSave }: {
             {draft.chart !== 'kpi' && <ReportTable draft={draft} customs={customs} />}
           </div>
         </main>
-        <aside className="border-t lg:border-l lg:border-t-0" aria-label="Configuração">
+        <aside className="order-2 border-b lg:order-3 lg:border-b-0 lg:border-l" aria-label="Configuração">
           <PanelTitle>Visualização</PanelTitle>
           <div className="grid grid-cols-2 gap-1.5 px-4">
             {CHARTS.map((c) => {
