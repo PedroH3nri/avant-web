@@ -1,7 +1,7 @@
-/** Regras de tela das metas: a cor do andamento, os meses para escolher e os valores do modelo. */
+/** Regras de tela das metas: a cor do andamento, os meses para escolher, os valores do modelo e a meta da Groone. */
 
 import type { Lang } from '@/lib/types'
-import type { GoalProgress } from '@/modules/internal/goals/types'
+import type { GoalProgress, GoalTemplate } from '@/modules/internal/goals/types'
 
 const MONTHS_IN_YEAR = 12
 const LAST_MONTHS = 12
@@ -54,4 +54,20 @@ export function formatAmount(value: string, lang: Lang): string {
 /** Os valores do modelo: 12 números de zero para cima. */
 export function templateValid(months: string[], lang: Lang): boolean {
   return months.length === MONTHS_IN_YEAR && months.every((value) => Number.isFinite(parseAmount(value, lang)))
+}
+
+/** Os modelos que os papéis podem usar: todos menos a meta da Groone. */
+export function roleTemplates(templates: GoalTemplate[]): GoalTemplate[] {
+  return templates.filter((template) => !template.is_company_goal)
+}
+
+/** A meta da Groone do ano, se já existir. */
+export function companyGoalOf(templates: GoalTemplate[], year: number): GoalTemplate | null {
+  return templates.find((template) => template.is_company_goal && template.year === year) ?? null
+}
+
+/** Os anos para escolher a meta da Groone: o anterior, o atual e o próximo. */
+export function companyGoalYears(today: string): number[] {
+  const current = Number(today.slice(0, 4))
+  return [current - 1, current, current + 1]
 }

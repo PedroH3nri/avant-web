@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** Painel interno: a equipe Groone, a troca de papel de cada pessoa e o convite com os papéis da Company Groone. */
+/** Painel interno: a equipe Groone, a meta da Groone, a troca de papel de cada pessoa e o convite com os papéis da Company Groone. */
 import { computed, onMounted, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
 import { Settings } from 'lucide-vue-next'
@@ -22,6 +22,7 @@ import { ApiError } from '@/lib/api'
 import { errorText, formatAgo, formatDate, pick, t } from '@/lib/i18n'
 import { td, th } from '@/lib/table'
 import type { Invitation, Member, RoleOption } from '@/modules/team/types'
+import CompanyGoalCard from '@/modules/internal/goals/components/CompanyGoalCard.vue'
 import { useSession } from '@/stores/session'
 import { staffService } from '@/modules/internal/staff/service'
 import { teamService } from '@/modules/team/service'
@@ -40,6 +41,7 @@ const canSeeInvites = computed(() => session.can('team.view'))
 const loadError = ref<string | null>(null)
 const canEditGroone = computed(() => session.can('company.edit'))
 const canManageTeam = computed(() => session.can('team.manage'))
+const canSeeGoal = computed(() => session.can('internal.commissions.view') || session.can('internal.commissions.manage'))
 const saving = ref<string | null>(null)
 const email = ref('')
 const roleId = ref('')
@@ -141,6 +143,7 @@ async function invite() {
         <Button size="sm" @click="$router.push('/configuracoes')"><Settings />{{ t('int.grooneSettingsEdit') }}</Button>
       </template>
     </Card>
+    <CompanyGoalCard v-if="canSeeGoal" />
     <Card v-if="roleOptions.length" :title="t('int.staffInvite')" :desc="t('int.staffInviteDesc')">
       <form id="staff-invite" class="grid gap-4 md:grid-cols-[1.4fr_1fr]" @submit.prevent="invite">
         <Field id="si-email" :label="t('login.email')">

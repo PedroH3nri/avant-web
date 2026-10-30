@@ -17,7 +17,7 @@ import { formatMetric, toNumber } from '@/lib/metrics'
 import { td, th } from '@/lib/table'
 import GoalBar from '@/modules/internal/goals/components/GoalBar.vue'
 import GoalTemplatesDialog from '@/modules/internal/goals/components/GoalTemplatesDialog.vue'
-import { goalTone, monthOptions } from '@/modules/internal/goals/rules'
+import { goalTone, monthOptions, roleTemplates } from '@/modules/internal/goals/rules'
 import { goalService } from '@/modules/internal/goals/service'
 import type { GoalMode, GoalTemplate, PersonGoal, RoleGoal, TeamGoals } from '@/modules/internal/goals/types'
 import { teamService } from '@/modules/team/service'
@@ -49,7 +49,7 @@ async function load() {
     team.value = everyone
     if (canView.value || canManage.value) {
       const [templateList, goalList, roleList] = await Promise.all([goalService.templates(), goalService.roleGoals(), teamService.roleOptions()])
-      templates.value = templateList.items
+      templates.value = roleTemplates(templateList.items)
       roleGoals.value = goalList.items
       roles.value = roleList.items.filter((role) => !role.is_system)
     }

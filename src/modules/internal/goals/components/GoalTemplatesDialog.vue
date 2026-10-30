@@ -1,10 +1,8 @@
 <script setup lang="ts">
-/** Modelos de meta: a lista, o formulário com um valor por mês e a marca de meta da Groone. */
+/** Modelos de meta dos papéis: a lista e o formulário com um valor por mês (a meta da Groone fica na Equipe Groone). */
 import { computed, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
-import Badge from '@/components/ui/Badge.vue'
 import Button from '@/components/ui/Button.vue'
-import Checkbox from '@/components/ui/Checkbox.vue'
 import Dialog from '@/components/ui/Dialog.vue'
 import Field from '@/components/ui/Field.vue'
 import Input from '@/components/ui/Input.vue'
@@ -12,7 +10,7 @@ import Pagination from '@/components/ui/Pagination.vue'
 import { ApiError } from '@/lib/api'
 import { errorText, lang, locale, t } from '@/lib/i18n'
 import { formatMetric, toNumber } from '@/lib/metrics'
-import { formatAmount, parseAmount, templateValid } from '@/modules/internal/goals/rules'
+import { formatAmount, parseAmount, roleTemplates, templateValid } from '@/modules/internal/goals/rules'
 import { goalService } from '@/modules/internal/goals/service'
 import type { GoalTemplate } from '@/modules/internal/goals/types'
 
@@ -25,7 +23,6 @@ const creating = ref(false)
 const name = ref('')
 const year = ref('')
 const months = ref<string[]>([])
-const companyGoal = ref(false)
 const busy = ref(false)
 const removing = ref<string | null>(null)
 const templates = ref<GoalTemplate[]>([])
@@ -52,7 +49,7 @@ async function loadPage() {
       page.value = Math.max(1, found.pages)
       return
     }
-    templates.value = found.items
+    templates.value = roleTemplates(found.items)
     total.value = found.total
     pages.value = found.pages
   } catch (error) {
@@ -73,7 +70,6 @@ function start(template: GoalTemplate | null) {
   name.value = template?.name ?? ''
   year.value = String(template?.year ?? props.year)
   months.value = template ? template.months.map((value) => formatAmount(value, lang.value)) : Array.from({ length: MONTHS_IN_YEAR }, () => '')
-  companyGoal.value = template?.is_company_goal ?? false
   removing.value = null
 }
 
@@ -87,7 +83,7 @@ function close() {
 async function save() {
   if (!valid.value) return
   busy.value = true
-  const input = { name: name.value.trim(), year: Number(year.value), months: months.value.map((value) => parseAmount(value, lang.value).toFixed(2)), is_company_goal: companyGoal.value }
+  const input = { name: name.value.trim(), year: Number(year.value), months: months.value.map((value) => parseAmount(value, lang.value).toFixed(2)), is_company_goal: false }
   try {
     if (editing.value) await goalService.updateTemplate(editing.value.id, input)
     else await goalService.createTemplate(input)
@@ -95,7 +91,7 @@ async function save() {
     close()
     await changed()
   } catch (error) {
-    toast.error(error instanceof ApiError && error.code === 'company_goal_taken' ? errorText('company_goal_taken') : errorText(error instanceof ApiError ? error.code : 'unknown'))
+    toast.error(errorText(error instanceof ApiError ? error.code : 'unknown'))
   } finally {
     busy.value = false
   }
@@ -137,13 +133,12 @@ const yearTotal = (template: GoalTemplate) => formatMetric(template.months.reduc
           </label>
         </div>
       </fieldset>
-      <Checkbox id="goal-company" v-model="companyGoal" :label="t('goals.companyGoal')" :hint="t('goals.companyGoalHint')" />
     </form>
     <ul v-else class="grid gap-2">
       <li v-if="!templates.length" class="text-[14px] text-muted-foreground">{{ t('goals.noTemplates') }}</li>
       <li v-for="template in templates" :key="template.id" class="flex flex-wrap items-center gap-3 rounded-md border p-3">
         <span class="min-w-0 flex-1">
-          <span class="flex items-center gap-2 text-[14px] font-medium">{{ template.name }}<Badge v-if="template.is_company_goal">{{ t('goals.companyBadge') }}</Badge></span>
+          <span class="flex items-center gap-2 text-[14px] font-medium">{{ template.name }}</span>
           <span class="block text-[13px] text-muted-foreground tnum">{{ template.year }} · {{ t('goals.yearTotal', { total: yearTotal(template) }) }}</span>
         </span>
         <Button variant="outline" size="sm" @click="start(template)">{{ t('goals.edit') }}</Button>
