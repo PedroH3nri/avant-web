@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** Criar ou editar um papel personalizado: nome, sites e permissões do catálogo. */
+/** Criar ou editar um papel personalizado: nome, sites e permissões do catálogo, ou só o nome. */
 import { computed, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
 import Button from '@/components/ui/Button.vue'
@@ -13,10 +13,11 @@ import type { SiteScope } from '@/lib/types'
 import type { Permission, Role } from '@/modules/team/types'
 import { cn } from '@/lib/utils'
 import { useSession } from '@/stores/session'
+import { groupPermissions } from '@/modules/team/rules'
 import { teamService } from '@/modules/team/service'
 
 const open = defineModel<boolean>('open', { default: false })
-const props = defineProps<{ role: Role | null; permissions: Permission[] }>()
+const props = defineProps<{ role: Role | null; permissions: Permission[]; nameOnly?: boolean }>()
 const emit = defineEmits<{ saved: [role: Role] }>()
 const session = useSession()
 
@@ -34,11 +35,7 @@ watch(open, (value) => {
   category.value = null
 })
 
-const groups = computed(() => {
-  const by = new Map<string, Permission[]>()
-  for (const permission of props.permissions) by.set(permission.group, [...(by.get(permission.group) ?? []), permission])
-  return [...by.entries()]
-})
+const groups = computed(() => groupPermissions(props.permissions))
 /** Os grupos que aparecem: todos, ou só a categoria escolhida no filtro. */
 const shownGroups = computed(() => groups.value.filter(([group]) => category.value === null || group === category.value))
 /** Classe do botão de categoria, ligado ou não. */
@@ -59,7 +56,8 @@ function toggle(key: string, on: boolean) {
 /** Cria ou atualiza o papel. */
 async function save() {
   busy.value = true
-  const body = { name: name.value.trim(), permissions: [...chosen.value].sort(), site_scope: scope.value }
+  const full = { name: name.value.trim(), permissions: [...chosen.value].sort(), site_scope: scope.value }
+  const body = props.nameOnly && props.role ? { name: full.name } : full
   try {
     const saved = props.role ? await teamService.updateRole(props.role.id, body) : await teamService.createRole(body)
     emit('saved', saved)
@@ -74,12 +72,13 @@ async function save() {
 </script>
 
 <template>
-  <Dialog v-model:open="open" :title="role ? t('role.edit') : t('role.create')" class="max-w-[600px]">
+  <Dialog v-model:open="open" :title="role ? t('role.edit') : t('role.create')" :class="nameOnly ? 'max-w-[440px]' : 'max-w-[600px]'">
     <form id="role-form" class="grid gap-5" @submit.prevent="save">
       <Field id="role-name" :label="t('role.name')">
         <Input id="role-name" v-model="name" maxlength="60" />
       </Field>
-      <fieldset class="grid gap-2">
+      <p v-if="nameOnly && !role" class="text-[13px] text-muted-foreground">{{ t('role.permsAfter') }}</p>
+      <fieldset v-if="!nameOnly" class="grid gap-2">
         <legend class="mb-2 text-[13px] font-medium text-muted-foreground">{{ t('role.scopeTitle') }}</legend>
         <label v-for="scopeOption in ['assigned', 'all'] as const" :key="scopeOption" class="flex cursor-pointer items-center gap-2.5 text-[14px]">
           <input v-model="scope" type="radio" name="role-scope" :value="scopeOption" class="size-4 accent-[hsl(var(--foreground))]" />
@@ -87,7 +86,7 @@ async function save() {
         </label>
         <p v-if="scope === 'assigned'" class="text-[13px] text-muted-foreground">{{ t('role.scopeAssignedHint') }}</p>
       </fieldset>
-      <fieldset class="grid gap-4">
+      <fieldset v-if="!nameOnly" class="grid gap-4">
         <legend class="mb-1 text-[13px] font-medium text-muted-foreground">{{ t('role.permsTitle') }}</legend>
         <p class="-mt-2 text-[13px] text-muted-foreground">{{ t('role.permsHint') }}</p>
         <div v-if="groups.length > 1" class="flex flex-wrap gap-1.5" role="group" :aria-label="t('role.filterLabel')">

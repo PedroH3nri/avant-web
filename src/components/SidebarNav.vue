@@ -26,7 +26,8 @@ type Group = { key: Key | null; items: Item[] }
 // (o guarda do router e a API decidem o acesso). Itens com ``internal`` abrem o painel interno
 // (o guarda troca para a Company Groone) e só a equipe Groone os vê; os outros abrem a Empresa
 // cliente. Itens com ``clientOnly`` somem para a equipe Groone, que tem a versão interna deles
-// (Equipes: a Groone vê as equipes de todos os clientes, nunca a própria).
+// (Equipes: a Groone vê as equipes de todos os clientes, nunca a própria; Papéis e permissões:
+// a Groone cuida dos seus em Papéis da equipe).
 const GROUPS: Group[] = [
   { key: null, items: [{ to: '/', key: 'nav.home', icon: LayoutDashboard }] },
   {
@@ -58,7 +59,7 @@ const GROUPS: Group[] = [
     items: [
       { to: '/interno/equipe', key: 'int.staff', icon: UsersRound, internal: true },
       { to: '/interno/papeis', key: 'com.nav.roles', icon: IdCard, internal: true },
-      { to: '/papeis', key: 'nav.roles', icon: ShieldCheck },
+      { to: '/papeis', key: 'nav.roles', icon: ShieldCheck, clientOnly: true },
       { to: '/custos', key: 'nav.costs', icon: Receipt },
     ],
   },
