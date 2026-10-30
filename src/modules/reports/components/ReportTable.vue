@@ -1,14 +1,21 @@
 <script setup lang="ts">
-/** A tabela do relatório: uma coluna por dimensão e por métrica, com a aparência pelo valor. */
-import { computed } from 'vue'
+/** A tabela do relatório: uma coluna por dimensão e por métrica, com a aparência pelo valor, 10 linhas por página. */
+import { computed, ref, watch } from 'vue'
 import DataTable from '@/components/ui/DataTable.vue'
+import Pagination from '@/components/ui/Pagination.vue'
 import { lang, locale, t } from '@/lib/i18n'
 import { formatMetric, toNumber } from '@/lib/metrics'
+import { pageCount, pageSlice } from '@/lib/pagination'
 import { td, th } from '@/lib/table'
 import { dimensionText, metricInfo, scaleHue, type ReportDraft } from '@/modules/reports/rules'
 import type { MetricCatalog, ReportResult } from '@/modules/reports/types'
 
 const props = defineProps<{ draft: ReportDraft; result: ReportResult; catalog: MetricCatalog }>()
+
+const page = ref(1)
+const rows = computed(() => (props.draft.dimensions.length ? props.result.rows : []))
+const shownRows = computed(() => pageSlice(rows.value, page.value))
+watch(() => props.result, () => (page.value = 1))
 
 const dimensions = computed(() => props.draft.dimensions.map((key) => ({ key, label: props.catalog.dimensions.find((item) => item.key === key)?.label[lang.value] ?? key })))
 const metrics = computed(() => props.draft.metrics.map((key) => ({ key, ...metricInfo(key, props.catalog, lang.value), scale: props.draft.styles[key]?.scale })))
@@ -41,7 +48,7 @@ function background(key: string, value: string | null | undefined) {
           <td v-if="draft.compare" :class="[td, 'text-right tnum whitespace-nowrap text-muted-foreground']">{{ show(metric.key, result.previous_totals?.[metric.key]) }}</td>
         </template>
       </tr>
-      <tr v-for="(row, index) in draft.dimensions.length ? result.rows : []" :key="index" class="hover:bg-muted">
+      <tr v-for="(row, index) in shownRows" :key="`${page}-${index}`" class="hover:bg-muted">
         <td v-for="dimension in dimensions" :key="dimension.key" :class="[td, 'whitespace-nowrap font-medium']">
           {{ dimensionText(dimension.key, row.dimensions[dimension.key] ?? null, result.labels, locale) ?? t('report.empty') }}
         </td>
@@ -52,5 +59,6 @@ function background(key: string, value: string | null | undefined) {
       </tr>
     </tbody>
   </DataTable>
+  <Pagination v-if="rows.length" v-model:page="page" :total="rows.length" :pages="pageCount(rows.length)" class="mt-2" />
   <p v-if="result.truncated" class="mt-2 text-[13px] text-muted-foreground">{{ t('report.truncated', { n: result.rows.length }) }}</p>
 </template>
