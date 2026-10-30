@@ -41,6 +41,7 @@ function router() {
       { path: '/interno/pessoas', component: Blank, meta: { internal: true } },
       { path: '/interno/clientes/:id', component: Blank, meta: { internal: true } },
       { path: '/interno/contratos', component: Blank, meta: { internal: true } },
+      { path: '/interno/papeis', component: Blank, meta: { internal: true } },
     ],
   })
 }
@@ -75,7 +76,7 @@ describe('SidebarNav', () => {
     await r.push('/interno')
     const w = mount(SidebarNav, { global: { plugins: [r] } })
     const before = labels(w)
-    expect(before).toEqual(['Dashboard', 'Clientes', 'Equipes', 'Networks do GAM', 'Contratos', 'Sites', 'Ad Manager', 'Page Views', 'Relatórios', 'Resultado', 'Resultado dos clientes', 'Metas', 'Minha comissão', 'Comissões', 'Equipe Groone', 'Papéis da equipe', 'Papéis e permissões', 'Custos'])
+    expect(before).toEqual(['Dashboard', 'Clientes', 'Equipes', 'Networks do GAM', 'Contratos', 'Sites', 'Ad Manager', 'Page Views', 'Relatórios', 'Resultado', 'Resultado dos clientes', 'Metas', 'Minha comissão', 'Comissões', 'Equipe Groone', 'Papéis da equipe', 'Custos'])
     expect(w.findAll('nav div').map((d) => d.text())).toEqual(['Clientes', 'Relatórios', 'Empresa'])
 
     session.set(me('c', ['sites.view']))
@@ -101,7 +102,7 @@ describe('SidebarNav', () => {
     const r = router()
     await r.push('/interno')
     const w = mount(SidebarNav, { global: { plugins: [r] } })
-    expect(labels(w)).toEqual(['Dashboard', 'Clientes', 'Equipes', 'Networks do GAM', 'Contratos', 'Sites', 'Ad Manager', 'Page Views', 'Relatórios', 'Resultado', 'Resultado dos clientes', 'Metas', 'Minha comissão', 'Comissões', 'Equipe Groone', 'Papéis da equipe', 'Papéis e permissões', 'Custos'])
+    expect(labels(w)).toEqual(['Dashboard', 'Clientes', 'Equipes', 'Networks do GAM', 'Contratos', 'Sites', 'Ad Manager', 'Page Views', 'Relatórios', 'Resultado', 'Resultado dos clientes', 'Metas', 'Minha comissão', 'Comissões', 'Equipe Groone', 'Papéis da equipe', 'Custos'])
     // Equipes, para a equipe Groone, são as equipes dos clientes, nunca a própria.
     await w.findAll('nav a').find((a) => a.text() === 'Equipes')!.trigger('click')
     await flushPromises()
@@ -127,7 +128,7 @@ describe('SidebarNav', () => {
     const w = mount(SidebarNav, { global: { plugins: [r] } })
     const current = () => w.find('nav [aria-current="page"]').text()
     const cases: [string, string][] = [
-      ['/papeis', 'Papéis e permissões'],
+      ['/interno/papeis', 'Papéis da equipe'],
       ['/interno', 'Clientes'],
       ['/interno/clientes/c', 'Clientes'],
       ['/interno/pessoas', 'Clientes'],

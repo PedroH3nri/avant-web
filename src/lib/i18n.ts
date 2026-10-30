@@ -996,6 +996,21 @@ const dict = {
     'Solo puedes dar permisos que tú mismo tienes.',
   ],
   'role.saved': ['Papel salvo', 'Role saved', 'Rol guardado'],
+  'role.permsCardDesc': [
+    'O que quem tem o papel {role} pode fazer no Avant.',
+    'What people with the {role} role can do in Avant.',
+    'Lo que puede hacer en Avant quien tiene el rol {role}.',
+  ],
+  'role.permsAfter': [
+    'As permissões e as regras de comissão do papel ficam nos cards dele, depois de criar.',
+    'Permissions and commission rules for the role are set in its cards after you create it.',
+    'Los permisos y las reglas de comisión del rol se definen en sus tarjetas después de crearlo.',
+  ],
+  'role.permsReadonly': [
+    'Só quem gerencia papéis muda as permissões.',
+    'Only people who manage roles can change permissions.',
+    'Solo quien gestiona roles cambia los permisos.',
+  ],
   'role.deleted': ['Papel apagado', 'Role deleted', 'Rol borrado'],
   'role.readonly': ['Papéis predefinidos não mudam.', 'Predefined roles do not change.', 'Los roles predefinidos no cambian.'],
   'perm.group.company': ['Empresa', 'Company', 'Empresa'],
