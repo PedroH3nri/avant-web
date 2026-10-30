@@ -1,6 +1,7 @@
 /** Regras de tela da comissão; quem confere de verdade é a API. */
 import type { Lang } from '@/lib/types'
-import type { CommissionEvent, CommissionKind, CommissionRuleInput, CommissionStatus, CommissionTarget, ManagerChange, PersonMonth, WindowMonth } from '@/modules/internal/commissions/types'
+import type { CommissionEvent, CommissionKind, CommissionRuleInput, CommissionStatus, CommissionTarget, PersonMonth, WindowMonth } from '@/modules/internal/commissions/types'
+import type { ManagerChange } from '@/modules/internal/clients/types'
 import { parseAmount } from '@/modules/internal/goals/rules'
 import type { GoalMode } from '@/modules/internal/goals/types'
 

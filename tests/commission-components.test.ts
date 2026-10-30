@@ -64,12 +64,30 @@ describe('card do responsável Groone', () => {
     select.value = 'caio'
     select.dispatchEvent(new Event('change'))
     await flushPromises()
-    expect(document.body.textContent).toContain('param hoje')
+    expect(document.body.textContent).toContain('1 prazo aberto para hoje')
     expect(document.body.textContent).toContain('2 prazos sem responsável passam para Caio')
     select.value = 'bia'
     select.dispatchEvent(new Event('change'))
     await flushPromises()
-    expect(document.body.textContent).toContain('continuam com essa pessoa')
+    expect(document.body.textContent).toContain('continua com Bia')
+  })
+
+  it('com prazos que seguem e outros que param, não se contradiz', async () => {
+    perms.value = new Set(['internal.clients.manage', 'internal.commissions.manage'])
+    managerChange.mockResolvedValue({ continues: 1, stops: 2, arrives: 0 })
+    const card = mount(AccountManagerCard, { props: { client }, attachTo: document.body })
+    await flushPromises()
+    await card.get('button').trigger('click')
+    await flushPromises()
+    const select = document.querySelector<HTMLSelectElement>('#account-manager')!
+    select.value = 'bia'
+    select.dispatchEvent(new Event('change'))
+    await flushPromises()
+    const text = document.body.textContent ?? ''
+    expect(text).toContain('1 prazo aberto continua com Bia')
+    expect(text).toContain('2 prazos abertos param hoje')
+    expect(text).not.toContain('mesmo papel')
+    expect(text.match(/já foi gerado/g)).toHaveLength(1)
   })
 
   it('sem a resposta dos prazos, não afirma que nada muda', async () => {

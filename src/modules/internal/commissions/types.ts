@@ -63,10 +63,3 @@ export interface PersonMonth {
   role_name: string | null
   month: CommissionMonth
 }
-
-/** O que a troca de responsável faria com os prazos (``/internal/clients/{id}/manager-change``). */
-export interface ManagerChange {
-  continues: number
-  stops: number
-  arrives: number
-}

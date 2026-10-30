@@ -16,7 +16,7 @@ import { profileBody, profileInput } from '@/modules/internal/clients/rules'
 import { clientService } from '@/modules/internal/clients/service'
 import type { Client, ClientDetail } from '@/modules/internal/clients/types'
 import { changeNotes, type ChangeNote } from '@/modules/internal/commissions/rules'
-import type { ManagerChange } from '@/modules/internal/commissions/types'
+import type { ManagerChange } from '@/modules/internal/clients/types'
 import { staffService } from '@/modules/internal/staff/service'
 import type { Member } from '@/modules/team/types'
 import { useSession } from '@/stores/session'
@@ -63,9 +63,9 @@ const changeLines = computed(() => {
   const found = preview.value
   const person = next.value
   if (!found || !person) return []
-  return changeNotes(found).map((note) =>
-    note === 'arrives' ? tn(NOTE_KEY[note], found.arrives, { name: person.user.name }) : t(NOTE_KEY[note], { name: person.user.name }),
-  )
+  const counts: Record<ChangeNote, number> = { continues: found.continues, stops: found.stops, arrives: found.arrives, none: 0 }
+  const lines = changeNotes(found).map((note) => tn(NOTE_KEY[note], counts[note], { name: person.user.name }))
+  return found.continues + found.stops > 0 ? [...lines, t('com.manager.earned')] : lines
 })
 const warns = computed(() => (preview.value?.stops ?? 0) > 0)
 

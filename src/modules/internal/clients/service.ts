@@ -1,9 +1,8 @@
 /** Chamadas da API dos clientes no painel interno. */
 
-import type { ManagerChange } from '@/modules/internal/commissions/types'
 import { api, type Query } from '@/lib/api'
 import type { Items, Page } from '@/lib/types'
-import type { AuditEntry, Client, ClientDetail, ClientMember, ClientOption, OwnerInvitation } from '@/modules/internal/clients/types'
+import type { AuditEntry, Client, ClientDetail, ClientMember, ClientOption, ManagerChange, OwnerInvitation } from '@/modules/internal/clients/types'
 
 /** Serviço dos clientes, das equipes deles e dos convites de dono. */
 export const clientService = {
