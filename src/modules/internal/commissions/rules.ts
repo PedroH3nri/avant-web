@@ -2,6 +2,7 @@
 import type { Lang } from '@/lib/types'
 import type { CommissionEvent, CommissionKind, CommissionRuleInput, CommissionStatus, CommissionTarget, PersonMonth, WindowMonth } from '@/modules/internal/commissions/types'
 import { parseAmount } from '@/modules/internal/goals/rules'
+import type { GoalMode } from '@/modules/internal/goals/types'
 
 export const KINDS: CommissionKind[] = ['created', 'reactivated']
 export const TARGETS: CommissionTarget[] = ['client', 'network', 'site']
@@ -107,4 +108,12 @@ export function toIssue(people: PersonMonth[]): PersonMonth[] {
 export function adjustmentValid(amount: string, reason: string, lang: Lang): boolean {
   const value = parseAmount(amount, lang)
   return Number.isFinite(value) && value > 0 && reason.trim().length > 0
+}
+
+/** A meta de cada pessoa do papel no mês (``AAAA-MM``): o valor inteiro, ou dividido por quem tem o papel. */
+export function personGoalAmount(months: string[], mode: GoalMode, people: number, month: string): number | null {
+  const value = Number(months[Number(month.slice(5, 7)) - 1] ?? Number.NaN)
+  if (!Number.isFinite(value)) return null
+  if (mode === 'per_member') return value
+  return people > 0 ? value / people : null
 }

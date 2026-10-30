@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { adjustmentValid, emptyRuleForm, eventOf, formatDay, managerChange, newRuleForm, ruleBody, ruleErrors, splitEvent, takenEvents, toIssue, windowState } from '@/modules/internal/commissions/rules'
+import { adjustmentValid, emptyRuleForm, eventOf, formatDay, managerChange, newRuleForm, personGoalAmount, ruleBody, ruleErrors, splitEvent, takenEvents, toIssue, windowState } from '@/modules/internal/commissions/rules'
 import type { CommissionStatus } from '@/modules/internal/commissions/types'
 
 describe('regras de comissão no papel', () => {
@@ -69,5 +69,18 @@ describe('regra nova', () => {
     expect(newRuleForm(new Set())).toMatchObject({ kind: 'created', target: 'client' })
     expect(newRuleForm(new Set(['client_created']))).toMatchObject({ kind: 'created', target: 'network' })
     expect(newRuleForm(new Set(['client_created', 'network_created', 'site_created']))).toMatchObject({ kind: 'reactivated', target: 'client' })
+  })
+})
+
+describe('meta mensal do papel', () => {
+  const months = Array.from({ length: 12 }, (_, index) => String((index + 1) * 1000))
+  it('por pessoa: cada pessoa tem o valor do mês inteiro', () => {
+    expect(personGoalAmount(months, 'per_member', 3, '2026-10')).toBe(10000)
+  })
+  it('dividida: o valor do mês é dividido por quem tem o papel', () => {
+    expect(personGoalAmount(months, 'split', 4, '2026-10')).toBe(2500)
+  })
+  it('dividida sem ninguém no papel fica sem valor', () => {
+    expect(personGoalAmount(months, 'split', 0, '2026-10')).toBeNull()
   })
 })
