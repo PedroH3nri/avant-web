@@ -174,4 +174,20 @@ describe('SidebarRail', () => {
     expect(testRouter.currentRoute.value.path).toBe('/interno/metas')
     expect(wrapper.emitted('navigate')).toBeTruthy()
   })
+
+  it('na gaveta, o painel só abre no grupo tocado ou no grupo da tela atual', async () => {
+    const session = useSession()
+    session.set(me('g', ['*']))
+    const testRouter = router()
+    await testRouter.push('/')
+    const wrapper = mount(SidebarRail, { props: { drawer: true }, global: { plugins: [testRouter] } })
+    const panel = () => wrapper.find('#rail-panel-drawer')
+    expect(panel().attributes('aria-hidden')).toBe('true')
+    const clients = wrapper.findAll('nav[aria-label="Menu principal"] > *')[1]!
+    await clients.trigger('click')
+    expect(panel().attributes('aria-hidden')).toBe('false')
+    expect(wrapper.findAll('#rail-panel-drawer a')[0]!.text()).toBe('Clientes')
+    await clients.trigger('click')
+    expect(panel().attributes('aria-hidden')).toBe('true')
+  })
 })

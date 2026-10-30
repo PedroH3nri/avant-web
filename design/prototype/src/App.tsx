@@ -318,9 +318,10 @@ function RailSidebar({ screen, go, drawer = false }: { screen: Screen; go: (s: S
   const touched = useRef(false)
   const touchMode = useRef(false)
   const container = useRef<HTMLDivElement | null>(null)
+  const [drawerGroup, setDrawerGroup] = useState<string | null>(owner.items.length > 1 ? owner.key : null)
   useEffect(() => { setHovered(null) }, [screen])
-  const open = drawer || hovered !== null
-  const shown = groups.find((group) => group.key === (hovered ?? lastShown)) ?? owner
+  const open = drawer ? drawerGroup !== null : hovered !== null
+  const shown = groups.find((group) => group.key === (drawer ? drawerGroup : hovered ?? lastShown)) ?? owner
   /** Cancela a troca e o fechamento que ainda estão esperando. */
   const cancel = () => { if (closing.current) clearTimeout(closing.current); if (switching.current) clearTimeout(switching.current) }
   /** Mostra o painel do grupo. */
@@ -340,7 +341,8 @@ function RailSidebar({ screen, go, drawer = false }: { screen: Screen; go: (s: S
   const pick = (group: RailGroup) => {
     const viaTouch = touched.current
     touched.current = false
-    if (group.items.length > 1 && (drawer || viaTouch)) { cancel(); if (!drawer && hovered === group.key) setHovered(null); else show(group.key); return }
+    if (drawer && group.items.length > 1) { setDrawerGroup(drawerGroup === group.key ? null : group.key); return }
+    if (group.items.length > 1 && viaTouch) { cancel(); if (!drawer && hovered === group.key) setHovered(null); else show(group.key); return }
     go(group.items[0].id)
   }
   return (
@@ -371,7 +373,7 @@ function RailSidebar({ screen, go, drawer = false }: { screen: Screen; go: (s: S
       <div
         onMouseEnter={() => { if (closing.current) clearTimeout(closing.current); if (switching.current) clearTimeout(switching.current) }}
         aria-hidden={!open}
-        className={drawer ? 'flex min-w-0 flex-1 flex-col bg-sidebar' : cn('absolute inset-y-0 left-[88px] flex w-[248px] flex-col border-r bg-sidebar shadow-[8px_0_24px_-12px_rgba(0,0,0,0.18)] transition-[opacity,transform] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none',
+        className={drawer ? cn('w-[248px] max-w-[calc(92vw-88px)] flex-col bg-sidebar', open ? 'flex' : 'hidden') : cn('absolute inset-y-0 left-[88px] flex w-[248px] flex-col border-r bg-sidebar shadow-[8px_0_24px_-12px_rgba(0,0,0,0.18)] transition-[opacity,transform] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none',
           open ? 'translate-x-0 opacity-100 duration-300' : 'pointer-events-none -translate-x-3 opacity-0 duration-200')}
       >
         <div className="flex h-14 items-center gap-2 border-b px-4"><span className="text-[14px] font-semibold tracking-tight">{shown.label}</span>{internal && <Badge>Interno</Badge>}</div>
@@ -393,7 +395,7 @@ function Shell({ t, lang, setLang, screen, go, image, children }: { t: T; lang: 
     <div className="flex flex-1">
       <aside className="sticky top-11 z-40 hidden h-[calc(100dvh-2.75rem)] shrink-0 self-start md:block"><RailSidebar screen={screen} go={go} /></aside>
       <Sheet open={open} onOpenChange={setOpen}>
-        <SheetContent side="left" className="w-[336px] max-w-[92vw] p-0 [&>button:first-child]:hidden">
+        <SheetContent side="left" className="w-auto max-w-[92vw] p-0 sm:max-w-[92vw] [&>button:first-child]:hidden">
           <SheetTitle className="sr-only">Menu</SheetTitle>
           <RailSidebar drawer screen={screen} go={nav} />
         </SheetContent>
