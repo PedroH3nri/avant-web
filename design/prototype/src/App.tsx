@@ -363,6 +363,10 @@ const INTERNAL_RAIL: RailGroup[] = [
   { key: 'comissoes', label: 'Comissões', icon: Wallet, items: [{ id: 'comissoes', label: 'Comissões da equipe' }, { id: 'minhacomissao', label: 'Minha comissão' }] },
   { key: 'equipegroone', label: 'Equipe', icon: ShieldCheck, items: [{ id: 'papelcomissao', label: 'Papéis da Equipe Groone' }] },
 ]
+const RAIL_WIDTH = 88
+const OPEN_DELAY = 120
+const SWITCH_DELAY = 250
+const CLOSE_DELAY = 200
 /** Sidebar em trilho: um ícone por grupo; passar o mouse abre, por cima da página, o painel com os itens do grupo. */
 function RailSidebar({ screen, go }: { screen: Screen; go: (s: Screen) => void }) {
   const internal = INTERNAL_SCREENS.includes(screen)
@@ -371,16 +375,21 @@ function RailSidebar({ screen, go }: { screen: Screen; go: (s: Screen) => void }
   const [hovered, setHovered] = useState<string | null>(null)
   const [lastShown, setLastShown] = useState(owner.key)
   const closing = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const switching = useRef<ReturnType<typeof setTimeout> | null>(null)
   useEffect(() => { setHovered(null) }, [screen])
   const open = hovered !== null
   const shown = groups.find((group) => group.key === (hovered ?? lastShown)) ?? owner
-  /** Abre o painel do grupo sob o mouse, cancelando um fechamento pendente. */
-  const hover = (key: string) => { if (closing.current) clearTimeout(closing.current); setHovered(key); setLastShown(key) }
+  /** Cancela a troca e o fechamento que ainda estão esperando. */
+  const cancel = () => { if (closing.current) clearTimeout(closing.current); if (switching.current) clearTimeout(switching.current) }
+  /** Mostra o painel do grupo. */
+  const show = (key: string) => { setHovered(key); setLastShown(key) }
+  /** Abre o painel do grupo sob o mouse depois de uma pequena espera, para o mouse que só passa por cima não trocar os itens. */
+  const hover = (key: string) => { cancel(); if (key === hovered) return; switching.current = setTimeout(() => show(key), open ? SWITCH_DELAY : OPEN_DELAY) }
   /** Fecha o painel com um pequeno atraso, para dar tempo de o mouse chegar nele. */
-  const leave = () => { closing.current = setTimeout(() => setHovered(null), 200) }
+  const leave = () => { if (switching.current) clearTimeout(switching.current); closing.current = setTimeout(() => setHovered(null), CLOSE_DELAY) }
   return (
     <div className="relative flex h-full" onMouseLeave={leave}>
-      <div className="relative z-10 flex w-[72px] shrink-0 flex-col items-center border-r bg-sidebar py-3">
+      <div className="relative z-10 flex shrink-0 flex-col items-center border-r bg-sidebar py-3" style={{ width: RAIL_WIDTH }}>
         <button onClick={() => go(internal ? 'interno' : 'inicio')} aria-label="Avant, início" className="rounded-md p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><Mark size={28} /></button>
         <nav className="mt-4 grid w-full gap-1 px-1.5" aria-label="Grupos do menu">
           {groups.map((group) => {
@@ -388,8 +397,8 @@ function RailSidebar({ screen, go }: { screen: Screen; go: (s: Screen) => void }
             const current = owner.key === group.key
             const showing = open && shown.key === group.key
             return (
-              <button key={group.key} onClick={() => go(group.items[0].id)} onMouseEnter={() => hover(group.key)} onFocus={() => hover(group.key)} aria-current={current ? 'page' : undefined} aria-expanded={group.items.length > 1 ? showing : undefined} title={group.label}
-                className={cn('flex flex-col items-center gap-1 rounded-md py-2 text-[10.5px] font-medium leading-none transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+              <button key={group.key} onClick={() => go(group.items[0].id)} onMouseEnter={() => hover(group.key)} onFocus={() => { cancel(); show(group.key) }} aria-current={current ? 'page' : undefined} aria-expanded={group.items.length > 1 ? showing : undefined} title={group.label}
+                className={cn('flex flex-col items-center gap-1.5 rounded-md py-2.5 text-[12px] font-medium leading-none transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                   current ? 'bg-secondary text-foreground' : showing ? 'bg-accent text-foreground' : 'text-muted-foreground hover:bg-accent hover:text-foreground')}>
                 <Icon className="h-[18px] w-[18px]" />{group.label}
               </button>
@@ -397,16 +406,16 @@ function RailSidebar({ screen, go }: { screen: Screen; go: (s: Screen) => void }
           })}
         </nav>
         <div className="mt-auto grid w-full gap-1 px-1.5">
-          <button onClick={() => go(internal ? 'inicio' : 'interno')} onMouseEnter={leave} title={internal ? 'Voltar ao painel do cliente' : 'Painel interno'} className="flex flex-col items-center gap-1 rounded-md py-2 text-[10.5px] font-medium leading-none text-muted-foreground hover:bg-accent hover:text-foreground">
+          <button onClick={() => go(internal ? 'inicio' : 'interno')} onMouseEnter={leave} title={internal ? 'Voltar ao painel do cliente' : 'Painel interno'} className="flex flex-col items-center gap-1.5 rounded-md py-2.5 text-[12px] font-medium leading-none text-muted-foreground hover:bg-accent hover:text-foreground">
             {internal ? <ArrowLeft className="h-[18px] w-[18px]" /> : <ShieldCheck className="h-[18px] w-[18px]" />}{internal ? 'Cliente' : 'Interno'}
           </button>
           <div className="mt-1 flex justify-center"><Avatar name="Pedro Henrique" size={30} /></div>
         </div>
       </div>
       <div
-        onMouseEnter={() => hovered && hover(hovered)}
+        onMouseEnter={() => { if (closing.current) clearTimeout(closing.current); if (switching.current) clearTimeout(switching.current) }}
         aria-hidden={!open}
-        className={cn('absolute inset-y-0 left-[72px] flex w-[228px] flex-col border-r bg-sidebar shadow-[8px_0_24px_-12px_rgba(0,0,0,0.18)] transition-[opacity,transform] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none',
+        className={cn('absolute inset-y-0 left-[88px] flex w-[248px] flex-col border-r bg-sidebar shadow-[8px_0_24px_-12px_rgba(0,0,0,0.18)] transition-[opacity,transform] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none',
           open ? 'translate-x-0 opacity-100 duration-300' : 'pointer-events-none -translate-x-3 opacity-0 duration-200')}
       >
         <div className="flex h-14 items-center gap-2 border-b px-4"><span className="text-[14px] font-semibold tracking-tight">{shown.label}</span>{internal && <Badge>Interno</Badge>}</div>
