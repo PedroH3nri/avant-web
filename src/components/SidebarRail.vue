@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** Sidebar em trilho: um ícone por grupo; passar o mouse, focar ou tocar abre, por cima da página, o painel com os itens do grupo. Na gaveta do celular, o painel fica sempre ao lado do trilho. */
+/** Sidebar em trilho: um ícone por grupo; passar o mouse, focar ou tocar abre, por cima da página, o painel com os itens do grupo. Na gaveta do celular, o painel abre ao lado do trilho só no grupo tocado ou no grupo da tela atual. */
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { DropdownMenuRoot, DropdownMenuTrigger } from 'reka-ui'
 import { LogOut, UserRound } from 'lucide-vue-next'
@@ -28,14 +28,17 @@ let switching: ReturnType<typeof setTimeout> | null = null
 let touched = false
 let touchMode = false
 
+const drawerGroup = ref<string | null>(groups.value.find((section) => section.items.length > 1 && groupActive(section))?.id ?? null)
+
 const panelId = computed(() => (props.drawer ? 'rail-panel-drawer' : 'rail-panel'))
-const open = computed(() => props.drawer || hovered.value !== null)
-const shown = computed(
-  () =>
-    groups.value.find((section) => section.id === (hovered.value ?? lastShown.value)) ??
+const open = computed(() => (props.drawer ? drawerGroup.value !== null : hovered.value !== null))
+const shown = computed(() =>
+  props.drawer
+    ? (groups.value.find((section) => section.id === drawerGroup.value) ?? null)
+    : (groups.value.find((section) => section.id === (hovered.value ?? lastShown.value)) ??
     groups.value.find((section) => section.items.length > 1 && groupActive(section)) ??
-    groups.value.find((section) => section.items.length > 1) ??
-    null,
+      groups.value.find((section) => section.items.length > 1) ??
+      null),
 )
 watch(() => route.path, () => (hovered.value = null))
 watch(hovered, (value) => {
@@ -62,7 +65,11 @@ function pointer(event: PointerEvent) {
 function pick(section: NavGroup) {
   const viaTouch = touched
   touched = false
-  if (props.drawer || viaTouch) {
+  if (props.drawer) {
+    drawerGroup.value = drawerGroup.value === section.id ? null : section.id
+    return
+  }
+  if (viaTouch) {
     cancel()
     if (!props.drawer && hovered.value === section.id) hovered.value = null
     else show(section)
@@ -186,7 +193,7 @@ const panelItem = (on: boolean) =>
       :inert="!open || undefined"
       :class="
         drawer
-          ? 'flex min-w-0 flex-1 flex-col bg-sidebar'
+          ? cn('w-[248px] max-w-[calc(92vw-88px)] flex-col bg-sidebar', open ? 'flex' : 'hidden')
           : cn(
           'absolute inset-y-0 left-[88px] flex w-[248px] flex-col border-r bg-sidebar shadow-[8px_0_24px_-12px_rgba(0,0,0,0.18)] transition-[opacity,transform] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none',
           open ? 'translate-x-0 opacity-100 duration-300' : 'pointer-events-none -translate-x-3 opacity-0 duration-200',
