@@ -1,11 +1,12 @@
 <script setup lang="ts">
-/** Moldura das telas logadas: sidebar, menu no celular e conteúdo. */
+/** Moldura das telas logadas: trilho no desktop, gaveta com o menu completo no celular e conteúdo. */
 import { ref } from 'vue'
 import { DialogContent, DialogOverlay, DialogPortal, DialogRoot, DialogTitle } from 'reka-ui'
 import { Menu } from 'lucide-vue-next'
 import CompanySwitcher from '@/components/CompanySwitcher.vue'
 import LangSwitch from '@/components/LangSwitch.vue'
 import SidebarNav from '@/components/SidebarNav.vue'
+import SidebarRail from '@/components/SidebarRail.vue'
 import Button from '@/components/ui/Button.vue'
 import { t } from '@/lib/i18n'
 
@@ -14,8 +15,8 @@ const open = ref(false)
 
 <template>
   <div class="flex min-h-full">
-    <aside class="sticky top-0 hidden h-dvh w-[248px] shrink-0 self-start border-r lg:block">
-      <SidebarNav />
+    <aside class="sticky top-0 z-30 hidden h-dvh w-[72px] shrink-0 self-start lg:block">
+      <SidebarRail />
     </aside>
     <DialogRoot v-model:open="open">
       <DialogPortal>

@@ -1,0 +1,114 @@
+import { beforeEach, describe, expect, it } from 'vitest'
+import { mount, flushPromises } from '@vue/test-utils'
+import { createPinia, setActivePinia } from 'pinia'
+import { createMemoryHistory, createRouter } from 'vue-router'
+import { defineComponent } from 'vue'
+import SidebarRail from '@/components/SidebarRail.vue'
+import { useSession } from '@/stores/session'
+import type { Me } from '@/lib/types'
+
+const Blank = defineComponent({ template: '<div />' })
+
+/** A sessão de teste com a Empresa ativa e as permissões. */
+function me(active: string, permissions: string[]): Me {
+  return {
+    user: { id: 'u', email: 'ana@groone.com', name: 'Ana Lima', locale: 'pt', image_url: null },
+    companies: [
+      { id: 'g', name: 'Groone', slug: 'groone', is_owner: false, is_internal: true, image_url: null },
+      { id: 'c', name: 'Cliente', slug: 'cliente', is_owner: true, is_internal: false, image_url: null },
+    ],
+    active_company_id: active,
+    permissions,
+    site_scope: 'all',
+    is_staff: true,
+    mfa_enabled: true,
+    mfa_setup_required: false,
+    display_currency: 'USD',
+    theme: 'system',
+    accent: 'default',
+  }
+}
+
+/** Router de teste com as rotas que o menu usa. */
+function router() {
+  return createRouter({
+    history: createMemoryHistory(),
+    routes: [
+      { path: '/', component: Blank },
+      { path: '/equipe', component: Blank },
+      { path: '/papeis', component: Blank },
+      { path: '/relatorios', component: Blank },
+      { path: '/relatorios/:id', component: Blank },
+      { path: '/interno', component: Blank, meta: { internal: true } },
+      { path: '/interno/pessoas', component: Blank, meta: { internal: true } },
+      { path: '/interno/clientes/:id', component: Blank, meta: { internal: true } },
+      { path: '/interno/contratos', component: Blank, meta: { internal: true } },
+      { path: '/interno/papeis', component: Blank, meta: { internal: true } },
+      { path: '/interno/equipe', component: Blank, meta: { internal: true } },
+    ],
+  })
+}
+
+
+/** Os rótulos dos grupos no trilho. */
+const railLabels = (wrapper: ReturnType<typeof mount>) => wrapper.findAll('nav[aria-label="Menu principal"] > *').map((entry) => entry.text())
+/** Os rótulos dos itens no painel. */
+const panelLabels = (wrapper: ReturnType<typeof mount>) => wrapper.findAll('#rail-panel a').map((link) => link.text())
+
+describe('SidebarRail', () => {
+  beforeEach(() => setActivePinia(createPinia()))
+
+  it('mostra um ícone por grupo e acende o grupo da tela', async () => {
+    const session = useSession()
+    session.set(me('g', ['*']))
+    const testRouter = router()
+    await testRouter.push('/interno/contratos')
+    const wrapper = mount(SidebarRail, { global: { plugins: [testRouter] } })
+    expect(railLabels(wrapper)).toEqual(['Dashboard', 'Clientes', 'Relatórios', 'Empresa'])
+    expect(wrapper.find('nav [aria-current]').text()).toBe('Clientes')
+    expect(wrapper.find('#rail-panel').attributes('aria-hidden')).toBe('true')
+  })
+
+  it('abre o painel do grupo ao passar o mouse, com os mesmos itens da lista', async () => {
+    const session = useSession()
+    session.set(me('g', ['*']))
+    const testRouter = router()
+    await testRouter.push('/interno')
+    const wrapper = mount(SidebarRail, { global: { plugins: [testRouter] } })
+    const [, clients, reports] = wrapper.findAll('nav[aria-label="Menu principal"] > *')
+    await clients!.trigger('mouseenter')
+    expect(wrapper.find('#rail-panel').attributes('aria-hidden')).toBe('false')
+    expect(panelLabels(wrapper)).toEqual(['Clientes', 'Equipes', 'Networks do GAM', 'Contratos', 'Sites'])
+    expect(wrapper.find('#rail-panel [aria-current="page"]').text()).toBe('Clientes')
+    await reports!.trigger('mouseenter')
+    expect(panelLabels(wrapper)).toEqual(['Ad Manager', 'Page Views', 'Relatórios', 'Resultado', 'Resultado dos clientes', 'Metas', 'Minha comissão', 'Comissões'])
+  })
+
+  it('fecha o painel ao abrir uma tela e não abre painel para o Dashboard', async () => {
+    const session = useSession()
+    session.set(me('g', ['*']))
+    const testRouter = router()
+    await testRouter.push('/interno')
+    const wrapper = mount(SidebarRail, { global: { plugins: [testRouter] } })
+    const [dashboard, clients] = wrapper.findAll('nav[aria-label="Menu principal"] > *')
+    await clients!.trigger('mouseenter')
+    await wrapper.findAll('#rail-panel a').find((link) => link.text() === 'Contratos')!.trigger('click')
+    await flushPromises()
+    expect(testRouter.currentRoute.value.path).toBe('/interno/contratos')
+    expect(wrapper.find('#rail-panel').attributes('aria-hidden')).toBe('true')
+    await dashboard!.trigger('mouseenter')
+    expect(wrapper.find('#rail-panel').attributes('aria-hidden')).toBe('true')
+  })
+
+  it('clicar no grupo abre o primeiro item dele', async () => {
+    const session = useSession()
+    session.set(me('g', ['*']))
+    const testRouter = router()
+    await testRouter.push('/')
+    const wrapper = mount(SidebarRail, { global: { plugins: [testRouter] } })
+    const company = wrapper.findAll('nav[aria-label="Menu principal"] > *')[3]!
+    await company.trigger('click')
+    await flushPromises()
+    expect(testRouter.currentRoute.value.path).toBe('/interno/equipe')
+  })
+})
