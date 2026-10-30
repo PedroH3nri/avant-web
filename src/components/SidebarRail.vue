@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** Sidebar em trilho: um ícone por grupo; passar o mouse ou focar abre, por cima da página, o painel com os itens do grupo. */
+/** Sidebar em trilho: um ícone por grupo; passar o mouse, focar ou tocar abre, por cima da página, o painel com os itens do grupo. Na gaveta do celular, o painel fica sempre ao lado do trilho. */
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { DropdownMenuRoot, DropdownMenuTrigger } from 'reka-ui'
 import { LogOut, UserRound } from 'lucide-vue-next'
@@ -14,16 +14,62 @@ import { cn } from '@/lib/utils'
 const OPEN_DELAY_MS = 120
 const SWITCH_DELAY_MS = 250
 const CLOSE_DELAY_MS = 200
+const props = withDefaults(defineProps<{ drawer?: boolean }>(), { drawer: false })
+const emit = defineEmits<{ navigate: [] }>()
 const hovered = ref<string | null>(null)
-const { session, route, ready, groups, active, groupActive, openLink, account, logout } = useNavigation(() => (hovered.value = null))
+const { session, route, ready, groups, active, groupActive, openLink, account, logout } = useNavigation(() => {
+  hovered.value = null
+  emit('navigate')
+})
 const lastShown = ref<string | null>(null)
+const container = ref<HTMLElement | null>(null)
 let closing: ReturnType<typeof setTimeout> | null = null
 let switching: ReturnType<typeof setTimeout> | null = null
+let touched = false
+let touchMode = false
 
-const open = computed(() => hovered.value !== null)
-const shown = computed(() => groups.value.find((section) => section.id === (hovered.value ?? lastShown.value)) ?? null)
+const panelId = computed(() => (props.drawer ? 'rail-panel-drawer' : 'rail-panel'))
+const open = computed(() => props.drawer || hovered.value !== null)
+const shown = computed(
+  () =>
+    groups.value.find((section) => section.id === (hovered.value ?? lastShown.value)) ??
+    groups.value.find((section) => section.items.length > 1 && groupActive(section)) ??
+    groups.value.find((section) => section.items.length > 1) ??
+    null,
+)
 watch(() => route.path, () => (hovered.value = null))
-onBeforeUnmount(cancel)
+watch(hovered, (value) => {
+  document.removeEventListener('pointerdown', outside)
+  if (value !== null && !props.drawer) document.addEventListener('pointerdown', outside)
+})
+onBeforeUnmount(() => {
+  cancel()
+  document.removeEventListener('pointerdown', outside)
+})
+
+/** No toque, fecha o painel quando a pessoa toca fora do menu. */
+function outside(event: PointerEvent) {
+  if (!container.value?.contains(event.target as Node)) hovered.value = null
+}
+
+/** Guarda se o último toque no menu foi com o dedo ou a caneta, que não têm hover. */
+function pointer(event: PointerEvent) {
+  touchMode = event.pointerType !== 'mouse'
+  touched = touchMode
+}
+
+/** Clique no grupo: no toque e na gaveta abre ou fecha o painel do grupo; com o mouse vai para o primeiro item. */
+function pick(section: NavGroup) {
+  const viaTouch = touched
+  touched = false
+  if (props.drawer || viaTouch) {
+    cancel()
+    if (!props.drawer && hovered.value === section.id) hovered.value = null
+    else show(section)
+    return
+  }
+  void openLink(null, section.items[0]!.to)
+}
 
 /** Cancela a troca e o fechamento que ainda estão esperando. */
 function cancel() {
@@ -44,6 +90,7 @@ function show(section: NavGroup) {
 
 /** Abre o painel do grupo sob o mouse depois de uma pequena espera, para o mouse que só passa por cima não trocar os itens. */
 function hover(section: NavGroup) {
+  if (props.drawer || touched) return
   cancel()
   if (section.id === hovered.value) return
   switching = setTimeout(() => show(section), open.value ? SWITCH_DELAY_MS : OPEN_DELAY_MS)
@@ -51,12 +98,20 @@ function hover(section: NavGroup) {
 
 /** Fecha o painel com um pequeno atraso, para dar tempo de o mouse chegar nele. */
 function leave() {
+  if (props.drawer || touchMode) return
   if (switching) clearTimeout(switching)
   closing = setTimeout(() => (hovered.value = null), CLOSE_DELAY_MS)
 }
 
+/** Foco pelo teclado abre o painel do grupo na hora; o foco que vem do toque fica com o clique. */
+function focusGroup(section: NavGroup) {
+  if (props.drawer || touched) return
+  show(section)
+}
+
 /** Fecha o painel quando o foco sai do menu inteiro. */
 function blur(event: FocusEvent) {
+  if (props.drawer) return
   const next = event.relatedTarget as Node | null
   if (!next || !(event.currentTarget as HTMLElement).contains(next)) hovered.value = null
 }
@@ -76,7 +131,7 @@ const panelItem = (on: boolean) =>
 </script>
 
 <template>
-  <div class="relative flex h-full" @mouseleave="leave" @focusout="blur" @keydown.esc="hovered = null">
+  <div ref="container" class="relative flex h-full" @mouseleave="leave" @focusout="blur" @keydown.esc="hovered = null" @pointerdown="pointer">
     <div class="relative z-10 flex w-[88px] shrink-0 flex-col items-center border-r bg-sidebar py-3">
       <RouterLink to="/" class="rounded-md p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" @mouseenter="leave">
         <Mark :size="28" /><span class="sr-only">Avant</span>
@@ -89,7 +144,7 @@ const panelItem = (on: boolean) =>
             :aria-current="groupActive(section) ? 'page' : undefined"
             :class="railItem(section)"
             @mouseenter="hover(section)"
-            @focus="show(section)"
+            @focus="focusGroup(section)"
             @click="openLink($event, section.items[0]!.to)"
           >
             <component :is="section.icon" />{{ t(section.label) }}
@@ -99,11 +154,11 @@ const panelItem = (on: boolean) =>
             type="button"
             :aria-current="groupActive(section) ? 'true' : undefined"
             :aria-expanded="open && shown?.id === section.id"
-            aria-controls="rail-panel"
+            :aria-controls="panelId"
             :class="railItem(section)"
             @mouseenter="hover(section)"
-            @focus="show(section)"
-            @click="openLink(null, section.items[0]!.to)"
+            @focus="focusGroup(section)"
+            @click="pick(section)"
           >
             <component :is="section.icon" />{{ t(section.label) }}
           </button>
@@ -126,11 +181,13 @@ const panelItem = (on: boolean) =>
       </div>
     </div>
     <div
-      id="rail-panel"
+      :id="panelId"
       :aria-hidden="!open"
       :inert="!open || undefined"
       :class="
-        cn(
+        drawer
+          ? 'flex min-w-0 flex-1 flex-col bg-sidebar'
+          : cn(
           'absolute inset-y-0 left-[88px] flex w-[248px] flex-col border-r bg-sidebar shadow-[8px_0_24px_-12px_rgba(0,0,0,0.18)] transition-[opacity,transform] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none',
           open ? 'translate-x-0 opacity-100 duration-300' : 'pointer-events-none -translate-x-3 opacity-0 duration-200',
         )
