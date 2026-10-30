@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { adjustmentValid, emptyRuleForm, eventOf, formatDay, managerChange, newRuleForm, ruleBody, ruleErrors, splitEvent, takenEvents, toIssue, windowState } from '@/modules/internal/commissions/rules'
+import { activeByRole, adjustmentValid, discount, emptyRuleForm, eventOf, formatDay, localToday, managerChange, newRuleForm, personGoalAmount, ruleBody, ruleErrors, splitEvent, takenEvents, toIssue, windowState } from '@/modules/internal/commissions/rules'
 import type { CommissionStatus } from '@/modules/internal/commissions/types'
 
 describe('regras de comissão no papel', () => {
@@ -69,5 +69,38 @@ describe('regra nova', () => {
     expect(newRuleForm(new Set())).toMatchObject({ kind: 'created', target: 'client' })
     expect(newRuleForm(new Set(['client_created']))).toMatchObject({ kind: 'created', target: 'network' })
     expect(newRuleForm(new Set(['client_created', 'network_created', 'site_created']))).toMatchObject({ kind: 'reactivated', target: 'client' })
+  })
+})
+
+describe('meta mensal do papel', () => {
+  const months = Array.from({ length: 12 }, (_, index) => String((index + 1) * 1000))
+  it('por pessoa: cada pessoa tem o valor do mês inteiro', () => {
+    expect(personGoalAmount(months, 'per_member', 3, '2026-10')).toBe(10000)
+  })
+  it('dividida: o valor do mês é dividido por quem tem o papel', () => {
+    expect(personGoalAmount(months, 'split', 4, '2026-10')).toBe(2500)
+  })
+  it('dividida sem ninguém no papel fica sem valor', () => {
+    expect(personGoalAmount(months, 'split', 0, '2026-10')).toBeNull()
+  })
+})
+
+describe('correções da revisão', () => {
+  it('o desconto vem negativo da API e aparece como valor positivo', () => {
+    expect(discount('-40.00')).toBe(40)
+    expect(discount('0.00')).toBe(0)
+    expect(discount(null)).toBe(0)
+  })
+
+  it('o dia de hoje é o do relógio local, não o de UTC', () => {
+    expect(localToday(new Date(2026, 9, 31, 22, 30))).toBe('2026-10-31')
+    expect(localToday(new Date(2026, 0, 5, 0, 10))).toBe('2026-01-05')
+  })
+
+  it('conta só as pessoas ativas de cada papel', () => {
+    const member = (role: string | null, status: 'active' | 'suspended') => ({ role: role ? { id: role } : null, status })
+    const counts = activeByRole([member('r1', 'active'), member('r1', 'suspended'), member('r1', 'active'), member('r2', 'active'), member(null, 'active')])
+    expect(counts.get('r1')).toBe(2)
+    expect(counts.get('r2')).toBe(1)
   })
 })

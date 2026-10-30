@@ -13,24 +13,28 @@ import { errorText, lang, locale, t, type Key } from '@/lib/i18n'
 import { formatMetric, toNumber } from '@/lib/metrics'
 import { td, th } from '@/lib/table'
 import CommissionKpis from '@/modules/internal/commissions/components/CommissionKpis.vue'
-import { STATUS_TONE, formatDay, windowState } from '@/modules/internal/commissions/rules'
+import { STATUS_TONE, discount, formatDay, localToday, windowState } from '@/modules/internal/commissions/rules'
 import { commissionService } from '@/modules/internal/commissions/service'
 import type { MyCommissions, WindowMonth } from '@/modules/internal/commissions/types'
 import { formatAmount, monthOptions } from '@/modules/internal/goals/rules'
 
-const today = new Date().toISOString().slice(0, 10)
+const today = localToday()
 const months = computed(() => monthOptions(today, locale.value))
 const month = ref(today.slice(0, 7))
 const data = ref<MyCommissions | null>(null)
 const loadError = ref<string | null>(null)
+let ticket = 0
 
-/** Carrega a minha comissão do mês escolhido. */
+/** Carrega a minha comissão do mês escolhido; uma resposta de um mês antigo é ignorada. */
 async function load() {
+  const mine = ++ticket
   loadError.value = null
+  data.value = null
   try {
-    data.value = await commissionService.mine(month.value)
+    const found = await commissionService.mine(month.value)
+    if (mine === ticket) data.value = found
   } catch (error) {
-    loadError.value = errorText(error instanceof ApiError ? error.code : 'unknown')
+    if (mine === ticket) loadError.value = errorText(error instanceof ApiError ? error.code : 'unknown')
   }
 }
 onMounted(load)
@@ -39,7 +43,7 @@ watch(month, load)
 /** Valor em dólar no idioma da pessoa. */
 const money = (value: string) => formatMetric(toNumber(value), 'currency', locale.value)
 /** Valor descontado, com o sinal de menos; zero vira traço. */
-const minus = (value: string) => ((toNumber(value) ?? 0) === 0 ? '–' : `− ${money(value)}`)
+const minus = (value: string) => (discount(value) === 0 ? '–' : `− ${money(String(discount(value)))}`)
 /** Nome do mês da API (``AAAA-MM-DD``). */
 const monthName = (iso: string) => new Intl.DateTimeFormat(locale.value, { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${iso}T00:00:00Z`))
 const openWindows = computed(() => (data.value?.windows ?? []).filter((entry) => ['ends', 'endless'].includes(windowState(entry, today).kind)).length)

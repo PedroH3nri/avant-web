@@ -208,7 +208,8 @@ async function saveProfile() {
   if (!current || !profileOk(profile.value)) return
   profileBusy.value = true
   try {
-    const fresh = await clientService.update(current.id, { profile: profileBody(profile.value) })
+    const managerId = current.profile?.account_manager_id ?? null
+    const fresh = await clientService.update(current.id, { profile: profileBody({ ...profile.value, account_manager_id: managerId }) })
     client.value = { ...current, ...fresh }
     editing.value = false
     toast.success(t('common.saved'))
