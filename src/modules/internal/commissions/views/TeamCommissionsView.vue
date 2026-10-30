@@ -25,14 +25,14 @@ import { formatMetric, toNumber } from '@/lib/metrics'
 import { td, th } from '@/lib/table'
 import AdjustmentDialog from '@/modules/internal/commissions/components/AdjustmentDialog.vue'
 import CommissionKpis from '@/modules/internal/commissions/components/CommissionKpis.vue'
-import { STATUS_TONE, toIssue } from '@/modules/internal/commissions/rules'
+import { STATUS_TONE, discount, localToday, toIssue } from '@/modules/internal/commissions/rules'
 import { commissionService } from '@/modules/internal/commissions/service'
 import type { PersonMonth, WindowMonth } from '@/modules/internal/commissions/types'
 import { formatAmount, monthOptions } from '@/modules/internal/goals/rules'
 import { useSession } from '@/stores/session'
 
 const session = useSession()
-const today = new Date().toISOString().slice(0, 10)
+const today = localToday()
 const months = computed(() => monthOptions(today, locale.value))
 const month = ref(today.slice(0, 7))
 const people = ref<PersonMonth[] | null>(null)
@@ -47,30 +47,45 @@ const issuing = ref(false)
 const startsOn = ref('')
 const savedStart = ref<string | null>(null)
 const startBusy = ref(false)
+let ticket = 0
+let detailTicket = 0
 
-/** Carrega a comissão de cada pessoa no mês e, para quem administra, a data de início. */
+/** Carrega a comissão de cada pessoa no mês; uma resposta de um mês antigo é ignorada. */
 async function load() {
+  const mine = ++ticket
   loadError.value = null
+  people.value = null
   try {
-    const [found, settings] = await Promise.all([commissionService.team(month.value), canManage.value ? commissionService.settings() : Promise.resolve(null)])
-    people.value = found.items
-    if (settings) {
-      savedStart.value = settings.starts_on
-      startsOn.value = settings.starts_on ?? ''
-    }
+    const found = await commissionService.team(month.value)
+    if (mine === ticket) people.value = found.items
   } catch (error) {
-    loadError.value = errorText(error instanceof ApiError ? error.code : 'unknown')
+    if (mine === ticket) loadError.value = errorText(error instanceof ApiError ? error.code : 'unknown')
   }
 }
-onMounted(load)
+/** A data de início gravada, para quem administra; o campo só muda aqui e ao salvar. */
+async function loadStart() {
+  if (!canManage.value) return
+  try {
+    const settings = await commissionService.settings()
+    savedStart.value = settings.starts_on
+    startsOn.value = settings.starts_on ?? ''
+  } catch (error) {
+    toast.error(errorText(error instanceof ApiError ? error.code : 'unknown'))
+  }
+}
+onMounted(() => {
+  void load()
+  void loadStart()
+})
 watch(month, load)
 
 /** Valor em dólar no idioma da pessoa. */
 const money = (value: string) => formatMetric(toNumber(value), 'currency', locale.value)
 /** Valor descontado, com o sinal de menos; zero vira traço. */
-const minus = (value: string) => ((toNumber(value) ?? 0) === 0 ? '–' : `− ${money(value)}`)
+const minus = (value: string) => (discount(value) === 0 ? '–' : `− ${money(String(discount(value)))}`)
 /** Soma um campo do mês de todas as pessoas, em texto com duas casas. */
-const sum = (list: PersonMonth[], field: 'total' | 'adjustments') => list.reduce((total, person) => total + (toNumber(person.month[field]) ?? 0), 0).toFixed(2)
+const sum = (list: PersonMonth[], field: 'total' | 'adjustments') =>
+  list.reduce((total, person) => total + (field === 'adjustments' ? discount(person.month[field]) : (toNumber(person.month[field]) ?? 0)), 0).toFixed(2)
 const ready = computed(() => toIssue(people.value ?? []))
 const monthLabel = computed(() => months.value.find((item) => item.value === month.value)?.label ?? month.value)
 const kpis = computed(() => {
@@ -85,28 +100,35 @@ const kpis = computed(() => {
 
 /** Abre os prazos da pessoa no mês. */
 async function openDetail(person: PersonMonth) {
+  const mine = ++detailTicket
   detail.value = person
   detailWindows.value = null
   try {
-    detailWindows.value = (await commissionService.person(person.user.id, month.value)).items
+    const found = (await commissionService.person(person.user.id, month.value)).items
+    if (mine === detailTicket) detailWindows.value = found
   } catch (error) {
-    toast.error(errorText(error instanceof ApiError ? error.code : 'unknown'))
+    if (mine === detailTicket) toast.error(errorText(error instanceof ApiError ? error.code : 'unknown'))
   }
 }
-/** Marca como emitido o mês das pessoas da lista. */
+/** Marca como emitido o mês das pessoas da lista; segue mesmo se uma falhar e diz quem ficou. */
 async function issue(list: PersonMonth[]) {
+  if (issuing.value) return
   issuing.value = true
-  try {
-    for (const person of list) await commissionService.issue(person.user.id, month.value)
-    const [first] = list
-    const title = list.length === 1 && first ? t('com.team.issuedOne', { name: first.user.name }) : t('com.team.issuedAll', { n: list.length })
-    toast.success(title, { description: t('com.team.issuedDesc') })
-  } catch (error) {
-    toast.error(errorText(error instanceof ApiError ? error.code : 'unknown'))
-  } finally {
-    issuing.value = false
-    await load()
+  const failed: PersonMonth[] = []
+  for (const person of list) {
+    try {
+      await commissionService.issue(person.user.id, month.value)
+    } catch {
+      failed.push(person)
+    }
   }
+  issuing.value = false
+  const done = list.length - failed.length
+  const [first] = list
+  if (failed.length > 0) toast.error(t('com.team.issuedPartial', { done, failed: failed.length, names: failed.map((person) => person.user.name).join(', ') }))
+  else if (list.length === 1 && first) toast.success(t('com.team.issuedOne', { name: first.user.name }), { description: t('com.team.issuedDesc') })
+  else toast.success(t('com.team.issuedAll', { n: done }), { description: t('com.team.issuedDesc') })
+  await load()
 }
 /** Grava a data de início da comissão no Avant. */
 async function saveStart() {
@@ -114,6 +136,7 @@ async function saveStart() {
   try {
     const saved = await commissionService.setStart(startsOn.value)
     savedStart.value = saved.starts_on
+    startsOn.value = saved.starts_on ?? ''
     toast.success(t('com.start.saved'))
     await load()
   } catch (error) {
@@ -170,8 +193,8 @@ async function saveStart() {
                 <MenuContent align="end" class="w-52">
                   <MenuItem @select="openDetail(person)">{{ t('com.action.view') }}</MenuItem>
                   <template v-if="canManage">
-                    <MenuItem :disabled="person.month.status !== 'validated'" @select="adjusting = person">{{ t('com.action.adjust') }}</MenuItem>
-                    <MenuItem :disabled="person.month.status !== 'validated'" @select="issue([person])">{{ t('com.action.issue') }}</MenuItem>
+                    <MenuItem :disabled="issuing || person.month.status !== 'validated'" @select="adjusting = person">{{ t('com.action.adjust') }}</MenuItem>
+                    <MenuItem :disabled="issuing || person.month.status !== 'validated'" @select="issue([person])">{{ t('com.action.issue') }}</MenuItem>
                   </template>
                 </MenuContent>
               </DropdownMenuRoot>

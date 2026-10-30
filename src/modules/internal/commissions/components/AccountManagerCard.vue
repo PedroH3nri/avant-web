@@ -23,37 +23,39 @@ import { useSession } from '@/stores/session'
 const props = defineProps<{ client: ClientDetail }>()
 const emit = defineEmits<{ saved: [client: Client] }>()
 const session = useSession()
-const staff = ref<Member[]>([])
+const staff = ref<Member[] | null>(null)
+const staffError = ref(false)
 const open = ref(false)
 const picked = ref('')
 const busy = ref(false)
 
-/** A equipe Groone inteira, página por página. */
+/** A equipe Groone inteira, com os suspensos, para achar o responsável e o papel dele. */
 async function loadStaff() {
-  const found: Member[] = []
-  for (let page = 1; ; page++) {
-    const result = await staffService.list({ page })
-    found.push(...result.items)
-    if (page >= result.pages) break
+  staffError.value = false
+  try {
+    staff.value = (await staffService.options()).items
+  } catch {
+    staffError.value = true
   }
-  staff.value = found.filter((member) => member.status === 'active')
 }
-onMounted(() => void loadStaff().catch(() => (staff.value = [])))
+onMounted(loadStaff)
 
 const managerId = computed(() => props.client.profile?.account_manager_id ?? null)
-const manager = computed(() => staff.value.find((member) => member.user.id === managerId.value) ?? null)
+const manager = computed(() => staff.value?.find((member) => member.user.id === managerId.value) ?? null)
 const canChange = computed(() => !!props.client.profile && session.can('internal.clients.manage') && (managerId.value === null || session.can('internal.commissions.manage')))
 const options = computed(() =>
-  staff.value
-    .filter((member) => member.user.id !== managerId.value)
+  (staff.value ?? [])
+    .filter((member) => member.status === 'active' && member.user.id !== managerId.value)
     .map((member) => ({ value: member.user.id, label: `${member.user.name} · ${member.role ? pick(member.role.name) : t('com.manager.noRole')}` })),
 )
-const next = computed(() => staff.value.find((member) => member.user.id === picked.value) ?? null)
-const change = computed(() => managerChange(managerId.value === null ? null : (manager.value?.role?.id ?? ''), next.value?.role?.id ?? null))
+const next = computed(() => staff.value?.find((member) => member.user.id === picked.value) ?? null)
+/** O papel do responsável de hoje como o core vê: só conta quem está ativo na Groone. */
+const currentRole = computed(() => (manager.value?.status === 'active' ? (manager.value.role?.id ?? '') : ''))
+const change = computed(() => managerChange(managerId.value === null ? null : currentRole.value, next.value?.role?.id ?? null))
 const changeText = computed(() => (next.value ? t(`com.manager.${change.value}` as Key, { name: next.value.user.name }) : ''))
 
 watch(open, (opened) => {
-  if (opened) picked.value = options.value[0]?.value ?? ''
+  if (opened) picked.value = ''
 })
 
 /** Grava o novo responsável no cadastro do cliente. */
@@ -76,7 +78,9 @@ async function save() {
 
 <template>
   <Card :title="t('com.manager.title')" :desc="t('com.manager.desc')" :footer-note="canChange ? t('com.manager.note') : undefined">
-    <div v-if="manager" class="flex items-center gap-3">
+    <p v-if="staffError" class="text-[14px] text-bad">{{ errorText('unknown') }}</p>
+    <p v-else-if="staff === null" class="text-[14px] text-muted-foreground" role="status">{{ t('common.loading') }}</p>
+    <div v-else-if="manager" class="flex items-center gap-3">
       <Avatar :name="manager.user.name" :image-url="manager.user.image_url" />
       <div>
         <div class="text-[14px] font-medium">{{ manager.user.name }}</div>
@@ -85,7 +89,7 @@ async function save() {
     </div>
     <p v-else class="text-[14px] text-muted-foreground">{{ t('com.manager.none') }}</p>
     <template v-if="canChange" #footer>
-      <Button size="sm" variant="outline" class="bg-card" :disabled="options.length === 0" @click="open = true">
+      <Button size="sm" variant="outline" class="bg-card" :disabled="staff === null || options.length === 0" @click="open = true">
         {{ managerId ? t('com.manager.change') : t('com.manager.set') }}
       </Button>
     </template>
@@ -97,7 +101,7 @@ async function save() {
   >
     <div class="grid gap-4">
       <Field id="account-manager" :label="t('com.manager.pick')">
-        <NativeSelect id="account-manager" v-model="picked" :options="options" />
+        <NativeSelect id="account-manager" v-model="picked" :options="[{ value: '', label: t('com.manager.choose') }, ...options]" />
       </Field>
       <div v-if="next" :class="cn('flex gap-3 rounded-md border p-3 text-[13px]', change === 'stops' ? 'border-ochre/40 bg-ochre-soft' : 'bg-muted')">
         <Info :class="cn('mt-0.5 size-4 shrink-0', change === 'stops' ? 'text-ochre' : 'text-muted-foreground')" aria-hidden="true" />

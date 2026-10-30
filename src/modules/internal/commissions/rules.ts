@@ -117,3 +117,22 @@ export function personGoalAmount(months: string[], mode: GoalMode, people: numbe
   if (mode === 'per_member') return value
   return people > 0 ? value / people : null
 }
+
+/** O desconto como valor positivo: a API manda os descontos lançados com sinal de menos. */
+export function discount(value: string | null): number {
+  return Math.abs(Number(value ?? 0)) || 0
+}
+
+/** O dia de hoje (``AAAA-MM-DD``) no relógio de quem usa, não em UTC. */
+export function localToday(now: Date = new Date()): string {
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+}
+
+/** Quantas pessoas ativas cada papel tem, como a meta dividida conta. */
+export function activeByRole(members: { role: { id: string } | null; status: string }[]): Map<string, number> {
+  const counts = new Map<string, number>()
+  for (const member of members) {
+    if (member.status === 'active' && member.role) counts.set(member.role.id, (counts.get(member.role.id) ?? 0) + 1)
+  }
+  return counts
+}

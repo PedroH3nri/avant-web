@@ -20,7 +20,8 @@ import { formatMetric } from '@/lib/metrics'
 import { td, th } from '@/lib/table'
 import { cn } from '@/lib/utils'
 import RuleDialog from '@/modules/internal/commissions/components/RuleDialog.vue'
-import { personGoalAmount, splitEvent } from '@/modules/internal/commissions/rules'
+import { activeByRole, localToday, personGoalAmount, splitEvent } from '@/modules/internal/commissions/rules'
+import { staffService } from '@/modules/internal/staff/service'
 import { commissionService } from '@/modules/internal/commissions/service'
 import type { CommissionRule } from '@/modules/internal/commissions/types'
 import NativeSelect from '@/components/ui/NativeSelect.vue'
@@ -52,7 +53,11 @@ const removeOpen = computed({ get: () => removing.value !== null, set: (value) =
 const canManage = computed(() => session.can('internal.commissions.manage'))
 const canRoles = computed(() => session.can('roles.manage'))
 const current = computed(() => roles.value.find((role) => role.id === roleId.value) ?? null)
-const today = new Date().toISOString().slice(0, 10)
+const today = localToday()
+const active = ref<Map<string, number>>(new Map())
+const goalKey = ref(0)
+const canSeeRoles = computed(() => session.can('roles.view'))
+let rulesTicket = 0
 const templates = ref<GoalTemplate[]>([])
 const roleGoals = ref<RoleGoal[]>([])
 const templatesOpen = ref(false)
@@ -60,20 +65,21 @@ const goalBusy = ref(false)
 const MODES: GoalMode[] = ['per_member', 'split']
 const goal = computed(() => roleGoals.value.find((item) => item.role_id === roleId.value) ?? null)
 const template = computed(() => templates.value.find((item) => item.id === goal.value?.goal_template_id) ?? null)
-const templateOptions = computed(() => [{ value: '', label: t('goals.noGoalOption') }, ...templates.value.filter((item) => !item.is_company_goal).map((item) => ({ value: item.id, label: item.name.includes(String(item.year)) ? item.name : `${item.name} (${item.year})` }))])
+const templateOptions = computed(() => [{ value: '', label: t('goals.noGoalOption') }, ...templates.value.filter((item) => !item.is_company_goal || item.id === goal.value?.goal_template_id).map((item) => ({ value: item.id, label: item.name.includes(String(item.year)) ? item.name : `${item.name} (${item.year})` }))])
 /** A frase do valor da meta de cada pessoa no mês atual. */
 const goalText = computed(() => {
   const chosen = template.value
   const role = current.value
   if (!chosen || !goal.value || !role) return ''
   if (chosen.year !== Number(today.slice(0, 4))) return t('com.goal.otherYear', { year: chosen.year, current: today.slice(0, 4) })
-  const amount = personGoalAmount(chosen.months, goal.value.goal_mode, role.member_count, today.slice(0, 7))
+  const people = active.value.get(role.id) ?? 0
+  const amount = personGoalAmount(chosen.months, goal.value.goal_mode, people, today.slice(0, 7))
   if (amount === null) return t('com.goal.noPeople')
   const month = monthOptions(today, locale.value)[0]?.label ?? ''
   const text = t('com.goal.amount', { month, amount: formatMetric(amount, 'currency', locale.value) })
   if (goal.value.goal_mode !== 'split') return `${text}.`
   const total = formatMetric(Number(chosen.months[Number(today.slice(5, 7)) - 1]), 'currency', locale.value)
-  return `${text} ${t('com.goal.splitOf', { total, n: role.member_count })}.`
+  return `${text} ${t('com.goal.splitOf', { total, n: people })}.`
 })
 
 /** Todos os papéis da Company Groone, página por página (os predefinidos são dos clientes). */
@@ -95,12 +101,18 @@ async function countRules(list: Role[]) {
 /** Carrega papéis, permissões e as regras do papel escolhido. */
 async function load() {
   loadError.value = null
+  if (!canSeeRoles.value) {
+    loaded.value = true
+    return
+  }
+  void loadGoals()
+  if (canRoles.value) void teamService.permissions().then((catalog) => (permissions.value = catalog.items), () => (permissions.value = []))
   try {
-    const [list, catalog] = await Promise.all([allRoles(), teamService.permissions(), loadGoals()])
+    const list = await allRoles()
     roles.value = list
-    permissions.value = catalog.items
+    const before = roleId.value
     if (!list.some((role) => role.id === roleId.value)) roleId.value = list[0]?.id ?? ''
-    await Promise.all([loadRules(), countRules(list)])
+    await Promise.all([roleId.value === before ? loadRules() : Promise.resolve(), countRules(list)])
     loaded.value = true
   } catch (error) {
     loadError.value = errorText(error instanceof ApiError ? error.code : 'unknown')
@@ -109,11 +121,17 @@ async function load() {
 onMounted(load)
 watch(() => session.me?.active_company_id, load)
 
-/** Os modelos de meta e a meta de cada papel. */
+/** Os modelos de meta, a meta de cada papel e quantas pessoas ativas cada papel tem; se falhar,
+ * só o card da meta fica sem dados. */
 async function loadGoals() {
-  const [templateList, goalList] = await Promise.all([goalService.templates(), goalService.roleGoals()])
-  templates.value = templateList.items
-  roleGoals.value = goalList.items
+  try {
+    const [templateList, goalList, staff] = await Promise.all([goalService.templates(), goalService.roleGoals(), staffService.options()])
+    templates.value = templateList.items
+    roleGoals.value = goalList.items
+    active.value = activeByRole(staff.items)
+  } catch (error) {
+    toast.error(errorText(error instanceof ApiError ? error.code : 'unknown'))
+  }
 }
 /** Troca o modelo ou o modo da meta do papel escolhido. */
 async function setGoal(templateId: string, mode: GoalMode) {
@@ -125,6 +143,7 @@ async function setGoal(templateId: string, mode: GoalMode) {
     roleGoals.value = (await goalService.roleGoals()).items
     toast.success(t('goals.roleSaved', { role: pick(role.name) }))
   } catch (error) {
+    goalKey.value++
     toast.error(errorText(error instanceof ApiError ? error.code : 'unknown'))
   } finally {
     goalBusy.value = false
@@ -133,8 +152,12 @@ async function setGoal(templateId: string, mode: GoalMode) {
 
 /** As regras do papel escolhido. */
 async function loadRules() {
-  rules.value = roleId.value ? (await commissionService.rules(roleId.value)).items : []
-  counts.value = new Map(counts.value).set(roleId.value, rules.value.length)
+  const mine = ++rulesTicket
+  const id = roleId.value
+  const found = id ? (await commissionService.rules(id)).items : []
+  if (mine !== rulesTicket) return
+  rules.value = found
+  counts.value = new Map(counts.value).set(id, found.length)
 }
 watch(roleId, () => void loadRules().catch((error) => toast.error(errorText(error instanceof ApiError ? error.code : 'unknown'))))
 
@@ -197,6 +220,7 @@ function ruleEnd(rule: CommissionRule): string {
   <PageBody class="lg:grid-cols-[280px_minmax(0,1fr)]">
     <LoadError v-if="loadError" class="lg:col-span-2" :message="loadError" @retry="load" />
     <p v-else-if="!loaded" class="text-[14px] text-muted-foreground lg:col-span-2" role="status">{{ t('common.loading') }}</p>
+    <p v-else-if="!canSeeRoles" class="text-[14px] text-muted-foreground lg:col-span-2">{{ t('com.roles.needRolesView') }}</p>
     <p v-else-if="roles.length === 0" class="text-[14px] text-muted-foreground lg:col-span-2">{{ t('com.roles.empty') }}</p>
     <template v-else>
       <nav class="grid content-start gap-1" :aria-label="t('com.nav.roles')">
@@ -204,7 +228,7 @@ function ruleEnd(rule: CommissionRule): string {
           v-for="role in roles"
           :key="role.id"
           type="button"
-          :aria-current="roleId === role.id ? 'page' : undefined"
+          :aria-pressed="roleId === role.id"
           :class="cn('rounded-md border bg-card px-3 py-2.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', roleId === role.id ? 'border-foreground' : 'hover:bg-accent')"
           @click="roleId = role.id"
         >
@@ -260,6 +284,7 @@ function ruleEnd(rule: CommissionRule): string {
             <Field id="role-goal" :label="t('com.goal.template')">
               <NativeSelect
                 id="role-goal"
+                :key="`goal-select-${goalKey}`"
                 :model-value="goal?.goal_template_id ?? ''"
                 :options="templateOptions"
                 :disabled="!canManage || goalBusy"
@@ -269,7 +294,7 @@ function ruleEnd(rule: CommissionRule): string {
             <Button v-if="canManage" variant="outline" class="self-end" @click="templatesOpen = true">{{ t('goals.templatesTitle') }}</Button>
           </div>
           <div v-if="goal" class="mt-4 grid gap-3">
-            <fieldset class="grid gap-2 sm:grid-cols-2" :disabled="!canManage || goalBusy">
+            <fieldset :key="`goal-mode-${goalKey}`" class="grid gap-2 sm:grid-cols-2" :disabled="!canManage || goalBusy">
               <legend class="sr-only">{{ t('goals.modeLabel') }}</legend>
               <label v-for="mode in MODES" :key="mode" :class="cn('flex cursor-pointer items-start gap-3 rounded-md border p-3', goal.goal_mode === mode && 'border-foreground')">
                 <input type="radio" name="goal-mode" :checked="goal.goal_mode === mode" class="mt-1 accent-[hsl(var(--foreground))]" @change="setGoal(goal.goal_template_id, mode)" />
