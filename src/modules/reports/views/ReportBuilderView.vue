@@ -380,7 +380,7 @@ onBeforeUnmount(() => {
           @delete-metric="askRemoveMetric"
         />
       </aside>
-      <main class="min-w-0 bg-muted">
+      <main class="order-3 min-w-0 bg-muted lg:order-2">
         <div class="grid gap-4 p-4 sm:p-6">
           <div class="flex flex-wrap items-center gap-1.5">
             <span v-for="key in draft.metrics" :key="key" class="inline-flex h-7 items-center gap-1 rounded-full border bg-card pl-1 pr-1 text-[13px]">
@@ -405,7 +405,7 @@ onBeforeUnmount(() => {
           </div>
         </div>
       </main>
-      <aside class="border-t lg:border-l lg:border-t-0" :aria-label="t('report.settings')">
+      <aside class="order-2 border-b lg:order-3 lg:border-b-0 lg:border-l" :aria-label="t('report.settings')">
         <ConfigPanel :draft="draft" :catalog="catalog" :editable="editable" :options="options" @update="(patch) => change({ ...draft, ...patch })" />
       </aside>
     </div>
