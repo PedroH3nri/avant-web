@@ -76,7 +76,7 @@ describe('SidebarRail', () => {
     const testRouter = router()
     await testRouter.push('/interno/contratos')
     const wrapper = mount(SidebarRail, { global: { plugins: [testRouter] } })
-    expect(railLabels(wrapper)).toEqual(['Dashboard', 'Clientes', 'Relatórios', 'Empresa'])
+    expect(railLabels(wrapper)).toEqual(['Dashboard', 'Clientes', 'Relatórios', 'Comissões', 'Empresa'])
     expect(wrapper.find('nav [aria-current]').text()).toBe('Clientes')
     expect(wrapper.find('#rail-panel').attributes('aria-hidden')).toBe('true')
   })
@@ -93,7 +93,7 @@ describe('SidebarRail', () => {
     expect(panelLabels(wrapper)).toEqual(['Clientes', 'Equipes', 'Networks do GAM', 'Contratos', 'Sites'])
     expect(wrapper.find('#rail-panel [aria-current="page"]').text()).toBe('Clientes')
     await hoverAndWait(reports!)
-    expect(panelLabels(wrapper)).toEqual(['Ad Manager', 'Page Views', 'Relatórios', 'Resultado', 'Resultado dos clientes', 'Metas', 'Minha comissão', 'Comissões'])
+    expect(panelLabels(wrapper)).toEqual(['Ad Manager', 'Page Views', 'Relatórios', 'Resultado', 'Resultado dos clientes', 'Metas'])
   })
 
   it('fecha o painel ao abrir uma tela e não abre painel para o Dashboard', async () => {
@@ -118,7 +118,7 @@ describe('SidebarRail', () => {
     const testRouter = router()
     await testRouter.push('/')
     const wrapper = mount(SidebarRail, { global: { plugins: [testRouter] } })
-    const company = wrapper.findAll('nav[aria-label="Menu principal"] > *')[3]!
+    const company = wrapper.findAll('nav[aria-label="Menu principal"] > *')[4]!
     await company.trigger('click')
     await flushPromises()
     expect(testRouter.currentRoute.value.path).toBe('/interno/equipe')

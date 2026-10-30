@@ -21,6 +21,7 @@ const dict = {
   'nav.account': ['Minha conta', 'My account', 'Mi cuenta'],
   'nav.groupClients': ['Clientes', 'Clients', 'Clientes'],
   'nav.groupReports': ['Relatórios', 'Reports', 'Informes'],
+  'nav.groupCommissions': ['Comissões', 'Commissions', 'Comisiones'],
   'nav.groupCompany': ['Empresa', 'Company', 'Empresa'],
   'nav.roles': ['Papéis e permissões', 'Roles and permissions', 'Roles y permisos'],
   'nav.menu': ['Abrir menu', 'Open menu', 'Abrir menú'],
