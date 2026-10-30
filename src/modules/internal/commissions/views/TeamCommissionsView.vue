@@ -50,11 +50,12 @@ const startBusy = ref(false)
 let ticket = 0
 let detailTicket = 0
 
-/** Carrega a comissão de cada pessoa no mês; uma resposta de um mês antigo é ignorada. */
-async function load() {
+/** Carrega a comissão de cada pessoa no mês; uma resposta de um mês antigo é ignorada. Ao trocar
+ * de mês, mostra carregando; depois de uma ação, mantém a tabela até a resposta. */
+async function load(monthChanged = false) {
   const mine = ++ticket
   loadError.value = null
-  people.value = null
+  if (monthChanged) people.value = null
   try {
     const found = await commissionService.team(month.value)
     if (mine === ticket) people.value = found.items
@@ -74,10 +75,10 @@ async function loadStart() {
   }
 }
 onMounted(() => {
-  void load()
+  void load(true)
   void loadStart()
 })
-watch(month, load)
+watch(month, () => load(true))
 
 /** Valor em dólar no idioma da pessoa. */
 const money = (value: string) => formatMetric(toNumber(value), 'currency', locale.value)
@@ -115,17 +116,19 @@ async function issue(list: PersonMonth[]) {
   if (issuing.value) return
   issuing.value = true
   const failed: PersonMonth[] = []
+  let reason = ''
   for (const person of list) {
     try {
       await commissionService.issue(person.user.id, month.value)
-    } catch {
+    } catch (error) {
       failed.push(person)
+      reason ||= errorText(error instanceof ApiError ? error.code : 'unknown')
     }
   }
   issuing.value = false
   const done = list.length - failed.length
   const [first] = list
-  if (failed.length > 0) toast.error(t('com.team.issuedPartial', { done, failed: failed.length, names: failed.map((person) => person.user.name).join(', ') }))
+  if (failed.length > 0) toast.error(t('com.team.issuedPartial', { done, failed: failed.length, names: failed.map((person) => person.user.name).join(', ') }), { description: reason })
   else if (list.length === 1 && first) toast.success(t('com.team.issuedOne', { name: first.user.name }), { description: t('com.team.issuedDesc') })
   else toast.success(t('com.team.issuedAll', { n: done }), { description: t('com.team.issuedDesc') })
   await load()

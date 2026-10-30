@@ -541,7 +541,7 @@ const dict = {
   'com.manager.note': ['Só quem administra as comissões troca o responsável.', 'Only commission admins change the manager.', 'Solo quien administra las comisiones cambia el responsable.'],
   'com.manager.choose': ['Escolha uma pessoa', 'Choose a person', 'Elige una persona'],
   'com.roles.needRolesView': ['Para ver os papéis da equipe, peça a permissão de ver papéis.', 'To see the team roles, ask for the permission to view roles.', 'Para ver los roles del equipo, pide el permiso de ver roles.'],
-  'com.team.issuedPartial': ['{done} emitidas; {failed} não: {names}', '{done} issued; {failed} not: {names}', '{done} emitidas; {failed} no: {names}'],
+  'com.team.issuedPartial': ['{done} emitidos; {failed} não: {names}', '{done} issued; {failed} not: {names}', '{done} emitidos; {failed} no: {names}'],
   'com.manager.pick': ['Novo responsável', 'New manager', 'Nuevo responsable'],
   'com.manager.first': ['Os prazos sem pessoa deste cliente passam para {name}, se o papel dessa pessoa tiver regra.', 'This client\'s windows without a person go to {name}, if that person\'s role has a rule.', 'Los plazos sin persona de este cliente pasan a {name}, si el rol de esa persona tiene regla.'],
   'com.manager.continues': ['{name} é do mesmo papel: os prazos abertos continuam com essa pessoa, até a mesma data de fim. O que já foi gerado fica com quem gerou.', '{name} has the same role: open windows continue with this person, until the same end date. What was already earned stays with who earned it.', '{name} es del mismo rol: los plazos abiertos siguen con esa persona, hasta la misma fecha de fin. Lo ya generado queda con quien lo generó.'],
@@ -2213,6 +2213,7 @@ const errors: Record<string, readonly [string, string, string]> = {
   invalid_input: ['Confira os campos.', 'Check the fields.', 'Revisa los campos.'],
   unsupported_currency: ['Moeda não aceita.', 'Currency not supported.', 'Moneda no admitida.'],
   company_goal_taken: ['Já existe uma meta da Groone neste ano.', 'There is already a Groone goal for this year.', 'Ya existe una meta de Groone en este año.'],
+  commission_start_locked: ['A data de início não muda depois que um mês da comissão fechou.', 'The start date cannot change after a commission month has closed.', 'La fecha de inicio no cambia después de que cerró un mes de la comisión.'],
   commission_rule_taken: ['Este papel já tem uma regra para esse evento.', 'This role already has a rule for that event.', 'Este rol ya tiene una regla para ese evento.'],
   invalid_formula: [
     'Não dá para calcular essa fórmula.',

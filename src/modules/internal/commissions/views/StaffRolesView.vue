@@ -124,11 +124,14 @@ watch(() => session.me?.active_company_id, load)
 /** Os modelos de meta, a meta de cada papel e quantas pessoas ativas cada papel tem; se falhar,
  * só o card da meta fica sem dados. */
 async function loadGoals() {
+  void staffService.options().then(
+    (staff) => (active.value = activeByRole(staff.items)),
+    () => (active.value = new Map()),
+  )
   try {
-    const [templateList, goalList, staff] = await Promise.all([goalService.templates(), goalService.roleGoals(), staffService.options()])
+    const [templateList, goalList] = await Promise.all([goalService.templates(), goalService.roleGoals()])
     templates.value = templateList.items
     roleGoals.value = goalList.items
-    active.value = activeByRole(staff.items)
   } catch (error) {
     toast.error(errorText(error instanceof ApiError ? error.code : 'unknown'))
   }
@@ -154,6 +157,7 @@ async function setGoal(templateId: string, mode: GoalMode) {
 async function loadRules() {
   const mine = ++rulesTicket
   const id = roleId.value
+  if (rules.value.some((rule) => rule.role_id !== id)) rules.value = []
   const found = id ? (await commissionService.rules(id)).items : []
   if (mine !== rulesTicket) return
   rules.value = found
