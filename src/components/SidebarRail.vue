@@ -204,16 +204,17 @@ const panelItem = (on: boolean) =>
       <template v-if="shown">
         <div class="flex h-14 shrink-0 items-center border-b px-4 text-[14px] font-semibold tracking-tight">{{ t(shown.label) }}</div>
         <nav class="grid gap-0.5 overflow-y-auto p-3" :aria-label="t(shown.label)">
-          <RouterLink
-            v-for="link in shown.items"
-            :key="link.to"
-            :to="link.to"
-            :aria-current="active(link) ? 'page' : undefined"
-            :class="panelItem(active(link))"
-            @click="openLink($event, link.to)"
-          >
-            <component :is="link.icon" />{{ t(link.key) }}
-          </RouterLink>
+          <template v-for="link in shown.items" :key="link.to">
+            <hr v-if="link.separated" class="my-2 border-border" />
+            <RouterLink
+              :to="link.to"
+              :aria-current="active(link) ? 'page' : undefined"
+              :class="panelItem(active(link))"
+              @click="openLink($event, link.to)"
+            >
+              <component :is="link.icon" />{{ t(link.key) }}
+            </RouterLink>
+          </template>
         </nav>
       </template>
     </div>

@@ -149,7 +149,7 @@ onMounted(load)
 </script>
 
 <template>
-  <PageHeader :title="t('nav.reports')" :sub="t('report.listSub')">
+  <PageHeader :title="t('nav.customReports')" :sub="t('report.listSub')">
     <template v-if="canManage" #actions>
       <Button @click="router.push('/relatorios/novo')"><Plus />{{ t('report.create') }}</Button>
     </template>
