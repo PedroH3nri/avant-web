@@ -69,6 +69,20 @@ describe('card do responsável Groone', () => {
     expect(document.body.textContent).toContain('continuam com essa pessoa')
   })
 
+  it('sem a resposta dos prazos, não afirma que nada muda', async () => {
+    perms.value = new Set(['internal.clients.manage', 'internal.commissions.manage'])
+    managerWindows.mockRejectedValueOnce(new Error('fora do ar'))
+    const card = mount(AccountManagerCard, { props: { client }, attachTo: document.body })
+    await flushPromises()
+    await card.get('button').trigger('click')
+    await flushPromises()
+    const select = document.querySelector<HTMLSelectElement>('#account-manager')!
+    select.value = 'caio'
+    select.dispatchEvent(new Event('change'))
+    await flushPromises()
+    expect(document.body.textContent).not.toContain('não muda comissão')
+  })
+
   it('sem administrar a comissão, não troca um responsável que já existe', async () => {
     perms.value = new Set(['internal.clients.manage'])
     const card = mount(AccountManagerCard, { props: { client } })

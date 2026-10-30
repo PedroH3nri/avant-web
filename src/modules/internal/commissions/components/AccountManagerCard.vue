@@ -67,7 +67,7 @@ watch(open, (opened) => {
   windowRoles.value = null
   clientService.managerWindows(props.client.id).then(
     (found) => (windowRoles.value = found.role_ids),
-    () => (windowRoles.value = []),
+    () => (windowRoles.value = null),
   )
 })
 
