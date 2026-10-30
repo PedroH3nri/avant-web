@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { activeByRole, adjustmentValid, windowsChange, discount, emptyRuleForm, eventOf, formatDay, localToday, newRuleForm, personGoalAmount, ruleBody, ruleErrors, splitEvent, takenEvents, toIssue, windowState } from '@/modules/internal/commissions/rules'
+import { activeByRole, adjustmentValid, changeNotes, discount, emptyRuleForm, eventOf, formatDay, localToday, newRuleForm, personGoalAmount, ruleBody, ruleErrors, splitEvent, takenEvents, toIssue, windowState } from '@/modules/internal/commissions/rules'
 import type { CommissionStatus } from '@/modules/internal/commissions/types'
 
 describe('regras de comissão no papel', () => {
@@ -100,11 +100,9 @@ describe('correções da revisão', () => {
 })
 
 describe('pendências da revisão', () => {
-  it('a troca de responsável segue os papéis dos prazos abertos', () => {
-    expect(windowsChange(null, [], 'r1')).toBe('first')
-    expect(windowsChange('u1', ['r1'], 'r1')).toBe('continues')
-    expect(windowsChange('u1', ['r1'], 'r2')).toBe('stops')
-    expect(windowsChange('u1', ['r1', 'r2'], 'r2')).toBe('mixed')
-    expect(windowsChange('u1', [], 'r2')).toBe('none')
+  it('a troca de responsável diz o que segue, o que para e o que chega', () => {
+    expect(changeNotes({ continues: 2, stops: 0, arrives: 0 })).toEqual(['continues'])
+    expect(changeNotes({ continues: 1, stops: 1, arrives: 1 })).toEqual(['continues', 'stops', 'arrives'])
+    expect(changeNotes({ continues: 0, stops: 0, arrives: 0 })).toEqual(['none'])
   })
 })

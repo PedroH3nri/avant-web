@@ -71,3 +71,10 @@ export interface AuditEntry {
   data: Record<string, unknown>
   created_at: string
 }
+
+/** O que a troca de responsável faria com os prazos (``/internal/clients/{id}/manager-change``). */
+export interface ManagerChange {
+  continues: number
+  stops: number
+  arrives: number
+}

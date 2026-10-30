@@ -1,6 +1,7 @@
 /** Regras de tela da comissão; quem confere de verdade é a API. */
 import type { Lang } from '@/lib/types'
 import type { CommissionEvent, CommissionKind, CommissionRuleInput, CommissionStatus, CommissionTarget, PersonMonth, WindowMonth } from '@/modules/internal/commissions/types'
+import type { ManagerChange } from '@/modules/internal/clients/types'
 import { parseAmount } from '@/modules/internal/goals/rules'
 import type { GoalMode } from '@/modules/internal/goals/types'
 
@@ -131,11 +132,14 @@ export function activeByRole(members: { role: { id: string } | null; status: str
   return counts
 }
 
-/** O que a troca de responsável faz com os prazos abertos, pelo papel de cada um (como o core). */
-export function windowsChange(managerId: string | null, windowRoles: string[], nextRoleId: string | null): 'first' | 'continues' | 'stops' | 'mixed' | 'none' {
-  if (managerId === null) return 'first'
-  if (windowRoles.length === 0) return 'none'
-  const kept = windowRoles.filter((role) => role === nextRoleId).length
-  if (kept === windowRoles.length) return 'continues'
-  return kept === 0 ? 'stops' : 'mixed'
+/** O que a troca de responsável faz, em frases: segue, para, chega ou nada. */
+export type ChangeNote = 'continues' | 'stops' | 'arrives' | 'none'
+
+/** As frases que o aviso da troca mostra, pela prévia da API. */
+export function changeNotes(change: ManagerChange): ChangeNote[] {
+  const notes: ChangeNote[] = []
+  if (change.continues > 0) notes.push('continues')
+  if (change.stops > 0) notes.push('stops')
+  if (change.arrives > 0) notes.push('arrives')
+  return notes.length ? notes : ['none']
 }
