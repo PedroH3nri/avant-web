@@ -48,6 +48,9 @@ const routes: RouteRecordRaw[] = [
       { path: 'interno/resultados', component: () => import('@/modules/internal/results/views/ClientsResultsView.vue'), meta: { internal: true, permission: 'internal.results.view' } },
       { path: 'interno/equipes', component: () => import('@/modules/internal/clients/views/ClientTeamsView.vue'), meta: { internal: true, permission: 'internal.clients.view' } },
       { path: 'interno/equipe', component: () => import('@/modules/internal/staff/views/StaffView.vue'), meta: { internal: true, permission: 'internal.staff.manage' } },
+      { path: 'interno/papeis', component: () => import('@/modules/internal/commissions/views/StaffRolesView.vue'), meta: { internal: true, permission: 'internal.commissions.view' } },
+      { path: 'interno/minha-comissao', component: () => import('@/modules/internal/commissions/views/MyCommissionView.vue'), meta: { internal: true } },
+      { path: 'interno/comissoes', component: () => import('@/modules/internal/commissions/views/TeamCommissionsView.vue'), meta: { internal: true, permission: 'internal.commissions.view' } },
       {
         path: 'interno/contratos',
         component: () => import('@/modules/internal/contracts/views/ContractsView.vue'),

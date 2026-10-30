@@ -13,6 +13,7 @@ import Badge from '@/components/ui/Badge.vue'
 import Button from '@/components/ui/Button.vue'
 import Card from '@/components/ui/Card.vue'
 import CompanyImageCard from '@/components/CompanyImageCard.vue'
+import AccountManagerCard from '@/modules/internal/commissions/components/AccountManagerCard.vue'
 import DataTable from '@/components/ui/DataTable.vue'
 import Dialog from '@/components/ui/Dialog.vue'
 import Field from '@/components/ui/Field.vue'
@@ -27,7 +28,7 @@ import { auditText, errorText, formatAgo, formatDate, pick, t } from '@/lib/i18n
 import { td, th } from '@/lib/table'
 import type { Page } from '@/lib/types'
 import type { CompanyStatus } from '@/modules/company/types'
-import type { AuditEntry, ClientDetail, OwnerInvitation } from '@/modules/internal/clients/types'
+import type { AuditEntry, Client, ClientDetail, OwnerInvitation } from '@/modules/internal/clients/types'
 import { useSession } from '@/stores/session'
 import { clientService } from '@/modules/internal/clients/service'
 
@@ -207,7 +208,8 @@ async function saveProfile() {
   if (!current || !profileOk(profile.value)) return
   profileBusy.value = true
   try {
-    const fresh = await clientService.update(current.id, { profile: profileBody(profile.value) })
+    const managerId = current.profile?.account_manager_id ?? null
+    const fresh = await clientService.update(current.id, { profile: profileBody({ ...profile.value, account_manager_id: managerId }) })
     client.value = { ...current, ...fresh }
     editing.value = false
     toast.success(t('common.saved'))
@@ -217,6 +219,12 @@ async function saveProfile() {
   } finally {
     profileBusy.value = false
   }
+}
+
+/** Guarda o cliente com o responsável novo e recarrega o histórico. */
+async function managerSaved(fresh: Client) {
+  if (client.value) client.value = { ...client.value, ...fresh }
+  await reloadAudit()
 }
 
 const statusOptions = computed(() => STAFF_STATUSES.filter((status) => status !== client.value?.status))
@@ -331,6 +339,8 @@ function who(auditEntry: AuditEntry) {
           <Button v-else variant="outline" @click="openEdit">{{ t('int.edit') }}</Button>
         </template>
       </Card>
+
+      <AccountManagerCard :client="client" @saved="managerSaved" />
 
       <CompanyImageCard :name="client.name" :image-url="client.image_url" staff :readonly="!canManage" :save="saveImage" :remove="removeImage" />
 
