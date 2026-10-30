@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** Painel interno: a equipe Groone e o convite com os papéis da Company Groone. */
+/** Painel interno: a equipe Groone, a troca de papel de cada pessoa e o convite com os papéis da Company Groone. */
 import { computed, onMounted, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
 import { Settings } from 'lucide-vue-next'
@@ -39,6 +39,8 @@ const invitePages = ref(0)
 const canSeeInvites = computed(() => session.can('team.view'))
 const loadError = ref<string | null>(null)
 const canEditGroone = computed(() => session.can('company.edit'))
+const canManageTeam = computed(() => session.can('team.manage'))
+const saving = ref<string | null>(null)
 const email = ref('')
 const roleId = ref('')
 const busy = ref(false)
@@ -86,6 +88,26 @@ watch(invitePage, () => loadInvites().catch(pageError))
 const roleOptions = computed(() => roles.value.map((role) => ({ value: role.id, label: pick(role.name) })))
 /** Nome do papel pelo id. */
 const roleName = (id: string | null) => pick(roles.value.find((role) => role.id === id)?.name)
+
+/** Diz se o membro é a própria pessoa. */
+const isMe = (member: Member) => member.user.id === session.me?.user.id
+/** Diz se o papel do membro pode ser trocado por quem está vendo (nunca o dono nem a própria pessoa). */
+const editable = (member: Member) => canManageTeam.value && roleOptions.value.length > 0 && !member.is_owner && !isMe(member)
+
+/** Troca o papel de uma pessoa da equipe Groone. */
+async function assign(member: Member, newRoleId: string) {
+  if (newRoleId === member.role?.id) return
+  saving.value = member.id
+  try {
+    const updated = await teamService.updateMember(member.id, { role_id: newRoleId })
+    staff.value = (staff.value ?? []).map((existing) => (existing.id === member.id ? { ...existing, ...updated } : existing))
+    toast.success(t('roles.assigned', { name: member.user.name }))
+  } catch (error) {
+    toast.error(errorText(error instanceof ApiError ? error.code : 'unknown'))
+  } finally {
+    saving.value = null
+  }
+}
 
 /** Convida alguém para a equipe Groone. */
 async function invite() {
@@ -146,30 +168,48 @@ async function invite() {
       <Pagination v-if="invitePages > 1" v-model:page="invitePage" :total="inviteTotal" :pages="invitePages" class="mt-3" />
     </Card>
 
-    <DataTable v-if="!loadError" :min="640">
+    <DataTable v-if="!loadError" :min="760">
       <thead>
         <tr>
           <th :class="th">{{ t('int.person') }}</th>
-          <th :class="th">{{ t('team.role') }}</th>
+          <th :class="[th, 'w-[240px]']">{{ t('team.role') }}</th>
+          <th :class="th">{{ t('member.direct') }}</th>
           <th :class="th">{{ t('team.status') }}</th>
           <th :class="th">{{ t('team.since') }}</th>
         </tr>
       </thead>
       <tbody>
-        <TableState :cols="4" :loading="!staff" />
+        <TableState :cols="5" :loading="!staff" />
         <tr v-for="member in staff ?? []" :key="member.id">
           <td :class="td">
             <div class="flex items-center gap-3">
               <Avatar :name="member.user.name" :image-url="member.user.image_url" :size="28" />
               <div class="min-w-0">
-                <div class="font-medium">{{ member.user.name }}</div>
+                <div class="font-medium">
+                  {{ member.user.name }}<span v-if="isMe(member)" class="font-normal text-muted-foreground"> ({{ t('team.you') }})</span>
+                </div>
                 <div class="truncate text-[13px] text-muted-foreground">{{ member.user.email }}</div>
               </div>
             </div>
           </td>
           <td :class="td">
             <Badge v-if="member.is_owner">{{ t('int.owner') }}</Badge>
+            <NativeSelect
+              v-else-if="editable(member)"
+              :model-value="member.role?.id ?? ''"
+              :options="roleOptions"
+              :disabled="saving === member.id"
+              :aria-label="t('roles.roleFor', { name: member.user.name })"
+              class="h-9"
+              @update:model-value="assign(member, $event)"
+            />
             <template v-else>{{ pick(member.role?.name) }}</template>
+          </td>
+          <td :class="td">
+            <span v-if="member.is_owner" class="text-[14px] text-muted-foreground">{{ t('role.allPerms') }}</span>
+            <RouterLink v-else :to="`/equipe/${member.id}`" class="text-[14px] text-link hover:underline focus-visible:underline focus-visible:outline-none">
+              {{ t('roles.direct') }}
+            </RouterLink>
           </td>
           <td :class="td">
             <Status :tone="member.status === 'active' ? 'ok' : 'neutral'">{{ member.status === 'active' ? t('team.active') : t('team.suspended') }}</Status>

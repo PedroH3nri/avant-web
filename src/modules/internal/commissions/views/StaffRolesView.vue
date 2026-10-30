@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** Papéis da equipe Groone: criar e editar o papel e as regras de comissão de cada um. */
+/** Papéis da equipe Groone: criar o papel, as regras de comissão, a meta e as permissões de cada um. */
 import { computed, onMounted, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
 import { DropdownMenuRoot, DropdownMenuTrigger } from 'reka-ui'
@@ -29,6 +29,7 @@ import { formatAmount, monthOptions } from '@/modules/internal/goals/rules'
 import { goalService } from '@/modules/internal/goals/service'
 import type { GoalMode, GoalTemplate, RoleGoal } from '@/modules/internal/goals/types'
 import RoleDialog from '@/modules/team/components/RoleDialog.vue'
+import RolePermissionsCard from '@/modules/team/components/RolePermissionsCard.vue'
 import { teamService } from '@/modules/team/service'
 import type { Permission, Role } from '@/modules/team/types'
 import { useSession } from '@/stores/session'
@@ -108,7 +109,7 @@ async function load() {
     return
   }
   void loadGoals()
-  if (canRoles.value) void teamService.permissions().then((catalog) => (permissions.value = catalog.items), () => (permissions.value = []))
+  void teamService.permissions().then((catalog) => (permissions.value = catalog.items), () => (permissions.value = []))
   try {
     const list = await allRoles()
     roles.value = list
@@ -184,6 +185,10 @@ async function roleSaved(role: Role) {
   roleId.value = role.id
   await load()
   if (created) toast.success(t('com.roles.created'), { description: t('com.roles.createdDesc') })
+}
+/** Troca o papel salvo pelo card de permissões na lista, sem recarregar a tela. */
+function permissionsSaved(saved: Role) {
+  roles.value = roles.value.map((role) => (role.id === saved.id ? { ...role, ...saved } : role))
 }
 /** Abre a regra para criar (null) ou editar. */
 function openRule(rule: CommissionRule | null) {
@@ -315,11 +320,12 @@ function ruleEnd(rule: CommissionRule): string {
             </p>
           </div>
         </Card>
+        <RolePermissionsCard :role="current" :permissions="permissions" @saved="permissionsSaved" />
       </div>
     </template>
   </PageBody>
   <GoalTemplatesDialog v-model:open="templatesOpen" :year="Number(today.slice(0, 4))" @changed="loadGoals" />
-  <RoleDialog v-model:open="roleDialog" :role="editingRole" :permissions="permissions" @saved="roleSaved" />
+  <RoleDialog v-model:open="roleDialog" :role="editingRole" :permissions="permissions" name-only @saved="roleSaved" />
   <RuleDialog v-if="current" v-model:open="ruleDialog" :role="current" :roles="roles" :rules="rules" :rule="editingRule" @saved="loadRules" />
   <ConfirmDialog
     v-model:open="removeOpen"
