@@ -3395,31 +3395,35 @@ type InvoiceService = { id: string; title: string; description: string }
 
 const INVOICE_STATUS: Record<InvoiceStatus, [string, 'ochre' | 'neutral' | 'ok']> = { draft: ['Rascunho', 'ochre'], issued: ['Emitida', 'neutral'], paid: ['Paga', 'ok'] }
 const ME_STAFF = 'Lucas Prado'
+/** Quem paga a invoice: os dados da GroOne, os mesmos do Genius. */
+const GROONE_PAYER = { name: 'GROONE, LLC', ein: '30-1462306', address: '1191 E Newport Center Dr 103, Deerfield Beach, FL 33442' }
+const PERSON_DOCUMENTS = ['Brasil · CPF', 'Argentina · CUIL/DNI', 'Chile · RUT', 'Colômbia · CC', 'México · CURP/RFC', 'Peru · DNI', 'Portugal · NIF', 'Espanha · NIF/DNI', 'Estados Unidos · SSN/ITIN', 'Reino Unido · NINO']
 const INITIAL_PAYEE: Payee = { docType: 'Brasil · CPF', docNumber: '123.456.789-09', legalName: 'Lucas Prado de Almeida', phone: '+55 11 98888-0000', address: 'Rua Exemplo, 200, Campinas, SP', bank: 'Banco Exemplo', swift: 'EXMPBRSP', account: '98765-4', routing: '0001' }
 const INITIAL_SERVICES: InvoiceService[] = [
-  { id: 's1', title: 'Gestão de contas', description: 'Acompanhamento mensal de clientes da carteira.' },
-  { id: 's2', title: 'Prospecção de clientes', description: 'Reuniões e propostas com publishers novos.' },
-  { id: 's3', title: 'Suporte técnico', description: 'Ajustes de ad units e tags nos sites dos clientes.' },
-  { id: 's4', title: 'Treinamento', description: 'Treinamento de clientes ou da equipe.' },
+  { id: 's1', title: 'Account Management', description: 'Monthly follow-up of the client portfolio.' },
+  { id: 's2', title: 'Client Prospecting', description: 'Meetings and proposals with new publishers.' },
+  { id: 's3', title: 'Technical Support', description: 'Ad unit and tag adjustments on client sites.' },
+  { id: 's4', title: 'Training', description: 'Training sessions for clients or the team.' },
 ]
-/** Linha travada da comissão de um mês, com a conta no texto. */
-const commissionLine = (month: string, commission: number, deduction: number, adjustment: number): InvoiceLine => ({
-  id: `c-${month}`, title: `Comissão de ${month.toLowerCase()}`, locked: true, amount: commission - deduction - adjustment,
-  description: `Comissão ${money.format(commission)} − dedução do GAM ${money.format(deduction)}${adjustment ? ` − descontos ${money.format(adjustment)}` : ''}`,
-})
+/** Linhas travadas da comissão de um mês, em inglês e com os textos do Genius; a dedução e os descontos só entram quando há valor. */
+const commissionLines = (month: string, commission: number, deduction: number, adjustment: number): InvoiceLine[] => [
+  { id: `c-${month}`, title: 'New Client Acquisition Commission', description: 'Percentage-based earnings from the company revenue share on clients acquired by the employee.', amount: commission, locked: true },
+  ...(deduction ? [{ id: `d-${month}`, title: 'Commission Adjustment — Google Policy Deductions', description: 'Proportional deductions applied to commission earnings due to invalid traffic on acquired client networks.', amount: -deduction, locked: true }] : []),
+  ...(adjustment ? [{ id: `a-${month}`, title: 'Commission Adjustment — Discounts', description: 'Discounts applied by Groone to commission earnings during the period.', amount: -adjustment, locked: true }] : []),
+]
 const INITIAL_INVOICES: ProtoInvoice[] = [
   { id: 1184, number: 'INV-001184-7c2e', owner: 'Marina Alves', role: 'Comercial externo', month: 'Setembro 2026', status: 'issued', created: '16/10/2026', issued: '16/10/2026', payee: { ...INITIAL_PAYEE, legalName: 'Marina Alves', docNumber: '987.654.321-00' },
-    lines: [commissionLine('Setembro', 812.2, 31.1, 0), { id: 'm1', title: 'Gestão de contas', description: '12 clientes da carteira.', amount: 300, locked: false }] },
+    lines: [...commissionLines('Setembro', 812.2, 31.1, 0), { id: 'm1', title: 'Account Management', description: '12 clients in the portfolio.', amount: 300, locked: false }] },
   { id: 1185, number: 'INV-001185-a91f', owner: 'Pedro Henrique', role: 'Comercial interno', month: 'Setembro 2026', status: 'issued', created: '17/10/2026', issued: '17/10/2026', payee: { ...INITIAL_PAYEE, legalName: 'Pedro Henrique', docNumber: '111.222.333-44' },
-    lines: [commissionLine('Setembro', 402.1, 12.8, 0)] },
+    lines: [...commissionLines('Setembro', 402.1, 12.8, 0)] },
   { id: 1186, number: 'INV-001186-03bd', owner: 'Júlia Santos', role: 'Comercial interno', month: 'Setembro 2026', status: 'draft', created: '17/10/2026', returned: { by: 'Pedro Henrique', at: '20/10/2026', reason: 'O treinamento foi de 2 horas, não 20. Corrija o valor e emita de novo.' },
-    lines: [commissionLine('Setembro', 455.3, 14.0, 0), { id: 'j1', title: 'Treinamento', description: 'Treinamento de clientes novos, 20 horas.', amount: 2000, locked: false }] },
+    lines: [...commissionLines('Setembro', 455.3, 14.0, 0), { id: 'j1', title: 'Training', description: 'Onboarding training for new clients, 20 hours.', amount: 2000, locked: false }] },
   { id: 1102, number: 'INV-001102-e45a', owner: ME_STAFF, role: 'Comercial externo', month: 'Agosto 2026', status: 'paid', created: '15/09/2026', issued: '15/09/2026', paid: '25/09/2026', payee: INITIAL_PAYEE,
-    lines: [commissionLine('Agosto', 520.5, 18.9, 0), { id: 'l1', title: 'Prospecção de clientes', description: '4 reuniões com publishers de receitas.', amount: 150, locked: false }] },
+    lines: [...commissionLines('Agosto', 520.5, 18.9, 0), { id: 'l1', title: 'Client Prospecting', description: '4 meetings with recipe publishers.', amount: 150, locked: false }] },
   { id: 1103, number: 'INV-001103-5d10', owner: 'Marina Alves', role: 'Comercial externo', month: 'Agosto 2026', status: 'paid', created: '15/09/2026', issued: '16/09/2026', paid: '25/09/2026', payee: { ...INITIAL_PAYEE, legalName: 'Marina Alves', docNumber: '987.654.321-00' },
-    lines: [commissionLine('Agosto', 744.0, 28.3, 0)] },
+    lines: [...commissionLines('Agosto', 744.0, 28.3, 0)] },
   { id: 1021, number: 'INV-001021-b7e3', owner: ME_STAFF, role: 'Comercial externo', month: 'Julho 2026', status: 'paid', created: '15/08/2026', issued: '15/08/2026', paid: '26/08/2026', payee: INITIAL_PAYEE,
-    lines: [commissionLine('Julho', 488.2, 15.0, 0)] },
+    lines: [...commissionLines('Julho', 488.2, 15.0, 0)] },
 ]
 /** Total da invoice: a soma das linhas. */
 const invoiceTotal = (invoice: ProtoInvoice) => invoice.lines.reduce((sum, line) => sum + line.amount, 0)
@@ -3436,11 +3440,11 @@ function PayeeDialog({ open, onOpenChange, payee, onSave }: { open: boolean; onO
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[640px]">
-        <DialogHeader><DialogTitle>Dados de recebimento</DialogTitle><DialogDescription>Os mesmos dados fiscais que os clientes preenchem. Entram na invoice quando ela é emitida; mudar depois não altera invoices já emitidas.</DialogDescription></DialogHeader>
+        <DialogHeader><DialogTitle>Dados de recebimento</DialogTitle><DialogDescription>Os seus dados como pessoa física: quem recebe é sempre você, nunca uma empresa. Entram na invoice quando ela é emitida; mudar depois não altera invoices já emitidas.</DialogDescription></DialogHeader>
         <div className="grid gap-4 md:grid-cols-2">
-          <Field id="py-type" label="Tipo de documento"><Input id="py-type" className="h-9" value={form.docType} onChange={set('docType')} /></Field>
+          <Field id="py-type" label="Documento de pessoa física"><Select value={form.docType} onValueChange={(value) => setForm({ ...form, docType: value })}><SelectTrigger id="py-type" className="h-9"><SelectValue /></SelectTrigger><SelectContent>{PERSON_DOCUMENTS.map((document) => <SelectItem key={document} value={document}>{document}</SelectItem>)}</SelectContent></Select></Field>
           <Field id="py-doc" label="Número do documento"><Input id="py-doc" className="h-9 tnum" value={form.docNumber} onChange={set('docNumber')} /></Field>
-          <Field id="py-name" label="Nome completo ou razão social"><Input id="py-name" className="h-9" value={form.legalName} onChange={set('legalName')} /></Field>
+          <Field id="py-name" label="Nome completo"><Input id="py-name" className="h-9" value={form.legalName} onChange={set('legalName')} /></Field>
           <Field id="py-phone" label="Telefone com DDI"><Input id="py-phone" className="h-9 tnum" value={form.phone} onChange={set('phone')} /></Field>
           <div className="md:col-span-2"><Field id="py-addr" label="Endereço"><Input id="py-addr" className="h-9" value={form.address} onChange={set('address')} /></Field></div>
           <Field id="py-bank" label="Banco"><Input id="py-bank" className="h-9" value={form.bank} onChange={set('bank')} /></Field>
@@ -3458,12 +3462,12 @@ function PayeeDialog({ open, onOpenChange, payee, onSave }: { open: boolean; onO
 function MyInvoicesScreen({ state }: { state: InvoiceState }) {
   const { invoices, setInvoices, payee, setPayee, open } = state
   const mine = invoices.filter((invoice) => invoice.owner === ME_STAFF)
-  const pending = mine.some((invoice) => invoice.month === 'Setembro 2026') ? [] : [{ month: 'Setembro 2026', line: commissionLine('Setembro', 591, 23.4, 40) }]
+  const pending = mine.some((invoice) => invoice.month === 'Setembro 2026') ? [] : [{ month: 'Setembro 2026', lines: commissionLines('Setembro', 591, 23.4, 40) }]
   const [creating, setCreating] = useState(false)
   const [editingPayee, setEditingPayee] = useState(false)
   const create = () => {
     const id = Math.max(...invoices.map((invoice) => invoice.id)) + 1
-    const invoice: ProtoInvoice = { id, number: `INV-${String(id).padStart(6, '0')}-4f8a`, owner: ME_STAFF, role: 'Comercial externo', month: pending[0].month, status: 'draft', created: '30/10/2026', lines: [pending[0].line] }
+    const invoice: ProtoInvoice = { id, number: `INV-${String(id).padStart(6, '0')}-4f8a`, owner: ME_STAFF, role: 'Comercial externo', month: pending[0].month, status: 'draft', created: '30/10/2026', lines: pending[0].lines }
     setInvoices([invoice, ...invoices])
     setCreating(false)
     toast.success('Invoice criada', { description: 'A comissão de setembro entrou na invoice e ficou como emitida.' })
@@ -3476,7 +3480,7 @@ function MyInvoicesScreen({ state }: { state: InvoiceState }) {
       <Body>
         {pending.length > 0 && (
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-card px-4 py-3 text-[14px]">
-            <span>A comissão de setembro foi validada em 15/10: <span className="font-medium tnum">{money.format(pending[0].line.amount)}</span>. Crie a invoice para receber.</span>
+            <span>A comissão de setembro foi validada em 15/10: <span className="font-medium tnum">{money.format(pending[0].lines.reduce((sum, line) => sum + line.amount, 0))}</span>. Crie a invoice para receber.</span>
             <Button size="sm" onClick={() => setCreating(true)}>Criar invoice de setembro</Button>
           </div>
         )}
@@ -3495,7 +3499,7 @@ function MyInvoicesScreen({ state }: { state: InvoiceState }) {
             ))}
           </tbody>
         </Table>
-        <Card title="Dados de recebimento" desc="Copiados para a invoice quando você emite. Sem eles, a invoice não pode ser emitida."
+        <Card title="Dados de recebimento" desc="Seus dados como pessoa física: quem recebe é sempre você. Copiados para a invoice quando você emite."
           footer={<Button size="sm" variant="outline" onClick={() => setEditingPayee(true)}>Editar</Button>} footerNote="Só você vê e muda estes dados.">
           <dl className="grid gap-x-6 gap-y-3 text-[14px] sm:grid-cols-2 lg:grid-cols-3">
             {[['Nome', payee.legalName], [payee.docType, payee.docNumber], ['Telefone', payee.phone], ['Endereço', payee.address], ['Banco', `${payee.bank} · SWIFT ${payee.swift}`], ['Conta', `${payee.account} · agência ${payee.routing}`]].map(([label, value]) => (
@@ -3509,9 +3513,13 @@ function MyInvoicesScreen({ state }: { state: InvoiceState }) {
           <DialogHeader><DialogTitle>Nova invoice</DialogTitle><DialogDescription>Só aparecem os meses com comissão validada e sem invoice.</DialogDescription></DialogHeader>
           <Field id="inv-month" label="Mês"><Select defaultValue="Setembro 2026"><SelectTrigger id="inv-month" className="h-9"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="Setembro 2026">Setembro 2026</SelectItem></SelectContent></Select></Field>
           {pending[0] && (
-            <div className="rounded-md border p-3 text-[14px]">
-              <div className="flex items-center justify-between gap-3"><span className="flex items-center gap-2 font-medium"><Lock className="h-3.5 w-3.5 text-muted-foreground" />{pending[0].line.title}</span><span className="tnum font-medium">{money.format(pending[0].line.amount)}</span></div>
-              <div className="mt-1 text-[13px] text-muted-foreground">{pending[0].line.description}</div>
+            <div className="grid divide-y rounded-md border text-[14px]">
+              {pending[0].lines.map((line) => (
+                <div key={line.id} className="p-3">
+                  <div className="flex items-center justify-between gap-3"><span className="flex items-center gap-2 font-medium"><Lock className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />{line.title}</span><span className="tnum font-medium whitespace-nowrap">{money.format(line.amount)}</span></div>
+                  <div className="mt-1 text-[13px] text-muted-foreground">{line.description}</div>
+                </div>
+              ))}
             </div>
           )}
           <p className="text-[13px] text-muted-foreground">Ao criar, a comissão de setembro passa a emitida e fica presa a esta invoice. Se você excluir o rascunho, ela volta a validada.</p>
@@ -3539,7 +3547,7 @@ function ServiceLineDialog({ open, onOpenChange, services, line, onSave }: { ope
           <Field id="sl-service" label="Serviço" hint={service?.description}>
             <Select value={serviceId} onValueChange={setServiceId}><SelectTrigger id="sl-service" className="h-9"><SelectValue /></SelectTrigger><SelectContent>{services.map((item) => <SelectItem key={item.id} value={item.id}>{item.title}</SelectItem>)}</SelectContent></Select>
           </Field>
-          <Field id="sl-desc" label="Descrição (opcional)"><Textarea id="sl-desc" rows={2} value={description} onChange={(event) => setDescription(event.target.value)} placeholder="O que foi feito no mês." /></Field>
+          <Field id="sl-desc" label="Descrição em inglês (opcional)"><Textarea id="sl-desc" rows={2} value={description} onChange={(event) => setDescription(event.target.value)} placeholder="What was done this month." /></Field>
           <Field id="sl-amount" label="Valor (US$)" error={amountErr}><Input id="sl-amount" inputMode="decimal" className="h-9 max-w-[200px] tnum" value={amount} onChange={(event) => setAmount(event.target.value)} placeholder="300,00" aria-invalid={!!amountErr} /></Field>
         </div>
         <DialogFooter><Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button><Button disabled={!service || amount === '' || !!amountErr} onClick={() => service && onSave({ id: line?.id ?? `l${Date.now()}`, title: service.title, description: description.trim(), amount: value, locked: false })}>{line ? 'Salvar' : 'Adicionar'}</Button></DialogFooter>
@@ -3609,14 +3617,14 @@ function InvoiceScreen({ state, id, from }: { state: InvoiceState; id: number; f
               <div className="grid gap-6 text-[14px] sm:grid-cols-3">
                 <div>
                   <div className="text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">De</div>
-                  {shownPayee ? (
-                    <div className="mt-2 grid gap-0.5"><span className="font-medium">{shownPayee.legalName}</span><span className="text-muted-foreground">{shownPayee.docType} {shownPayee.docNumber}</span><span className="text-muted-foreground">{shownPayee.address}</span><span className="text-muted-foreground">{shownPayee.phone}</span></div>
-                  ) : <div className="mt-2 text-muted-foreground">Entra quando a invoice for emitida.</div>}
-                  {invoice.status === 'draft' && shownPayee && <div className="mt-2 text-[12px] text-muted-foreground">Dados atuais; ficam copiados na emissão.</div>}
+                  <div className="mt-2 grid gap-0.5"><span className="font-medium">{GROONE_PAYER.name}</span><span className="text-muted-foreground">EIN {GROONE_PAYER.ein}</span><span className="text-muted-foreground">{GROONE_PAYER.address}</span></div>
                 </div>
                 <div>
-                  <div className="text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Para</div>
-                  <div className="mt-2 grid gap-0.5"><span className="font-medium">Groone LLC</span><span className="text-muted-foreground">Equipe Groone · {invoice.role}</span></div>
+                  <div className="text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Para · recebedor</div>
+                  {shownPayee ? (
+                    <div className="mt-2 grid gap-0.5"><span className="font-medium">{shownPayee.legalName}</span><span className="text-muted-foreground">{invoice.role}</span><span className="text-muted-foreground">Pessoa física · {shownPayee.docType} {shownPayee.docNumber}</span><span className="text-muted-foreground">{shownPayee.address}</span><span className="text-muted-foreground">{shownPayee.phone}</span></div>
+                  ) : <div className="mt-2 grid gap-0.5"><span className="font-medium">{invoice.owner}</span><span className="text-muted-foreground">{invoice.role}</span><span className="text-muted-foreground">Os dados de recebimento entram quando a invoice for emitida.</span></div>}
+                  {invoice.status === 'draft' && shownPayee && <div className="mt-2 text-[12px] text-muted-foreground">Dados atuais; ficam copiados na emissão.</div>}
                 </div>
                 <div className="grid content-start gap-2">
                   {[['Mês', invoice.month], ['Criada', invoice.created], ['Emitida', invoice.issued ?? '–'], ['Paga', invoice.paid ?? '–']].map(([label, value]) => (
@@ -3780,14 +3788,14 @@ function InvoiceServicesScreen({ state }: { state: InvoiceState }) {
             ))}
           </tbody>
         </Table>
-        <p className="text-[13px] text-muted-foreground">Só quem tem a permissão de serviços de invoice cria, edita e exclui. Cada invoice guarda a própria cópia do nome e do valor.</p>
+        <p className="text-[13px] text-muted-foreground">Só quem tem a permissão de serviços de invoice cria, edita e exclui. Nome e descrição em inglês, como toda a invoice. Cada invoice guarda a própria cópia do nome e do valor.</p>
       </Body>
       <Dialog open={editing !== null} onOpenChange={(open) => !open && setEditing(null)}>
         <DialogContent>
           <DialogHeader><DialogTitle>{editing === 'new' ? 'Novo serviço' : 'Editar serviço'}</DialogTitle><DialogDescription>{editing === 'new' ? 'Aparece para a equipe ao adicionar um serviço na invoice.' : 'Vale para as próximas invoices. As que já usam o serviço não mudam.'}</DialogDescription></DialogHeader>
           <div className="grid gap-4">
-            <Field id="sv-title" label="Nome" error={duplicate && 'Já existe um serviço com esse nome.'}><Input id="sv-title" className="h-9" value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Gestão de contas" /></Field>
-            <Field id="sv-desc" label="Descrição (opcional)"><Textarea id="sv-desc" rows={2} value={description} onChange={(event) => setDescription(event.target.value)} /></Field>
+            <Field id="sv-title" label="Nome em inglês" error={duplicate && 'Já existe um serviço com esse nome.'}><Input id="sv-title" className="h-9" value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Account Management" /></Field>
+            <Field id="sv-desc" label="Descrição em inglês (opcional)"><Textarea id="sv-desc" rows={2} value={description} onChange={(event) => setDescription(event.target.value)} /></Field>
           </div>
           <DialogFooter><Button variant="outline" onClick={() => setEditing(null)}>Cancelar</Button><Button disabled={!title.trim() || duplicate} onClick={save}>Salvar</Button></DialogFooter>
         </DialogContent>
