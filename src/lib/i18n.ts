@@ -422,10 +422,11 @@ const dict = {
   'com.roles.new': ['Novo papel', 'New role', 'Nuevo rol'],
   'com.roles.empty': ['A equipe Groone ainda não tem papéis próprios.', 'The Groone team has no roles of its own yet.', 'El equipo Groone aún no tiene roles propios.'],
   'com.roles.rules': ['{n} regras de comissão', '{n} commission rules', '{n} reglas de comisión'],
+  'com.roles.rulesOne': ['1 regra de comissão', '1 commission rule', '1 regla de comisión'],
   'com.roles.noCommission': ['sem comissão', 'no commission', 'sin comisión'],
   'com.card.title': ['Comissão · {role}', 'Commission · {role}', 'Comisión · {role}'],
   'com.card.desc': ['Uma regra por evento. A base é o revshare da Groone; as deduções do GAM recebem o mesmo percentual e saem no fechamento, dia 15.', 'One rule per event. The base is Groone\'s revshare; GAM deductions get the same percentage and come off at closing, on the 15th.', 'Una regla por evento. La base es el revshare de Groone; las deducciones de GAM reciben el mismo porcentaje y salen en el cierre, el día 15.'],
-  'com.card.note': ['Mudanças valem do dia seguinte em diante; dias já calculados e meses fechados não mudam.', 'Changes apply from the next day on; days already calculated and closed months don\'t change.', 'Los cambios valen desde el día siguiente; los días ya calculados y los meses cerrados no cambian.'],
+  'com.card.note': ['Mudanças valem do dia da mudança em diante; dias já calculados e meses fechados não mudam.', 'Changes apply from the day of the change on; days already calculated and closed months don\'t change.', 'Los cambios valen desde el día del cambio; los días ya calculados y los meses cerrados no cambian.'],
   'com.card.none': ['Este papel não recebe comissão. Crie uma regra para começar.', 'This role earns no commission. Create a rule to start.', 'Este rol no recibe comisión. Crea una regla para empezar.'],
   'com.rule.new': ['Nova regra', 'New rule', 'Nueva regla'],
   'com.rule.createTitle': ['Nova regra de comissão', 'New commission rule', 'Nueva regla de comisión'],
@@ -478,6 +479,7 @@ const dict = {
   'com.col.duration': ['Recebendo', 'Earning', 'Recibiendo'],
   'com.col.end': ['No fim', 'At the end', 'Al final'],
   'com.days': ['{n} dias', '{n} days', '{n} días'],
+  'com.daysOne': ['1 dia', '1 day', '1 día'],
   'com.passesTo': ['Passa para {role}', 'Moves to {role}', 'Pasa a {role}'],
   'com.staysWith': ['Fica com a pessoa', 'Stays with the person', 'Queda con la persona'],
   'com.ruleActions': ['Ações da regra {rule}', 'Actions for rule {rule}', 'Acciones de la regla {rule}'],
@@ -516,6 +518,7 @@ const dict = {
   'com.team.sub': ['A comissão de cada pessoa da Equipe Groone, mês a mês. O mês fecha no dia 15 do mês seguinte, depois das deduções do GAM.', 'Each Groone team member\'s commission, month by month. The month closes on the 15th of the next month, after GAM deductions.', 'La comisión de cada persona del equipo Groone, mes a mes. El mes cierra el día 15 del mes siguiente, tras las deducciones de GAM.'],
   'com.team.empty': ['Ninguém tem comissão neste mês.', 'Nobody has commission this month.', 'Nadie tiene comisión este mes.'],
   'com.team.toIssue': ['{n} pessoas com o mês validado e ainda não emitido.', '{n} people with the month validated and not yet issued.', '{n} personas con el mes validado y aún no emitido.'],
+  'com.team.toIssueOne': ['1 pessoa com o mês validado e ainda não emitido.', '1 person with the month validated and not yet issued.', '1 persona con el mes validado y aún no emitido.'],
   'com.team.issueAll': ['Marcar todas como emitidas', 'Mark all as issued', 'Marcar todas como emitidas'],
   'com.action.view': ['Ver prazos', 'View windows', 'Ver plazos'],
   'com.action.adjust': ['Lançar desconto', 'Add discount', 'Registrar descuento'],
@@ -527,6 +530,8 @@ const dict = {
   'com.adjust.amount': ['Valor do desconto (US$)', 'Discount amount (US$)', 'Valor del descuento (US$)'],
   'com.adjust.reason': ['Motivo', 'Reason', 'Motivo'],
   'com.adjust.amountErr': ['Use um valor maior que zero.', 'Use an amount above zero.', 'Usa un valor mayor que cero.'],
+  'com.adjust.reasonErr': ['Diga o motivo do desconto.', 'Give the reason for the discount.', 'Indica el motivo del descuento.'],
+  'com.adjust.placeholder': ['40,00', '40.00', '40,00'],
   'com.adjusted': ['Desconto lançado', 'Discount added', 'Descuento registrado'],
   'com.person.title': ['{name} · {month}', '{name} · {month}', '{name} · {month}'],
   'com.start.title': ['Data de início da comissão', 'Commission start date', 'Fecha de inicio de la comisión'],
@@ -546,6 +551,8 @@ const dict = {
   'com.manager.first': ['Os prazos sem pessoa deste cliente passam para {name}, se o papel dessa pessoa tiver regra.', 'This client\'s windows without a person go to {name}, if that person\'s role has a rule.', 'Los plazos sin persona de este cliente pasan a {name}, si el rol de esa persona tiene regla.'],
   'com.manager.continues': ['{name} é do mesmo papel: os prazos abertos continuam com essa pessoa, até a mesma data de fim. O que já foi gerado fica com quem gerou.', '{name} has the same role: open windows continue with this person, until the same end date. What was already earned stays with who earned it.', '{name} es del mismo rol: los plazos abiertos siguen con esa persona, hasta la misma fecha de fin. Lo ya generado queda con quien lo generó.'],
   'com.manager.stops': ['{name} é de outro papel: os prazos abertos param hoje. O que já foi gerado fica com quem gerou.', '{name} has another role: open windows stop today. What was already earned stays with who earned it.', '{name} es de otro rol: los plazos abiertos paran hoy. Lo ya generado queda con quien lo generó.'],
+  'com.manager.mixed': ['{name} tem o papel de parte dos prazos abertos: esses continuam com essa pessoa e os outros param hoje. O que já foi gerado fica com quem gerou.', '{name} has the role of some of the open windows: those continue with this person and the others stop today. What was already earned stays with who earned it.', '{name} tiene el rol de parte de los plazos abiertos: esos siguen con esta persona y los demás paran hoy. Lo ya generado queda con quien lo generó.'],
+  'com.manager.noWindows': ['O responsável de hoje não tem prazos abertos neste cliente; a troca não muda comissão nenhuma.', 'The current manager has no open windows on this client; the change does not affect any commission.', 'El responsable actual no tiene plazos abiertos en este cliente; el cambio no afecta ninguna comisión.'],
   'com.manager.save': ['Trocar', 'Change', 'Cambiar'],
   'com.manager.saved': ['Responsável trocado', 'Manager changed', 'Responsable cambiado'],
   'com.nav.mine': ['Minha comissão', 'My commission', 'Mi comisión'],
@@ -558,9 +565,11 @@ const dict = {
   'com.goal.splitHint': ['O valor é dividido entre quem tem o papel.', 'The amount is split among those in the role.', 'El valor se divide entre quienes tienen el rol.'],
   'com.goal.amount': ['Em {month}, cada pessoa deste papel tem meta de {amount} de revshare da Groone', 'In {month}, each person in this role has a goal of {amount} of Groone revshare', 'En {month}, cada persona de este rol tiene una meta de {amount} de revshare de Groone'],
   'com.goal.splitOf': ['({total} ÷ {n} pessoas)', '({total} ÷ {n} people)', '({total} ÷ {n} personas)'],
+  'com.goal.splitOfOne': ['({total} ÷ 1 pessoa)', '({total} ÷ 1 person)', '({total} ÷ 1 persona)'],
   'com.goal.noPeople': ['Ninguém tem este papel ainda: a meta dividida aparece quando houver alguém.', 'Nobody has this role yet: the split goal shows up once someone does.', 'Nadie tiene este rol todavía: la meta dividida aparece cuando haya alguien.'],
   'com.goal.otherYear': ['O modelo é de {year}; escolha um de {current} para ver o valor do mês.', 'The template is for {year}; pick one for {current} to see the month\'s amount.', 'La plantilla es de {year}; elige una de {current} para ver el valor del mes.'],
   'com.roles.people': ['{n} pessoas', '{n} people', '{n} personas'],
+  'com.roles.peopleOne': ['1 pessoa', '1 person', '1 persona'],
   'com.roles.created': ['Papel criado', 'Role created', 'Rol creado'],
   'com.roles.createdDesc': ['Agora adicione as regras de comissão.', 'Now add the commission rules.', 'Ahora agrega las reglas de comisión.'],
   'com.roles.editRole': ['Editar papel', 'Edit role', 'Editar rol'],
@@ -2400,6 +2409,13 @@ function fill(text: string, params?: Record<string, string | number>): string {
 /** Texto da chave no idioma atual. */
 export function t(key: Key, params?: Record<string, string | number>): string {
   return fill(dict[key][index[lang.value]], params)
+}
+
+/** Texto com quantidade: com ``count`` igual a 1, usa a chave terminada em ``One`` quando existe. */
+export function tn(key: Key, count: number, params?: Record<string, string | number>): string {
+  const one = `${key}One`
+  const chosen = count === 1 && one in dict ? (one as Key) : key
+  return t(chosen, { n: count, ...params })
 }
 
 /** Nome do grupo de permissões no idioma atual; um grupo novo da API sem texto aqui mostra a chave. */

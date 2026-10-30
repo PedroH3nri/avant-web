@@ -15,7 +15,7 @@ import { cn } from '@/lib/utils'
 import { profileBody, profileInput } from '@/modules/internal/clients/rules'
 import { clientService } from '@/modules/internal/clients/service'
 import type { Client, ClientDetail } from '@/modules/internal/clients/types'
-import { managerChange } from '@/modules/internal/commissions/rules'
+import { windowsChange } from '@/modules/internal/commissions/rules'
 import { staffService } from '@/modules/internal/staff/service'
 import type { Member } from '@/modules/team/types'
 import { useSession } from '@/stores/session'
@@ -50,12 +50,25 @@ const options = computed(() =>
 )
 const next = computed(() => staff.value?.find((member) => member.user.id === picked.value) ?? null)
 /** O papel do responsável de hoje como o core vê: só conta quem está ativo na Groone. */
-const currentRole = computed(() => (manager.value?.status === 'active' ? (manager.value.role?.id ?? '') : ''))
-const change = computed(() => managerChange(managerId.value === null ? null : currentRole.value, next.value?.role?.id ?? null))
-const changeText = computed(() => (next.value ? t(`com.manager.${change.value}` as Key, { name: next.value.user.name }) : ''))
+const windowRoles = ref<string[] | null>(null)
+const change = computed(() => windowsChange(managerId.value, windowRoles.value ?? [], next.value?.role?.id ?? null))
+const CHANGE_KEY: Record<ReturnType<typeof windowsChange>, Key> = {
+  first: 'com.manager.first',
+  continues: 'com.manager.continues',
+  stops: 'com.manager.stops',
+  mixed: 'com.manager.mixed',
+  none: 'com.manager.noWindows',
+}
+const changeText = computed(() => (next.value && windowRoles.value !== null ? t(CHANGE_KEY[change.value], { name: next.value.user.name }) : ''))
 
 watch(open, (opened) => {
-  if (opened) picked.value = ''
+  if (!opened) return
+  picked.value = ''
+  windowRoles.value = null
+  clientService.managerWindows(props.client.id).then(
+    (found) => (windowRoles.value = found.role_ids),
+    () => (windowRoles.value = []),
+  )
 })
 
 /** Grava o novo responsável no cadastro do cliente. */
@@ -103,8 +116,8 @@ async function save() {
       <Field id="account-manager" :label="t('com.manager.pick')">
         <NativeSelect id="account-manager" v-model="picked" :options="[{ value: '', label: t('com.manager.choose') }, ...options]" />
       </Field>
-      <div v-if="next" :class="cn('flex gap-3 rounded-md border p-3 text-[13px]', change === 'stops' ? 'border-ochre/40 bg-ochre-soft' : 'bg-muted')">
-        <Info :class="cn('mt-0.5 size-4 shrink-0', change === 'stops' ? 'text-ochre' : 'text-muted-foreground')" aria-hidden="true" />
+      <div v-if="changeText" :class="cn('flex gap-3 rounded-md border p-3 text-[13px]', ['stops', 'mixed'].includes(change) ? 'border-ochre/40 bg-ochre-soft' : 'bg-muted')">
+        <Info :class="cn('mt-0.5 size-4 shrink-0', ['stops', 'mixed'].includes(change) ? 'text-ochre' : 'text-muted-foreground')" aria-hidden="true" />
         <span>{{ changeText }}</span>
       </div>
     </div>

@@ -1,6 +1,6 @@
 import { nextTick } from 'vue'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { auditText, chooseLang, errorText, formatAgo, permissionGroupLabel, pick, t } from '@/lib/i18n'
+import { auditText, chooseLang, errorText, formatAgo, permissionGroupLabel, pick, t, tn } from '@/lib/i18n'
 import { safeNext } from '@/lib/nav'
 
 beforeEach(() => chooseLang('pt'))
@@ -55,5 +55,13 @@ describe('auditText', () => {
   it('traduz as ações conhecidas e mostra as outras como vêm', () => {
     expect(auditText('company.suspended')).toBe('Cliente suspenso')
     expect(auditText('algo.novo')).toBe('algo.novo')
+  })
+})
+
+describe('plural', () => {
+  it('usa o texto de uma unidade quando n é 1', () => {
+    expect(tn('com.roles.people', 1)).toBe('1 pessoa')
+    expect(tn('com.roles.people', 3)).toBe('3 pessoas')
+    expect(tn('com.days', 1)).toBe('1 dia')
   })
 })

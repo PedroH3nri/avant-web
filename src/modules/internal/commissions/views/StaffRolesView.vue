@@ -15,8 +15,7 @@ import Field from '@/components/ui/Field.vue'
 import MenuContent from '@/components/ui/MenuContent.vue'
 import MenuItem from '@/components/ui/MenuItem.vue'
 import { ApiError } from '@/lib/api'
-import { errorText, lang, locale, pick, t, type Key } from '@/lib/i18n'
-import { formatMetric } from '@/lib/metrics'
+import { errorText, lang, locale, pick, t, tn, type Key } from '@/lib/i18n'
 import { td, th } from '@/lib/table'
 import { cn } from '@/lib/utils'
 import RuleDialog from '@/modules/internal/commissions/components/RuleDialog.vue'
@@ -66,20 +65,23 @@ const MODES: GoalMode[] = ['per_member', 'split']
 const goal = computed(() => roleGoals.value.find((item) => item.role_id === roleId.value) ?? null)
 const template = computed(() => templates.value.find((item) => item.id === goal.value?.goal_template_id) ?? null)
 const templateOptions = computed(() => [{ value: '', label: t('goals.noGoalOption') }, ...templates.value.filter((item) => !item.is_company_goal || item.id === goal.value?.goal_template_id).map((item) => ({ value: item.id, label: item.name.includes(String(item.year)) ? item.name : `${item.name} (${item.year})` }))])
-/** A frase do valor da meta de cada pessoa no mês atual. */
+/** Dólares sem centavos, como no protótipo. */
+const wholeDollars = (value: number) => new Intl.NumberFormat(locale.value, { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value)
+const AMOUNT_MARK = '\u0000'
+/** A frase do valor da meta de cada pessoa no mês atual, com o valor separado para o destaque. */
 const goalText = computed(() => {
   const chosen = template.value
   const role = current.value
-  if (!chosen || !goal.value || !role) return ''
-  if (chosen.year !== Number(today.slice(0, 4))) return t('com.goal.otherYear', { year: chosen.year, current: today.slice(0, 4) })
+  if (!chosen || !goal.value || !role) return null
+  if (chosen.year !== Number(today.slice(0, 4))) return { before: t('com.goal.otherYear', { year: chosen.year, current: today.slice(0, 4) }), amount: '', after: '' }
   const people = active.value.get(role.id) ?? 0
   const amount = personGoalAmount(chosen.months, goal.value.goal_mode, people, today.slice(0, 7))
-  if (amount === null) return t('com.goal.noPeople')
+  if (amount === null) return { before: t('com.goal.noPeople'), amount: '', after: '' }
   const month = monthOptions(today, locale.value)[0]?.label ?? ''
-  const text = t('com.goal.amount', { month, amount: formatMetric(amount, 'currency', locale.value) })
-  if (goal.value.goal_mode !== 'split') return `${text}.`
-  const total = formatMetric(Number(chosen.months[Number(today.slice(5, 7)) - 1]), 'currency', locale.value)
-  return `${text} ${t('com.goal.splitOf', { total, n: people })}.`
+  const [before = '', rest = ''] = t('com.goal.amount', { month, amount: AMOUNT_MARK }).split(AMOUNT_MARK)
+  if (goal.value.goal_mode !== 'split') return { before, amount: wholeDollars(amount), after: `${rest}.` }
+  const total = wholeDollars(Number(chosen.months[Number(today.slice(5, 7)) - 1]))
+  return { before, amount: wholeDollars(amount), after: `${rest} ${tn('com.goal.splitOf', people, { total })}.` }
 })
 
 /** Todos os papéis da Company Groone, página por página (os predefinidos são dos clientes). */
@@ -167,9 +169,9 @@ watch(roleId, () => void loadRules().catch((error) => toast.error(errorText(erro
 
 /** Resumo do papel na lista: pessoas e regras de comissão. */
 function roleLine(role: Role): string {
-  const people = t('com.roles.people', { n: role.member_count })
+  const people = tn('com.roles.people', role.member_count)
   const total = counts.value.get(role.id) ?? 0
-  return `${people} · ${total ? t('com.roles.rules', { n: total }) : t('com.roles.noCommission')}`
+  return `${people} · ${total ? tn('com.roles.rules', total) : t('com.roles.noCommission')}`
 }
 /** Abre o papel para criar (null) ou editar. */
 function openRole(role: Role | null) {
@@ -261,8 +263,8 @@ function ruleEnd(rule: CommissionRule): string {
                   <div class="text-[12px] text-muted-foreground">{{ ruleKind(rule) }}</div>
                 </td>
                 <td :class="[td, 'text-right tnum']">{{ formatAmount(rule.percentage, lang) }}%</td>
-                <td :class="[td, 'whitespace-nowrap text-right tnum']">{{ rule.start_offset_days ? t('com.days', { n: rule.start_offset_days }) : '–' }}</td>
-                <td :class="[td, 'whitespace-nowrap text-right tnum']">{{ rule.duration_days ? t('com.days', { n: rule.duration_days }) : t('com.noEnd') }}</td>
+                <td :class="[td, 'whitespace-nowrap text-right tnum']">{{ rule.start_offset_days ? tn('com.days', rule.start_offset_days) : '–' }}</td>
+                <td :class="[td, 'whitespace-nowrap text-right tnum']">{{ rule.duration_days ? tn('com.days', rule.duration_days) : t('com.noEnd') }}</td>
                 <td :class="[td, 'whitespace-nowrap text-muted-foreground']">{{ ruleEnd(rule) }}</td>
                 <td :class="td">
                   <DropdownMenuRoot v-if="canManage">
@@ -308,7 +310,9 @@ function ruleEnd(rule: CommissionRule): string {
                 </span>
               </label>
             </fieldset>
-            <p class="text-[14px]">{{ goalText }}</p>
+            <p v-if="goalText" class="text-[14px]">
+              {{ goalText.before }}<span class="font-medium tnum">{{ goalText.amount }}</span>{{ goalText.after }}
+            </p>
           </div>
         </Card>
       </div>

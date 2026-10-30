@@ -77,12 +77,6 @@ export function takenEvents(rules: { id: string; event: CommissionEvent }[], edi
   return new Set(rules.filter((rule) => rule.id !== editingId).map((rule) => rule.event))
 }
 
-/** O que acontece com os prazos abertos quando o responsável muda. */
-export function managerChange(currentRoleId: string | null, nextRoleId: string | null): 'first' | 'continues' | 'stops' {
-  if (currentRoleId === null) return 'first'
-  return currentRoleId === nextRoleId ? 'continues' : 'stops'
-}
-
 /** Dia da API (``AAAA-MM-DD``) no formato do idioma, sem andar com o fuso. */
 export function formatDay(iso: string, locale: string): string {
   return new Intl.DateTimeFormat(locale, { dateStyle: 'short', timeZone: 'UTC' }).format(new Date(`${iso}T00:00:00Z`))
@@ -135,4 +129,13 @@ export function activeByRole(members: { role: { id: string } | null; status: str
     if (member.status === 'active' && member.role) counts.set(member.role.id, (counts.get(member.role.id) ?? 0) + 1)
   }
   return counts
+}
+
+/** O que a troca de responsável faz com os prazos abertos, pelo papel de cada um (como o core). */
+export function windowsChange(managerId: string | null, windowRoles: string[], nextRoleId: string | null): 'first' | 'continues' | 'stops' | 'mixed' | 'none' {
+  if (managerId === null) return 'first'
+  if (windowRoles.length === 0) return 'none'
+  const kept = windowRoles.filter((role) => role === nextRoleId).length
+  if (kept === windowRoles.length) return 'continues'
+  return kept === 0 ? 'stops' : 'mixed'
 }

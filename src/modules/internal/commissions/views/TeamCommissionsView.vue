@@ -20,7 +20,7 @@ import NativeSelect from '@/components/ui/NativeSelect.vue'
 import Status from '@/components/ui/Status.vue'
 import TableState from '@/components/ui/TableState.vue'
 import { ApiError } from '@/lib/api'
-import { errorText, lang, locale, t, type Key } from '@/lib/i18n'
+import { errorText, lang, locale, t, tn, type Key } from '@/lib/i18n'
 import { formatMetric, toNumber } from '@/lib/metrics'
 import { td, th } from '@/lib/table'
 import AdjustmentDialog from '@/modules/internal/commissions/components/AdjustmentDialog.vue'
@@ -206,7 +206,7 @@ async function saveStart() {
         </tbody>
       </DataTable>
       <div v-if="canManage && ready.length > 0" class="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-card px-4 py-3 text-[14px]">
-        <span class="text-muted-foreground">{{ t('com.team.toIssue', { n: ready.length }) }}</span>
+        <span class="text-muted-foreground">{{ tn('com.team.toIssue', ready.length) }}</span>
         <Button variant="outline" :loading="issuing" @click="issue(ready)">{{ t('com.team.issueAll') }}</Button>
       </div>
       <Card v-if="canManage" :title="t('com.start.title')" :desc="t('com.start.desc')" :footer-note="savedStart ? undefined : t('com.start.missing')">
