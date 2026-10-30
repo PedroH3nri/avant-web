@@ -1,11 +1,38 @@
 import { describe, expect, it } from 'vitest'
-import { formatAmount, goalTone, monthOptions, paceMark, parseAmount, templateValid } from '@/modules/internal/goals/rules'
-import type { GoalProgress } from '@/modules/internal/goals/types'
+import { companyGoalOf, companyGoalYears, formatAmount, goalTone, monthOptions, paceMark, parseAmount, roleTemplates, templateValid } from '@/modules/internal/goals/rules'
+import type { GoalProgress, GoalTemplate } from '@/modules/internal/goals/types'
 
 /** Andamento com o que o teste muda. */
 const progress = (patch: Partial<GoalProgress>): GoalProgress => ({ done: '0', goal: '1000', share: '0', on_pace: null, projected: null, ...patch })
 
+/** Modelo de meta com o que o teste muda. */
+const template = (patch: Partial<GoalTemplate>): GoalTemplate => ({
+  id: 'modelo',
+  name: 'Modelo',
+  year: 2026,
+  currency: 'USD',
+  months: Array.from({ length: 12 }, () => '0'),
+  is_company_goal: false,
+  created_at: '2026-01-01T00:00:00Z',
+  updated_at: '2026-01-01T00:00:00Z',
+  ...patch,
+})
+
 describe('regras das metas', () => {
+  it('separa a meta da Groone dos modelos dos papéis', () => {
+    const vendas = template({ id: 'vendas' })
+    const groone2026 = template({ id: 'groone-2026', is_company_goal: true })
+    const groone2027 = template({ id: 'groone-2027', is_company_goal: true, year: 2027 })
+    const all = [vendas, groone2026, groone2027]
+    expect(roleTemplates(all)).toEqual([vendas])
+    expect(companyGoalOf(all, 2027)).toBe(groone2027)
+    expect(companyGoalOf([vendas], 2026)).toBeNull()
+  })
+
+  it('oferece o ano anterior, o atual e o próximo para a meta da Groone', () => {
+    expect(companyGoalYears('2026-10-30')).toEqual([2025, 2026, 2027])
+  })
+
   it('pinta pelo ritmo e fica neutro sem meta ou sem ritmo', () => {
     expect(goalTone(progress({ on_pace: true }))).toBe('ok')
     expect(goalTone(progress({ on_pace: false }))).toBe('ochre')
