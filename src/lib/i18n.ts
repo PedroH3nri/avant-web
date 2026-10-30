@@ -220,7 +220,7 @@ const dict = {
     'Las visitas llegan cada hora de los sitios con la etiqueta de Groone instalada.',
   ],
   'nav.pageViews': ['Page Views', 'Page Views', 'Page Views'],
-  'nav.reports': ['Relatórios', 'Reports', 'Informes'],
+  'nav.customReports': ['Relatórios customizados', 'Custom reports', 'Informes personalizados'],
   // Relatórios salvos e construtor
   'report.listSub': ['Monte relatórios com as métricas do GAM, das page views e as suas, salve e compartilhe com a equipe.', 'Build reports with GAM metrics, page views and your own, then save and share them with the team.', 'Arma informes con las métricas de GAM, las páginas vistas y las tuyas, guárdalos y compártelos con el equipo.'],
   'report.create': ['Criar relatório', 'Create report', 'Crear informe'],

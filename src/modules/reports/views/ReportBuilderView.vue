@@ -340,7 +340,7 @@ onBeforeUnmount(() => {
 <template>
   <div class="flex min-h-[calc(100dvh-3.5rem)] flex-col bg-background">
     <header class="sticky top-14 z-10 flex flex-wrap items-center gap-3 border-b bg-background px-4 py-3">
-      <Button variant="ghost" size="sm" class="-ml-1" @click="router.push('/relatorios')"><ArrowLeft />{{ t('nav.reports') }}</Button>
+      <Button variant="ghost" size="sm" class="-ml-1" @click="router.push('/relatorios')"><ArrowLeft />{{ t('nav.customReports') }}</Button>
       <span class="h-5 w-px bg-border" aria-hidden="true" />
       <input
         v-model="draft.name"
