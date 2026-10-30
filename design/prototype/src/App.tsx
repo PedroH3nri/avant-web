@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Toaster, toast } from 'sonner'
-import { Check, ChevronsUpDown, Copy, Loader2, LogOut, Plus, RefreshCw, Search, X, AlertTriangle, ArrowLeft, MoreHorizontal, Lock, Mail, ExternalLink, Home, Users, Network, Settings, ShieldCheck, Menu, BarChart3, Eye, FileText, Wallet, Target } from 'lucide-react'
+import { Check, ChevronsUpDown, Copy, Loader2, Plus, RefreshCw, Search, X, AlertTriangle, ArrowLeft, MoreHorizontal, Lock, Mail, ExternalLink, Home, Users, Network, Settings, ShieldCheck, Menu, BarChart3, Wallet } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -250,15 +250,6 @@ function Invite({ t, go }: { t: T; go: (s: Screen) => void }) {
 
 /* ---------- app shell: sidebar + main ---------- */
 
-const NAV: { id: Screen; key: Key; icon: typeof Home }[] = [
-  { id: 'inicio', key: 'nav.home', icon: Home },
-  { id: 'desempenho', key: 'nav.performance', icon: BarChart3 },
-  { id: 'visitas', key: 'nav.pageViews', icon: Eye },
-  { id: 'relatorios', key: 'nav.reports', icon: FileText },
-  { id: 'equipe', key: 'nav.team', icon: Users },
-  { id: 'networks', key: 'nav.networks', icon: Network },
-  { id: 'configuracoes', key: 'nav.settings', icon: Settings },
-]
 
 function LangSwitch({ lang, setLang, className }: { lang: Lang; setLang: (l: Lang) => void; className?: string }) {
   return (
@@ -266,58 +257,6 @@ function LangSwitch({ lang, setLang, className }: { lang: Lang; setLang: (l: Lan
       {(['pt', 'en', 'es'] as Lang[]).map((l) => (
         <button key={l} onClick={() => setLang(l)} aria-pressed={lang === l} className={cn('h-7 flex-1 rounded-[4px] px-2 text-[12px] font-medium uppercase focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', lang === l ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground')}>{l}</button>
       ))}
-    </div>
-  )
-}
-
-function SidebarContent({ t, screen, go }: { t: T; screen: Screen; go: (s: Screen) => void }) {
-  const internal = INTERNAL_SCREENS.includes(screen)
-  const isActive = (id: Screen) => screen === id || (id === 'networks' && screen === 'conectar') || (id === 'equipe' && ['grupos', 'grupo', 'grupoinativo', 'membro'].includes(screen))
-  const item = (active: boolean) => cn('flex h-9 w-full items-center gap-2.5 rounded-md px-2.5 text-left text-[14px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-    active ? 'bg-secondary font-medium text-foreground' : 'text-muted-foreground hover:bg-accent hover:text-foreground')
-  return (
-    <div className="flex h-full flex-col bg-sidebar">
-      <div className="flex h-14 items-center gap-2 border-b px-3">
-        <button onClick={() => go(internal ? 'interno' : 'inicio')} aria-label="Avant, início" className="shrink-0 rounded-md p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><Mark size={24} /></button>
-        <span className="leading-tight"><span className="block text-[14px] font-semibold tracking-tight">Avant</span><span className="block text-[12px] text-muted-foreground">by Groone</span></span>
-      </div>
-      <nav className="grid gap-0.5 p-3" aria-label="Principal">
-        {internal ? (
-          ([['interno', t('int.title'), Users], ['comissoes', 'Comissões da equipe', Wallet], ['minhacomissao', 'Minha comissão', Target], ['papelcomissao', 'Papéis da Equipe Groone', ShieldCheck]] as const).map(([id, label, Icon]) => (
-            <button key={id} onClick={() => go(id)} aria-current={screen === id ? 'page' : undefined} className={item(screen === id)}><Icon className="h-4 w-4" />{label}</button>
-          ))
-        ) : NAV.map(({ id, key, icon: Icon }) => (
-          <button key={id} onClick={() => go(id)} aria-current={isActive(id) ? 'page' : undefined} className={item(isActive(id))}>
-            <Icon className="h-4 w-4" />{t(key)}
-            {id === 'networks' && <span className="ml-auto h-2 w-2 rounded-full bg-bad" aria-label="1 network sem acesso" />}
-          </button>
-        ))}
-        {!internal && (
-          <>
-            <div className="px-2.5 pb-1 pt-5 text-[12px] font-medium text-muted-foreground">{t('nav.soon')}</div>
-            {(['nav.dashboards'] as Key[]).map((k) => (
-              <span key={k} className="flex h-9 items-center gap-2.5 px-2.5 text-[14px] text-muted-foreground/70"><Lock className="h-4 w-4" />{t(k)}</span>
-            ))}
-          </>
-        )}
-      </nav>
-      <div className="mt-auto grid gap-3 border-t p-3">
-        <button onClick={() => go(internal ? 'inicio' : 'interno')} className={item(false)}>
-          {internal ? <ArrowLeft className="h-4 w-4" /> : <ShieldCheck className="h-4 w-4" />}{internal ? t('nav.back') : t('nav.internal')}
-        </button>
-        <DropdownMenu>
-          <DropdownMenuTrigger className="flex items-center gap-2.5 rounded-md p-1.5 text-left hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-            <Avatar name="Pedro Henrique" size={28} />
-            <span className="min-w-0 flex-1"><span className="block truncate text-[13px] font-medium">Pedro Henrique</span><span className="block truncate text-[12px] text-muted-foreground">pedro@blogexemplo.com</span></span>
-            <ChevronsUpDown className="h-4 w-4 shrink-0 text-muted-foreground" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" side="top" className="w-56">
-            <DropdownMenuItem>{t('top.profile')}</DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onSelect={() => go('login')}>{t('top.logout')}<LogOut className="ml-auto h-4 w-4" /></DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
     </div>
   )
 }
@@ -367,8 +306,8 @@ const RAIL_WIDTH = 88
 const OPEN_DELAY = 120
 const SWITCH_DELAY = 250
 const CLOSE_DELAY = 200
-/** Sidebar em trilho: um ícone por grupo; passar o mouse abre, por cima da página, o painel com os itens do grupo. */
-function RailSidebar({ screen, go }: { screen: Screen; go: (s: Screen) => void }) {
+/** Sidebar em trilho: um ícone por grupo; passar o mouse (ou tocar) abre, por cima da página, o painel com os itens do grupo. Na gaveta do celular, o painel fica sempre ao lado do trilho. */
+function RailSidebar({ screen, go, drawer = false }: { screen: Screen; go: (s: Screen) => void; drawer?: boolean }) {
   const internal = INTERNAL_SCREENS.includes(screen)
   const groups = internal ? INTERNAL_RAIL : CLIENT_RAIL
   const owner = groups.find((group) => group.items.some((entry) => entry.id === screen || entry.also?.includes(screen))) ?? groups[0]
@@ -376,8 +315,11 @@ function RailSidebar({ screen, go }: { screen: Screen; go: (s: Screen) => void }
   const [lastShown, setLastShown] = useState(owner.key)
   const closing = useRef<ReturnType<typeof setTimeout> | null>(null)
   const switching = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const touched = useRef(false)
+  const touchMode = useRef(false)
+  const container = useRef<HTMLDivElement | null>(null)
   useEffect(() => { setHovered(null) }, [screen])
-  const open = hovered !== null
+  const open = drawer || hovered !== null
   const shown = groups.find((group) => group.key === (hovered ?? lastShown)) ?? owner
   /** Cancela a troca e o fechamento que ainda estão esperando. */
   const cancel = () => { if (closing.current) clearTimeout(closing.current); if (switching.current) clearTimeout(switching.current) }
@@ -386,18 +328,32 @@ function RailSidebar({ screen, go }: { screen: Screen; go: (s: Screen) => void }
   /** Abre o painel do grupo sob o mouse depois de uma pequena espera, para o mouse que só passa por cima não trocar os itens. */
   const hover = (key: string) => { cancel(); if (key === hovered) return; switching.current = setTimeout(() => show(key), open ? SWITCH_DELAY : OPEN_DELAY) }
   /** Fecha o painel com um pequeno atraso, para dar tempo de o mouse chegar nele. */
-  const leave = () => { if (switching.current) clearTimeout(switching.current); closing.current = setTimeout(() => setHovered(null), CLOSE_DELAY) }
+  const leave = () => { if (drawer || touchMode.current) return; if (switching.current) clearTimeout(switching.current); closing.current = setTimeout(() => setHovered(null), CLOSE_DELAY) }
+  useEffect(() => {
+    if (drawer || hovered === null) return
+    /** No toque, fecha o painel quando a pessoa toca fora do menu. */
+    const outside = (event: PointerEvent) => { if (!container.current?.contains(event.target as Node)) setHovered(null) }
+    document.addEventListener('pointerdown', outside)
+    return () => document.removeEventListener('pointerdown', outside)
+  }, [drawer, hovered])
+  /** Clique no grupo: no toque e na gaveta abre o painel do grupo; com o mouse vai para o primeiro item. */
+  const pick = (group: RailGroup) => {
+    const viaTouch = touched.current
+    touched.current = false
+    if (group.items.length > 1 && (drawer || viaTouch)) { cancel(); if (!drawer && hovered === group.key) setHovered(null); else show(group.key); return }
+    go(group.items[0].id)
+  }
   return (
-    <div className="relative flex h-full" onMouseLeave={leave}>
+    <div ref={container} className="relative flex h-full" onMouseLeave={leave} onPointerDown={(event) => { touchMode.current = event.pointerType !== 'mouse' }}>
       <div className="relative z-10 flex shrink-0 flex-col items-center border-r bg-sidebar py-3" style={{ width: RAIL_WIDTH }}>
         <button onClick={() => go(internal ? 'interno' : 'inicio')} aria-label="Avant, início" className="rounded-md p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><Mark size={28} /></button>
         <nav className="mt-4 grid w-full gap-1 px-1.5" aria-label="Grupos do menu">
           {groups.map((group) => {
             const Icon = group.icon
             const current = owner.key === group.key
-            const showing = open && shown.key === group.key
+            const showing = open && shown.key === group.key && group.items.length > 1
             return (
-              <button key={group.key} onClick={() => go(group.items[0].id)} onMouseEnter={() => hover(group.key)} onFocus={() => { cancel(); show(group.key) }} aria-current={current ? 'page' : undefined} aria-expanded={group.items.length > 1 ? showing : undefined} title={group.label}
+              <button key={group.key} onPointerDown={(event) => { touched.current = event.pointerType !== 'mouse' }} onClick={() => pick(group)} onMouseEnter={() => { if (!drawer && !touched.current) hover(group.key) }} onFocus={() => { if (drawer || touched.current) return; cancel(); show(group.key) }} aria-current={current ? 'page' : undefined} aria-expanded={group.items.length > 1 ? showing : undefined} title={group.label}
                 className={cn('flex flex-col items-center gap-1.5 rounded-md py-2.5 text-[12px] font-medium leading-none transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                   current ? 'bg-secondary text-foreground' : showing ? 'bg-accent text-foreground' : 'text-muted-foreground hover:bg-accent hover:text-foreground')}>
                 <Icon className="h-[18px] w-[18px]" />{group.label}
@@ -415,7 +371,7 @@ function RailSidebar({ screen, go }: { screen: Screen; go: (s: Screen) => void }
       <div
         onMouseEnter={() => { if (closing.current) clearTimeout(closing.current); if (switching.current) clearTimeout(switching.current) }}
         aria-hidden={!open}
-        className={cn('absolute inset-y-0 left-[88px] flex w-[248px] flex-col border-r bg-sidebar shadow-[8px_0_24px_-12px_rgba(0,0,0,0.18)] transition-[opacity,transform] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none',
+        className={drawer ? 'flex min-w-0 flex-1 flex-col bg-sidebar' : cn('absolute inset-y-0 left-[88px] flex w-[248px] flex-col border-r bg-sidebar shadow-[8px_0_24px_-12px_rgba(0,0,0,0.18)] transition-[opacity,transform] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none',
           open ? 'translate-x-0 opacity-100 duration-300' : 'pointer-events-none -translate-x-3 opacity-0 duration-200')}
       >
         <div className="flex h-14 items-center gap-2 border-b px-4"><span className="text-[14px] font-semibold tracking-tight">{shown.label}</span>{internal && <Badge>Interno</Badge>}</div>
@@ -435,16 +391,16 @@ function Shell({ t, lang, setLang, screen, go, image, children }: { t: T; lang: 
   const nav = (s: Screen) => { setOpen(false); go(s) }
   return (
     <div className="flex flex-1">
-      <aside className="sticky top-11 z-40 hidden h-[calc(100dvh-2.75rem)] shrink-0 self-start lg:block"><RailSidebar screen={screen} go={go} /></aside>
+      <aside className="sticky top-11 z-40 hidden h-[calc(100dvh-2.75rem)] shrink-0 self-start md:block"><RailSidebar screen={screen} go={go} /></aside>
       <Sheet open={open} onOpenChange={setOpen}>
-        <SheetContent side="left" className="w-[272px] p-0 [&>button:first-child]:hidden">
+        <SheetContent side="left" className="w-[336px] max-w-[92vw] p-0 [&>button:first-child]:hidden">
           <SheetTitle className="sr-only">Menu</SheetTitle>
-          <SidebarContent t={t} screen={screen} go={nav} />
+          <RailSidebar drawer screen={screen} go={nav} />
         </SheetContent>
       </Sheet>
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-20 flex h-14 items-center gap-2 border-b bg-background px-4 sm:px-6 lg:top-11">
-          <Button variant="ghost" size="icon" className="-ml-2 lg:hidden" onClick={() => setOpen(true)} aria-label="Abrir menu"><Menu /></Button>
+          <Button variant="ghost" size="icon" className="-ml-2 md:hidden" onClick={() => setOpen(true)} aria-label="Abrir menu"><Menu /></Button>
           <CompanySwitcher t={t} internal={INTERNAL_SCREENS.includes(screen)} image={image} />
           <LangSwitch lang={lang} setLang={setLang} className="ml-auto w-[132px]" />
         </header>
