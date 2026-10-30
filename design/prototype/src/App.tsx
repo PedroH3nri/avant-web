@@ -3088,13 +3088,55 @@ function RuleDialog({ open, onOpenChange, role, roles, rule, onSave }: { open: b
   )
 }
 
+const INTERNAL_PERMS: [string, [string, string][]][] = [
+  ['Clientes', [['internal.clients.view', 'Ver os clientes'], ['internal.clients.manage', 'Cadastrar e editar clientes']]],
+  ['Contratos', [['internal.contracts.view', 'Ver os contratos'], ['internal.contracts.create', 'Criar contrato à mão']]],
+  ['Comissão e metas', [['internal.commissions.view', 'Ver a comissão e a meta de todos'], ['internal.commissions.manage', 'Editar regras, emitir, lançar desconto e trocar o responsável']]],
+  ['Resultado', [['internal.results.view', 'Ver o resultado dos clientes']]],
+]
+
+/** Modal de papel novo da Equipe Groone: nome e permissões; a comissão vem depois, na lista de regras. */
+function NewStaffRoleDialog({ open, onOpenChange, names, onCreate }: { open: boolean; onOpenChange: (open: boolean) => void; names: string[]; onCreate: (name: string) => void }) {
+  const [name, setName] = useState('')
+  const [picked, setPicked] = useState<string[]>(['internal.clients.view'])
+  const taken = names.some((item) => item.toLowerCase() === name.trim().toLowerCase())
+  const toggle = (key: string) => setPicked(picked.includes(key) ? picked.filter((item) => item !== key) : [...picked, key])
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[600px]">
+        <DialogHeader><DialogTitle>Novo papel da Equipe Groone</DialogTitle><DialogDescription>Depois de criar, adicione as regras de comissão e a meta do papel.</DialogDescription></DialogHeader>
+        <div className="grid gap-4">
+          <Field id="staff-role-name" label="Nome" error={taken && 'Já existe um papel com esse nome.'}><Input id="staff-role-name" className="h-9" value={name} onChange={(e) => setName(e.target.value)} placeholder="Comercial de parcerias" aria-invalid={taken} /></Field>
+          <div className="grid gap-2">
+            <span className="text-[13px] font-medium text-muted-foreground">Permissões</span>
+            <div className="scroll-thin grid max-h-[min(40dvh,320px)] gap-4 overflow-y-auto rounded-md border p-4">
+              {INTERNAL_PERMS.map(([group, perms]) => (
+                <div key={group} className="grid gap-2"><h3 className="text-[13px] font-medium">{group}</h3>
+                  {perms.map(([key, label]) => <label key={key} className="flex items-center gap-2.5 text-[14px]"><input type="checkbox" checked={picked.includes(key)} onChange={() => toggle(key)} className="size-4 accent-[hsl(var(--foreground))]" />{label}</label>)}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+        <DialogFooter><Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button><Button disabled={!name.trim() || taken} onClick={() => onCreate(name.trim())}>Criar papel</Button></DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 function RoleCommissionScreen() {
   const [roles, setRoles] = useState(STAFF_ROLES)
   const [roleId, setRoleId] = useState(STAFF_ROLES[1].id)
   const [goalsOpen, setGoalsOpen] = useState(false)
   const [dialog, setDialog] = useState<{ rule: CommissionRule | null } | null>(null)
   const [removing, setRemoving] = useState<CommissionRule | null>(null)
+  const [creatingRole, setCreatingRole] = useState(false)
   const editing = roles.find((role) => role.id === roleId)!
+  const createRole = (name: string) => {
+    const role: StaffRole = { id: `papel-${Date.now()}`, name, rules: [], goal: null, goalMode: 'per_member', people: [] }
+    setRoles([...roles, role]); setRoleId(role.id); setCreatingRole(false)
+    toast.success('Papel criado', { description: 'Agora adicione as regras de comissão.' })
+  }
   const update = (patch: Partial<StaffRole>) => setRoles(roles.map((role) => (role.id === roleId ? { ...role, ...patch } : role)))
   const goal = personGoal(editing)
   const template = STAFF_GOALS.find((item) => item.id === editing.goal)
@@ -3106,7 +3148,8 @@ function RoleCommissionScreen() {
   }
   return (
     <>
-      <PageHeader title="Papéis da Equipe Groone" sub="Cada papel diz o que a pessoa pode fazer e, para quem recebe comissão, como ela ganha e qual é a meta." />
+      <PageHeader title="Papéis da Equipe Groone" sub="Cada papel diz o que a pessoa pode fazer e, para quem recebe comissão, como ela ganha e qual é a meta."
+        actions={<Button onClick={() => setCreatingRole(true)}><Plus className="h-4 w-4" />Novo papel</Button>} />
       <Body className="lg:grid-cols-[280px_minmax(0,1fr)]">
         <nav className="grid content-start gap-1" aria-label="Papéis">
           {roles.map((role) => (
@@ -3171,6 +3214,7 @@ function RoleCommissionScreen() {
           </Card>
         </div>
       </Body>
+      <NewStaffRoleDialog key={creatingRole ? 'open' : 'closed'} open={creatingRole} onOpenChange={setCreatingRole} names={roles.map((role) => role.name)} onCreate={createRole} />
       {dialog && <RuleDialog key={dialog.rule?.id ?? 'new'} open onOpenChange={(open) => !open && setDialog(null)} role={editing} roles={roles} rule={dialog.rule} onSave={saveRule} />}
       <Dialog open={!!removing} onOpenChange={(open) => !open && setRemoving(null)}>
         <DialogContent><DialogHeader><DialogTitle>Apagar {removing ? ruleName(removing).toLowerCase() : ''}?</DialogTitle><DialogDescription>Os prazos abertos por esta regra param de gerar comissão amanhã. O que já foi calculado fica.</DialogDescription></DialogHeader>
