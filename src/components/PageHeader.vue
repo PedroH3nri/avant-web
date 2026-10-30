@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** Cabeçalho das telas: título e subtítulo opcional. */
+/** Cabeçalho das telas: título, subtítulo e uma linha de detalhes opcionais. */
 defineProps<{ title: string; sub?: string }>()
 </script>
 
@@ -10,6 +10,7 @@ defineProps<{ title: string; sub?: string }>()
         <slot name="back" />
         <h1 class="text-[32px] font-semibold leading-tight tracking-[-0.04em]">{{ title }}</h1>
         <p v-if="sub" class="mt-2 text-[15px] text-muted-foreground">{{ sub }}</p>
+        <slot name="meta" />
       </div>
       <div v-if="$slots.actions" class="flex flex-wrap gap-2"><slot name="actions" /></div>
     </div>
