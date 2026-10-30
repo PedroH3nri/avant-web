@@ -3,7 +3,7 @@
 import { computed, type Component } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
-import { Building2, ChartLine, Coins, Eye, FileChartColumn, FileSignature, Globe, IdCard, LayoutDashboard, Network, Receipt, Scale, ShieldCheck, Target, Users, UsersRound, Wallet } from 'lucide-vue-next'
+import { Building2, ChartLine, Coins, Eye, FileChartColumn, FileSignature, FileText, Globe, IdCard, LayoutDashboard, Network, Receipt, ReceiptText, Scale, ShieldCheck, Target, Users, UsersRound, Wallet } from 'lucide-vue-next'
 import { ApiError } from '@/lib/api'
 import { errorText, type Key } from '@/lib/i18n'
 import { useSession } from '@/stores/session'
@@ -54,7 +54,9 @@ export const NAV_GROUPS: NavGroup[] = [
     icon: Wallet,
     items: [
       { to: '/interno/minha-comissao', key: 'com.nav.mine', icon: Wallet, internal: true },
+      { to: '/interno/minhas-invoices', key: 'inv.mine.title', icon: FileText, internal: true },
       { to: '/interno/comissoes', key: 'com.nav.team', icon: Coins, internal: true },
+      { to: '/interno/invoices', key: 'inv.team.title', icon: ReceiptText, internal: true },
     ],
   },
   {
@@ -73,6 +75,7 @@ export const NAV_GROUPS: NavGroup[] = [
 // Telas sem item próprio que acendem o item da lista de onde se chega a elas.
 const SIBLINGS: Record<string, string[]> = {
   '/interno': ['/interno/clientes/', '/interno/pessoas'],
+  '/interno/invoices': ['/interno/servicos-de-invoice'],
 }
 
 /** Os grupos que a pessoa vê: a equipe Groone troca os itens só de cliente pelos internos. */

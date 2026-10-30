@@ -20,7 +20,7 @@ import NativeSelect from '@/components/ui/NativeSelect.vue'
 import Status from '@/components/ui/Status.vue'
 import TableState from '@/components/ui/TableState.vue'
 import { ApiError } from '@/lib/api'
-import { errorText, lang, locale, t, tn, type Key } from '@/lib/i18n'
+import { errorText, lang, locale, t, type Key } from '@/lib/i18n'
 import { formatMetric, toNumber } from '@/lib/metrics'
 import { td, th } from '@/lib/table'
 import AdjustmentDialog from '@/modules/internal/commissions/components/AdjustmentDialog.vue'
@@ -43,7 +43,6 @@ const detailWindows = ref<WindowMonth[] | null>(null)
 const detailOpen = computed({ get: () => detail.value !== null, set: (value) => !value && (detail.value = null) })
 const adjusting = ref<PersonMonth | null>(null)
 const adjustOpen = computed({ get: () => adjusting.value !== null, set: (value) => !value && (adjusting.value = null) })
-const issuing = ref(false)
 const startsOn = ref('')
 const savedStart = ref<string | null>(null)
 const startBusy = ref(false)
@@ -111,28 +110,6 @@ async function openDetail(person: PersonMonth) {
     if (mine === detailTicket) toast.error(errorText(error instanceof ApiError ? error.code : 'unknown'))
   }
 }
-/** Marca como emitido o mês das pessoas da lista; segue mesmo se uma falhar e diz quem ficou. */
-async function issue(list: PersonMonth[]) {
-  if (issuing.value) return
-  issuing.value = true
-  const failed: PersonMonth[] = []
-  let reason = ''
-  for (const person of list) {
-    try {
-      await commissionService.issue(person.user.id, month.value)
-    } catch (error) {
-      failed.push(person)
-      reason ||= errorText(error instanceof ApiError ? error.code : 'unknown')
-    }
-  }
-  issuing.value = false
-  const done = list.length - failed.length
-  const [first] = list
-  if (failed.length > 0) toast.error(t('com.team.issuedPartial', { done, failed: failed.length, names: failed.map((person) => person.user.name).join(', ') }), { description: reason })
-  else if (list.length === 1 && first) toast.success(t('com.team.issuedOne', { name: first.user.name }), { description: t('com.team.issuedDesc') })
-  else toast.success(t('com.team.issuedAll', { n: done }), { description: t('com.team.issuedDesc') })
-  await load()
-}
 /** Grava a data de início da comissão no Avant. */
 async function saveStart() {
   startBusy.value = true
@@ -196,8 +173,7 @@ async function saveStart() {
                 <MenuContent align="end" class="w-52">
                   <MenuItem @select="openDetail(person)">{{ t('com.action.view') }}</MenuItem>
                   <template v-if="canManage">
-                    <MenuItem :disabled="issuing || person.month.status !== 'validated'" @select="adjusting = person">{{ t('com.action.adjust') }}</MenuItem>
-                    <MenuItem :disabled="issuing || person.month.status !== 'validated'" @select="issue([person])">{{ t('com.action.issue') }}</MenuItem>
+                    <MenuItem :disabled="person.month.status !== 'validated'" @select="adjusting = person">{{ t('com.action.adjust') }}</MenuItem>
                   </template>
                 </MenuContent>
               </DropdownMenuRoot>
@@ -205,10 +181,6 @@ async function saveStart() {
           </tr>
         </tbody>
       </DataTable>
-      <div v-if="canManage && ready.length > 0" class="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-card px-4 py-3 text-[14px]">
-        <span class="text-muted-foreground">{{ tn('com.team.toIssue', ready.length) }}</span>
-        <Button variant="outline" :loading="issuing" @click="issue(ready)">{{ t('com.team.issueAll') }}</Button>
-      </div>
       <Card v-if="canManage" :title="t('com.start.title')" :desc="t('com.start.desc')" :footer-note="savedStart ? undefined : t('com.start.missing')">
         <Field id="commission-start" :label="t('com.start.label')">
           <Input id="commission-start" v-model="startsOn" type="date" class="max-w-[200px] tnum" />
