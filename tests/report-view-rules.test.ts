@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { emptyDraft, savedPeriod, thumbPath, thumbShape, viewChanged, viewDraft } from '@/modules/reports/rules'
 import type { ReportPreview } from '@/modules/reports/types'
+import { pageCount, pageSlice } from '@/lib/pagination'
 
 /** Miniatura com os pontos dados. */
 const preview = (values: string[]): ReportPreview => ({
@@ -44,5 +45,15 @@ describe('miniatura e leitura do relatório salvo', () => {
     expect(savedPeriod(saved)).toBe('fixed')
     expect(viewDraft(saved, 'fixed', true).fixedPeriod).toEqual(saved.fixedPeriod)
     expect(viewDraft(saved, 'yesterday', false).fixedPeriod).toBeNull()
+  })
+})
+
+describe('páginas de uma lista que já chegou inteira', () => {
+  it('corta 10 por página e conta as páginas', () => {
+    const items = Array.from({ length: 23 }, (_, index) => index)
+    expect(pageSlice(items, 1)).toEqual(items.slice(0, 10))
+    expect(pageSlice(items, 3)).toEqual([20, 21, 22])
+    expect(pageCount(23)).toBe(3)
+    expect(pageCount(0)).toBe(0)
   })
 })
