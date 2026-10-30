@@ -23,6 +23,12 @@ export const reportService = {
   query: (body: unknown) => api.post<ReportResult>('/reports/query', body),
   /** Uma página dos relatórios salvos que a pessoa vê, com a aba (`scope`), a busca (`q`) e as contagens. */
   list: (query?: Query) => api.get<ReportPage>('/reports', query),
+  /** Os relatórios que a pessoa fixou no topo, na ordem em que fixou. */
+  pinned: () => api.get<Pick<Items<SavedReport>, 'items'>>('/reports/pinned'),
+  /** Fixa o relatório no topo da lista da pessoa. */
+  pin: (id: string) => api.put<void>(`/reports/${id}/pin`, {}),
+  /** Solta o relatório fixado. */
+  unpin: (id: string) => api.delete(`/reports/${id}/pin`),
   /** Um relatório salvo. */
   get: (id: string) => api.get<SavedReport>(`/reports/${id}`),
   /** Salva um relatório novo. */

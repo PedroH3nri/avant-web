@@ -1,11 +1,13 @@
 <script setup lang="ts">
-/** Relatórios salvos: os que a pessoa vê, com busca, abas, duplicar, exportar, apagar e os modelos. */
+/**
+ * Relatórios customizados: os fixados no topo e os outros em cartões com a miniatura guardada (ou em
+ * lista), com busca, abas, duplicar, fixar, exportar, apagar e os modelos.
+ */
 import { computed, onMounted, ref, watch } from 'vue'
 import { useDebounceFn } from '@vueuse/core'
 import { useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
-import { DropdownMenuRoot, DropdownMenuSeparator, DropdownMenuTrigger } from 'reka-ui'
-import { FileChartColumn, Lock, MoreHorizontal, Plus, Search } from 'lucide-vue-next'
+import { FileChartColumn, LayoutGrid, List, Lock, Pin, Plus, Search } from 'lucide-vue-next'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import LoadError from '@/components/LoadError.vue'
 import PageBody from '@/components/PageBody.vue'
@@ -15,22 +17,25 @@ import Button from '@/components/ui/Button.vue'
 import DataTable from '@/components/ui/DataTable.vue'
 import Pagination from '@/components/ui/Pagination.vue'
 import Input from '@/components/ui/Input.vue'
-import MenuContent from '@/components/ui/MenuContent.vue'
-import MenuItem from '@/components/ui/MenuItem.vue'
 import TableState from '@/components/ui/TableState.vue'
 import { ApiError } from '@/lib/api'
 import { latestCall } from '@/lib/latest'
 import { errorText, formatDate, lang, t, type Key } from '@/lib/i18n'
 import { td, th } from '@/lib/table'
 import { cn } from '@/lib/utils'
+import ReportCard from '@/modules/reports/components/ReportCard.vue'
+import ReportMenu from '@/modules/reports/components/ReportMenu.vue'
+import ReportThumb from '@/modules/reports/components/ReportThumb.vue'
 import { exportUrl, reportService } from '@/modules/reports/service'
-import type { ReportTemplate, SavedReport } from '@/modules/reports/types'
+import type { MetricCatalog, ReportTemplate, SavedReport } from '@/modules/reports/types'
 import { teamService } from '@/modules/team/service'
 import { useSession } from '@/stores/session'
 
 type Tab = 'all' | 'mine' | 'shared' | 'templates'
+type Layout = 'cards' | 'list'
 
 const SEARCH_DELAY_MS = 300
+const LAYOUT_STORAGE = 'avant.reports.layout'
 const session = useSession()
 const router = useRouter()
 const reports = ref<SavedReport[] | null>(null)
@@ -39,6 +44,9 @@ const total = ref(0)
 const pages = ref(0)
 const tabCounts = ref({ all: 0, mine: 0, shared: 0 })
 const templates = ref<ReportTemplate[] | null>(null)
+const pinned = ref<SavedReport[]>([])
+const catalog = ref<MetricCatalog | null>(null)
+const layout = ref<Layout>(storedLayout())
 const owners = ref<Record<string, string>>({})
 const loadError = ref<string | null>(null)
 const tab = ref<Tab>('all')
@@ -53,8 +61,47 @@ const tabs: { key: Tab; label: Key }[] = [
   { key: 'shared', label: 'report.tabShared' },
   { key: 'templates', label: 'report.tabTemplates' },
 ]
-/** Quantos itens cada aba tem. */
-const counts = computed<Record<Tab, number>>(() => ({ ...tabCounts.value, templates: templates.value?.length ?? 0 }))
+const layouts: { key: Layout; label: Key; icon: typeof List }[] = [
+  { key: 'cards', label: 'report.layoutCards', icon: LayoutGrid },
+  { key: 'list', label: 'report.layoutList', icon: List },
+]
+/** Os fixados da aba e da busca atuais (a página da API já vem sem eles). */
+const shownPinned = computed(() => {
+  const term = search.value.trim().toLowerCase()
+  return pinned.value.filter((report) => {
+    const mine = report.owner_user_id === myId.value
+    const inTab = tab.value === 'all' || (tab.value === 'mine' ? mine : !mine)
+    return inTab && report.name.toLowerCase().includes(term)
+  })
+})
+const pinnedIds = computed(() => new Set(pinned.value.map((report) => report.id)))
+/** Quantos itens cada aba tem (com os fixados, que a página não traz). */
+const counts = computed<Record<Tab, number>>(() => {
+  const mine = pinned.value.filter((report) => report.owner_user_id === myId.value).length
+  return {
+    all: tabCounts.value.all + pinned.value.length,
+    mine: tabCounts.value.mine + mine,
+    shared: tabCounts.value.shared + pinned.value.length - mine,
+    templates: templates.value?.length ?? 0,
+  }
+})
+const empty = computed(() => !!reports.value && reports.value.length === 0 && shownPinned.value.length === 0)
+
+/** O jeito de mostrar escolhido da última vez (cartões, se o navegador não guarda). */
+function storedLayout(): Layout {
+  try {
+    return localStorage.getItem(LAYOUT_STORAGE) === 'list' ? 'list' : 'cards'
+  } catch {
+    return 'cards'
+  }
+}
+watch(layout, (current) => {
+  try {
+    localStorage.setItem(LAYOUT_STORAGE, current)
+  } catch {
+    return
+  }
+})
 
 const reportsCall = latestCall()
 /** Carrega a página dos relatórios da aba com a busca; se ela ficou vazia, volta uma. */
@@ -89,15 +136,21 @@ watch(page, loadReports)
 watch(tab, (current) => current !== 'templates' && firstPage())
 watch(search, () => void searchReports())
 
-/** Carrega os relatórios, os modelos e, para quem vê a equipe, o nome dos donos. */
+/** Carrega os relatórios fixados pela pessoa. */
+async function loadPinned() {
+  pinned.value = (await reportService.pinned()).items
+}
+
+/** Carrega os relatórios, os fixados, os modelos, o catálogo (nomes das métricas) e o nome dos donos. */
 async function load() {
   loadError.value = null
   try {
-    const [models] = await Promise.all([reportService.templates(), loadReports()])
+    const [models] = await Promise.all([reportService.templates(), loadReports(), loadPinned()])
     templates.value = models.items
   } catch (error) {
     loadError.value = errorText(error instanceof ApiError ? error.code : 'unknown')
   }
+  reportService.catalog().then((found) => (catalog.value = found), () => (catalog.value = null))
   if (!session.can('team.view')) return
   try {
     const members = await teamService.memberOptions()
@@ -110,6 +163,17 @@ async function load() {
 /** Nome do dono: "Você", o nome pela equipe ou "Outra pessoa". */
 const ownerName = (report: SavedReport) =>
   report.owner_user_id === myId.value ? t('report.you') : (owners.value[report.owner_user_id] ?? t('report.someoneElse'))
+
+/** Fixa no topo ou solta; no limite de fixados, a API diz por quê. */
+async function togglePin(report: SavedReport) {
+  try {
+    if (pinnedIds.value.has(report.id)) await reportService.unpin(report.id)
+    else await reportService.pin(report.id)
+    await Promise.all([loadPinned(), loadReports()])
+  } catch (error) {
+    toast.error(error instanceof ApiError && error.code === 'invalid_input' && error.message ? error.message : errorText(error instanceof ApiError ? error.code : 'unknown'))
+  }
+}
 
 /** Faz uma cópia privada e abre a lista com ela no topo. */
 async function duplicate(report: SavedReport) {
@@ -130,7 +194,7 @@ async function remove() {
   busy.value = true
   try {
     await reportService.remove(report.id)
-    await loadReports()
+    await Promise.all([loadPinned(), loadReports()])
     removing.value = null
     toast.success(t('report.deleted'))
   } catch (error) {
@@ -169,9 +233,24 @@ onMounted(load)
           {{ t(item.label) }}<span class="ml-1.5 tnum text-muted-foreground">{{ counts[item.key] }}</span>
         </button>
       </div>
-      <div v-if="tab !== 'templates'" class="relative w-full sm:w-[280px]">
-        <Search class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input v-model="search" :placeholder="t('report.searchName')" :aria-label="t('report.searchName')" class="pl-9" />
+      <div v-if="tab !== 'templates'" class="flex w-full items-center gap-2 sm:w-auto">
+        <div class="relative flex-1 sm:w-[280px] sm:flex-none">
+          <Search class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input v-model="search" :placeholder="t('report.searchName')" :aria-label="t('report.searchName')" class="pl-9" />
+        </div>
+        <div class="flex rounded-md border bg-background p-0.5" role="group" :aria-label="t('report.layout')">
+          <button
+            v-for="item in layouts"
+            :key="item.key"
+            type="button"
+            :aria-pressed="layout === item.key"
+            :title="t(item.label)"
+            :class="cn('flex size-8 items-center justify-center rounded-[4px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', layout === item.key ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground')"
+            @click="layout = item.key"
+          >
+            <component :is="item.icon" class="size-4" /><span class="sr-only">{{ t(item.label) }}</span>
+          </button>
+        </div>
       </div>
     </div>
 
@@ -183,57 +262,86 @@ onMounted(load)
       </section>
     </div>
 
-    <DataTable v-else :min="760">
-      <thead>
-        <tr>
-          <th :class="th">{{ t('report.name') }}</th>
-          <th :class="th">{{ t('report.chartType') }}</th>
-          <th :class="th">{{ t('report.owner') }}</th>
-          <th :class="th">{{ t('report.whoSees') }}</th>
-          <th :class="th">{{ t('report.updated') }}</th>
-          <th :class="[th, 'w-12']"><span class="sr-only">{{ t('report.actions') }}</span></th>
-        </tr>
-      </thead>
-      <tbody>
-        <TableState
-          :cols="6"
-          :loading="!reports && !loadError"
-          :empty="!!reports && reports.length === 0"
-          :icon="FileChartColumn"
-          :title="search ? t('report.noMatch', { term: search }) : t('report.noneTitle')"
-          :desc="search ? undefined : t('report.noneDesc')"
-        />
-        <tr v-for="report in reports ?? []" :key="report.id" class="hover:bg-muted">
-          <td :class="td">
-            <RouterLink :to="`/relatorios/${report.id}`" class="font-medium hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{{ report.name }}</RouterLink>
-          </td>
-          <td :class="td"><Badge>{{ t(`report.chart.${report.chart_type}` as Key) }}</Badge></td>
-          <td :class="[td, 'whitespace-nowrap']">{{ ownerName(report) }}</td>
-          <td :class="[td, 'whitespace-nowrap text-muted-foreground']">
-            <Lock v-if="report.visibility === 'private'" class="mr-1.5 inline size-3.5" aria-hidden="true" />{{ t(`report.visibility.${report.visibility}` as Key) }}
-          </td>
-          <td :class="[td, 'whitespace-nowrap text-muted-foreground']">{{ formatDate(report.updated_at) }}</td>
-          <td :class="td">
-            <DropdownMenuRoot>
-              <DropdownMenuTrigger as-child>
-                <Button variant="ghost" size="icon" :aria-label="t('report.actionsOf', { name: report.name })"><MoreHorizontal /></Button>
-              </DropdownMenuTrigger>
-              <MenuContent align="end">
-                <MenuItem @select="router.push(`/relatorios/${report.id}`)">{{ t('report.open') }}</MenuItem>
-                <MenuItem v-if="canManage" @select="duplicate(report)">{{ t('report.duplicate') }}</MenuItem>
-                <MenuItem @select="download(report, 'csv')">{{ t('report.exportCsv') }}</MenuItem>
-                <MenuItem @select="download(report, 'xlsx')">{{ t('report.exportXlsx') }}</MenuItem>
-                <template v-if="report.editable">
-                  <DropdownMenuSeparator class="-mx-1 my-1 h-px bg-border" />
-                  <MenuItem danger @select="removing = report">{{ t('common.delete') }}</MenuItem>
-                </template>
-              </MenuContent>
-            </DropdownMenuRoot>
-          </td>
-        </tr>
-      </tbody>
-    </DataTable>
-    <Pagination v-if="tab !== 'templates' && reports" v-model:page="page" :total="total" :pages="pages" />
+    <div v-else-if="layout === 'cards' && empty" class="grid justify-items-center gap-2 rounded-lg border bg-card px-6 py-16 text-center">
+      <FileChartColumn class="size-6 text-muted-foreground" aria-hidden="true" />
+      <p class="text-[14px] font-medium">{{ search ? t('report.noMatch', { term: search }) : t('report.noneTitle') }}</p>
+      <p v-if="!search" class="text-[13px] text-muted-foreground">{{ t('report.noneDesc') }}</p>
+    </div>
+
+    <div v-else-if="layout === 'cards' && !reports" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-busy="true">
+      <div v-for="index in 3" :key="index" class="h-[236px] animate-pulse rounded-lg border bg-muted" />
+    </div>
+
+    <template v-else>
+      <section v-for="block in [{ key: 'pinned', items: shownPinned }, { key: 'others', items: reports ?? [] }]" :key="block.key" class="grid gap-3" :class="block.items.length === 0 && (block.key === 'pinned' || (!!reports && !empty)) ? 'hidden' : undefined">
+        <h2 v-if="shownPinned.length" class="text-[12px] font-medium uppercase tracking-wide text-muted-foreground">{{ block.key === 'pinned' ? t('report.pinned') : t('report.others') }}</h2>
+        <div v-if="layout === 'cards'" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <ReportCard
+            v-for="report in block.items"
+            :key="report.id"
+            :report="report"
+            :catalog="catalog"
+            :pinned="pinnedIds.has(report.id)"
+            :owner="ownerName(report)"
+            :owner-avatar="report.owner_user_id === myId ? (session.me?.user.name ?? '') : ownerName(report)"
+            :can-duplicate="canManage"
+            @edit="router.push(`/relatorios/${report.id}/editar`)"
+            @duplicate="duplicate(report)"
+            @pin="togglePin(report)"
+            @download="(format) => download(report, format)"
+            @remove="removing = report"
+          />
+        </div>
+        <DataTable v-else :min="820">
+          <thead>
+            <tr>
+              <th :class="[th, 'w-[120px]']"><span class="sr-only">{{ t('report.chartType') }}</span></th>
+              <th :class="th">{{ t('report.name') }}</th>
+              <th :class="th">{{ t('report.chartType') }}</th>
+              <th :class="th">{{ t('report.owner') }}</th>
+              <th :class="th">{{ t('report.whoSees') }}</th>
+              <th :class="th">{{ t('report.updated') }}</th>
+              <th :class="[th, 'w-12']"><span class="sr-only">{{ t('report.actions') }}</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <TableState
+              v-if="block.key === 'others'"
+              :cols="7"
+              :loading="!reports && !loadError"
+              :empty="empty"
+              :icon="FileChartColumn"
+              :title="search ? t('report.noMatch', { term: search }) : t('report.noneTitle')"
+              :desc="search ? undefined : t('report.noneDesc')"
+            />
+            <tr v-for="report in block.items" :key="report.id" class="hover:bg-muted">
+              <td :class="[td, 'py-1.5']"><div class="h-10 w-[104px] overflow-hidden rounded border bg-muted/60"><ReportThumb :report="report" :catalog="catalog" compact /></div></td>
+              <td :class="td">
+                <RouterLink :to="`/relatorios/${report.id}`" class="font-medium hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{{ report.name }}</RouterLink>
+                <Pin v-if="pinnedIds.has(report.id)" class="ml-1.5 inline size-3.5 text-muted-foreground" :aria-label="t('report.pinned')" />
+              </td>
+              <td :class="td"><Badge>{{ t(`report.chart.${report.chart_type}` as Key) }}</Badge></td>
+              <td :class="[td, 'whitespace-nowrap']">{{ ownerName(report) }}</td>
+              <td :class="[td, 'whitespace-nowrap text-muted-foreground']">
+                <Lock v-if="report.visibility === 'private'" class="mr-1.5 inline size-3.5" aria-hidden="true" />{{ t(`report.visibility.${report.visibility}` as Key) }}
+              </td>
+              <td :class="[td, 'whitespace-nowrap text-muted-foreground']">{{ formatDate(report.updated_at) }}</td>
+              <td :class="td">
+                <ReportMenu :report="report" :pinned="pinnedIds.has(report.id)" :can-duplicate="canManage" with-open
+                  @open="router.push(`/relatorios/${report.id}`)"
+                  @edit="router.push(`/relatorios/${report.id}/editar`)"
+                  @duplicate="duplicate(report)"
+                  @pin="togglePin(report)"
+                  @download="(format) => download(report, format)"
+                  @remove="removing = report"
+                />
+              </td>
+            </tr>
+          </tbody>
+        </DataTable>
+        <Pagination v-if="block.key === 'others' && reports" v-model:page="page" :total="total" :pages="pages" />
+      </section>
+    </template>
   </PageBody>
   <ConfirmDialog
     :open="!!removing"
