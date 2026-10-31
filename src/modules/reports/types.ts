@@ -142,6 +142,26 @@ export interface SavedReport {
   updated_at: string
   /** A pessoa pode editar e apagar (é a dona ou tem reports.manage). */
   editable: boolean
+  /** A miniatura guardada (só na lista e nos fixados; null para quem não vê todos os sites). */
+  preview?: ReportPreview | null
+  /** A pessoa fixou o relatório no topo da lista. */
+  pinned?: boolean
+}
+
+export interface ReportPreviewPoint {
+  label: string | null
+  value: string | null
+}
+
+/** A miniatura do gráfico: a primeira métrica no eixo, já na moeda de quem vê; sem dimensão vale o total. */
+export interface ReportPreview {
+  metric: string
+  money: boolean
+  dimension: string | null
+  points: ReportPreviewPoint[]
+  total: string | null
+  previous_total: string | null
+  currency: string
 }
 
 export interface SavedReportInput {

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
  * Construtor de relatórios, como o do HubSpot: campos à esquerda, prévia ao vivo no centro e a
- * configuração à direita. Serve para relatório novo, salvo (``/relatorios/:id``) ou modelo.
+ * configuração à direita. Serve para relatório novo, salvo (``/relatorios/:id/editar``) ou modelo.
  */
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
@@ -271,7 +271,7 @@ async function save(form: SaveForm) {
     toast.success(t('report.saved'))
     if (created) {
       allowLeave = true
-      await router.replace(`/relatorios/${report.id}`)
+      await router.replace(`/relatorios/${report.id}/editar`)
       allowLeave = false
     }
   } catch (error) {
@@ -296,7 +296,7 @@ async function saveCopy() {
           })
     toast.success(t('report.duplicated'))
     allowLeave = true
-    await router.push(`/relatorios/${copy.id}`)
+    await router.push(`/relatorios/${copy.id}/editar`)
     allowLeave = false
   } catch (error) {
     toast.error(apiMessage(error))
@@ -340,7 +340,7 @@ onBeforeUnmount(() => {
 <template>
   <div class="flex min-h-[calc(100dvh-3.5rem)] flex-col bg-background">
     <header class="sticky top-14 z-10 flex flex-wrap items-center gap-3 border-b bg-background px-4 py-3">
-      <Button variant="ghost" size="sm" class="-ml-1" @click="router.push('/relatorios')"><ArrowLeft />{{ t('nav.reports') }}</Button>
+      <Button variant="ghost" size="sm" class="-ml-1" @click="router.push(draft.id ? `/relatorios/${draft.id}` : '/relatorios')"><ArrowLeft />{{ t('nav.customReports') }}</Button>
       <span class="h-5 w-px bg-border" aria-hidden="true" />
       <input
         v-model="draft.name"
@@ -380,7 +380,7 @@ onBeforeUnmount(() => {
           @delete-metric="askRemoveMetric"
         />
       </aside>
-      <main class="min-w-0 bg-muted">
+      <main class="order-3 min-w-0 bg-muted lg:order-2">
         <div class="grid gap-4 p-4 sm:p-6">
           <div class="flex flex-wrap items-center gap-1.5">
             <span v-for="key in draft.metrics" :key="key" class="inline-flex h-7 items-center gap-1 rounded-full border bg-card pl-1 pr-1 text-[13px]">
@@ -405,7 +405,7 @@ onBeforeUnmount(() => {
           </div>
         </div>
       </main>
-      <aside class="border-t lg:border-l lg:border-t-0" :aria-label="t('report.settings')">
+      <aside class="order-2 border-b lg:order-3 lg:border-b-0 lg:border-l" :aria-label="t('report.settings')">
         <ConfigPanel :draft="draft" :catalog="catalog" :editable="editable" :options="options" @update="(patch) => change({ ...draft, ...patch })" />
       </aside>
     </div>

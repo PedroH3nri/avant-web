@@ -16,6 +16,7 @@ import type {
   MetricSource,
   MetricStyle,
   RelativePeriod,
+  ReportPreview,
   ReportQuery,
   ReportRow,
   ReportTemplate,
@@ -360,4 +361,47 @@ export function keepKnownRoles(roleIds: string[], roles: { id: string; name: str
   if (roles === null) return roleIds
   const known = new Set(roles.map((role) => role.id))
   return roleIds.filter((id) => known.has(id))
+}
+
+export type ThumbShape = 'line' | 'area' | 'bars' | 'rows' | 'total'
+
+/** O desenho da miniatura pelo tipo do gráfico; sem pontos guardados, fica o total. */
+export function thumbShape(chart: ChartType, preview: ReportPreview | null | undefined): ThumbShape {
+  if (chart === 'kpi' || (preview && preview.points.length === 0)) return 'total'
+  if (chart === 'line' || chart === 'area') return chart
+  return chart === 'table' ? 'rows' : 'bars'
+}
+
+/** O traço SVG de uma série num quadro de ``width`` x ``height``, com folga em cima e embaixo. */
+export function thumbPath(values: (number | null)[], width: number, height: number, padding = 8): string {
+  if (values.length === 0) return ''
+  const numbers = values.map((value) => value ?? 0)
+  const highest = Math.max(...numbers, 0) || 1
+  const step = numbers.length === 1 ? 0 : width / (numbers.length - 1)
+  return numbers
+    .map((value, index) => {
+      const horizontal = numbers.length === 1 ? width / 2 : index * step
+      const vertical = padding + (height - padding * 2) * (1 - value / highest)
+      return `${index ? 'L' : 'M'}${horizontal.toFixed(1)},${vertical.toFixed(1)}`
+    })
+    .join('')
+}
+
+/** O período da leitura: um preset ou as datas fixas que o relatório salvou. */
+export type ViewPeriod = RelativePeriod | 'fixed'
+
+/** O rascunho que a leitura roda: o salvo com o período e a comparação escolhidos só nesta visita. */
+export function viewDraft(saved: ReportDraft, period: ViewPeriod, compare: boolean): ReportDraft {
+  if (period === 'fixed') return { ...saved, compare }
+  return { ...saved, period, fixedPeriod: null, compare }
+}
+
+/** O período em que o relatório salvo abre. */
+export function savedPeriod(saved: ReportDraft): ViewPeriod {
+  return saved.fixedPeriod ? 'fixed' : saved.period
+}
+
+/** A leitura está diferente do que o relatório salvou. */
+export function viewChanged(saved: ReportDraft, period: ViewPeriod, compare: boolean): boolean {
+  return period !== savedPeriod(saved) || compare !== saved.compare
 }

@@ -17,12 +17,12 @@ describe('menu do painel', () => {
   beforeAll(() => (lang.value = 'pt'))
 
   it('mostra os mesmos itens para a equipe Groone, sem filtrar por permissão', () => {
-    expect(labels(true)).toEqual(['Dashboard', 'Clientes', 'Equipes', 'Networks do GAM', 'Contratos', 'Sites', 'Ad Manager', 'Page Views', 'Relatórios', 'Resultado', 'Resultado dos clientes', 'Metas', 'Minha comissão', 'Minhas invoices', 'Comissões', 'Invoices', 'Equipe Groone', 'Papéis da equipe', 'Custos'])
+    expect(labels(true)).toEqual(['Dashboard', 'Clientes', 'Equipes', 'Networks do GAM', 'Contratos', 'Sites', 'Ad Manager', 'Page Views', 'Resultado', 'Resultado dos clientes', 'Metas', 'Relatórios customizados', 'Minha comissão', 'Minhas invoices', 'Comissões', 'Invoices', 'Equipe Groone', 'Papéis da equipe', 'Custos'])
     expect(headers(true)).toEqual(['Clientes', 'Relatórios', 'Comissões', 'Empresa'])
   })
 
   it('quem não é da equipe Groone não vê os itens internos', () => {
-    expect(labels(false)).toEqual(['Dashboard', 'Equipes', 'Networks do GAM', 'Sites', 'Ad Manager', 'Page Views', 'Relatórios', 'Resultado', 'Papéis e permissões', 'Custos'])
+    expect(labels(false)).toEqual(['Dashboard', 'Equipes', 'Networks do GAM', 'Sites', 'Ad Manager', 'Page Views', 'Resultado', 'Relatórios customizados', 'Papéis e permissões', 'Custos'])
     expect(headers(false)).toEqual(['Clientes', 'Relatórios', 'Empresa'])
     expect(labels(false)).not.toContain('Equipe Groone')
   })
@@ -47,7 +47,7 @@ describe('menu do painel', () => {
       ['/interno/clientes/c', 'Clientes'],
       ['/interno/pessoas', 'Clientes'],
       ['/interno/contratos', 'Contratos'],
-      ['/relatorios/123', 'Relatórios'],
+      ['/relatorios/123', 'Relatórios customizados'],
     ]
     for (const [path, label] of cases) expect(activeLabels(true, path)).toEqual([label])
   })

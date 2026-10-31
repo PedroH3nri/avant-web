@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Toaster, toast } from 'sonner'
-import { Check, ChevronsUpDown, Copy, Loader2, Plus, RefreshCw, Search, X, AlertTriangle, ArrowLeft, MoreHorizontal, Lock, Mail, ExternalLink, Home, Users, Network, Settings, ShieldCheck, Menu, BarChart3, Wallet, Download, Trash2 } from 'lucide-react'
+import { Check, ChevronsUpDown, Copy, Loader2, Plus, RefreshCw, Search, X, AlertTriangle, ArrowLeft, MoreHorizontal, Lock, Mail, ExternalLink, Home, Users, Network, Settings, ShieldCheck, Menu, BarChart3, Wallet, Download, Trash2, Pin, PinOff, Pencil, LayoutGrid, List } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -23,7 +23,8 @@ const SCREENS = [
   ['inicio', 'Início'],
   ['desempenho', 'Desempenho'],
   ['visitas', 'Page Views'],
-  ['relatorios', 'Relatórios'],
+  ['relatorios', 'Relatórios customizados'],
+  ['relatorio', 'Relatórios customizados · Relatório salvo'],
   ['construtor', 'Relatórios · Construtor'],
   ['resultado', 'Resultado'],
   ['custos', 'Custos'],
@@ -292,10 +293,10 @@ function CompanySwitcher({ t, internal, image }: { t: T; internal: boolean; imag
 
 /* ---------- sidebar em trilho com painel (avant-web#91) ---------- */
 
-type RailGroup = { key: string; label: string; icon: typeof Home; items: { id: Screen; label: string; also?: Screen[] }[] }
+type RailGroup = { key: string; label: string; icon: typeof Home; items: { id: Screen; label: string; also?: Screen[]; separated?: boolean }[] }
 const CLIENT_RAIL: RailGroup[] = [
   { key: 'inicio', label: 'Início', icon: Home, items: [{ id: 'inicio', label: 'Dashboard' }] },
-  { key: 'relatorios', label: 'Relatórios', icon: BarChart3, items: [{ id: 'desempenho', label: 'Ad Manager' }, { id: 'visitas', label: 'Page Views' }, { id: 'relatorios', label: 'Relatórios', also: ['construtor'] }] },
+  { key: 'relatorios', label: 'Relatórios', icon: BarChart3, items: [{ id: 'desempenho', label: 'Ad Manager' }, { id: 'visitas', label: 'Page Views' }, { id: 'relatorios', label: 'Relatórios customizados', also: ['construtor', 'relatorio'], separated: true }] },
   { key: 'financeiro', label: 'Financeiro', icon: Wallet, items: [{ id: 'resultado', label: 'Resultado' }, { id: 'custos', label: 'Custos' }] },
   { key: 'inventario', label: 'Inventário', icon: Network, items: [{ id: 'networks', label: 'Networks do GAM', also: ['conectar'] }] },
   { key: 'equipe', label: 'Equipe', icon: Users, items: [{ id: 'equipe', label: 'Membros', also: ['membro'] }, { id: 'grupos', label: 'Grupos', also: ['grupo', 'grupoinativo'] }] },
@@ -384,7 +385,7 @@ function RailSidebar({ screen, go, drawer = false }: { screen: Screen; go: (s: S
         <nav className="grid gap-0.5 p-3" aria-label={shown.label}>
           {shown.items.map((entry) => {
             const active = entry.id === screen || !!entry.also?.includes(screen)
-            return <button key={entry.id} tabIndex={open ? 0 : -1} onClick={() => go(entry.id)} aria-current={active ? 'page' : undefined} className={cn('flex h-9 w-full items-center rounded-md px-2.5 text-left text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', active ? 'bg-secondary font-medium text-foreground' : 'text-muted-foreground hover:bg-accent hover:text-foreground')}>{entry.label}</button>
+            return <div key={entry.id} className="contents">{entry.separated && <hr className="my-2 border-border" />}<button tabIndex={open ? 0 : -1} onClick={() => go(entry.id)} aria-current={active ? 'page' : undefined} className={cn('flex h-9 w-full items-center rounded-md px-2.5 text-left text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', active ? 'bg-secondary font-medium text-foreground' : 'text-muted-foreground hover:bg-accent hover:text-foreground')}>{entry.label}</button></div>
           })}
         </nav>
       </div>
@@ -605,7 +606,7 @@ function PerformanceScreen() {
         actions={
           <>
             <Select value={period} onValueChange={(v) => setPeriod(v as PeriodKey)}>
-              <SelectTrigger className="h-9 w-[180px]" aria-label="Período"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-9 w-[210px]" aria-label="Período"><SelectValue /></SelectTrigger>
               <SelectContent>{PERIODS.map(([k, l]) => <SelectItem key={k} value={k}>{l}</SelectItem>)}</SelectContent>
             </Select>
             <Button variant="outline" aria-pressed={compare} onClick={() => setCompare(!compare)} className="h-9">
@@ -691,7 +692,7 @@ function PageViewsScreen() {
         actions={
           <>
             <Select value={period} onValueChange={(v) => setPeriod(v as PeriodKey)}>
-              <SelectTrigger className="h-9 w-[180px]" aria-label="Período"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-9 w-[210px]" aria-label="Período"><SelectValue /></SelectTrigger>
               <SelectContent>{PERIODS.map(([k, l]) => <SelectItem key={k} value={k}>{l}</SelectItem>)}</SelectContent>
             </Select>
             <Button variant="outline" aria-pressed={compare} onClick={() => setCompare(!compare)} className="h-9">
@@ -1449,7 +1450,7 @@ function ResultScreen({ go }: { go: (s: Screen) => void }) {
       <PageHeader title="Resultado" sub="O que sobra de cada mês: faturamento, menos as deduções do Ad Manager, menos os custos da Empresa."
         actions={
           <>
-            <Select defaultValue="6"><SelectTrigger className="h-9 w-[180px]" aria-label="Período"><SelectValue /></SelectTrigger>
+            <Select defaultValue="6"><SelectTrigger className="h-9 w-[210px]" aria-label="Período"><SelectValue /></SelectTrigger>
               <SelectContent><SelectItem value="6">Últimos 6 meses</SelectItem><SelectItem value="12">Últimos 12 meses</SelectItem><SelectItem value="year">Este ano</SelectItem></SelectContent>
             </Select>
             <Button variant="outline" className="h-9" onClick={() => go('custos')}>Custos</Button>
@@ -2153,6 +2154,8 @@ const INITIAL_REPORTS: ReportDraft[] = [
   { ...blank(), id: 'r2', name: 'RPM por requisição no mês', metrics: ['custom.rpm_por_requisicao', 'ecpm'], dims: ['date'], period: 'this_month', chart: 'line', compare: true, visibility: 'private', updated: 'Ontem, 18:40', styles: { 'custom.rpm_por_requisicao': { color: '#FF2BD6' }, ecpm: { color: '#00E5FF' } } },
   { ...blank(), id: 'r3', name: 'Top ad units', metrics: ['revenue'], dims: ['ad_unit'], chart: 'bar', limit: 5, visibility: 'roles', roles: ['Gestor de tráfego'], owner: 'Ana Souza', updated: '24/10/2026' },
   { ...blank(), id: 'r4', name: 'Receita do mês', metrics: ['revenue'], dims: [], period: 'this_month', chart: 'kpi', compare: true, visibility: 'company', owner: 'João Lima', updated: '20/10/2026', styles: { revenue: { scale: { mode: 'red_green', from: 2000, to: 5000 } } } },
+  { ...blank(), id: 'r5', name: 'Page views por hora', metrics: ['page_views'], dims: ['hour'], period: 'yesterday', chart: 'area', visibility: 'company', owner: 'Carla Mendes', updated: '18/10/2026' },
+  { ...blank(), id: 'r6', name: 'Receita por país', metrics: ['revenue'], dims: ['country'], chart: 'pie', visibility: 'company', updated: '15/10/2026' },
 ]
 const TEMPLATES: (Omit<ReportDraft, 'id' | 'owner' | 'updated'> & { key: string; desc: string })[] = [
   { ...blank(), key: 'revenue_by_site', name: 'Receita por site', desc: 'Receita, impressões e eCPM de cada site nos últimos 30 dias.', metrics: ['revenue', 'impressions', 'ecpm'], dims: ['site'], chart: 'table' },
@@ -2261,24 +2264,170 @@ function evaluate(formula: string, values: Record<string, string>): number | nul
   } catch { return null }
 }
 
-function ReportsScreen({ reports, setReports, open, openTemplate }: { reports: ReportDraft[]; setReports: (r: ReportDraft[]) => void; open: (id: string | null) => void; openTemplate: (key: string) => void }) {
+const REPORT_DESCRIPTIONS: Record<string, string> = {
+  r1: 'Receita, impressões e eCPM de cada site. O eCPM fica verde acima de R$ 4,50.',
+  r2: 'A métrica nossa de RPM por requisição contra o eCPM, dia a dia, comparando com o mês anterior.',
+  r3: 'Os 5 ad units que mais renderam nos últimos 30 dias.',
+  r4: 'Quanto a Empresa já faturou no mês, contra o mesmo ponto do mês passado.',
+  r5: 'Os horários de mais visita, ontem, somando todos os sites.',
+  r6: 'De onde vem a receita, nos últimos 30 dias.',
+}
+const PERIOD_LABEL = Object.fromEntries(PERIODS.map(([k, l]) => [k, l])) as Record<PeriodKey, string>
+
+/** Miniatura do relatório no cartão da lista: a forma do gráfico salvo, sem eixo nem legenda. */
+function ReportThumb({ report, customs }: { report: ReportDraft; customs: CustomDef[] }) {
+  const first = report.metrics[0]
+  if (!first) return null
+  const def = metricDef(first, customs)
+  const color = report.styles[first]?.color
+  const rows = dimRows(report)
+  const values = rows.map((r) => sampleValue(first, r, def.kind))
+  const max = Math.max(...values) || 1
+  if (report.chart === 'kpi') {
+    const now = sampleValue(first, 'total', def.kind)
+    return (
+      <div className="flex h-full flex-col justify-center px-5">
+        <span className="text-[12px] font-medium text-muted-foreground">{def.label}</span>
+        <span className="text-[28px] font-semibold tracking-[-0.04em] tnum" style={{ color }}>{fmt(def.kind, now)}</span>
+        {report.compare && <Delta now={now} before={sampleValue(first, 'prev', def.kind)} />}
+      </div>
+    )
+  }
+  if (report.chart === 'line' || report.chart === 'area') {
+    const W = 300, H = 96
+    const x = (i: number) => (rows.length === 1 ? W / 2 : (i * W) / (rows.length - 1))
+    const y = (v: number) => 8 + (H - 16) * (1 - v / max)
+    const path = values.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join('')
+    return (
+      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="h-full w-full" aria-hidden="true">
+        {report.chart === 'area' && <path d={`${path}L${W},${H}L0,${H}Z`} className="fill-foreground/[0.06]" />}
+        <path d={path} fill="none" strokeWidth={2} vectorEffect="non-scaling-stroke" className="stroke-foreground" style={{ stroke: color }} />
+      </svg>
+    )
+  }
+  if (report.chart === 'bar' || report.chart === 'pie' || report.chart === 'funnel') {
+    return (
+      <div className="flex h-full flex-col justify-center gap-1.5 px-5">
+        {rows.slice(0, 4).map((r, i) => (
+          <div key={r} className="grid grid-cols-[96px_1fr] items-center gap-2 text-[11px] text-muted-foreground">
+            <span className="truncate">{r}</span>
+            <span className="block h-2 rounded-sm bg-foreground" style={{ width: `${(values[i] / max) * 100}%`, background: color, opacity: color ? 1 : 1 - i * 0.15 }} />
+          </div>
+        ))}
+      </div>
+    )
+  }
+  return (
+    <div className="grid h-full content-center gap-1 px-5 text-[11px]">
+      {rows.slice(0, 3).map((r) => (
+        <div key={r} className="flex items-center justify-between gap-3 border-b border-border/60 pb-1 last:border-0">
+          <span className="truncate text-muted-foreground">{r}</span>
+          <span className="tnum">{fmt(def.kind, sampleValue(first, r, def.kind))}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/** Menu de ações de um relatório salvo, igual no cartão, na linha da lista e na tela do relatório. */
+function ReportMenu({ report, pinned, onOpen, onEdit, onDuplicate, onPin, onRemove }: { report: ReportDraft; pinned: boolean; onOpen?: () => void; onEdit: () => void; onDuplicate: () => void; onPin: () => void; onRemove: () => void }) {
+  const editable = report.owner === ME
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8" aria-label={`Ações de ${report.name}`}><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-48">
+        {onOpen && <DropdownMenuItem onSelect={onOpen}>Abrir</DropdownMenuItem>}
+        {editable && <DropdownMenuItem onSelect={onEdit}>Editar</DropdownMenuItem>}
+        <DropdownMenuItem onSelect={onDuplicate}>Duplicar</DropdownMenuItem>
+        <DropdownMenuItem onSelect={onPin}>{pinned ? 'Desafixar' : 'Fixar no topo'}</DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onSelect={() => toast('Exportando CSV…')}>Exportar CSV</DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => toast('Exportando XLSX…')}>Exportar XLSX</DropdownMenuItem>
+        {editable && (<><DropdownMenuSeparator /><DropdownMenuItem className="text-bad focus:text-bad" onSelect={onRemove}>Apagar</DropdownMenuItem></>)}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
+/** Quem vê o relatório, com cadeado quando é só do dono. */
+function WhoSees({ report }: { report: ReportDraft }) {
+  return <span className="inline-flex items-center gap-1">{report.visibility === 'private' && <Lock className="h-3.5 w-3.5" aria-hidden="true" />}{report.visibility === 'roles' ? report.roles.join(', ') : VIS_LABEL[report.visibility]}</span>
+}
+
+type ReportActions = { view: (id: string) => void; edit: (id: string | null) => void; duplicate: (r: ReportDraft) => void; pin: (id: string) => void; remove: (r: ReportDraft) => void }
+
+/** Cartão do relatório salvo: miniatura do gráfico, nome, descrição e de quem é. O cartão inteiro abre a leitura. */
+function ReportCard({ report, customs, pinned, actions }: { report: ReportDraft; customs: CustomDef[]; pinned: boolean; actions: ReportActions }) {
+  return (
+    <article className="group relative flex flex-col overflow-hidden rounded-lg border bg-card transition-colors hover:border-foreground/25">
+      <div className="h-[112px] border-b bg-muted/60 py-2"><ReportThumb report={report} customs={customs} /></div>
+      <div className="flex flex-1 flex-col gap-1.5 p-4">
+        <div className="flex items-start gap-2">
+          <h3 className="min-w-0 flex-1 text-[15px] font-semibold leading-snug tracking-tight">
+            <button onClick={() => actions.view(report.id!)} className="text-left after:absolute after:inset-0 focus-visible:outline-none focus-visible:after:rounded-lg focus-visible:after:ring-2 focus-visible:after:ring-ring">{report.name}</button>
+          </h3>
+          {pinned && <Pin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-label="Fixado" />}
+          <div className="relative z-10 -mr-1.5 -mt-1"><ReportMenu report={report} pinned={pinned} onEdit={() => actions.edit(report.id)} onDuplicate={() => actions.duplicate(report)} onPin={() => actions.pin(report.id!)} onRemove={() => actions.remove(report)} /></div>
+        </div>
+        <p className="line-clamp-2 flex-1 text-[13px] text-muted-foreground">{REPORT_DESCRIPTIONS[report.id!] ?? report.description ?? ''}</p>
+        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-muted-foreground">
+          <span className="flex items-center gap-1.5 text-foreground"><Avatar name={report.owner} size={18} />{report.owner === ME ? 'Você' : report.owner.split(' ')[0]}</span>
+          <WhoSees report={report} />
+          <span>{PERIOD_LABEL[report.period]}</span>
+          <span className="ml-auto">{report.updated}</span>
+        </div>
+      </div>
+    </article>
+  )
+}
+
+/** Lista dos relatórios customizados: fixados no topo, cartões com miniatura ou lista compacta, abas, busca e modelos. */
+function ReportsScreen({ reports, setReports, customs, pinned, setPinned, view, edit, openTemplate }: { reports: ReportDraft[]; setReports: (r: ReportDraft[]) => void; customs: CustomDef[]; pinned: string[]; setPinned: (p: string[]) => void; view: (id: string) => void; edit: (id: string | null) => void; openTemplate: (key: string) => void }) {
   const [tab, setTab] = useState<'all' | 'mine' | 'shared' | 'templates'>('all')
+  const [layout, setLayout] = useState<'cards' | 'list'>('cards')
   const [query, setQuery] = useState('')
   const [removing, setRemoving] = useState<ReportDraft | null>(null)
   const visible = reports
     .filter((r) => tab === 'all' || (tab === 'mine' ? r.owner === ME : r.owner !== ME))
     .filter((r) => r.name.toLowerCase().includes(query.trim().toLowerCase()))
+  const top = visible.filter((r) => pinned.includes(r.id!))
+  const rest = visible.filter((r) => !pinned.includes(r.id!))
   const counts = { all: reports.length, mine: reports.filter((r) => r.owner === ME).length, shared: reports.filter((r) => r.owner !== ME).length, templates: TEMPLATES.length }
-  const duplicate = (r: ReportDraft) => {
-    const copy = { ...r, id: `r${Date.now()}`, name: `${r.name} (cópia)`, owner: ME, visibility: 'private' as Visibility, roles: [], updated: 'Agora' }
-    setReports([copy, ...reports])
-    toast.success('Cópia criada', { description: 'A cópia é sua e começa privada.' })
+  const actions: ReportActions = {
+    view, edit,
+    duplicate: (r) => {
+      const copy = { ...r, id: `r${Date.now()}`, name: `${r.name} (cópia)`, owner: ME, visibility: 'private' as Visibility, roles: [], updated: 'Agora' }
+      setReports([copy, ...reports])
+      toast.success('Cópia criada', { description: 'A cópia é sua e começa privada.' })
+    },
+    pin: (id) => setPinned(pinned.includes(id) ? pinned.filter((p) => p !== id) : [...pinned, id]),
+    remove: setRemoving,
   }
   const tabs = [['all', 'Todos'], ['mine', 'Meus'], ['shared', 'Compartilhados comigo'], ['templates', 'Modelos da Groone']] as const
+  /** Um bloco de relatórios no formato escolhido (cartões ou lista). */
+  const block = (items: ReportDraft[]) => layout === 'cards' ? (
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{items.map((r) => <ReportCard key={r.id} report={r} customs={customs} pinned={pinned.includes(r.id!)} actions={actions} />)}</div>
+  ) : (
+    <Table min={760}>
+      <thead><tr><th className={th}>Nome</th><th className={th}>Visualização</th><th className={th}>Dono</th><th className={th}>Quem vê</th><th className={th}>Alterado</th><th className={cn(th, 'w-12')}><span className="sr-only">Ações</span></th></tr></thead>
+      <tbody>
+        {items.map((r) => (
+          <tr key={r.id} className="hover:bg-muted">
+            <td className={td}><button onClick={() => view(r.id!)} className="text-left font-medium hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{r.name}</button>{pinned.includes(r.id!) && <Pin className="ml-1.5 inline h-3.5 w-3.5 text-muted-foreground" aria-label="Fixado" />}</td>
+            <td className={td}><Badge>{CHART_LABEL[r.chart]}</Badge></td>
+            <td className={cn(td, 'whitespace-nowrap')}><span className="flex items-center gap-2"><Avatar name={r.owner} size={22} />{r.owner === ME ? 'Você' : r.owner}</span></td>
+            <td className={cn(td, 'whitespace-nowrap text-muted-foreground')}><WhoSees report={r} /></td>
+            <td className={cn(td, 'whitespace-nowrap text-muted-foreground')}>{r.updated}</td>
+            <td className={td}><ReportMenu report={r} pinned={pinned.includes(r.id!)} onOpen={() => view(r.id!)} onEdit={() => edit(r.id)} onDuplicate={() => actions.duplicate(r)} onPin={() => actions.pin(r.id!)} onRemove={() => setRemoving(r)} /></td>
+          </tr>
+        ))}
+      </tbody>
+    </Table>
+  )
   return (
     <>
-      <PageHeader title="Relatórios" sub="Monte relatórios com as métricas do GAM, das page views e as suas, salve e compartilhe com a equipe."
-        actions={<Button onClick={() => open(null)} className="h-9"><Plus className="h-4 w-4" />Criar relatório</Button>} />
+      <PageHeader title="Relatórios customizados" sub="Os relatórios que você e a equipe montaram com as métricas do GAM, das page views e as suas."
+        actions={<Button onClick={() => edit(null)} className="h-9"><Plus className="h-4 w-4" />Criar relatório</Button>} />
       <Body>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap gap-1 rounded-md border bg-background p-0.5" role="tablist" aria-label="Filtro">
@@ -2289,9 +2438,16 @@ function ReportsScreen({ reports, setReports, open, openTemplate }: { reports: R
             ))}
           </div>
           {tab !== 'templates' && (
-            <div className="relative w-full sm:w-[280px]">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar pelo nome" aria-label="Buscar relatório" className="h-9 pl-9" />
+            <div className="flex w-full items-center gap-2 sm:w-auto">
+              <div className="relative flex-1 sm:w-[280px] sm:flex-none">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar pelo nome" aria-label="Buscar relatório" className="h-9 pl-9" />
+              </div>
+              <div className="flex rounded-md border bg-background p-0.5" role="group" aria-label="Mostrar como">
+                {([['cards', LayoutGrid, 'Cartões'], ['list', List, 'Lista']] as const).map(([k, Icon, l]) => (
+                  <button key={k} onClick={() => setLayout(k)} aria-pressed={layout === k} title={l} className={cn('flex h-8 w-8 items-center justify-center rounded-[4px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', layout === k ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground')}><Icon className="h-4 w-4" /><span className="sr-only">{l}</span></button>
+                ))}
+              </div>
             </div>
           )}
         </div>
@@ -2309,35 +2465,10 @@ function ReportsScreen({ reports, setReports, open, openTemplate }: { reports: R
         ) : visible.length === 0 ? (
           <Card pad><p className="text-[14px] text-muted-foreground">{query ? `Nenhum relatório com "${query}".` : 'Nenhum relatório aqui ainda. Comece por um modelo da Groone.'}</p></Card>
         ) : (
-          <Table min={760}>
-            <thead><tr><th className={th}>Nome</th><th className={th}>Visualização</th><th className={th}>Dono</th><th className={th}>Quem vê</th><th className={th}>Alterado</th><th className={cn(th, 'w-12')}><span className="sr-only">Ações</span></th></tr></thead>
-            <tbody>
-              {visible.map((r) => {
-                const editable = r.owner === ME
-                return (
-                  <tr key={r.id} className="hover:bg-muted">
-                    <td className={td}><button onClick={() => open(r.id)} className="text-left font-medium hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{r.name}</button></td>
-                    <td className={td}><Badge>{CHART_LABEL[r.chart]}</Badge></td>
-                    <td className={cn(td, 'whitespace-nowrap')}><span className="flex items-center gap-2"><Avatar name={r.owner} size={22} />{r.owner === ME ? 'Você' : r.owner}</span></td>
-                    <td className={cn(td, 'whitespace-nowrap text-muted-foreground')}>{r.visibility === 'private' && <Lock className="mr-1.5 inline h-3.5 w-3.5" />}{r.visibility === 'roles' ? r.roles.join(', ') : VIS_LABEL[r.visibility]}</td>
-                    <td className={cn(td, 'whitespace-nowrap text-muted-foreground')}>{r.updated}</td>
-                    <td className={td}>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" aria-label={`Ações de ${r.name}`}><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48">
-                          <DropdownMenuItem onSelect={() => open(r.id)}>Abrir</DropdownMenuItem>
-                          <DropdownMenuItem onSelect={() => duplicate(r)}>Duplicar</DropdownMenuItem>
-                          <DropdownMenuItem onSelect={() => toast('Exportando CSV…')}>Exportar CSV</DropdownMenuItem>
-                          <DropdownMenuItem onSelect={() => toast('Exportando XLSX…')}>Exportar XLSX</DropdownMenuItem>
-                          {editable && (<><DropdownMenuSeparator /><DropdownMenuItem className="text-bad focus:text-bad" onSelect={() => setRemoving(r)}>Apagar</DropdownMenuItem></>)}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </Table>
+          <>
+            {top.length > 0 && <section className="grid gap-3"><h2 className="text-[12px] font-medium uppercase tracking-wide text-muted-foreground">Fixados</h2>{block(top)}</section>}
+            {rest.length > 0 && <section className="grid gap-3">{top.length > 0 && <h2 className="text-[12px] font-medium uppercase tracking-wide text-muted-foreground">Outros relatórios</h2>}{block(rest)}</section>}
+          </>
         )}
       </Body>
       <Dialog open={!!removing} onOpenChange={(o) => !o && setRemoving(null)}>
@@ -2349,6 +2480,87 @@ function ReportsScreen({ reports, setReports, open, openTemplate }: { reports: R
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </>
+  )
+}
+
+/** Leitura do relatório salvo: totais no topo, gráfico e tabela. Período e comparação mudam só a visita, não o relatório. */
+function ReportViewScreen({ report, customs, pinned, onPin, onBack, onEdit, onDuplicate }: { report: ReportDraft; customs: CustomDef[]; pinned: boolean; onPin: () => void; onBack: () => void; onEdit: () => void; onDuplicate: () => void }) {
+  const [period, setPeriod] = useState<PeriodKey>(report.period)
+  const [compare, setCompare] = useState(report.compare)
+  const editable = report.owner === ME
+  const shown: ReportDraft = { ...report, period, compare }
+  const changed = period !== report.period || compare !== report.compare
+  const metrics = report.metrics.map((m) => ({ key: m, ...metricDef(m, customs) }))
+  const chartCard = report.chart !== 'table' && report.chart !== 'kpi'
+  return (
+    <>
+      <div className="border-b bg-background">
+        <div className="mx-auto flex max-w-[1200px] flex-wrap items-end justify-between gap-x-6 gap-y-4 px-4 py-10 sm:px-6">
+          <div className="min-w-0 max-w-[72ch]">
+            <Button variant="ghost" size="sm" onClick={onBack} className="-ml-2.5 mb-3 text-muted-foreground"><ArrowLeft className="h-4 w-4" />Relatórios customizados</Button>
+            <h1 className="text-[32px] font-semibold leading-tight tracking-[-0.04em]">{report.name}</h1>
+            <p className="mt-2 text-[15px] text-muted-foreground">{REPORT_DESCRIPTIONS[report.id!] ?? report.description}</p>
+            <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-[13px] text-muted-foreground">
+              <span className="flex items-center gap-1.5 text-foreground"><Avatar name={report.owner} size={20} />{report.owner === ME ? 'Seu relatório' : report.owner}</span>
+              <WhoSees report={report} />
+              <span>Alterado {/^(hoje|ontem)/i.test(report.updated) ? report.updated.toLowerCase() : `em ${report.updated}`}</span>
+              <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-ok" aria-hidden="true" />Dados até hoje, 14:00</span>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="icon" className="h-9 w-9" onClick={onPin} aria-pressed={pinned} title={pinned ? 'Desafixar' : 'Fixar no topo da lista'}>{pinned ? <PinOff className="h-4 w-4" /> : <Pin className="h-4 w-4" />}<span className="sr-only">{pinned ? 'Desafixar' : 'Fixar'}</span></Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild><Button variant="outline" className="h-9"><Download className="h-4 w-4" />Exportar</Button></DropdownMenuTrigger>
+              <DropdownMenuContent align="end"><DropdownMenuItem onSelect={() => toast('Exportando CSV…')}>CSV</DropdownMenuItem><DropdownMenuItem onSelect={() => toast('Exportando XLSX…')}>XLSX (Excel)</DropdownMenuItem></DropdownMenuContent>
+            </DropdownMenu>
+            {editable ? <Button className="h-9" onClick={onEdit}><Pencil className="h-4 w-4" />Editar</Button> : <Button className="h-9" onClick={onDuplicate}><Copy className="h-4 w-4" />Duplicar para editar</Button>}
+          </div>
+        </div>
+      </div>
+      <Body>
+        <div className="flex flex-wrap items-center gap-2">
+          <Select value={period} onValueChange={(v) => setPeriod(v as PeriodKey)}>
+            <SelectTrigger className="h-9 w-[210px]" aria-label="Período"><SelectValue /></SelectTrigger>
+            <SelectContent>{PERIODS.map(([k, l]) => <SelectItem key={k} value={k}>{l}{k === report.period ? ' (salvo)' : ''}</SelectItem>)}</SelectContent>
+          </Select>
+          <button onClick={() => setCompare(!compare)} aria-pressed={compare} className={cn('flex h-9 items-center gap-2 rounded-md border bg-background px-3 text-[13px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', compare ? 'text-foreground' : 'text-muted-foreground hover:text-foreground')}>
+            <span className={cn('flex h-4 w-4 items-center justify-center rounded-[4px] border', compare && 'border-primary bg-primary text-primary-foreground')}>{compare && <Check className="h-3 w-3" />}</span>Comparar com o período anterior
+          </button>
+          {report.dims.map((d) => <Badge key={d}>Por {R_DIMENSIONS.find((x) => x.key === d)?.label.toLowerCase()}</Badge>)}
+          {report.filters.map((f) => <Badge key={f.field}>{R_DIMENSIONS.find((x) => x.key === f.field)?.label}: {f.values.join(', ')}</Badge>)}
+          {changed && (
+            <span className="ml-auto flex items-center gap-2 text-[13px] text-muted-foreground">
+              Vendo diferente do salvo
+              <Button variant="ghost" size="sm" className="h-8" onClick={() => { setPeriod(report.period); setCompare(report.compare) }}>Voltar ao salvo</Button>
+              {editable && <Button variant="outline" size="sm" className="h-8" onClick={() => toast.success('Relatório atualizado', { description: `Agora abre em ${PERIOD_LABEL[period].toLowerCase()}.` })}>Salvar assim</Button>}
+            </span>
+          )}
+        </div>
+
+        <div className={cn('grid gap-px overflow-hidden rounded-lg border bg-border', metrics.length === 1 ? 'grid-cols-1' : metrics.length === 2 ? 'sm:grid-cols-2' : metrics.length === 3 ? 'sm:grid-cols-3' : 'sm:grid-cols-2 lg:grid-cols-4')}>
+          {metrics.map((m) => {
+            const now = sampleValue(m.key, `total-${period}`, m.kind)
+            const scale = report.styles[m.key]?.scale
+            return (
+              <div key={m.key} className="bg-card p-5">
+                <div className="flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground">{report.styles[m.key]?.color && <span className="h-2 w-2 rounded-full" style={{ background: report.styles[m.key]?.color }} aria-hidden="true" />}{m.label}{m.custom && <Badge>Sua</Badge>}</div>
+                <div className={cn('mt-1 font-semibold tracking-[-0.04em] tnum', report.chart === 'kpi' ? 'text-[44px]' : 'text-[28px]')} style={scale ? { color: `hsl(${scaleHue(scale, now)} 75% 38%)` } : undefined}>{fmt(m.kind, now)}</div>
+                <div className="mt-1 min-h-5">{compare ? <Delta now={now} before={sampleValue(m.key, `prev-${period}`, m.kind)} /> : <span className="text-[13px] text-muted-foreground">{PERIOD_LABEL[period]}</span>}</div>
+              </div>
+            )
+          })}
+        </div>
+
+        {chartCard && <Card title={`${metrics[0]?.label}${report.dims[0] ? ` por ${R_DIMENSIONS.find((x) => x.key === axisSplit(report).axis)?.label.toLowerCase()}` : ''}`} className="min-w-0"><ReportChart draft={shown} customs={customs} /></Card>}
+
+        {report.dims.length > 0 && (
+          <section className="grid gap-3">
+            <div className="flex items-end justify-between gap-3"><h2 className="text-[16px] font-semibold tracking-tight">Dados</h2><span className="text-[13px] text-muted-foreground">{comboRows(shown).length} linhas</span></div>
+            <ReportTable draft={shown} customs={customs} />
+          </section>
+        )}
+      </Body>
     </>
   )
 }
@@ -2747,7 +2959,7 @@ function ReportBuilderScreen({ initial, customs, setCustoms, onBack, onSave }: {
   return (
     <div className="flex min-h-[calc(100dvh-2.75rem)] flex-col bg-background">
       <header className="sticky top-11 z-20 flex flex-wrap items-center gap-3 border-b bg-background px-4 py-3">
-        <Button variant="ghost" size="sm" onClick={onBack} className="-ml-1"><ArrowLeft className="h-4 w-4" />Relatórios</Button>
+        <Button variant="ghost" size="sm" onClick={onBack} className="-ml-1"><ArrowLeft className="h-4 w-4" />Voltar</Button>
         <span className="h-5 w-px bg-border" aria-hidden="true" />
         <input value={draft.name} onChange={(e) => update({ name: e.target.value })} aria-label="Nome do relatório" disabled={!editable} maxLength={120}
           className="min-w-0 flex-1 rounded-md bg-transparent px-2 py-1 text-[18px] font-semibold tracking-tight hover:bg-accent focus-visible:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:hover:bg-transparent" />
@@ -2790,7 +3002,7 @@ function ReportBuilderScreen({ initial, customs, setCustoms, onBack, onSave }: {
             ))}
           </div>
         </aside>
-        <main className="min-w-0 bg-muted">
+        <main className="order-3 min-w-0 bg-muted lg:order-2">
           <div className="grid gap-4 p-4 sm:p-6">
             <div className="flex flex-wrap items-center gap-1.5">
               {draft.metrics.map((m) => (
@@ -2814,7 +3026,7 @@ function ReportBuilderScreen({ initial, customs, setCustoms, onBack, onSave }: {
             {draft.chart !== 'kpi' && <ReportTable draft={draft} customs={customs} />}
           </div>
         </main>
-        <aside className="border-t lg:border-l lg:border-t-0" aria-label="Configuração">
+        <aside className="order-2 border-b lg:order-3 lg:border-b-0 lg:border-l" aria-label="Configuração">
           <PanelTitle>Visualização</PanelTitle>
           <div className="grid grid-cols-2 gap-1.5 px-4">
             {CHARTS.map((c) => {
@@ -3853,11 +4065,14 @@ export default function App() {
   const [image, setImage] = useState<string | null>(null)
   const [reports, setReports] = useState(INITIAL_REPORTS)
   const [customs, setCustoms] = useState(INITIAL_CUSTOMS)
+  const [pinned, setPinned] = useState<string[]>(['r2'])
+  const [viewId, setViewId] = useState('r1')
   const [draft, setDraft] = useState<ReportDraft>(() => ({ ...INITIAL_REPORTS[1] }))
   const [invoices, setInvoices] = useState(INITIAL_INVOICES)
   const [services, setServices] = useState(INITIAL_SERVICES)
   const [payee, setPayee] = useState(INITIAL_PAYEE)
   const [invoiceView, setInvoiceView] = useState<{ id: number; from: 'mine' | 'all' }>({ id: 1186, from: 'all' })
+  const viewReport = (id: string) => { setViewId(id); go('relatorio') }
   const openReport = (id: string | null) => { setDraft(id ? { ...reports.find((r) => r.id === id)! } : blank()); go('construtor') }
   const openTemplate = (key: string) => { const { key: _key, desc: _desc, ...tpl } = TEMPLATES.find((x) => x.key === key)!; setDraft({ ...tpl, id: null, owner: ME, updated: 'Agora' }); go('construtor') }
   const saveReport = (saved: ReportDraft) => {
@@ -3895,8 +4110,12 @@ export default function App() {
       case 'inicio': return <HomeScreen t={t} go={go} members={members} />
       case 'desempenho': return <PerformanceScreen />
       case 'visitas': return <PageViewsScreen />
-      case 'relatorios': return <ReportsScreen reports={reports} setReports={setReports} open={openReport} openTemplate={openTemplate} />
-      case 'construtor': return <ReportBuilderScreen key={`${draft.id}-${draft.name}`} initial={draft} customs={customs} setCustoms={setCustoms} onBack={() => go('relatorios')} onSave={saveReport} />
+      case 'relatorios': return <ReportsScreen reports={reports} setReports={setReports} customs={customs} pinned={pinned} setPinned={setPinned} view={viewReport} edit={openReport} openTemplate={openTemplate} />
+      case 'relatorio': {
+        const report = reports.find((r) => r.id === viewId) ?? reports[0]
+        return <ReportViewScreen key={report.id} report={report} customs={customs} pinned={pinned.includes(report.id!)} onPin={() => setPinned(pinned.includes(report.id!) ? pinned.filter((p) => p !== report.id) : [...pinned, report.id!])} onBack={() => go('relatorios')} onEdit={() => openReport(report.id)} onDuplicate={() => { const copy = { ...report, id: `r${Date.now()}`, name: `${report.name} (cópia)`, owner: ME, visibility: 'private' as Visibility, roles: [], updated: 'Agora' }; setReports([copy, ...reports]); setDraft(copy); go('construtor') }} />
+      }
+      case 'construtor': return <ReportBuilderScreen key={`${draft.id}-${draft.name}`} initial={draft} customs={customs} setCustoms={setCustoms} onBack={() => (draft.id ? viewReport(draft.id) : go('relatorios'))} onSave={saveReport} />
       case 'resultado': return <ResultScreen go={go} />
       case 'custos': return <CostsScreen />
       case 'equipe': return <TeamScreen t={t} go={go} members={members} setMembers={setMembers} groupCount={groups.length} />

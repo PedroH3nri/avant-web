@@ -8,7 +8,7 @@ import { ApiError } from '@/lib/api'
 import { errorText, type Key } from '@/lib/i18n'
 import { useSession } from '@/stores/session'
 
-export type NavItem = { to: string; key: Key; icon: Component; internal?: boolean; clientOnly?: boolean }
+export type NavItem = { to: string; key: Key; icon: Component; internal?: boolean; clientOnly?: boolean; separated?: boolean }
 export type NavGroup = { id: string; key: Key | null; label: Key; icon: Component; items: NavItem[] }
 
 // O menu é imutável: os mesmos itens em todas as rotas e Empresas, sem filtrar por permissão
@@ -16,7 +16,7 @@ export type NavGroup = { id: string; key: Key | null; label: Key; icon: Componen
 // (o guarda troca para a Company Groone) e só a equipe Groone os vê; os outros abrem a Empresa
 // cliente. Itens com ``clientOnly`` somem para a equipe Groone, que tem a versão interna deles
 // (Equipes: a Groone vê as equipes de todos os clientes, nunca a própria; Papéis e permissões:
-// a Groone cuida dos seus em Papéis da equipe).
+// a Groone cuida dos seus em Papéis da equipe). Itens com ``separated`` ganham uma linha acima.
 export const NAV_GROUPS: NavGroup[] = [
   { id: 'home', key: null, label: 'nav.home', icon: LayoutDashboard, items: [{ to: '/', key: 'nav.home', icon: LayoutDashboard }] },
   {
@@ -41,10 +41,10 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { to: '/desempenho', key: 'nav.adManager', icon: ChartLine },
       { to: '/visitas', key: 'nav.pageViews', icon: Eye },
-      { to: '/relatorios', key: 'nav.reports', icon: FileChartColumn },
       { to: '/resultado', key: 'nav.results', icon: Scale },
       { to: '/interno/resultados', key: 'int.results', icon: Scale, internal: true },
       { to: '/interno/metas', key: 'goals.title', icon: Target, internal: true },
+      { to: '/relatorios', key: 'nav.customReports', icon: FileChartColumn, separated: true },
     ],
   },
   {

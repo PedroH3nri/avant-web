@@ -21,3 +21,13 @@ export function pageNumbers(current: number, pages: number): (number | typeof EL
   })
   return result
 }
+
+/** Os itens de uma página de uma lista que já chegou inteira. */
+export function pageSlice<Item>(items: Item[], page: number): Item[] {
+  return items.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+}
+
+/** Quantas páginas tem uma lista de ``total`` itens. */
+export function pageCount(total: number): number {
+  return Math.ceil(total / PAGE_SIZE)
+}

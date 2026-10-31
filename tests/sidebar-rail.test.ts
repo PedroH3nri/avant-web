@@ -93,7 +93,10 @@ describe('SidebarRail', () => {
     expect(panelLabels(wrapper)).toEqual(['Clientes', 'Equipes', 'Networks do GAM', 'Contratos', 'Sites'])
     expect(wrapper.find('#rail-panel [aria-current="page"]').text()).toBe('Clientes')
     await hoverAndWait(reports!)
-    expect(panelLabels(wrapper)).toEqual(['Ad Manager', 'Page Views', 'Relatórios', 'Resultado', 'Resultado dos clientes', 'Metas'])
+    expect(panelLabels(wrapper)).toEqual(['Ad Manager', 'Page Views', 'Resultado', 'Resultado dos clientes', 'Metas', 'Relatórios customizados'])
+    const separator = wrapper.find('#rail-panel hr')
+    expect(separator.exists()).toBe(true)
+    expect(separator.element.nextElementSibling?.textContent).toBe('Relatórios customizados')
   })
 
   it('fecha o painel ao abrir uma tela e não abre painel para o Dashboard', async () => {
