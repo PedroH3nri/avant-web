@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Toaster, toast } from 'sonner'
-import { Check, ChevronsUpDown, Copy, Loader2, Plus, RefreshCw, Search, X, AlertTriangle, ArrowLeft, MoreHorizontal, Lock, Mail, ExternalLink, Home, Users, Network, Settings, ShieldCheck, Menu, BarChart3, Wallet, Download, Trash2, Pin, PinOff, Pencil, LayoutGrid, List } from 'lucide-react'
+import { Check, ChevronsUpDown, Copy, Loader2, Plus, RefreshCw, Search, X, AlertTriangle, ArrowLeft, MoreHorizontal, Lock, Mail, ExternalLink, Home, Users, Network, Settings, ShieldCheck, Menu, BarChart3, Wallet, Download, Trash2, Pin, PinOff, Pencil, LayoutGrid, List, GripVertical, Filter, Columns3, ArrowUpDown, LineChart as LineChartIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -49,9 +49,15 @@ const SCREENS = [
   ['invoice', 'Painel interno · Invoice'],
   ['invoices', 'Painel interno · Invoices da equipe'],
   ['servicosinvoice', 'Painel interno · Serviços de invoice'],
+  ['dashboard', 'M5 · Dashboard da Groone'],
+  ['dashboardeditar', 'M5 · Dashboard da Groone (editando)'],
+  ['alertas', 'M5 · Alertas'],
+  ['alertanovo', 'M5 · Novo alerta'],
+  ['envios', 'M5 · Envios agendados'],
+  ['visoes', 'M5 · Clientes com visões salvas'],
 ] as const
 type Screen = (typeof SCREENS)[number][0]
-const INTERNAL_SCREENS: Screen[] = ['interno', 'cliente', 'contratos', 'resultados', 'papelcomissao', 'minhacomissao', 'comissoes', 'minhasinvoices', 'invoice', 'invoices', 'servicosinvoice']
+const INTERNAL_SCREENS: Screen[] = ['interno', 'cliente', 'contratos', 'resultados', 'papelcomissao', 'minhacomissao', 'comissoes', 'minhasinvoices', 'invoice', 'invoices', 'servicosinvoice', 'dashboard', 'dashboardeditar', 'alertas', 'alertanovo', 'envios', 'visoes']
 const isScreen = (s: string): s is Screen => SCREENS.some(([k]) => k === s)
 type T = (k: Key) => string
 
@@ -303,7 +309,8 @@ const CLIENT_RAIL: RailGroup[] = [
   { key: 'empresa', label: 'Empresa', icon: Settings, items: [{ id: 'configuracoes', label: 'Configurações' }, { id: 'fiscais', label: 'Dados fiscais' }] },
 ]
 const INTERNAL_RAIL: RailGroup[] = [
-  { key: 'clientes', label: 'Clientes', icon: Users, items: [{ id: 'interno', label: 'Clientes', also: ['cliente'] }, { id: 'contratos', label: 'Contratos' }, { id: 'resultados', label: 'Resultado dos clientes' }] },
+  { key: 'relatoriosgroone', label: 'Relatórios', icon: LineChartIcon, items: [{ id: 'dashboard', label: 'Dashboards', also: ['dashboardeditar'] }, { id: 'alertas', label: 'Alertas', also: ['alertanovo'] }, { id: 'envios', label: 'Envios agendados' }] },
+  { key: 'clientes', label: 'Clientes', icon: Users, items: [{ id: 'interno', label: 'Clientes', also: ['cliente', 'visoes'] }, { id: 'contratos', label: 'Contratos' }, { id: 'resultados', label: 'Resultado dos clientes' }] },
   { key: 'comissoes', label: 'Comissões', icon: Wallet, items: [{ id: 'minhacomissao', label: 'Minha comissão' }, { id: 'minhasinvoices', label: 'Minhas invoices' }, { id: 'comissoes', label: 'Comissões da equipe' }, { id: 'invoices', label: 'Invoices', also: ['servicosinvoice', 'invoice'] }] },
   { key: 'equipegroone', label: 'Equipe', icon: ShieldCheck, items: [{ id: 'papelcomissao', label: 'Papéis da Equipe Groone' }] },
 ]
@@ -4053,6 +4060,334 @@ function AccountManagerCard() {
   )
 }
 
+/* ---------- M5 no painel interno: dashboards, alertas, envios e visões salvas (plano da M5, decisão 10) ---------- */
+
+type DashClient = { name: string; manager: string; networks: number; sites: number; revenue: number; before: number; ecpm: number; contract: 'active' | 'none' }
+const DASH_CLIENTS: DashClient[] = [
+  { name: 'Portal Notícias', manager: 'Lucas Prado', networks: 3, sites: 12, revenue: 68420, before: 61200, ecpm: 2.41, contract: 'active' },
+  { name: 'Receitas da Vó', manager: 'Marina Alves', networks: 1, sites: 4, revenue: 41980, before: 44310, ecpm: 3.12, contract: 'active' },
+  { name: 'Mundo Games', manager: 'Rafael Souza', networks: 2, sites: 7, revenue: 37650, before: 30120, ecpm: 1.86, contract: 'active' },
+  { name: 'Blog Exemplo', manager: 'Júlia Santos', networks: 1, sites: 3, revenue: 29310, before: 28950, ecpm: 2.77, contract: 'active' },
+  { name: 'Viagem Fácil', manager: 'Lucas Prado', networks: 1, sites: 2, revenue: 18240, before: 22800, ecpm: 2.05, contract: 'active' },
+  { name: 'Tech Hoje', manager: 'Marina Alves', networks: 2, sites: 5, revenue: 15870, before: 14020, ecpm: 1.64, contract: 'none' },
+]
+const DASH_MANAGERS = [
+  { name: 'Lucas Prado', role: 'Comercial externo', done: 9840, goal: 15000 },
+  { name: 'Marina Alves', role: 'Comercial externo', done: 13610, goal: 15000 },
+  { name: 'Júlia Santos', role: 'Comercial interno', done: 4120, goal: 5000 },
+  { name: 'Rafael Souza', role: 'Comercial interno', done: 3270, goal: 5000 },
+]
+const DASH_CATEGORIES = [['Notícias', 86660], ['Culinária', 41980], ['Games', 37650], ['Estilo de vida', 29310], ['Viagem', 18240], ['Tecnologia', 15870]] as const
+const DASH_DAYS = Array.from({ length: 27 }, (_, index) => ({ day: `${String(index + 1).padStart(2, '0')}/10`, value: 7600 + 900 * Math.sin(index * 0.7) + 500 * Math.sin(index * 0.23 + 1) - (index % 7 === 3 || index % 7 === 4 ? 1100 : 0) + index * 40 }))
+const DASHBOARDS = [['visao', 'Visão geral da Groone'], ['responsavel', 'Por responsável'], ['qualidade', 'Qualidade do inventário']] as const
+const usd2 = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 })
+const usdCompact = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'USD', notation: 'compact', maximumFractionDigits: 1 })
+
+/** Variação contra o período anterior, em verde ou vermelho. */
+function Change({ now, before }: { now: number; before: number }) {
+  const change = ((now - before) / before) * 100
+  const up = change >= 0
+  return <span className={cn('inline-flex items-center gap-1 text-[13px] tnum', up ? 'text-ok' : 'text-bad')}><span aria-hidden="true">{up ? '↑' : '↓'}</span>{pct.format(Math.abs(change))}%</span>
+}
+
+/** Gráfico de área da receita da Groone por dia, em dólar. */
+function AreaChart({ points }: { points: { day: string; value: number }[] }) {
+  const width = 640, height = 220, left = 56, right = 12, top = 12, bottom = 26
+  const max = Math.max(...points.map((point) => point.value)) * 1.15
+  const xAt = (index: number) => left + (index * (width - left - right)) / (points.length - 1)
+  const yAt = (value: number) => top + (height - top - bottom) * (1 - value / max)
+  const line = points.map((point, index) => `${index ? 'L' : 'M'}${xAt(index).toFixed(1)},${yAt(point.value).toFixed(1)}`).join('')
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} className="h-[220px] w-full" role="img" aria-label="Receita da Groone por dia">
+      {[0, 0.25, 0.5, 0.75, 1].map((fraction) => (
+        <g key={fraction}>
+          <line x1={left} x2={width - right} y1={yAt(max * fraction)} y2={yAt(max * fraction)} className="stroke-border" strokeWidth={1} />
+          <text x={left - 8} y={yAt(max * fraction) + 4} textAnchor="end" className="fill-muted-foreground text-[11px] tnum">{usdCompact.format(max * fraction)}</text>
+        </g>
+      ))}
+      {points.map((point, index) => index % 4 === 0 && <text key={point.day} x={xAt(index)} y={height - 8} textAnchor="middle" className="fill-muted-foreground text-[11px] tnum">{point.day}</text>)}
+      <path d={`${line}L${xAt(points.length - 1)},${yAt(0)}L${xAt(0)},${yAt(0)}Z`} className="fill-foreground/[0.05]" />
+      <path d={line} fill="none" className="stroke-foreground" strokeWidth={2} strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+/** Moldura de um widget do dashboard; no modo de edição ganha alça para arrastar e canto para redimensionar. */
+function Widget({ title, note, span, editing, children }: { title: string; note?: string; span: string; editing: boolean; children: React.ReactNode }) {
+  return (
+    <section className={cn('relative flex min-w-0 flex-col rounded-lg border bg-card', span, editing && 'border-dashed border-foreground/40 ring-4 ring-foreground/[0.03]')}>
+      <div className="flex items-center gap-2 px-5 pt-4">
+        {editing && <GripVertical className="h-4 w-4 cursor-grab text-muted-foreground" aria-label="Arrastar" />}
+        <h3 className="min-w-0 flex-1 truncate text-[14px] font-semibold tracking-tight">{title}</h3>
+        {note && !editing && <span className="text-[12px] text-muted-foreground">{note}</span>}
+        {editing ? <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="Opções do widget"><MoreHorizontal className="h-4 w-4" /></Button> : null}
+      </div>
+      <div className="min-w-0 flex-1 px-5 pb-5 pt-3">{children}</div>
+      {editing && <span className="absolute bottom-1 right-1 h-3 w-3 cursor-se-resize border-b-2 border-r-2 border-foreground/50" aria-label="Redimensionar" />}
+    </section>
+  )
+}
+
+/** Filtros que valem para o dashboard inteiro. */
+function DashFilters() {
+  const pick = (id: string, label: string, value: string, options: string[]) => (
+    <Select defaultValue={value}>
+      <SelectTrigger id={id} className="h-9 w-auto min-w-[150px] gap-2 bg-card" aria-label={label}><span className="text-muted-foreground">{label}:</span><SelectValue /></SelectTrigger>
+      <SelectContent>{options.map((option) => <SelectItem key={option} value={option}>{option}</SelectItem>)}</SelectContent>
+    </Select>
+  )
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      {pick('dash-period', 'Período', 'Este mês', ['Este mês', 'Mês passado', 'Últimos 30 dias', 'Este ano'])}
+      {pick('dash-clients', 'Clientes', 'Todos', ['Todos', 'Portal Notícias', 'Receitas da Vó', 'Mundo Games'])}
+      {pick('dash-manager', 'Responsável', 'Todos', ['Todos', ...DASH_MANAGERS.map((manager) => manager.name)])}
+      {pick('dash-networks', 'Networks', 'Todas', ['Todas', 'Manage Account', 'Manage Inventory'])}
+      <span className="ml-auto text-[13px] text-muted-foreground">Soma de 6 clientes · atualizado há 12 min</span>
+    </div>
+  )
+}
+
+/** Dashboard da equipe Groone: a soma de todos os clientes, com metas, em grade de widgets. */
+function GrooneDashboardScreen({ editing, go }: { editing: boolean; go: (s: Screen) => void }) {
+  const [adding, setAdding] = useState(false)
+  const revenue = DASH_CLIENTS.reduce((sum, client) => sum + client.revenue, 0)
+  const before = DASH_CLIENTS.reduce((sum, client) => sum + client.before, 0)
+  const kpis = [
+    { label: 'Receita da Groone', value: usd0.format(revenue), now: revenue, before },
+    { label: 'Receita bruta', value: usd0.format(revenue / 0.2), now: revenue / 0.2, before: before / 0.2 },
+    { label: 'eCPM', value: usd2.format(2.38), now: 2.38, before: 2.29 },
+    { label: 'Impressões', value: int.format(1185000000), now: 1185, before: 1121 },
+  ]
+  const actions = editing
+    ? <><Button variant="outline" onClick={() => setAdding(true)}><Plus />Adicionar widget</Button><Button variant="outline" onClick={() => go('dashboard')}>Cancelar</Button><Button onClick={() => { toast.success('Layout salvo'); go('dashboard') }}>Salvar layout</Button></>
+    : <>
+        <Select defaultValue="visao"><SelectTrigger className="h-9 w-[220px]" aria-label="Dashboard"><SelectValue /></SelectTrigger><SelectContent>{DASHBOARDS.map(([key, label]) => <SelectItem key={key} value={key}>{label}</SelectItem>)}</SelectContent></Select>
+        <Button variant="outline" onClick={() => go('dashboardeditar')}><Pencil />Editar</Button>
+        <Button onClick={() => toast('Abriria a escolha de um modelo: Visão geral, Por responsável, Por cliente')}><Plus />Novo dashboard</Button>
+      </>
+  return (
+    <>
+      <PageHeader title="Visão geral da Groone" sub="Dashboard padrão da equipe Groone. Cada pessoa vê só os clientes que pode ver." actions={actions} />
+      <Body>
+        {editing ? <div className="flex items-center gap-2 rounded-lg border border-dashed border-foreground/40 bg-card px-4 py-3 text-[14px]"><LayoutGrid className="h-4 w-4" />Editando o layout: arraste pela alça para mover e puxe o canto para mudar o tamanho. Os filtros abaixo viram o padrão do dashboard.</div> : null}
+        <DashFilters />
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-12">
+          {kpis.map((kpi) => (
+            <Widget key={kpi.label} title={kpi.label} span="md:col-span-3" editing={editing}>
+              <div className="text-[28px] font-semibold tracking-tight tnum">{kpi.value}</div>
+              <div className="mt-1 flex items-center gap-1.5"><Change now={kpi.now} before={kpi.before} /><span className="text-[13px] text-muted-foreground">contra setembro até o dia 27</span></div>
+            </Widget>
+          ))}
+          <Widget title="Receita da Groone por dia" note="Outubro" span="md:col-span-8" editing={editing}><AreaChart points={DASH_DAYS} /></Widget>
+          <Widget title="Meta da Groone · outubro" note="Faturamento Groone 2026" span="md:col-span-4" editing={editing}>
+            <GoalBar done={revenue} goal={COMPANY_GOAL.months[CURRENT_MONTH]} label="Meta da Groone" />
+            <p className="mt-4 text-[13px] text-muted-foreground">Receita da Groone de todos os clientes, menos a parte dela nas deduções quando o mês fecha.</p>
+          </Widget>
+          <Widget title="Clientes que mais rendem" note="Relatório salvo" span="md:col-span-8" editing={editing}>
+            <div className="-mx-5 overflow-x-auto">
+              <table className="w-full min-w-[560px] text-left text-[14px] [&_tbody_tr:last-child_td]:border-b-0">
+                <thead><tr>{['Cliente', 'Responsável', 'Receita da Groone', 'Variação', 'eCPM'].map((head, index) => <th key={head} className={cn(th, index > 1 && 'text-right')}>{head}</th>)}</tr></thead>
+                <tbody>{DASH_CLIENTS.slice(0, 5).map((client) => (
+                  <tr key={client.name} className="hover:bg-muted">
+                    <td className={cn(td, 'font-medium')}>{client.name}</td>
+                    <td className={td}><span className="inline-flex items-center gap-2"><Avatar name={client.manager} size={20} />{client.manager}</span></td>
+                    <td className={cn(td, 'text-right tnum')}>{usd0.format(client.revenue)}</td>
+                    <td className={cn(td, 'text-right')}><Change now={client.revenue} before={client.before} /></td>
+                    <td className={cn(td, 'text-right tnum')}>{usd2.format(client.ecpm)}</td>
+                  </tr>
+                ))}</tbody>
+              </table>
+            </div>
+          </Widget>
+          <Widget title="Metas da equipe" note="Meta do papel" span="md:col-span-4" editing={editing}>
+            <ul className="grid gap-4">
+              {DASH_MANAGERS.map((manager) => {
+                const share = manager.done / manager.goal
+                const ahead = share >= (DAY_OF_MONTH - 1) / DAYS_IN_MONTH
+                return (
+                  <li key={manager.name}>
+                    <div className="flex items-center justify-between gap-2 text-[13px]"><span className="inline-flex min-w-0 items-center gap-2 font-medium"><Avatar name={manager.name} size={20} /><span className="truncate">{manager.name}</span></span><span className="tnum text-muted-foreground">{usd0.format(manager.done)} de {usd0.format(manager.goal)}</span></div>
+                    <div className="mt-2 h-2 rounded-full bg-secondary"><div className={cn('h-2 rounded-full', ahead ? 'bg-ok' : 'bg-ochre')} style={{ width: `${Math.min(share, 1) * 100}%` }} /></div>
+                  </li>
+                )
+              })}
+            </ul>
+          </Widget>
+          <Widget title="Receita da Groone por categoria do site" span="md:col-span-6" editing={editing}>
+            <ul className="grid gap-2.5">
+              {DASH_CATEGORIES.map(([label, value]) => (
+                <li key={label} className="grid grid-cols-[110px_minmax(0,1fr)_auto] items-center gap-3 text-[13px]">
+                  <span className="truncate">{label}</span>
+                  <span className="h-2 rounded-full bg-muted"><span className="block h-2 rounded-full bg-foreground" style={{ width: `${(value / DASH_CATEGORIES[0][1]) * 100}%` }} /></span>
+                  <span className="tnum text-right">{usd0.format(value)}</span>
+                </li>
+              ))}
+            </ul>
+          </Widget>
+          <Widget title="Alertas disparados" note="Últimos 7 dias" span="md:col-span-3" editing={editing}>
+            <ul className="grid gap-3 text-[13px]">
+              <li><Status tone="bad">Viagem Fácil</Status><p className="mt-0.5 text-muted-foreground">Receita caiu 24% contra a média de 7 dias</p></li>
+              <li><Status tone="ochre">Mundo Games</Status><p className="mt-0.5 text-muted-foreground">Fill rate em 58%, abaixo de 60%</p></li>
+            </ul>
+            <button onClick={() => go('alertas')} className="mt-4 text-[13px] text-link hover:underline">Ver alertas</button>
+          </Widget>
+          <Widget title="Notas da semana" note="Texto" span="md:col-span-3" editing={editing}>
+            <p className="text-[14px] text-muted-foreground">Viagem Fácil perdeu um site na troca de domínio. Lucas acompanha a volta do tráfego até sexta.</p>
+          </Widget>
+        </div>
+      </Body>
+      <Dialog open={adding} onOpenChange={setAdding}>
+        <DialogContent className="sm:max-w-[520px]">
+          <DialogHeader><DialogTitle>Adicionar widget</DialogTitle><DialogDescription>O widget usa os filtros do dashboard por cima da consulta dele.</DialogDescription></DialogHeader>
+          <div className="grid gap-2">
+            {[['Relatório salvo', 'Um relatório customizado, com o gráfico dele.'], ['KPI', 'Um número grande com a variação contra o período anterior.'], ['Meta', 'A meta da Groone ou a meta de um papel da equipe.'], ['Alertas', 'Os últimos disparos dos alertas que você vê.'], ['Texto', 'Uma nota livre para a equipe.']].map(([name, hint]) => (
+              <button key={name} onClick={() => { setAdding(false); toast(`Adicionaria o widget ${name}`) }} className="rounded-md border px-4 py-3 text-left hover:bg-accent"><div className="text-[14px] font-medium">{name}</div><div className="text-[13px] text-muted-foreground">{hint}</div></button>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  )
+}
+
+type AlertRow = { name: string; condition: string; scope: string; recipients: string[]; last: string; state: 'on' | 'muted' | 'firing' }
+const ALERT_ROWS: AlertRow[] = [
+  { name: 'Queda de receita por cliente', condition: 'Receita da Groone cai mais de 20% contra a média de 7 dias', scope: 'Todos os clientes', recipients: ['Pedro Henrique', 'Lucas Prado'], last: 'Hoje, 09:00 · Viagem Fácil', state: 'firing' },
+  { name: 'Fill rate baixo', condition: 'Fill rate abaixo de 60%', scope: 'Mundo Games', recipients: ['Rafael Souza'], last: 'Ontem, 15:00', state: 'on' },
+  { name: 'eCPM do Portal Notícias', condition: 'eCPM cai mais de 15% contra a semana anterior', scope: 'Portal Notícias', recipients: ['Lucas Prado'], last: '12/10, 08:00', state: 'on' },
+  { name: 'Visibilidade abaixo do contrato', condition: 'Visibilidade abaixo de 50%', scope: 'Receitas da Vó', recipients: ['Marina Alves'], last: 'Nunca disparou', state: 'muted' },
+]
+
+/** Alertas da equipe Groone: a lista e o formulário do alerta novo, com prévia. */
+function AlertsScreen({ creating }: { creating: boolean }) {
+  const [open, setOpen] = useState(creating)
+  const state = { on: <Status tone="ok">Ativo</Status>, muted: <Status tone="neutral">Silenciado até 03/11</Status>, firing: <Status tone="bad">Disparado</Status> }
+  return (
+    <>
+      <PageHeader title="Alertas" sub="Avisos por e-mail quando uma métrica de um cliente passa de um limite ou muda muito. A conferência roda de hora em hora." actions={<Button onClick={() => setOpen(true)}><Plus />Novo alerta</Button>} />
+      <Body>
+        <Table min={960}>
+          <thead><tr>{['Alerta', 'Clientes', 'Quem recebe', 'Último disparo', 'Estado', ''].map((head) => <th key={head} className={th}>{head}</th>)}</tr></thead>
+          <tbody>{ALERT_ROWS.map((alert) => (
+            <tr key={alert.name} className="hover:bg-muted">
+              <td className={td}><div className="font-medium">{alert.name}</div><div className="text-[13px] text-muted-foreground">{alert.condition}</div></td>
+              <td className={td}>{alert.scope}</td>
+              <td className={td}><span className="flex -space-x-1.5">{alert.recipients.map((person) => <span key={person} title={person} className="rounded-full ring-2 ring-card"><Avatar name={person} size={24} /></span>)}</span></td>
+              <td className={cn(td, 'text-[13px] text-muted-foreground')}>{alert.last}</td>
+              <td className={td}>{state[alert.state]}</td>
+              <td className={cn(td, 'w-10')}><Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Opções"><MoreHorizontal className="h-4 w-4" /></Button></td>
+            </tr>
+          ))}</tbody>
+        </Table>
+      </Body>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-[560px]">
+          <DialogHeader><DialogTitle>Novo alerta</DialogTitle><DialogDescription>O alerta olha os clientes que você pode ver e só dispara de novo quando a métrica volta ao normal.</DialogDescription></DialogHeader>
+          <div className="grid gap-4">
+            <Field id="alert-name" label="Nome"><Input id="alert-name" defaultValue="Queda de receita por cliente" /></Field>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field id="alert-metric" label="Métrica"><Select defaultValue="groone"><SelectTrigger id="alert-metric"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="groone">Receita da Groone</SelectItem><SelectItem value="ecpm">eCPM</SelectItem><SelectItem value="fill">Fill rate</SelectItem><SelectItem value="view">Visibilidade</SelectItem></SelectContent></Select></Field>
+              <Field id="alert-scope" label="Clientes"><Select defaultValue="all"><SelectTrigger id="alert-scope"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Cada cliente, todos</SelectItem><SelectItem value="mine">Cada cliente meu</SelectItem><SelectItem value="one">Portal Notícias</SelectItem></SelectContent></Select></Field>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-[1.4fr_0.6fr_1.4fr]">
+              <Field id="alert-rule" label="Quando"><Select defaultValue="drop"><SelectTrigger id="alert-rule"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="drop">Cai mais de</SelectItem><SelectItem value="rise">Sobe mais de</SelectItem><SelectItem value="below">Fica abaixo de</SelectItem><SelectItem value="above">Fica acima de</SelectItem></SelectContent></Select></Field>
+              <Field id="alert-value" label="Valor"><Input id="alert-value" defaultValue="20%" className="tnum" /></Field>
+              <Field id="alert-base" label="Comparado com"><Select defaultValue="avg7"><SelectTrigger id="alert-base"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="avg7">Média dos últimos 7 dias</SelectItem><SelectItem value="week">Mesmo dia da semana anterior</SelectItem><SelectItem value="yesterday">Ontem</SelectItem></SelectContent></Select></Field>
+            </div>
+            <Field id="alert-to" label="Quem recebe" hint="Só pessoas da equipe Groone.">
+              <div className="flex min-h-10 flex-wrap items-center gap-1.5 rounded-md border px-2 py-1.5">{['Pedro Henrique', 'Lucas Prado'].map((person) => <span key={person} className="inline-flex h-6 items-center gap-1.5 rounded-full bg-secondary pl-1 pr-2 text-[13px]"><Avatar name={person} size={18} />{person}<X className="h-3 w-3 text-muted-foreground" /></span>)}<span className="px-1 text-[13px] text-muted-foreground">Adicionar pessoa</span></div>
+            </Field>
+            <div className="rounded-md border bg-muted px-4 py-3 text-[13px]"><div className="font-medium">Se valesse hoje</div><p className="mt-1 text-muted-foreground">Dispararia para 1 cliente: Viagem Fácil, com receita da Groone de US$ 512 ontem, 24% abaixo da média de 7 dias (US$ 674).</p></div>
+          </div>
+          <DialogFooter><Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button><Button onClick={() => { setOpen(false); toast.success('Alerta criado') }}>Criar alerta</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  )
+}
+
+const SCHEDULES = [
+  { name: 'Resumo semanal da Groone', what: 'Dashboard · Visão geral da Groone', when: 'Toda segunda, 08:00', to: 5, format: 'Resumo + CSV', next: 'Seg., 02/11, 08:00' },
+  { name: 'Fechamento do mês', what: 'Relatório · Receita por cliente', when: 'Dia 1 de cada mês, 09:00', to: 3, format: 'Resumo + CSV', next: 'Dom., 01/11, 09:00' },
+  { name: 'Clientes do Lucas', what: 'Dashboard · Por responsável (Lucas Prado)', when: 'Todo dia, 07:30', to: 1, format: 'Resumo', next: 'Amanhã, 07:30' },
+]
+
+/** Envios agendados: lista e a prévia do e-mail que sai. */
+function SchedulesScreen() {
+  return (
+    <>
+      <PageHeader title="Envios agendados" sub="Um dashboard ou relatório da Groone por e-mail, no dia e na hora escolhidos, para pessoas da equipe Groone. Os números de cada pessoa respeitam os clientes que ela vê." actions={<Button onClick={() => toast('Abriria o formulário do envio')}><Plus />Novo envio</Button>} />
+      <Body className="items-start lg:grid-cols-[minmax(0,1fr)_380px]">
+        <Table min={720}>
+          <thead><tr>{['Envio', 'Quando', 'Para', 'Formato', 'Próximo envio'].map((head) => <th key={head} className={th}>{head}</th>)}</tr></thead>
+          <tbody>{SCHEDULES.map((schedule) => (
+            <tr key={schedule.name} className="hover:bg-muted">
+              <td className={td}><div className="font-medium">{schedule.name}</div><div className="text-[13px] text-muted-foreground">{schedule.what}</div></td>
+              <td className={cn(td, 'text-[13px]')}>{schedule.when}</td>
+              <td className={cn(td, 'whitespace-nowrap tnum')}>{schedule.to} {schedule.to === 1 ? 'pessoa' : 'pessoas'}</td>
+              <td className={td}><Badge>{schedule.format}</Badge></td>
+              <td className={cn(td, 'text-[13px] text-muted-foreground')}>{schedule.next}</td>
+            </tr>
+          ))}</tbody>
+        </Table>
+        <Card title="Prévia do e-mail" desc="Resumo semanal da Groone, como chega na segunda." footerNote="CSV anexo: visao-geral-da-groone-2026-10.csv">
+          <div className="rounded-md border p-4 text-[13px]">
+            <div className="flex items-center gap-2"><Mark size={18} /><span className="font-semibold">Avant</span><span className="ml-auto text-muted-foreground">26/10 a 01/11</span></div>
+            <p className="mt-3 font-medium">Visão geral da Groone</p>
+            <dl className="mt-3 grid grid-cols-2 gap-3">
+              {[['Receita da Groone', 'US$ 54.320', '↑ 6,1%'], ['eCPM', 'US$ 2,38', '↑ 3,9%'], ['Meta da Groone', '44,1%', 'abaixo do ritmo'], ['Alertas', '2 disparos', '']].map(([label, value, extra]) => (
+                <div key={label} className="rounded border bg-muted px-3 py-2"><dt className="text-muted-foreground">{label}</dt><dd className="mt-0.5 font-semibold tnum">{value}{extra && <span className={cn('block font-normal', extra.startsWith('↑') ? 'text-ok' : 'text-ochre')}>{extra}</span>}</dd></div>
+              ))}
+            </dl>
+            <p className="mt-3 text-link">Abrir o dashboard no Avant</p>
+          </div>
+        </Card>
+      </Body>
+    </>
+  )
+}
+
+/** Clientes com visões salvas: abas por visão, filtros, colunas e ordem guardados. */
+function SavedViewsScreen({ go }: { go: (s: Screen) => void }) {
+  const views = [['all', 'Todos os clientes', 6], ['mine', 'Comercial externo', 4], ['nocontract', 'Sem contrato ativo', 1], ['drop', 'Em queda no mês', 2]] as const
+  const rows = DASH_CLIENTS.filter((client) => client.manager === 'Lucas Prado' || client.manager === 'Marina Alves').sort((first, second) => second.revenue - first.revenue)
+  return (
+    <>
+      <PageHeader title="Clientes" sub="As Empresas cliente da rede Groone." actions={<Button onClick={() => go('interno')}><Plus />Novo cliente</Button>} />
+      <Body>
+        <div className="flex flex-wrap items-center gap-1 border-b">
+          {views.map(([key, label, count]) => (
+            <button key={key} className={cn('-mb-px flex h-10 items-center gap-2 border-b-2 px-3 text-[14px]', key === 'mine' ? 'border-foreground font-medium text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground')}>{label}<span className="rounded-full bg-secondary px-1.5 text-[12px] tnum">{count}</span></button>
+          ))}
+          <button className="flex h-10 items-center gap-1 px-3 text-[14px] text-muted-foreground hover:text-foreground" onClick={() => toast('Criaria uma visão nova')}><Plus className="h-4 w-4" />Nova visão</button>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative w-full sm:w-[260px]"><Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input placeholder="Buscar cliente" className="h-9 bg-card pl-9" /></div>
+          <span className="inline-flex h-8 items-center gap-1.5 rounded-full border bg-card px-3 text-[13px]">Responsável: Lucas Prado, Marina Alves<X className="h-3.5 w-3.5 text-muted-foreground" /></span>
+          <Button variant="outline" size="sm" className="h-8"><Filter />Filtro</Button>
+          <Button variant="outline" size="sm" className="h-8"><Columns3 />Colunas</Button>
+          <Button variant="outline" size="sm" className="h-8"><ArrowUpDown />Receita da Groone, maior primeiro</Button>
+          <div className="ml-auto flex items-center gap-2"><span className="text-[13px] text-muted-foreground">Visão compartilhada com o papel Comercial externo</span><Button size="sm" className="h-8" onClick={() => toast.success('Visão salva')}>Salvar visão</Button></div>
+        </div>
+        <Table min={880}>
+          <thead><tr>{['Cliente', 'Responsável', 'Networks', 'Sites', 'Receita da Groone (out.)', 'Variação', 'Contrato'].map((head, index) => <th key={head} className={cn(th, index > 1 && index < 6 && 'text-right')}>{head}</th>)}</tr></thead>
+          <tbody>{rows.map((client) => (
+            <tr key={client.name} className="hover:bg-muted">
+              <td className={cn(td, 'font-medium')}><span className="inline-flex items-center gap-2"><CompanyIcon name={client.name} size={20} />{client.name}</span></td>
+              <td className={td}><span className="inline-flex items-center gap-2"><Avatar name={client.manager} size={20} />{client.manager}</span></td>
+              <td className={cn(td, 'text-right tnum')}>{client.networks}</td>
+              <td className={cn(td, 'text-right tnum')}>{client.sites}</td>
+              <td className={cn(td, 'text-right tnum')}>{usd0.format(client.revenue)}</td>
+              <td className={cn(td, 'text-right')}><Change now={client.revenue} before={client.before} /></td>
+              <td className={td}>{client.contract === 'active' ? <Status tone="ok">Ativo</Status> : <Status tone="ochre">Sem contrato ativo</Status>}</td>
+            </tr>
+          ))}</tbody>
+        </Table>
+      </Body>
+    </>
+  )
+}
+
 export default function App() {
   const initial = typeof location !== 'undefined' && isScreen(location.hash.slice(1)) ? (location.hash.slice(1) as Screen) : 'equipe'
   const [screen, setScreen] = useState<Screen>(initial)
@@ -4139,6 +4474,12 @@ export default function App() {
       case 'invoice': return <InvoiceScreen key={invoiceView.id} state={invoiceState} id={invoiceView.id} from={invoiceView.from} />
       case 'invoices': return <InvoicesScreen state={invoiceState} />
       case 'servicosinvoice': return <InvoiceServicesScreen state={invoiceState} />
+      case 'dashboard': return <GrooneDashboardScreen editing={false} go={go} />
+      case 'dashboardeditar': return <GrooneDashboardScreen editing go={go} />
+      case 'alertas': return <AlertsScreen creating={false} />
+      case 'alertanovo': return <AlertsScreen creating />
+      case 'envios': return <SchedulesScreen />
+      case 'visoes': return <SavedViewsScreen go={go} />
     }
   })()
 
