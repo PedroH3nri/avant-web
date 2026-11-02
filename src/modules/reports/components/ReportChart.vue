@@ -11,7 +11,13 @@ import { change, formatMetric, toNumber } from '@/lib/metrics'
 import { axisSplit, dimensionText, metricInfo, scaleHue, seriesColor, splitSeries, SPLIT_COLORS, type ReportDraft } from '@/modules/reports/rules'
 import type { MetricCatalog, ReportResult } from '@/modules/reports/types'
 
-const props = defineProps<{ draft: ReportDraft; result: ReportResult; catalog: MetricCatalog }>()
+const props = defineProps<{
+  draft: ReportDraft
+  result: ReportResult
+  catalog: MetricCatalog
+  /** Num bloco pequeno do dashboard: o KPI sem o rótulo (o bloco já tem título) e mais baixo. */
+  compact?: boolean
+}>()
 
 const metrics = computed(() => props.draft.metrics.map((key) => ({ key, ...metricInfo(key, props.catalog, lang.value), style: props.draft.styles[key] ?? {} })))
 const first = computed(() => metrics.value[0])
@@ -82,9 +88,9 @@ const firstFormat = computed(() => formatter(first.value?.key ?? ''))
 
 <template>
   <p v-if="empty && draft.chart !== 'kpi'" class="py-16 text-center text-[14px] text-muted-foreground">{{ t('report.noData') }}</p>
-  <div v-else-if="draft.chart === 'kpi' && kpi" class="py-10 text-center">
-    <div class="text-[13px] font-medium text-muted-foreground">{{ kpi.label }}</div>
-    <div class="mt-2 text-[44px] font-semibold tracking-[-0.04em] tnum" :style="{ color: kpi.color }">{{ kpi.text }}</div>
+  <div v-else-if="draft.chart === 'kpi' && kpi" :class="compact ? 'py-1' : 'py-10 text-center'">
+    <div v-if="!compact" class="text-[13px] font-medium text-muted-foreground">{{ kpi.label }}</div>
+    <div :class="['font-semibold tracking-[-0.04em] tnum', compact ? 'text-[32px] leading-none' : 'mt-2 text-[44px]']" :style="{ color: kpi.color }">{{ kpi.text }}</div>
     <div v-if="draft.compare && kpi.delta !== null" class="mt-2 text-[13px] tnum" :class="kpi.delta >= 0 ? 'text-ok' : 'text-bad'">
       <span aria-hidden="true">{{ kpi.delta >= 0 ? '↑' : '↓' }}</span> {{ t('report.vsPrevious', { value: `${Math.abs(kpi.delta).toFixed(1)}%` }) }}
     </div>

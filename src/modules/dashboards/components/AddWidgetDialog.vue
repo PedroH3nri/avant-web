@@ -7,7 +7,7 @@ import Field from '@/components/ui/Field.vue'
 import NativeSelect from '@/components/ui/NativeSelect.vue'
 import { lang, t, type Key } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
-import { goalWidget, kpiWidget, reportWidget, textWidget } from '@/modules/dashboards/rules'
+import { accountWidget, goalWidget, kpiWidget, reportWidget, textWidget } from '@/modules/dashboards/rules'
 import type { GoalScope, Widget, WidgetType } from '@/modules/dashboards/types'
 import { pickSource } from '@/modules/reports/rules'
 import { reportService } from '@/modules/reports/service'
@@ -27,8 +27,8 @@ const text = ref('')
 const scope = ref<GoalScope>('mine')
 
 const kinds = computed(() =>
-  (['query', 'report', 'text', 'goal'] as WidgetType[])
-    .filter((item) => item !== 'goal' || props.internal)
+  (['query', 'report', 'text', 'goal', 'account'] as WidgetType[])
+    .filter((item) => (item === 'goal' ? props.internal : item === 'account' ? !props.internal : true))
     .map((item) => ({ value: item, label: t(`dash.add.${item}` as Key), hint: t(`dash.add.${item}Hint` as Key) })),
 )
 const metrics = computed(() => [
@@ -73,6 +73,7 @@ function add() {
   if (kind.value === 'query') widget = kpiWidget(props.widgets, metric.value, pickSource([metric.value], [], [], props.catalog) ?? 'gam')
   else if (kind.value === 'report') widget = reportWidget(props.widgets, reportId.value)
   else if (kind.value === 'text') widget = textWidget(props.widgets, text.value.trim())
+  else if (kind.value === 'account') widget = accountWidget(props.widgets)
   else widget = goalWidget(props.widgets, scope.value)
   emit('add', widget)
   open.value = false
@@ -111,7 +112,7 @@ function add() {
           class="w-full rounded-md border border-input bg-background px-3 py-2 text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         />
       </Field>
-      <Field v-else id="widget-goal" :label="t('dash.add.goalScope')">
+      <Field v-else-if="kind === 'goal'" id="widget-goal" :label="t('dash.add.goalScope')">
         <NativeSelect id="widget-goal" v-model="scope" :options="scopes" />
       </Field>
     </div>

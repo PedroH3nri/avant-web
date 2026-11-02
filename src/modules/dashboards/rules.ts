@@ -10,6 +10,7 @@ export const FILTER_DIMENSIONS: FilterDimension[] = ['client', 'account_manager'
 const KPI_SIZE = { w: 3, h: 2 }
 const CHART_SIZE = { w: 6, h: 4 }
 const TEXT_SIZE = { w: 4, h: 2 }
+const ACCOUNT_SIZE = { w: 12, h: 4 }
 
 /** Os widgets na ordem de leitura (linha, depois coluna), que é a do celular, em uma coluna. */
 export function readingOrder(widgets: Widget[]): Widget[] {
@@ -96,6 +97,11 @@ export function textWidget(widgets: Widget[], text: string): Widget {
 /** O progresso da meta (da pessoa ou da equipe Groone) na primeira linha livre. */
 export function goalWidget(widgets: Widget[], scope: GoalScope): Widget {
   return { id: newWidgetId(widgets, 'goal'), type: 'goal', x: 0, y: nextRow(widgets), ...TEXT_SIZE, title: null, goal_scope: scope }
+}
+
+/** A situação da conta (vagas e networks com problema) na primeira linha livre, na largura toda. */
+export function accountWidget(widgets: Widget[]): Widget {
+  return { id: newWidgetId(widgets, 'account'), type: 'account', x: 0, y: nextRow(widgets), ...ACCOUNT_SIZE, title: null }
 }
 
 /** O período escolhido nos filtros, ou vazio (vale o de cada widget). */

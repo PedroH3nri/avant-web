@@ -1,7 +1,8 @@
 <script setup lang="ts">
 /**
  * Um widget do dashboard: roda a consulta (do relatório salvo ou a própria) com os filtros da tela
- * e mostra o gráfico ou a tabela; o de texto mostra a nota e o de meta, o andamento da meta.
+ * e mostra o gráfico ou a tabela; o de texto mostra a nota, o de meta o andamento da meta e o de
+ * conta a situação da Empresa. Num modelo pronto (``templateKey``), roda pelo modelo.
  * Editando, ganha os botões de mover, mudar o tamanho e tirar.
  */
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
@@ -18,6 +19,7 @@ import type { DashboardFilters, Widget } from '@/modules/dashboards/types'
 import GoalBar from '@/modules/internal/goals/components/GoalBar.vue'
 import { goalService } from '@/modules/internal/goals/service'
 import type { GoalProgress } from '@/modules/internal/goals/types'
+import AccountStatus from '@/modules/home/components/AccountStatus.vue'
 import ReportChart from '@/modules/reports/components/ReportChart.vue'
 import ReportTable from '@/modules/reports/components/ReportTable.vue'
 import { draftOf, fromReport, metricInfo, type ReportDraft } from '@/modules/reports/rules'
@@ -26,6 +28,8 @@ import type { MetricCatalog, ReportResult } from '@/modules/reports/types'
 
 const props = defineProps<{
   dashboardId: string
+  /** O modelo pronto que a tela inicial mostra antes de existir um dashboard. */
+  templateKey?: string
   widget: Widget
   filters: DashboardFilters | null
   catalog: MetricCatalog
@@ -53,6 +57,7 @@ const title = computed(() => {
   if (widget.type === 'report') return reportName.value ?? t('dash.widget.report')
   if (widget.type === 'goal') return widget.goal_scope === 'team' ? t('dash.widget.goalTeam') : t('dash.widget.goalMine')
   if (widget.type === 'text') return t('dash.widget.text')
+  if (widget.type === 'account') return t('dash.widget.account')
   const metric = widget.query?.metrics[0]
   return metric ? metricInfo(metric, props.catalog, lang.value).label : t('dash.widget.query')
 })
@@ -86,9 +91,11 @@ async function run() {
     if (props.widget.type === 'goal') {
       const found = props.widget.goal_scope === 'team' ? (await goalService.team(month)).company : (await goalService.mine(month)).progress
       if (ticket === latest) goal.value = found
-    } else if (props.widget.type !== 'text') {
+    } else if (props.widget.type !== 'text' && props.widget.type !== 'account') {
       if (!draft.value) await loadDraft()
-      const found = await dashboardService.run(props.dashboardId, props.widget.id, props.filters)
+      const found = props.templateKey
+        ? await dashboardService.runTemplate(props.templateKey, props.widget.id, props.filters)
+        : await dashboardService.run(props.dashboardId, props.widget.id, props.filters)
       if (ticket === latest) result.value = found
     }
   } catch (error) {
@@ -140,12 +147,14 @@ onBeforeUnmount(() => {
     </div>
     <div class="min-w-0 flex-1 overflow-auto px-5 pb-5 pt-3">
       <p v-if="widget.type === 'text'" class="whitespace-pre-line text-[14px] text-muted-foreground">{{ widget.text }}</p>
+      <AccountStatus v-else-if="widget.type === 'account' && !editing" />
+      <p v-else-if="widget.type === 'account'" class="text-[13px] text-muted-foreground">{{ t('dash.add.accountHint') }}</p>
       <p v-else-if="!stored" class="text-[13px] text-muted-foreground">{{ t('dash.widget.saveToSee') }}</p>
       <p v-else-if="failure" class="text-[13px] text-bad">{{ failure }}</p>
       <GoalBar v-else-if="widget.type === 'goal' && goal" :progress="goal" :month="month" :today="today" :label="title" />
       <template v-else-if="draft && result">
         <ReportTable v-if="draft.chart === 'table'" :draft="draft" :result="result" :catalog="catalog" />
-        <ReportChart v-else :draft="draft" :result="result" :catalog="catalog" />
+        <ReportChart v-else :draft="draft" :result="result" :catalog="catalog" compact />
       </template>
       <p v-else-if="loading" class="text-[13px] text-muted-foreground">{{ t('dash.widget.loading') }}</p>
     </div>

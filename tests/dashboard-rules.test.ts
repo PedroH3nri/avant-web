@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  accountWidget,
   cleanFilters,
   filtersChanged,
   goalWidget,
@@ -38,6 +39,7 @@ describe('regras dos dashboards', () => {
     expect(reportWidget(widgets, 'r2')).toMatchObject({ type: 'report', report_id: 'r2', y: 4 })
     expect(textWidget(widgets, 'oi')).toMatchObject({ id: 'text_2', text: 'oi' })
     expect(goalWidget(widgets, 'team')).toMatchObject({ type: 'goal', goal_scope: 'team' })
+    expect(accountWidget(widgets)).toMatchObject({ id: 'account_1', type: 'account', x: 0, y: 4, w: 12 })
   })
 
   it('move e redimensiona sem sair da grade', () => {

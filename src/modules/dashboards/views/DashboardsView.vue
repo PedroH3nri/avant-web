@@ -1,7 +1,8 @@
 <script setup lang="ts">
 /**
- * Dashboards: os widgets numa grade de 12 colunas, com filtros que valem para todos. Sem id, abre o
- * escolhido pela pessoa ou o padrão da Empresa. Quem pode editar arruma a grade e salva os filtros.
+ * Dashboards: os widgets numa grade de 12 colunas, com filtros que valem para todos. Sem id (a tela
+ * inicial), abre o escolhido pela pessoa ou o padrão da Empresa; sem nenhum, mostra o primeiro
+ * modelo pronto. Quem pode editar arruma a grade e salva os filtros.
  */
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -20,14 +21,14 @@ import MenuContent from '@/components/ui/MenuContent.vue'
 import MenuItem from '@/components/ui/MenuItem.vue'
 import NativeSelect from '@/components/ui/NativeSelect.vue'
 import { ApiError } from '@/lib/api'
-import { errorText, t } from '@/lib/i18n'
+import { errorText, lang, t } from '@/lib/i18n'
 import AddWidgetDialog from '@/modules/dashboards/components/AddWidgetDialog.vue'
 import DashboardFiltersBar from '@/modules/dashboards/components/DashboardFiltersBar.vue'
 import DashboardWidget from '@/modules/dashboards/components/DashboardWidget.vue'
 import NewDashboardDialog from '@/modules/dashboards/components/NewDashboardDialog.vue'
 import { emptyDefinition, filtersChanged, gridArea, moveWidget, readingOrder, removeWidget, resizeWidget, withLayout } from '@/modules/dashboards/rules'
 import { dashboardService } from '@/modules/dashboards/service'
-import type { Dashboard, DashboardFilters, FilterDimension, Widget } from '@/modules/dashboards/types'
+import type { Dashboard, DashboardFilters, DashboardTemplate, FilterDimension, Widget } from '@/modules/dashboards/types'
 import { clientService } from '@/modules/internal/clients/service'
 import { staffService } from '@/modules/internal/staff/service'
 import { networkName } from '@/modules/networks/rules'
@@ -44,6 +45,7 @@ const route = useRoute()
 const router = useRouter()
 const dashboard = ref<Dashboard | null>(null)
 const dashboards = ref<Dashboard[]>([])
+const template = ref<DashboardTemplate | null>(null)
 const chosenId = ref<string | null>(null)
 const catalog = ref<MetricCatalog | null>(null)
 const options = ref<Partial<Record<FilterDimension, FilterOption[]>>>({})
@@ -63,14 +65,16 @@ const removingBusy = ref(false)
 
 const internal = computed(() => session.company?.is_internal === true)
 const canManage = computed(() => session.can('dashboards.manage'))
-const widgets = computed(() => readingOrder(editing.value ? draftWidgets.value : (dashboard.value?.definition.widgets ?? [])))
-const storedIds = computed(() => new Set((dashboard.value?.definition.widgets ?? []).map((widget) => widget.id)))
-const shownFilters = computed<DashboardFilters | null>(() => (dashboard.value && filtersChanged(filters.value, dashboard.value.definition.filters) ? filters.value : null))
+const definition = computed(() => dashboard.value?.definition ?? template.value?.definition ?? null)
+const widgets = computed(() => readingOrder(editing.value ? draftWidgets.value : (definition.value?.widgets ?? [])))
+const storedIds = computed(() => new Set((definition.value?.widgets ?? []).map((widget) => widget.id)))
+const shownFilters = computed<DashboardFilters | null>(() => (definition.value && filtersChanged(filters.value, definition.value.filters) ? filters.value : null))
+const templateName = computed(() => (template.value ? template.value.name[lang.value] : null))
 const switchOptions = computed(() => dashboards.value.map((item) => ({ value: item.id, label: item.name })))
 const visibilities = computed(() => (['private', 'company'] as const).map((value) => ({ value, label: t(`dash.visibility.${value}`) })))
 const subtitle = computed(() => {
   const found = dashboard.value
-  if (!found) return undefined
+  if (!found) return template.value ? t('dash.templateSub') : undefined
   if (found.description) return found.description
   return found.is_default ? t('dash.defaultSub') : internal.value ? t('dash.grooneSub') : undefined
 })
@@ -94,22 +98,20 @@ async function load() {
   void loadOptions()
 }
 
-/** Abre o dashboard da rota; sem id, o escolhido pela pessoa ou o padrão (e troca a rota para ele). */
+/** Abre o dashboard da rota; sem id, o escolhido pela pessoa, o padrão, o primeiro da lista ou o modelo. */
 async function open() {
   editing.value = false
+  template.value = null
   const id = route.params.id as string | undefined
   if (id) {
     dashboard.value = await dashboardService.get(id)
   } else {
-    const home = (await dashboardService.home()).dashboard ?? dashboards.value[0] ?? null
-    if (home) {
-      await router.replace(`/dashboards/${home.id}`)
-      return
-    }
-    dashboard.value = null
+    const home = await dashboardService.home()
+    dashboard.value = home.dashboard ?? dashboards.value[0] ?? null
+    if (!dashboard.value) template.value = home.template
   }
-  empty.value = dashboard.value === null
-  filters.value = { ...(dashboard.value?.definition.filters ?? {}) }
+  empty.value = definition.value === null
+  filters.value = { ...(definition.value?.filters ?? {}) }
 }
 
 /** Os valores dos filtros que a pessoa pode ver: na Groone, também clientes e responsáveis. */
@@ -147,6 +149,25 @@ function startEditing() {
   draftName.value = found.name
   draftVisibility.value = found.visibility
   editing.value = true
+}
+
+/** Salva uma cópia do modelo da tela inicial e escolhe ela para abrir ao entrar. */
+async function saveTemplate() {
+  if (!template.value) return
+  creatingBusy.value = true
+  try {
+    const created = await dashboardService.fromTemplate(template.value.key)
+    await dashboardService.choose(created.id)
+    dashboards.value = [created, ...dashboards.value]
+    chosenId.value = created.id
+    template.value = null
+    dashboard.value = created
+    toast.success(t('dash.templateSaved'))
+  } catch (error) {
+    toast.error(apiMessage(error))
+  } finally {
+    creatingBusy.value = false
+  }
 }
 
 /** Sai do modo de edição sem salvar e volta aos filtros gravados. */
@@ -250,7 +271,7 @@ async function remove() {
     dashboards.value = dashboards.value.filter((item) => item.id !== id)
     removing.value = false
     toast.success(t('dash.removed'))
-    await router.push('/dashboards')
+    await router.push('/')
   } catch (error) {
     toast.error(apiMessage(error))
   } finally {
@@ -260,7 +281,7 @@ async function remove() {
 </script>
 
 <template>
-  <PageHeader :title="editing ? t('dash.editing') : (dashboard?.name ?? t('nav.dashboards'))" :sub="editing ? undefined : subtitle">
+  <PageHeader :title="editing ? t('dash.editing') : (dashboard?.name ?? templateName ?? t('nav.dashboards'))" :sub="editing ? undefined : subtitle">
     <template #meta>
       <div v-if="dashboard && !editing && (dashboard.is_default || chosenId === dashboard.id)" class="mt-3 flex flex-wrap gap-2">
         <Badge v-if="dashboard.is_default">{{ t('dash.badge.default') }}</Badge>
@@ -297,6 +318,7 @@ async function remove() {
             </template>
           </MenuContent>
         </DropdownMenuRoot>
+        <Button v-if="template && canManage" variant="outline" :loading="creatingBusy" @click="saveTemplate">{{ t('dash.saveTemplate') }}</Button>
         <Button v-if="canManage" @click="creating = true"><Plus />{{ t('dash.new.title') }}</Button>
       </template>
     </template>
@@ -306,8 +328,8 @@ async function remove() {
     <Card v-else-if="empty" :title="t('dash.empty.title')" :desc="canManage ? t('dash.empty.manage') : t('dash.empty.view')">
       <Button v-if="canManage" @click="creating = true"><Plus />{{ t('dash.new.title') }}</Button>
     </Card>
-    <template v-else-if="dashboard && catalog">
-      <div v-if="editing" class="grid gap-3 rounded-lg border border-dashed border-foreground/40 bg-card px-4 py-3">
+    <template v-else-if="definition && catalog">
+      <div v-if="editing && dashboard" class="grid gap-3 rounded-lg border border-dashed border-foreground/40 bg-card px-4 py-3">
         <p class="flex items-center gap-2 text-[14px]"><LayoutGrid class="size-4" aria-hidden="true" />{{ t('dash.editHint') }}</p>
         <div class="flex flex-wrap gap-2">
           <Input v-model="draftName" :maxlength="NAME_MAX" class="max-w-[320px]" :aria-label="t('dash.new.name')" />
@@ -322,7 +344,8 @@ async function remove() {
         <DashboardWidget
           v-for="widget in widgets"
           :key="widget.id"
-          :dashboard-id="dashboard.id"
+          :dashboard-id="dashboard?.id ?? ''"
+          :template-key="dashboard ? undefined : template?.key"
           :widget="widget"
           :filters="shownFilters"
           :catalog="catalog"
