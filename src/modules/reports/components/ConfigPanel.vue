@@ -34,7 +34,7 @@ const filterable = computed(() =>
 )
 /** Nome da dimensão no idioma. */
 const dimensionName = (key: string) => props.catalog.dimensions.find((dimension) => dimension.key === key)?.label[lang.value] ?? key
-/** O nome de um valor do filtro (site e network pelo nome). */
+/** O nome de um valor do filtro (site, network, cliente e responsável pelo nome). */
 const valueName = (field: string, value: string) => props.options[field]?.find((option) => option.value === value)?.label ?? value
 
 /** Troca os filtros. */
