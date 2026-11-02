@@ -3,7 +3,7 @@
 import type { Localized, Page } from '@/lib/types'
 import type { ChartType, RelativePeriod, ReportPeriod, SavedQuery, Visibility } from '@/modules/reports/types'
 
-export type WidgetType = 'report' | 'query' | 'text' | 'goal'
+export type WidgetType = 'report' | 'query' | 'text' | 'goal' | 'account'
 export type GoalScope = 'mine' | 'team'
 export type FilterDimension = 'client' | 'account_manager' | 'network' | 'site'
 
@@ -73,4 +73,10 @@ export interface DashboardTemplate {
   key: string
   name: Localized
   definition: DashboardDefinition
+}
+
+/** O que abre na tela inicial: o dashboard da pessoa ou, sem nenhum, o primeiro modelo. */
+export interface HomeDashboard {
+  dashboard: Dashboard | null
+  template: DashboardTemplate | null
 }
