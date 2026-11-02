@@ -43,6 +43,7 @@ import {
 } from '@/modules/reports/rules'
 import { customMetricService, exportUrl, reportService } from '@/modules/reports/service'
 import type { CustomMetric, MetricCatalog, MetricStyle, ReportResult, SavedReport, SavedReportInput } from '@/modules/reports/types'
+import { SITE_CATEGORIES, categoryLabel } from '@/modules/sites/rules'
 import { siteService } from '@/modules/sites/service'
 import { teamService } from '@/modules/team/service'
 import { useSession } from '@/stores/session'
@@ -125,17 +126,19 @@ async function load() {
   runPreview()
 }
 
-/** Papéis (para "Papéis escolhidos") e os valores dos filtros que a pessoa pode ver; na Groone, também clientes e responsáveis. */
+/** Papéis (para "Papéis escolhidos") e os valores dos filtros que a pessoa pode ver; na Groone, também clientes e responsáveis;
+ * nos clientes, os membros que podem ser responsáveis por um site. */
 async function loadExtras() {
   const groone = session.company?.is_internal === true
   /** A lista que a pessoa não pode ver: fica vazia no filtro. */
   const denied = () => Promise.reject(new Error('sem permissão'))
-  const [roleList, siteList, networkList, clientList, staffList] = await Promise.allSettled([
+  const [roleList, siteList, networkList, clientList, staffList, memberList] = await Promise.allSettled([
     session.can('roles.view') ? teamService.roleOptions() : denied(),
     session.can('sites.view') ? siteService.options() : denied(),
     session.can('network.view') ? networkService.options() : denied(),
     groone && session.can('internal.clients.view') ? clientService.options() : denied(),
     groone ? staffService.options() : denied(),
+    !groone && session.can('team.view') ? teamService.memberOptions() : denied(),
   ])
   roles.value = roleList.status === 'fulfilled' ? roleList.value.items.map((role) => ({ id: role.id, name: pick(role.name) })) : null
   options.value = {
@@ -143,6 +146,8 @@ async function loadExtras() {
     network: networkList.status === 'fulfilled' ? networkList.value.items.map((network) => ({ value: network.id, label: networkName(network) })) : [],
     client: clientList.status === 'fulfilled' ? clientList.value.items.map((client) => ({ value: client.id, label: client.name })) : [],
     account_manager: staffList.status === 'fulfilled' ? staffList.value.items.map((member) => ({ value: member.user.id, label: member.user.name || member.user.email })) : [],
+    site_category: SITE_CATEGORIES.map((category) => ({ value: category, label: categoryLabel(category) })),
+    site_responsible: memberList.status === 'fulfilled' ? memberList.value.items.map((member) => ({ value: member.user.id, label: member.user.name || member.user.email })) : [],
   }
 }
 

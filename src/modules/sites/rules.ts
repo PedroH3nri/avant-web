@@ -1,5 +1,5 @@
-import { t } from '@/lib/i18n'
-import type { AdUnit, Site } from '@/modules/sites/types'
+import { t, type Key } from '@/lib/i18n'
+import type { AdUnit, Site, SiteCategory, SitePatch } from '@/modules/sites/types'
 
 type Tone = 'ok' | 'warn' | 'bad' | 'ochre' | 'neutral'
 
@@ -42,4 +42,40 @@ export function tree(units: AdUnit[]): { unit: AdUnit; depth: number }[] {
   }
   walk(null, 0)
   return out
+}
+
+/** As categorias de site, na ordem da lista da Groone. */
+export const SITE_CATEGORIES: SiteCategory[] = [
+  'news',
+  'entertainment',
+  'sports',
+  'technology',
+  'finance',
+  'health',
+  'food',
+  'travel',
+  'education',
+  'lifestyle',
+  'automotive',
+  'games',
+  'religion',
+  'other',
+]
+
+/** Valor dos seletores do diálogo: manter como está, limpar ou um valor. */
+export const KEEP = ''
+export const NONE = 'none'
+
+/** O nome da categoria no idioma da tela; vazio é "Sem categoria". */
+export function categoryLabel(category: string | null): string {
+  if (!category) return t('sites.category.none')
+  return SITE_CATEGORIES.includes(category as SiteCategory) ? t(`sites.category.${category}` as Key) : category
+}
+
+/** O corpo do PATCH a partir dos seletores: o que ficou em "manter" não vai. */
+export function sitePatch(category: string, responsible: string): SitePatch {
+  const patch: SitePatch = {}
+  if (category !== KEEP) patch.category = category === NONE ? null : (category as SiteCategory)
+  if (responsible !== KEEP) patch.responsible_user_id = responsible === NONE ? null : responsible
+  return patch
 }

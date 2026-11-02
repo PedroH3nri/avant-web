@@ -8,7 +8,7 @@ vi.mock('@/modules/reports/service', () => ({ customMetricService: { check, crea
 
 import CustomMetricDialog from '@/modules/reports/components/CustomMetricDialog.vue'
 
-const catalog: MetricCatalog = { metrics: [], custom_metrics: [], dimensions: [], operators: [], periods: [], max_days: 1, max_limit: 1 }
+const catalog: MetricCatalog = { metrics: [], custom_metrics: [], dimensions: [], site_categories: [], operators: [], periods: [], max_days: 1, max_limit: 1 }
 
 describe('modal de métrica personalizada', () => {
   beforeEach(() => {
