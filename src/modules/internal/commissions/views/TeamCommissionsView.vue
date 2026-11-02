@@ -1,5 +1,6 @@
 <script setup lang="ts">
-/** Comissões da equipe: o mês de cada pessoa, os prazos dela, desconto, emissão e a data de início. */
+/** Comissões da equipe: o mês de cada pessoa, os prazos dela, desconto, emissão, a data de início e
+ * as visões salvas da tabela. */
 import { computed, onMounted, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
 import { DropdownMenuRoot, DropdownMenuTrigger } from 'reka-ui'
@@ -30,11 +31,58 @@ import { commissionService } from '@/modules/internal/commissions/service'
 import type { PersonMonth, WindowMonth } from '@/modules/internal/commissions/types'
 import { formatAmount, monthOptions } from '@/modules/internal/goals/rules'
 import { useSession } from '@/stores/session'
+import ColumnsMenu from '@/modules/views/components/ColumnsMenu.vue'
+import SavedViewsBar from '@/modules/views/components/SavedViewsBar.vue'
+import { cleanFilters, firstValue, monthPeriod, parseSort, periodMonth, sortValue, type Period } from '@/modules/views/rules'
+import type { ViewDefinition, ViewSort } from '@/modules/views/types'
+import type { CommissionStatus } from '@/modules/internal/commissions/types'
+
+const ALL = 'all'
+const STATUSES: CommissionStatus[] = ['draft', 'validated', 'issued', 'paid']
+const COLUMNS = ['person', 'role', 'commission', 'deduction', 'adjustments', 'total', 'status']
+const SORTS: ViewSort[] = [
+  { key: 'total', direction: 'desc' },
+  { key: 'person', direction: 'asc' },
+]
+const DEFAULT_VIEW: ViewDefinition = { columns: [...COLUMNS], filters: { period: 'current_month' }, sort: SORTS[0] ?? null }
 
 const session = useSession()
 const today = localToday()
 const months = computed(() => monthOptions(today, locale.value))
 const month = ref(today.slice(0, 7))
+const status = ref<CommissionStatus | typeof ALL>(ALL)
+const sort = ref(sortValue(SORTS[0] as ViewSort))
+const columns = ref<string[]>([...COLUMNS])
+const current = computed<ViewDefinition>(() => ({
+  columns: columns.value,
+  filters: cleanFilters({ period: monthPeriod(month.value, today), status: status.value === ALL ? undefined : status.value }),
+  sort: parseSort(sort.value),
+}))
+const statusOptions = computed(() => [{ value: ALL, label: t('com.allStatuses') }, ...STATUSES.map((value) => ({ value, label: t(`com.status.${value}` as Key) }))])
+const sortOptions = computed(() => SORTS.map((option) => ({ value: sortValue(option), label: t(`com.sort.${option.key}` as Key) })))
+/** As pessoas da tabela, com o filtro de situação e a ordem escolhida. */
+const rows = computed(() => {
+  const list = (people.value ?? []).filter((person) => status.value === ALL || person.month.status === status.value)
+  const chosen = parseSort(sort.value)
+  if (chosen?.key === 'person') return [...list].sort((first, second) => first.user.name.localeCompare(second.user.name, locale.value))
+  return [...list].sort((first, second) => (toNumber(second.month.total) ?? 0) - (toNumber(first.month.total) ?? 0))
+})
+/** Diz se a coluna aparece na tabela. */
+const shown = (column: string) => columns.value.includes(column)
+/** O nome da coluna no menu de colunas. */
+const columnLabel = (column: string) => t(`com.col.${column}` as Key)
+
+/** Põe na tabela as colunas, o mês, a situação e a ordem da visão escolhida. */
+function applyView(definition: ViewDefinition) {
+  const known = definition.columns.filter((column) => COLUMNS.includes(column))
+  columns.value = known.length ? known : [...COLUMNS]
+  const period = firstValue(definition.filters.period)
+  month.value = period ? periodMonth(period as Period, today) : today.slice(0, 7)
+  const chosenStatus = firstValue(definition.filters.status)
+  status.value = (STATUSES as string[]).includes(chosenStatus) ? (chosenStatus as CommissionStatus) : ALL
+  const chosenSort = definition.sort && SORTS.find((option) => sortValue(option) === sortValue(definition.sort as ViewSort))
+  sort.value = sortValue(chosenSort || (SORTS[0] as ViewSort))
+}
 const people = ref<PersonMonth[] | null>(null)
 const loadError = ref<string | null>(null)
 const canManage = computed(() => session.can('internal.commissions.manage'))
@@ -128,43 +176,45 @@ async function saveStart() {
 </script>
 
 <template>
-  <PageHeader :title="t('com.team.title')" :sub="t('com.team.sub')">
-    <template #actions>
-      <NativeSelect v-model="month" :options="months" :aria-label="t('com.month')" class="h-9 w-[200px]" />
-    </template>
-  </PageHeader>
+  <PageHeader :title="t('com.team.title')" :sub="t('com.team.sub')" />
   <PageBody>
     <LoadError v-if="loadError" :message="loadError" @retry="load" />
     <p v-else-if="!people" class="text-[14px] text-muted-foreground" role="status">{{ t('common.loading') }}</p>
     <template v-else>
       <CommissionKpis :items="kpis" />
+      <SavedViewsBar screen="commissions" :default-label="t('com.thisMonth')" :current="current" :defaults="DEFAULT_VIEW" @apply="applyView">
+        <NativeSelect v-model="month" :options="months" :aria-label="t('com.month')" class="w-full sm:w-[200px] [&_select]:h-9" />
+        <NativeSelect v-model="status" :options="statusOptions" :aria-label="t('com.col.status')" class="w-full sm:w-[180px] [&_select]:h-9" />
+        <NativeSelect v-model="sort" :options="sortOptions" :aria-label="t('views.sort')" class="w-full sm:w-[200px] [&_select]:h-9" />
+        <ColumnsMenu v-model:shown="columns" :columns="COLUMNS" :label="columnLabel" />
+      </SavedViewsBar>
       <DataTable :min="960">
         <thead>
           <tr>
-            <th :class="th">{{ t('com.col.person') }}</th>
-            <th :class="th">{{ t('com.col.role') }}</th>
-            <th :class="[th, 'text-right']">{{ t('com.col.commission') }}</th>
-            <th :class="[th, 'text-right']">{{ t('com.col.deduction') }}</th>
-            <th :class="[th, 'text-right']">{{ t('com.col.adjustments') }}</th>
-            <th :class="[th, 'text-right']">{{ t('com.col.total') }}</th>
-            <th :class="th">{{ t('com.col.status') }}</th>
+            <th v-if="shown('person')" :class="th">{{ t('com.col.person') }}</th>
+            <th v-if="shown('role')" :class="th">{{ t('com.col.role') }}</th>
+            <th v-if="shown('commission')" :class="[th, 'text-right']">{{ t('com.col.commission') }}</th>
+            <th v-if="shown('deduction')" :class="[th, 'text-right']">{{ t('com.col.deduction') }}</th>
+            <th v-if="shown('adjustments')" :class="[th, 'text-right']">{{ t('com.col.adjustments') }}</th>
+            <th v-if="shown('total')" :class="[th, 'text-right']">{{ t('com.col.total') }}</th>
+            <th v-if="shown('status')" :class="th">{{ t('com.col.status') }}</th>
             <th :class="[th, 'w-12']"><span class="sr-only">{{ t('team.actions') }}</span></th>
           </tr>
         </thead>
         <tbody>
-          <TableState :cols="8" :empty="people.length === 0" :desc="t('com.team.empty')" />
-          <tr v-for="person in people" :key="person.user.id" class="hover:bg-muted">
-            <td :class="td">
+          <TableState :cols="columns.length + 1" :empty="rows.length === 0" :desc="t('com.team.empty')" />
+          <tr v-for="person in rows" :key="person.user.id" class="hover:bg-muted">
+            <td v-if="shown('person')" :class="td">
               <button type="button" class="flex items-center gap-2.5 font-medium hover:underline focus-visible:underline focus-visible:outline-none" @click="openDetail(person)">
                 <Avatar :name="person.user.name" :image-url="person.user.image_url" />{{ person.user.name }}
               </button>
             </td>
-            <td :class="[td, 'whitespace-nowrap text-muted-foreground']">{{ person.role_name ?? '–' }}</td>
-            <td :class="[td, 'text-right tnum']">{{ money(person.month.commission) }}</td>
-            <td :class="[td, 'text-right tnum text-muted-foreground']">{{ minus(person.month.deduction) }}</td>
-            <td :class="[td, 'text-right tnum text-muted-foreground']">{{ minus(person.month.adjustments) }}</td>
-            <td :class="[td, 'text-right tnum font-medium']">{{ money(person.month.total) }}</td>
-            <td :class="td"><Status :tone="STATUS_TONE[person.month.status]">{{ t(`com.status.${person.month.status}` as Key) }}</Status></td>
+            <td v-if="shown('role')" :class="[td, 'whitespace-nowrap text-muted-foreground']">{{ person.role_name ?? '–' }}</td>
+            <td v-if="shown('commission')" :class="[td, 'text-right tnum']">{{ money(person.month.commission) }}</td>
+            <td v-if="shown('deduction')" :class="[td, 'text-right tnum text-muted-foreground']">{{ minus(person.month.deduction) }}</td>
+            <td v-if="shown('adjustments')" :class="[td, 'text-right tnum text-muted-foreground']">{{ minus(person.month.adjustments) }}</td>
+            <td v-if="shown('total')" :class="[td, 'text-right tnum font-medium']">{{ money(person.month.total) }}</td>
+            <td v-if="shown('status')" :class="td"><Status :tone="STATUS_TONE[person.month.status]">{{ t(`com.status.${person.month.status}` as Key) }}</Status></td>
             <td :class="td">
               <DropdownMenuRoot>
                 <DropdownMenuTrigger as-child>
