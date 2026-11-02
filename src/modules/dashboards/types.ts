@@ -1,0 +1,76 @@
+/** Formatos da API dos dashboards, iguais ao `dto.py` do avant-api. */
+
+import type { Localized, Page } from '@/lib/types'
+import type { ChartType, RelativePeriod, ReportPeriod, SavedQuery, Visibility } from '@/modules/reports/types'
+
+export type WidgetType = 'report' | 'query' | 'text' | 'goal'
+export type GoalScope = 'mine' | 'team'
+export type FilterDimension = 'client' | 'account_manager' | 'network' | 'site'
+
+/** Um widget na grade de 12 colunas: x e y são a coluna e a linha, w e h o tamanho. */
+export interface Widget {
+  id: string
+  type: WidgetType
+  x: number
+  y: number
+  w: number
+  h: number
+  title: string | null
+  report_id?: string
+  query?: SavedQuery & { schema_version: number }
+  chart_type?: ChartType
+  chart_options?: Record<string, unknown>
+  text?: string | null
+  goal_scope?: GoalScope
+}
+
+/** Filtros do dashboard: o período e os ids escolhidos por dimensão. */
+export interface DashboardFilters {
+  period?: (ReportPeriod & { preset?: RelativePeriod | null }) | null
+  client?: string[]
+  account_manager?: string[]
+  network?: string[]
+  site?: string[]
+}
+
+export interface DashboardDefinition {
+  schema_version: number
+  filters: DashboardFilters
+  widgets: Widget[]
+}
+
+export interface Dashboard {
+  id: string
+  name: string
+  description: string | null
+  definition: DashboardDefinition
+  visibility: Visibility
+  role_ids: string[]
+  owner_user_id: string
+  created_by: string | null
+  created_at: string
+  updated_at: string
+  /** O padrão da Empresa, que abre para quem não escolheu outro. */
+  is_default: boolean
+  /** A pessoa pode editar e apagar (é a dona ou tem dashboards.manage). */
+  editable: boolean
+}
+
+export interface DashboardInput {
+  name: string
+  description: string | null
+  definition: DashboardDefinition
+  visibility: Visibility
+  role_ids: string[]
+}
+
+export interface DashboardPage extends Page<Dashboard> {
+  default_id: string | null
+  chosen_id: string | null
+}
+
+export interface DashboardTemplate {
+  key: string
+  name: Localized
+  definition: DashboardDefinition
+}
