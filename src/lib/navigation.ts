@@ -3,7 +3,7 @@
 import { computed, type Component } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
-import { Building2, ChartLine, Coins, Eye, FileChartColumn, FileSignature, FileText, Globe, IdCard, LayoutDashboard, LayoutGrid, Network, Receipt, ReceiptText, Scale, ShieldCheck, Target, Users, UsersRound, Wallet } from 'lucide-vue-next'
+import { BellRing, Building2, ChartLine, Coins, Eye, FileChartColumn, FileSignature, FileText, Globe, IdCard, LayoutDashboard, LayoutGrid, Network, Receipt, ReceiptText, Scale, ShieldCheck, Target, Users, UsersRound, Wallet } from 'lucide-vue-next'
 import { ApiError } from '@/lib/api'
 import { errorText, type Key } from '@/lib/i18n'
 import { useSession } from '@/stores/session'
@@ -46,6 +46,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { to: '/interno/metas', key: 'goals.title', icon: Target, internal: true },
       { to: '/relatorios', key: 'nav.customReports', icon: FileChartColumn, separated: true },
       { to: '/dashboards', key: 'nav.dashboards', icon: LayoutGrid },
+      { to: '/interno/alertas', key: 'nav.alerts', icon: BellRing, internal: true },
     ],
   },
   {
