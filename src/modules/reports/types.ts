@@ -32,6 +32,8 @@ export interface MetricCatalog {
   /** As métricas personalizadas da Empresa ativa. */
   custom_metrics: CustomCatalogMetric[]
   dimensions: DimensionDef[]
+  /** Os valores da dimensão site_category, na ordem da lista da Groone. */
+  site_categories: { key: string; label: DimensionDef['label'] }[]
   operators: FilterOperator[]
   periods: RelativePeriod[]
   max_days: number

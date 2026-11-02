@@ -25,6 +25,7 @@ const catalog: MetricCatalog = {
   periods: ['last_30_days'],
   max_days: 400,
   max_limit: 10000,
+  site_categories: [],
 }
 const report: SavedReport = {
   id: 'r1',

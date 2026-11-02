@@ -2,7 +2,7 @@
 
 import { api, type Query } from '@/lib/api'
 import type { Items, Page } from '@/lib/types'
-import type { AdUnit, SiteDetail, SiteListItem, SiteMember } from '@/modules/sites/types'
+import type { AdUnit, Site, SiteDetail, SiteListItem, SiteMember, SitePatch } from '@/modules/sites/types'
 
 /** Serviço do inventário da Empresa ativa. */
 export const siteService = {
@@ -14,6 +14,10 @@ export const siteService = {
   show: (siteId: string) => api.get<SiteDetail>(`/sites/${siteId}`),
   /** Cadastra um site pelo domínio, aguardando o GAM. */
   create: (domain: string) => api.post<SiteListItem>('/sites', { domain }),
+  /** Muda a categoria e/ou o responsável de um site. */
+  classify: (siteId: string, body: SitePatch) => api.patch<Site>(`/sites/${siteId}`, body),
+  /** Muda a categoria e/ou o responsável de vários sites de uma vez (até 1000). */
+  classifyMany: (siteIds: string[], body: SitePatch) => api.patch<Items<Site>>('/sites', { site_ids: siteIds, ...body }),
   /** Apaga um site que ainda aguarda o GAM. */
   remove: (siteId: string) => api.delete(`/sites/${siteId}`),
   /** Quem vê o site. */

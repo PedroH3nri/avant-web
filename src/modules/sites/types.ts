@@ -2,6 +2,23 @@
 
 import type { Member } from '@/modules/team/types'
 
+/** Categoria do site, numa lista fixa da Groone (SiteCategory no avant-core). */
+export type SiteCategory =
+  | 'news'
+  | 'entertainment'
+  | 'sports'
+  | 'technology'
+  | 'finance'
+  | 'health'
+  | 'food'
+  | 'travel'
+  | 'education'
+  | 'lifestyle'
+  | 'automotive'
+  | 'games'
+  | 'religion'
+  | 'other'
+
 export interface Site {
   id: string
   /** Vazio enquanto aguarda o GAM. */
@@ -12,6 +29,16 @@ export interface Site {
   synced_at: string | null
   /** Cadastrado à mão, o GAM ainda não trouxe. */
   awaiting_gam: boolean
+  /** Vazio: sem categoria. */
+  category: SiteCategory | null
+  /** Usuário (membro da Empresa) responsável; vazio: sem responsável. */
+  responsible_user_id: string | null
+}
+
+/** O que muda num site ou num lote: só o campo enviado muda; null limpa. */
+export interface SitePatch {
+  category?: SiteCategory | null
+  responsible_user_id?: string | null
 }
 
 export interface SiteListItem extends Site {
