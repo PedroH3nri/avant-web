@@ -1,5 +1,6 @@
 <script setup lang="ts">
-/** Painel interno: contratos das networks MCM, com o revshare da Groone em cada uma. */
+/** Painel interno: contratos das networks MCM, com o revshare da Groone em cada uma, e as visões
+ * salvas da tabela de contratos. */
 import { computed, onMounted, ref, watch } from 'vue'
 import { DropdownMenuRoot, DropdownMenuSeparator, DropdownMenuTrigger } from 'reka-ui'
 import { MoreHorizontal } from 'lucide-vue-next'
@@ -23,12 +24,20 @@ import { ApiError } from '@/lib/api'
 import { contractActions, formatRevshare, manualNetworks, parseRevshare } from '@/modules/internal/contracts/rules'
 import { errorText, formatDate, locale, t, type Key } from '@/lib/i18n'
 import { td, th } from '@/lib/table'
-import { cn } from '@/lib/utils'
 import type { Contract, ContractNetwork, ContractStatus } from '@/modules/internal/contracts/types'
 import { useSession } from '@/stores/session'
 import { contractService } from '@/modules/internal/contracts/service'
+import { clientService } from '@/modules/internal/clients/service'
+import ColumnsMenu from '@/modules/views/components/ColumnsMenu.vue'
+import SavedViewsBar from '@/modules/views/components/SavedViewsBar.vue'
+import { cleanFilters, firstValue } from '@/modules/views/rules'
+import type { ViewDefinition } from '@/modules/views/types'
 
 type Filter = ContractStatus | 'all'
+
+const ALL = 'all'
+const COLUMNS = ['client', 'network', 'revshare', 'status', 'source', 'starts_at', 'ends_at']
+const DEFAULT_VIEW: ViewDefinition = { columns: [...COLUMNS], filters: { status: 'active' }, sort: { key: 'created_at', direction: 'desc' } }
 
 const session = useSession()
 const networks = ref<ContractNetwork[] | null>(null)
@@ -39,6 +48,29 @@ const pages = ref(0)
 const loadError = ref<string | null>(null)
 const filter = ref<Filter>('active')
 const filters: Filter[] = ['active', 'ended', 'all']
+const client = ref(ALL)
+const clients = ref<{ value: string; label: string }[]>([])
+const columns = ref<string[]>([...COLUMNS])
+const current = computed<ViewDefinition>(() => ({
+  columns: columns.value,
+  filters: cleanFilters({ status: filter.value === 'all' ? undefined : filter.value, company_id: client.value === ALL ? undefined : client.value }),
+  sort: DEFAULT_VIEW.sort,
+}))
+const filterOptions = computed(() => filters.map((option) => ({ value: option, label: t(`ct.filter.${option}`) })))
+const clientOptions = computed(() => [{ value: ALL, label: t('int.allClients') }, ...clients.value])
+/** Diz se a coluna aparece na tabela de contratos. */
+const shown = (column: string) => columns.value.includes(column)
+/** O nome da coluna no menu de colunas. */
+const columnLabel = (column: string) => t(`ct.column.${column}` as Key)
+
+/** Põe na tabela as colunas e os filtros da visão escolhida. */
+function applyView(definition: ViewDefinition) {
+  const known = definition.columns.filter((column) => COLUMNS.includes(column))
+  columns.value = known.length ? known : [...COLUMNS]
+  const status = firstValue(definition.filters.status)
+  client.value = firstValue(definition.filters.company_id) || ALL
+  choose(status === 'active' || status === 'ended' ? status : 'all')
+}
 
 const creating = ref(false)
 const networkId = ref('')
@@ -56,7 +88,11 @@ const canDelete = computed(() => session.can('internal.contracts.delete'))
 
 /** Carrega a página dos contratos do filtro atual; se ela ficou vazia, volta uma. */
 async function loadContracts() {
-  const found = await contractService.list({ page: page.value, status: filter.value === 'all' ? undefined : filter.value })
+  const found = await contractService.list({
+    page: page.value,
+    status: filter.value === 'all' ? undefined : filter.value,
+    company_id: client.value === ALL ? undefined : client.value,
+  })
   if (found.items.length === 0 && page.value > 1) {
     page.value = Math.max(1, found.pages)
     return
@@ -70,13 +106,15 @@ async function loadContracts() {
 async function load() {
   loadError.value = null
   try {
-    const [networkPage] = await Promise.all([contractService.networks(), loadContracts()])
+    const [networkPage, clientList] = await Promise.all([contractService.networks(), clientService.options(), loadContracts()])
     networks.value = networkPage.items
+    clients.value = clientList.items.map((item) => ({ value: item.id, label: item.name }))
   } catch (error) {
     loadError.value = errorText(error instanceof ApiError ? error.code : 'unknown')
   }
 }
 onMounted(load)
+watch(client, () => choose(filter.value))
 watch(page, () => loadContracts().catch((error) => (loadError.value = errorText(error instanceof ApiError ? error.code : 'unknown'))))
 
 /** Troca o filtro e busca de novo os contratos, na página 1. */
@@ -105,13 +143,6 @@ const networkName = (network: { display_name: string | null; network_code: strin
 const delegationLabel = (delegation: string | null) => (delegation ? t(`ct.delegation.${delegation}` as Key) : '–')
 /** A origem do revshare no idioma atual. */
 const sourceLabel = (source: 'gam' | 'manual') => t(`ct.source.${source}`)
-/** Classe do botão de filtro, ligado ou não. */
-const tabClass = (on: boolean) =>
-  cn(
-    'h-8 rounded-[4px] px-3 text-[13px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-    on ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground',
-  )
-
 /** Abre o formulário de contrato novo, já com a network escolhida quando vem da tabela. */
 function startCreate(item?: ContractNetwork) {
   networkId.value = item?.network.id ?? manual.value[0]?.network.id ?? ''
@@ -263,39 +294,39 @@ async function confirmRemove() {
       </section>
 
       <section class="grid gap-3">
-        <div class="flex flex-wrap justify-self-start rounded-md border bg-card p-0.5" role="tablist" :aria-label="t('ct.filterLabel')">
-          <button v-for="option in filters" :key="option" type="button" role="tab" :aria-selected="filter === option" :class="tabClass(filter === option)" @click="choose(option)">
-            {{ t(`ct.filter.${option}`) }}
-          </button>
-        </div>
+        <SavedViewsBar screen="contracts" :default-label="t('ct.activeContracts')" :current="current" :defaults="DEFAULT_VIEW" @apply="applyView">
+          <NativeSelect :model-value="filter" :options="filterOptions" :aria-label="t('ct.filterLabel')" class="w-full sm:w-44 [&_select]:h-9" @update:model-value="choose($event as Filter)" />
+          <NativeSelect v-model="client" :options="clientOptions" :aria-label="t('ct.client')" class="w-full sm:w-56 [&_select]:h-9" />
+          <ColumnsMenu v-model:shown="columns" :columns="COLUMNS" :label="columnLabel" />
+        </SavedViewsBar>
         <DataTable :min="900">
           <thead>
             <tr>
-              <th :class="th">{{ t('ct.client') }}</th>
-              <th :class="th">{{ t('ct.network') }}</th>
-              <th :class="th">{{ t('ct.revshareCol') }}</th>
-              <th :class="th">{{ t('ct.statusCol') }}</th>
-              <th :class="th">{{ t('ct.sourceCol') }}</th>
-              <th :class="th">{{ t('ct.start') }}</th>
-              <th :class="th">{{ t('ct.end') }}</th>
+              <th v-if="shown('client')" :class="th">{{ t('ct.client') }}</th>
+              <th v-if="shown('network')" :class="th">{{ t('ct.network') }}</th>
+              <th v-if="shown('revshare')" :class="th">{{ t('ct.revshareCol') }}</th>
+              <th v-if="shown('status')" :class="th">{{ t('ct.statusCol') }}</th>
+              <th v-if="shown('source')" :class="th">{{ t('ct.sourceCol') }}</th>
+              <th v-if="shown('starts_at')" :class="th">{{ t('ct.start') }}</th>
+              <th v-if="shown('ends_at')" :class="th">{{ t('ct.end') }}</th>
               <th :class="th"><span class="sr-only">{{ t('ct.actions') }}</span></th>
             </tr>
           </thead>
           <tbody>
-            <TableState :cols="8" :loading="!contracts" :empty="contracts?.length === 0" :desc="t('ct.empty')" />
+            <TableState :cols="columns.length + 1" :loading="!contracts" :empty="contracts?.length === 0" :desc="t('ct.empty')" />
             <tr v-for="contract in contracts ?? []" :key="contract.id">
-              <td :class="td">
+              <td v-if="shown('client')" :class="td">
                 <div class="font-medium">{{ contract.company.name }}</div>
                 <div v-if="contract.notes" class="max-w-[40ch] truncate text-[13px] text-muted-foreground" :title="contract.notes">{{ contract.notes }}</div>
               </td>
-              <td :class="td"><code class="font-mono text-[13px]">{{ contract.network.network_code }}</code></td>
-              <td :class="[td, 'tnum whitespace-nowrap']">{{ formatRevshare(contract.revshare, locale) }}</td>
-              <td :class="td">
+              <td v-if="shown('network')" :class="td"><code class="font-mono text-[13px]">{{ contract.network.network_code }}</code></td>
+              <td v-if="shown('revshare')" :class="[td, 'tnum whitespace-nowrap']">{{ formatRevshare(contract.revshare, locale) }}</td>
+              <td v-if="shown('status')" :class="td">
                 <Status :tone="contract.status === 'active' ? 'ok' : 'neutral'">{{ t(`ct.status.${contract.status}`) }}</Status>
               </td>
-              <td :class="[td, 'text-muted-foreground']">{{ sourceLabel(contract.source) }}</td>
-              <td :class="[td, 'whitespace-nowrap text-[13px] text-muted-foreground']">{{ formatDate(contract.started_at) }}</td>
-              <td :class="[td, 'whitespace-nowrap text-[13px] text-muted-foreground']">{{ contract.ended_at ? formatDate(contract.ended_at) : '–' }}</td>
+              <td v-if="shown('source')" :class="[td, 'text-muted-foreground']">{{ sourceLabel(contract.source) }}</td>
+              <td v-if="shown('starts_at')" :class="[td, 'whitespace-nowrap text-[13px] text-muted-foreground']">{{ formatDate(contract.started_at) }}</td>
+              <td v-if="shown('ends_at')" :class="[td, 'whitespace-nowrap text-[13px] text-muted-foreground']">{{ contract.ended_at ? formatDate(contract.ended_at) : '–' }}</td>
               <td :class="[td, 'text-right']">
                 <DropdownMenuRoot v-if="canUpdate || (canDelete && contractActions(contract).remove)">
                   <DropdownMenuTrigger as-child>
