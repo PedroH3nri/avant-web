@@ -37,7 +37,7 @@ export function readCookie(name: string, source = document.cookie): string | nul
   return null
 }
 
-export type Query = Record<string, string | number | boolean | null | undefined>
+export type Query = Record<string, string | number | boolean | string[] | null | undefined>
 
 export interface RequestOptions {
   query?: Query
@@ -47,11 +47,12 @@ export interface RequestOptions {
   signal?: AbortSignal
 }
 
-/** Monta a URL da API com a query string, sem os valores vazios. */
+/** Monta a URL da API com a query string, sem os valores vazios; uma lista repete a chave. */
 function url(path: string, query?: Query): string {
   const params = new URLSearchParams()
   for (const [key, value] of Object.entries(query ?? {})) {
-    if (value !== undefined && value !== null && value !== '') params.set(key, String(value))
+    if (Array.isArray(value)) value.forEach((item) => params.append(key, item))
+    else if (value !== undefined && value !== null && value !== '') params.set(key, String(value))
   }
   const queryString = params.toString()
   return `${API}${path}${queryString ? `?${queryString}` : ''}`
