@@ -1,0 +1,153 @@
+<script setup lang="ts">
+/**
+ * Um widget do dashboard: roda a consulta (do relatório salvo ou a própria) com os filtros da tela
+ * e mostra o gráfico ou a tabela; o de texto mostra a nota e o de meta, o andamento da meta.
+ * Editando, ganha os botões de mover, mudar o tamanho e tirar.
+ */
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { DropdownMenuRoot, DropdownMenuSeparator, DropdownMenuTrigger } from 'reka-ui'
+import { MoreHorizontal } from 'lucide-vue-next'
+import Button from '@/components/ui/Button.vue'
+import MenuContent from '@/components/ui/MenuContent.vue'
+import MenuItem from '@/components/ui/MenuItem.vue'
+import { ApiError } from '@/lib/api'
+import { errorText, lang, t } from '@/lib/i18n'
+import { cn } from '@/lib/utils'
+import { dashboardService } from '@/modules/dashboards/service'
+import type { DashboardFilters, Widget } from '@/modules/dashboards/types'
+import GoalBar from '@/modules/internal/goals/components/GoalBar.vue'
+import { goalService } from '@/modules/internal/goals/service'
+import type { GoalProgress } from '@/modules/internal/goals/types'
+import ReportChart from '@/modules/reports/components/ReportChart.vue'
+import ReportTable from '@/modules/reports/components/ReportTable.vue'
+import { draftOf, fromReport, metricInfo, type ReportDraft } from '@/modules/reports/rules'
+import { reportService } from '@/modules/reports/service'
+import type { MetricCatalog, ReportResult } from '@/modules/reports/types'
+
+const props = defineProps<{
+  dashboardId: string
+  widget: Widget
+  filters: DashboardFilters | null
+  catalog: MetricCatalog
+  editing: boolean
+  /** O widget já está gravado no dashboard (os novos só rodam depois de salvar). */
+  stored: boolean
+}>()
+const emit = defineEmits<{ move: [columns: number, rows: number]; resize: [columns: number, rows: number]; remove: [] }>()
+
+const today = new Date().toISOString().slice(0, 10)
+const month = today.slice(0, 7)
+const draft = ref<ReportDraft | null>(null)
+const reportName = ref<string | null>(null)
+const result = ref<ReportResult | null>(null)
+const goal = ref<GoalProgress | null>(null)
+const failure = ref<string | null>(null)
+const loading = ref(false)
+let latest = 0
+let retryTimer: ReturnType<typeof setTimeout> | null = null
+let disposed = false
+
+const title = computed(() => {
+  const widget = props.widget
+  if (widget.title) return widget.title
+  if (widget.type === 'report') return reportName.value ?? t('dash.widget.report')
+  if (widget.type === 'goal') return widget.goal_scope === 'team' ? t('dash.widget.goalTeam') : t('dash.widget.goalMine')
+  if (widget.type === 'text') return t('dash.widget.text')
+  const metric = widget.query?.metrics[0]
+  return metric ? metricInfo(metric, props.catalog, lang.value).label : t('dash.widget.query')
+})
+
+/** O motivo do erro da API, com o texto dela quando já explica. */
+const apiMessage = (error: unknown) =>
+  error instanceof ApiError ? (error.code === 'invalid_input' && error.message ? error.message : errorText(error.code, { s: Math.max(error.retryAfter ?? 2, 1) })) : errorText('unknown')
+
+/** Monta o rascunho do gráfico: o do relatório salvo ou o da consulta própria. */
+async function loadDraft() {
+  const widget = props.widget
+  if (widget.type === 'query' && widget.query && widget.chart_type) {
+    draft.value = draftOf(widget.query, widget.chart_type, widget.chart_options ?? {})
+    return
+  }
+  if (widget.type === 'report' && widget.report_id) {
+    const report = await reportService.get(widget.report_id)
+    reportName.value = report.name
+    draft.value = fromReport(report)
+  }
+}
+
+/** Roda o widget; só a última resposta vale e o limite de taxa agenda nova tentativa. */
+async function run() {
+  if (retryTimer) clearTimeout(retryTimer)
+  if (disposed || !props.stored) return
+  const ticket = ++latest
+  failure.value = null
+  loading.value = true
+  try {
+    if (props.widget.type === 'goal') {
+      const found = props.widget.goal_scope === 'team' ? (await goalService.team(month)).company : (await goalService.mine(month)).progress
+      if (ticket === latest) goal.value = found
+    } else if (props.widget.type !== 'text') {
+      if (!draft.value) await loadDraft()
+      const found = await dashboardService.run(props.dashboardId, props.widget.id, props.filters)
+      if (ticket === latest) result.value = found
+    }
+  } catch (error) {
+    if (ticket !== latest) return
+    if (error instanceof ApiError && error.code === 'rate_limited') retryTimer = setTimeout(run, Math.max(error.retryAfter ?? 2, 1) * 1000)
+    else failure.value = apiMessage(error)
+  } finally {
+    if (ticket === latest) loading.value = false
+  }
+}
+
+watch(() => [props.filters, props.stored], run, { immediate: true, deep: true })
+watch(
+  () => props.widget,
+  () => {
+    draft.value = null
+    void loadDraft().catch(() => undefined)
+  },
+  { deep: true },
+)
+onBeforeUnmount(() => {
+  disposed = true
+  if (retryTimer) clearTimeout(retryTimer)
+})
+</script>
+
+<template>
+  <section :class="cn('relative flex min-w-0 flex-col rounded-lg border bg-card', editing && 'border-dashed border-foreground/40')">
+    <div class="flex items-center gap-2 px-5 pt-4">
+      <h3 class="min-w-0 flex-1 truncate text-[14px] font-semibold tracking-tight">{{ title }}</h3>
+      <DropdownMenuRoot v-if="editing">
+        <DropdownMenuTrigger as-child>
+          <Button variant="ghost" size="icon" class="size-7" :aria-label="t('dash.edit.options', { name: title })"><MoreHorizontal /></Button>
+        </DropdownMenuTrigger>
+        <MenuContent align="end">
+          <MenuItem @select="emit('move', -1, 0)">{{ t('dash.edit.left') }}</MenuItem>
+          <MenuItem @select="emit('move', 1, 0)">{{ t('dash.edit.right') }}</MenuItem>
+          <MenuItem @select="emit('move', 0, -1)">{{ t('dash.edit.up') }}</MenuItem>
+          <MenuItem @select="emit('move', 0, 1)">{{ t('dash.edit.down') }}</MenuItem>
+          <DropdownMenuSeparator class="-mx-1 my-1 h-px bg-border" />
+          <MenuItem @select="emit('resize', 1, 0)">{{ t('dash.edit.wider') }}</MenuItem>
+          <MenuItem @select="emit('resize', -1, 0)">{{ t('dash.edit.narrower') }}</MenuItem>
+          <MenuItem @select="emit('resize', 0, 1)">{{ t('dash.edit.taller') }}</MenuItem>
+          <MenuItem @select="emit('resize', 0, -1)">{{ t('dash.edit.shorter') }}</MenuItem>
+          <DropdownMenuSeparator class="-mx-1 my-1 h-px bg-border" />
+          <MenuItem danger @select="emit('remove')">{{ t('dash.edit.remove') }}</MenuItem>
+        </MenuContent>
+      </DropdownMenuRoot>
+    </div>
+    <div class="min-w-0 flex-1 overflow-auto px-5 pb-5 pt-3">
+      <p v-if="widget.type === 'text'" class="whitespace-pre-line text-[14px] text-muted-foreground">{{ widget.text }}</p>
+      <p v-else-if="!stored" class="text-[13px] text-muted-foreground">{{ t('dash.widget.saveToSee') }}</p>
+      <p v-else-if="failure" class="text-[13px] text-bad">{{ failure }}</p>
+      <GoalBar v-else-if="widget.type === 'goal' && goal" :progress="goal" :month="month" :today="today" :label="title" />
+      <template v-else-if="draft && result">
+        <ReportTable v-if="draft.chart === 'table'" :draft="draft" :result="result" :catalog="catalog" />
+        <ReportChart v-else :draft="draft" :result="result" :catalog="catalog" />
+      </template>
+      <p v-else-if="loading" class="text-[13px] text-muted-foreground">{{ t('dash.widget.loading') }}</p>
+    </div>
+  </section>
+</template>

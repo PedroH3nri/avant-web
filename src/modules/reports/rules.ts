@@ -231,6 +231,12 @@ function fromQuery(query: SavedQuery): Pick<ReportDraft, 'metrics' | 'dimensions
   }
 }
 
+/** O rascunho de uma consulta salva com o gráfico dela (como a de um widget de dashboard). */
+export function draftOf(query: SavedQuery, chart: ChartType, options: Record<string, unknown>, name = ''): ReportDraft {
+  const styles = (options.metrics ?? {}) as Record<string, MetricStyle>
+  return { ...emptyDraft(name), ...fromQuery(query), chart, stacked: !!options.stacked, styles: { ...styles }, editable: false }
+}
+
 /** O rascunho de um relatório salvo. */
 export function fromReport(report: SavedReport): ReportDraft {
   return {
