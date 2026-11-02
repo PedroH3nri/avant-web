@@ -17,7 +17,7 @@ describe('menu do painel', () => {
   beforeAll(() => (lang.value = 'pt'))
 
   it('mostra os mesmos itens para a equipe Groone, sem filtrar por permissão', () => {
-    expect(labels(true)).toEqual(['Dashboard', 'Clientes', 'Equipes', 'Networks do GAM', 'Contratos', 'Sites', 'Ad Manager', 'Page Views', 'Resultado', 'Resultado dos clientes', 'Metas', 'Relatórios customizados', 'Dashboards', 'Minha comissão', 'Minhas invoices', 'Comissões', 'Invoices', 'Equipe Groone', 'Papéis da equipe', 'Custos'])
+    expect(labels(true)).toEqual(['Dashboard', 'Clientes', 'Equipes', 'Networks do GAM', 'Contratos', 'Sites', 'Ad Manager', 'Page Views', 'Resultado', 'Resultado dos clientes', 'Metas', 'Relatórios customizados', 'Dashboards', 'Alertas', 'Minha comissão', 'Minhas invoices', 'Comissões', 'Invoices', 'Equipe Groone', 'Papéis da equipe', 'Custos'])
     expect(headers(true)).toEqual(['Clientes', 'Relatórios', 'Comissões', 'Empresa'])
   })
 
@@ -49,6 +49,7 @@ describe('menu do painel', () => {
       ['/interno/contratos', 'Contratos'],
       ['/relatorios/123', 'Relatórios customizados'],
       ['/dashboards/123', 'Dashboards'],
+      ['/interno/alertas', 'Alertas'],
     ]
     for (const [path, label] of cases) expect(activeLabels(true, path)).toEqual([label])
   })
