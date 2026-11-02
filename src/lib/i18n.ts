@@ -154,12 +154,6 @@ const dict = {
     'No Google Ad Manager network connected yet.',
     'Aún no hay networks de Google Ad Manager conectadas.',
   ],
-  'home.metrics': [
-    'Receita, impressões e eCPM do Ad Manager, por dia, site e país.',
-    'Ad Manager revenue, impressions and eCPM, by day, site and country.',
-    'Ingresos, impresiones y eCPM de Ad Manager, por día, sitio y país.',
-  ],
-  'home.seePerformance': ['Ver desempenho', 'See performance', 'Ver rendimiento'],
 
   // Desempenho
   'perf.title': ['Ad Manager', 'Ad Manager', 'Ad Manager'],
@@ -869,6 +863,7 @@ const dict = {
     'La cuenta de servicio de Groone dejó de ser administradora de esta network.',
   ],
   'home.reconnect': ['Reconectar', 'Reconnect', 'Reconectar'],
+  'home.nothingToShow': ['Nada para mostrar nesta Empresa ainda.', 'Nothing to show for this company yet.', 'Nada que mostrar en esta empresa todavía.'],
   'home.noCompany': ['Você ainda não está em nenhuma Empresa', 'You are not in any company yet', 'Aún no estás en ninguna empresa'],
   'home.noCompanySub': [
     'Quando alguém convidar você, a Empresa aparece aqui.',
@@ -2618,6 +2613,12 @@ const dict = {
   'dash.add.textHint': ['Uma nota ou um título de seção.', 'A note or a section title.', 'Una nota o un título de sección.'],
   'dash.add.goal': ['Meta', 'Goal', 'Meta'],
   'dash.add.goalHint': ['O andamento da meta do mês.', 'Progress on the month goal.', 'El avance de la meta del mes.'],
+  'dash.add.account': ['Situação da conta', 'Account status', 'Estado de la cuenta'],
+  'dash.add.accountHint': ['As vagas e as networks, com as que estão sem acesso.', 'Seats and networks, including the ones without access.', 'Las plazas y las networks, con las que no tienen acceso.'],
+  'dash.widget.account': ['Situação da conta', 'Account status', 'Estado de la cuenta'],
+  'dash.templateSub': ['Modelo pronto. Salve uma cópia para mudar os blocos.', 'Ready-made template. Save a copy to change the blocks.', 'Plantilla lista. Guarda una copia para cambiar los bloques.'],
+  'dash.saveTemplate': ['Salvar como meu dashboard', 'Save as my dashboard', 'Guardar como mi dashboard'],
+  'dash.templateSaved': ['Dashboard salvo e escolhido para abrir no início', 'Dashboard saved and set to open on start', 'Dashboard guardado y elegido para abrir al inicio'],
   'dash.add.metric': ['Métrica', 'Metric', 'Métrica'],
   'dash.add.reportPick': ['Relatório', 'Report', 'Informe'],
   'dash.add.noReports': [

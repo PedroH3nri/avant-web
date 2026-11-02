@@ -3,7 +3,7 @@
 import { computed, type Component } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
-import { BellRing, Building2, ChartLine, Coins, Eye, FileChartColumn, FileSignature, FileText, Globe, IdCard, LayoutDashboard, LayoutGrid, MailCheck, Network, Receipt, ReceiptText, Scale, ShieldCheck, Target, Users, UsersRound, Wallet } from 'lucide-vue-next'
+import { BellRing, Building2, ChartLine, Coins, Eye, FileChartColumn, FileSignature, FileText, Globe, IdCard, LayoutDashboard, MailCheck, Network, Receipt, ReceiptText, Scale, ShieldCheck, Target, Users, UsersRound, Wallet } from 'lucide-vue-next'
 import { ApiError } from '@/lib/api'
 import { errorText, type Key } from '@/lib/i18n'
 import { useSession } from '@/stores/session'
@@ -45,7 +45,6 @@ export const NAV_GROUPS: NavGroup[] = [
       { to: '/interno/resultados', key: 'int.results', icon: Scale, internal: true },
       { to: '/interno/metas', key: 'goals.title', icon: Target, internal: true },
       { to: '/relatorios', key: 'nav.customReports', icon: FileChartColumn, separated: true },
-      { to: '/dashboards', key: 'nav.dashboards', icon: LayoutGrid },
       { to: '/interno/alertas', key: 'nav.alerts', icon: BellRing, internal: true },
       { to: '/interno/envios', key: 'nav.schedules', icon: MailCheck, internal: true },
     ],
@@ -91,7 +90,7 @@ export function visibleGroups(staff: boolean): NavGroup[] {
 /** Diz se o link está ativo no caminho, respeitando o lado (cliente ou interno) dele. */
 export function linkActive(link: NavItem, path: string, onInternal: boolean): boolean {
   if (!!link.internal !== onInternal) return false
-  if (link.to === '/') return path === '/'
+  if (link.to === '/') return path === '/' || path.startsWith('/dashboards/')
   // A lista de clientes é /interno; as outras telas internas têm o próprio item.
   if (path === link.to || (link.to !== '/interno' && path.startsWith(`${link.to}/`))) return true
   // Irmã terminada em barra vale para as telas embaixo dela; as outras, só o caminho exato.

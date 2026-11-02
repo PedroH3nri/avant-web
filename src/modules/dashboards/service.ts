@@ -2,7 +2,7 @@
 
 import { api, type Query } from '@/lib/api'
 import type { Items } from '@/lib/types'
-import type { Dashboard, DashboardFilters, DashboardInput, DashboardPage, DashboardTemplate } from '@/modules/dashboards/types'
+import type { Dashboard, DashboardFilters, DashboardInput, DashboardPage, DashboardTemplate, HomeDashboard } from '@/modules/dashboards/types'
 import type { ReportResult } from '@/modules/reports/types'
 
 /** Serviço dos dashboards. */
@@ -11,8 +11,8 @@ export const dashboardService = {
   list: (query?: Query) => api.get<DashboardPage>('/dashboards', query),
   /** Um dashboard. */
   get: (id: string) => api.get<Dashboard>(`/dashboards/${id}`),
-  /** O dashboard que abre para a pessoa: o escolhido, senão o padrão da Empresa. */
-  home: () => api.get<{ dashboard: Dashboard | null }>('/dashboards/home'),
+  /** O dashboard que abre para a pessoa (o escolhido, senão o padrão); sem nenhum, o primeiro modelo. */
+  home: () => api.get<HomeDashboard>('/dashboards/home'),
   /** Escolhe o dashboard que abre para a pessoa; vazio volta para o padrão. */
   choose: (id: string | null) => api.put<void>('/dashboards/home', { dashboard_id: id }),
   /** Marca o dashboard padrão da Empresa; vazio tira o padrão. */
@@ -32,4 +32,7 @@ export const dashboardService = {
   /** Roda um widget com os filtros da tela (ou, sem eles, os gravados). */
   run: (id: string, widgetId: string, filters: DashboardFilters | null) =>
     api.post<ReportResult>(`/dashboards/${id}/widgets/${widgetId}/run`, { filters }),
+  /** Roda um widget de um modelo pronto, sem salvar nada. */
+  runTemplate: (key: string, widgetId: string, filters: DashboardFilters | null) =>
+    api.post<ReportResult>(`/dashboards/templates/${key}/widgets/${widgetId}/run`, { filters }),
 }
