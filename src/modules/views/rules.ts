@@ -48,3 +48,20 @@ export function firstValue(value: FilterValue | undefined): string {
   if (Array.isArray(value)) return value[0] ?? ''
   return value ?? ''
 }
+
+export type Period = 'current_month' | 'previous_month'
+
+/** O mês (``AAAA-MM``) de um período relativo, contado a partir de hoje (``AAAA-MM-DD``). */
+export function periodMonth(period: Period, today: string): string {
+  const [year = 1970, month = 1] = today.split('-').map(Number)
+  const date = new Date(Date.UTC(year, month - 1 - (period === 'previous_month' ? 1 : 0), 1))
+  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`
+}
+
+/** O período relativo de um mês (``AAAA-MM`` ou ``AAAA-MM-DD``); vazio se for mais antigo. */
+export function monthPeriod(month: string, today: string): Period | undefined {
+  const chosen = month.slice(0, 7)
+  if (chosen === periodMonth('current_month', today)) return 'current_month'
+  if (chosen === periodMonth('previous_month', today)) return 'previous_month'
+  return undefined
+}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { cleanFilters, firstValue, parseSort, sameDefinition, sortValue, toggleColumn } from '@/modules/views/rules'
+import { cleanFilters, firstValue, monthPeriod, parseSort, periodMonth, sameDefinition, sortValue, toggleColumn } from '@/modules/views/rules'
 
 describe('visões salvas', () => {
   it('tira os filtros vazios', () => {
@@ -25,5 +25,15 @@ describe('visões salvas', () => {
     expect(toggleColumn(['client'], 'client', order)).toEqual(['client'])
     expect(firstValue(['a', 'b'])).toBe('a')
     expect(firstValue(undefined)).toBe('')
+  })
+})
+
+describe('período das visões', () => {
+  it('traduz mês atual e anterior, inclusive na virada do ano', () => {
+    expect(periodMonth('current_month', '2026-11-02')).toBe('2026-11')
+    expect(periodMonth('previous_month', '2026-01-15')).toBe('2025-12')
+    expect(monthPeriod('2026-10-01', '2026-11-02')).toBe('previous_month')
+    expect(monthPeriod('2026-11', '2026-11-02')).toBe('current_month')
+    expect(monthPeriod('2026-08', '2026-11-02')).toBeUndefined()
   })
 })
