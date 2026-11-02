@@ -4,8 +4,9 @@
  * para a API. Quem decide de verdade é a API; aqui só se antecipa para apagar o que não serve.
  */
 
-import type { Key } from '@/lib/i18n'
+import { t, type Key } from '@/lib/i18n'
 import { countryName, hourLabel, shortDay, toNumber } from '@/lib/metrics'
+import { categoryLabel } from '@/modules/sites/rules'
 import type { Lang } from '@/lib/types'
 import type {
   ChartOptions,
@@ -311,11 +312,14 @@ export function splitSeries(rows: ReportRow[], axis: string, split: string, metr
 
 /** O valor de uma dimensão como a pessoa lê: nome do site, data curta, hora, país; vazio é vazio. */
 export function dimensionText(dimension: string, value: string | null, labels: Record<string, Record<string, string>>, locale: string): string | null {
+  if (value === null && dimension === 'site_category') return categoryLabel(null)
+  if (value === null && dimension === 'site_responsible') return t('sites.responsible.none')
   if (value === null) return null
   if (dimension === 'date' || dimension === 'week') return shortDay(value, locale)
   if (dimension === 'month') return new Intl.DateTimeFormat(locale, { month: 'short', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${value.slice(0, 7)}-01T00:00:00Z`))
   if (dimension === 'hour') return hourLabel(Number(value))
   if (dimension === 'country') return countryName(value, locale)
+  if (dimension === 'site_category') return categoryLabel(value)
   return labels[dimension]?.[value] ?? value
 }
 

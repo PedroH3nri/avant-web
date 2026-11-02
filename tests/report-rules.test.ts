@@ -48,6 +48,7 @@ const catalog: MetricCatalog = {
   periods: ['last_30_days'],
   max_days: 400,
   max_limit: 10000,
+  site_categories: [],
 }
 
 /** Rascunho vazio com o que o teste muda. */

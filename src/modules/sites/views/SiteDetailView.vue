@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** Página de um site: ad units, quem vê o site e remoção. */
+/** Página de um site: categoria e responsável, ad units, quem vê o site e remoção. */
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
@@ -23,11 +23,13 @@ import Status from '@/components/ui/Status.vue'
 import TableState from '@/components/ui/TableState.vue'
 import { ApiError } from '@/lib/api'
 import { errorText, formatDate, t } from '@/lib/i18n'
-import { approval, tree } from '@/modules/sites/rules'
+import ClassifySitesDialog from '@/modules/sites/components/ClassifySitesDialog.vue'
+import { approval, categoryLabel, tree } from '@/modules/sites/rules'
 import { td, th } from '@/lib/table'
-import type { AdUnit, SiteDetail, SiteListItem, SiteMember } from '@/modules/sites/types'
+import type { AdUnit, Site, SiteDetail, SiteListItem, SiteMember } from '@/modules/sites/types'
 import { useSession } from '@/stores/session'
 import { siteService } from '@/modules/sites/service'
+import { teamService } from '@/modules/team/service'
 
 const route = useRoute()
 const session = useSession()
@@ -56,7 +58,31 @@ async function load() {
     else loadError.value = errorText(error instanceof ApiError ? error.code : 'unknown')
   }
 }
-onMounted(load)
+onMounted(() => {
+  void load()
+  if (session.can('team.view')) void loadPeople()
+})
+
+// Categoria e responsável
+const peopleOptions = ref<{ value: string; label: string }[]>([])
+const classifying = ref(false)
+/** Os membros ativos da Empresa, que podem ser responsáveis pelo site. */
+async function loadPeople() {
+  const found = await teamService.memberOptions().catch(() => ({ items: [] }))
+  peopleOptions.value = found.items
+    .filter((member) => member.status === 'active')
+    .map((member) => ({ value: member.user.id, label: member.user.name || member.user.email }))
+}
+const responsibleName = computed(() => {
+  const userId = site.value?.responsible_user_id
+  if (!userId) return t('sites.responsible.none')
+  return peopleOptions.value.find((person) => person.value === userId)?.label ?? t('sites.responsible.someone')
+})
+/** Mostra a categoria e o responsável novos sem recarregar a página. */
+function applyClassified(saved: Site[]) {
+  const fresh = saved[0]
+  if (site.value && fresh) site.value = { ...site.value, category: fresh.category, responsible_user_id: fresh.responsible_user_id }
+}
 
 // Site cadastrado à mão sai enquanto aguarda o GAM
 const removing = ref(false)
@@ -131,6 +157,21 @@ async function move() {
     <p v-else-if="!site" class="text-[14px] text-muted-foreground" role="status">{{ t('common.loading') }}</p>
     <template v-else>
       <Card v-if="site.awaiting_gam" :title="t('sites.awaiting')" :desc="t('site.awaitingDesc')" />
+      <Card :title="t('sites.classify.card')" :desc="t('sites.classify.cardDesc')">
+        <dl class="grid gap-3 text-[14px] sm:grid-cols-2">
+          <div>
+            <dt class="text-[13px] text-muted-foreground">{{ t('sites.col.category') }}</dt>
+            <dd class="mt-0.5 font-medium">{{ categoryLabel(site.category) }}</dd>
+          </div>
+          <div>
+            <dt class="text-[13px] text-muted-foreground">{{ t('sites.col.responsible') }}</dt>
+            <dd class="mt-0.5 font-medium">{{ responsibleName }}</dd>
+          </div>
+        </dl>
+        <template v-if="canManage" #footer>
+          <Button variant="outline" size="sm" @click="classifying = true">{{ t('sites.classify.edit') }}</Button>
+        </template>
+      </Card>
       <section v-if="!site.awaiting_gam" class="grid gap-3">
         <div>
           <h2 class="text-[16px] font-semibold tracking-tight">{{ t('site.units') }}</h2>
@@ -195,6 +236,7 @@ async function move() {
       :busy="busy"
       @confirm="removeSite"
     />
+    <ClassifySitesDialog v-if="site" v-model:open="classifying" :sites="[site]" :people="peopleOptions" @saved="applyClassified" />
     <Dialog v-model:open="moveOpen" :title="t('site.move')" :desc="moving ? `${moving.name} · ${t('site.childrenNote')}` : ''">
       <Field id="move-site" :label="t('sites.col.site')">
         <NativeSelect id="move-site" v-model="target" :options="targetOptions" />
