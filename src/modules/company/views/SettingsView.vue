@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** Configurações da Empresa: nome, imagem e dados fiscais. Tema, cor, idioma e foto são de cada pessoa, em Minha conta. */
+/** Configurações da Empresa: nome, imagem, dados fiscais e, para Manage Inventory, documentos. Tema, cor, idioma e foto são de cada pessoa, em Minha conta. */
 import { computed, onMounted, ref } from 'vue'
 import { toast } from 'vue-sonner'
 import { ArrowLeft } from 'lucide-vue-next'
@@ -7,6 +7,7 @@ import Button from '@/components/ui/Button.vue'
 import Card from '@/components/ui/Card.vue'
 import CompanyImageCard from '@/components/CompanyImageCard.vue'
 import FiscalDataCard from '@/modules/company/components/FiscalDataCard.vue'
+import CompanyDocumentsCard from '@/modules/documents/components/CompanyDocumentsCard.vue'
 import Input from '@/components/ui/Input.vue'
 import LoadError from '@/components/LoadError.vue'
 import PageBody from '@/components/PageBody.vue'
@@ -96,6 +97,7 @@ const saveName = () => save({ name: name.value.trim() }, savingName)
       </Card>
       <CompanyImageCard :name="company.name" :image-url="company.image_url" :readonly="!canEdit" :save="saveImage" :remove="removeImage" />
       <FiscalDataCard v-if="canEdit && !session.company?.is_internal" />
+      <CompanyDocumentsCard v-if="canEdit && !session.company?.is_internal" />
     </template>
   </PageBody>
 </template>

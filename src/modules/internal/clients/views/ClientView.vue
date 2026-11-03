@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** Painel interno: um cliente. Situação, convite de dono, cadastro, dados fiscais, vagas, dono, equipe e atividade. */
+/** Painel interno: um cliente. Situação, convite de dono, cadastro, dados fiscais, documentos, observações, vagas, dono, equipe e atividade. */
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { toast } from 'vue-sonner'
@@ -14,6 +14,8 @@ import Button from '@/components/ui/Button.vue'
 import Card from '@/components/ui/Card.vue'
 import CompanyImageCard from '@/components/CompanyImageCard.vue'
 import AccountManagerCard from '@/modules/internal/commissions/components/AccountManagerCard.vue'
+import ClientDocumentsCard from '@/modules/internal/clients/components/ClientDocumentsCard.vue'
+import ClientNotesCard from '@/modules/internal/clients/components/ClientNotesCard.vue'
 import DataTable from '@/components/ui/DataTable.vue'
 import Dialog from '@/components/ui/Dialog.vue'
 import Field from '@/components/ui/Field.vue'
@@ -37,6 +39,8 @@ const session = useSession()
 const id = computed(() => String(route.params.id))
 const canManage = computed(() => session.can('internal.clients.manage'))
 const canOwner = computed(() => session.can('internal.owner.change'))
+const canDocuments = computed(() => session.can('internal.clients.documents'))
+const canNotes = computed(() => session.can('internal.clients.notes'))
 
 const client = ref<ClientDetail | null>(null)
 const loadError = ref<string | null>(null)
@@ -121,6 +125,12 @@ async function loadAudit() {
   }
 }
 watch(auditPage, loadAudit)
+
+/** Mostra a primeira página da auditoria depois de uma ação dos cartões de documentos e observações. */
+function auditChanged() {
+  if (auditPage.value === 1) loadAudit()
+  else auditPage.value = 1
+}
 
 const seatsNum = computed(() => Number(seats.value))
 const seatsLow = computed(() => !!client.value && seatsNum.value < client.value.seats_used)
@@ -368,6 +378,9 @@ function who(auditEntry: AuditEntry) {
         </dl>
         <p v-else class="flex items-center gap-2 text-[14px] text-muted-foreground"><Lock class="size-4" aria-hidden="true" />{{ t('int.fiscalEmpty') }}</p>
       </Card>
+
+      <ClientDocumentsCard v-if="canDocuments" :company-id="client.id" @changed="auditChanged" />
+      <ClientNotesCard v-if="canNotes" :company-id="client.id" @changed="auditChanged" />
 
       <Card :title="t('int.seatsTitle')" :desc="t('int.seatsDesc')">
         <div class="max-w-[160px]">

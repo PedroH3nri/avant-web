@@ -1,8 +1,9 @@
 /** Chamadas da API dos clientes no painel interno. */
 
-import { api, type Query } from '@/lib/api'
+import { api, API, type Query } from '@/lib/api'
 import type { Items, Page } from '@/lib/types'
-import type { AuditEntry, Client, ClientDetail, ClientMember, ClientOption, ManagerChange, OwnerInvitation } from '@/modules/internal/clients/types'
+import type { ClientDocument, ClientDocumentsOverview, DocumentKind } from '@/modules/documents/types'
+import type { AuditEntry, Client, ClientDetail, ClientMember, ClientNote, ClientOption, ManagerChange, OwnerInvitation } from '@/modules/internal/clients/types'
 
 /** Serviço dos clientes, das equipes deles e dos convites de dono. */
 export const clientService = {
@@ -38,4 +39,21 @@ export const clientService = {
   resendOwnerInvitation: (invitationId: string) => api.post<OwnerInvitation>(`/internal/owner-invitations/${invitationId}/resend`),
   /** Cancela um convite de dono. */
   cancelOwnerInvitation: (invitationId: string) => api.delete(`/internal/owner-invitations/${invitationId}`),
+  /** Os documentos do cliente e se ele precisa enviá-los. */
+  documents: (companyId: string) => api.get<ClientDocumentsOverview>(`/internal/clients/${companyId}/documents`),
+  /** Endereço do download de um documento do cliente (o cookie da sessão vai junto). */
+  documentUrl: (companyId: string, kind: DocumentKind) => `${API}/internal/clients/${companyId}/documents/${kind}/file`,
+  /** Aprova o documento em análise. */
+  approveDocument: (companyId: string, kind: DocumentKind) => api.post<ClientDocument>(`/internal/clients/${companyId}/documents/${kind}/approve`),
+  /** Recusa o documento com o motivo. */
+  rejectDocument: (companyId: string, kind: DocumentKind, reason: string) =>
+    api.post<ClientDocument>(`/internal/clients/${companyId}/documents/${kind}/reject`, { reason }),
+  /** Uma página das observações do cliente, a mais nova primeiro. */
+  notes: (companyId: string, query?: Query) => api.get<Page<ClientNote>>(`/internal/clients/${companyId}/notes`, query),
+  /** Escreve uma observação. */
+  addNote: (companyId: string, message: string) => api.post(`/internal/clients/${companyId}/notes`, { message }),
+  /** Troca o texto de uma observação. */
+  editNote: (companyId: string, noteId: string, message: string) => api.patch(`/internal/clients/${companyId}/notes/${noteId}`, { message }),
+  /** Apaga uma observação. */
+  deleteNote: (companyId: string, noteId: string) => api.delete(`/internal/clients/${companyId}/notes/${noteId}`),
 }
