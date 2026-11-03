@@ -2,8 +2,9 @@
 /**
  * Um widget do dashboard: roda a consulta (do relatório salvo ou a própria) com os filtros da tela
  * e mostra o gráfico ou a tabela; o de texto mostra a nota, o de meta o andamento da meta e o de
- * conta a situação da Empresa. Num modelo pronto (``templateKey``), roda pelo modelo.
- * Editando, ganha os botões de mover, mudar o tamanho e tirar.
+ * conta a situação da Empresa. Num modelo pronto (``templateId``), roda pelo modelo; na prévia
+ * (``preview``, um modelo dos clientes aberto pela Groone) não roda nada. Editando, ganha o menu de
+ * mover, mudar o tamanho e tirar e, da tela média para cima, arrasta pelo título e cresce pelo canto.
  */
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { DropdownMenuRoot, DropdownMenuSeparator, DropdownMenuTrigger } from 'reka-ui'
@@ -14,6 +15,7 @@ import MenuItem from '@/components/ui/MenuItem.vue'
 import { ApiError } from '@/lib/api'
 import { errorText, lang, t } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
+import type { DragMode } from '@/modules/dashboards/drag'
 import { dashboardService } from '@/modules/dashboards/service'
 import type { DashboardFilters, Widget } from '@/modules/dashboards/types'
 import GoalBar from '@/modules/internal/goals/components/GoalBar.vue'
@@ -29,7 +31,11 @@ import type { MetricCatalog, ReportResult } from '@/modules/reports/types'
 const props = defineProps<{
   dashboardId: string
   /** O modelo pronto que a tela inicial mostra antes de existir um dashboard. */
-  templateKey?: string
+  templateId?: string
+  /** Só o desenho do widget, sem rodar: os números aparecem no painel de quem vê o modelo. */
+  preview?: boolean
+  /** O widget está sendo arrastado ou redimensionado. */
+  dragging?: boolean
   widget: Widget
   filters: DashboardFilters | null
   catalog: MetricCatalog
@@ -37,7 +43,7 @@ const props = defineProps<{
   /** O widget já está gravado no dashboard (os novos só rodam depois de salvar). */
   stored: boolean
 }>()
-const emit = defineEmits<{ move: [columns: number, rows: number]; resize: [columns: number, rows: number]; remove: [] }>()
+const emit = defineEmits<{ move: [columns: number, rows: number]; resize: [columns: number, rows: number]; remove: []; grab: [event: PointerEvent, mode: DragMode] }>()
 
 const today = new Date().toISOString().slice(0, 10)
 const month = today.slice(0, 7)
@@ -83,7 +89,7 @@ async function loadDraft() {
 /** Roda o widget; só a última resposta vale e o limite de taxa agenda nova tentativa. */
 async function run() {
   if (retryTimer) clearTimeout(retryTimer)
-  if (disposed || !props.stored) return
+  if (disposed || !props.stored || props.preview) return
   const ticket = ++latest
   failure.value = null
   loading.value = true
@@ -93,8 +99,8 @@ async function run() {
       if (ticket === latest) goal.value = found
     } else if (props.widget.type !== 'text' && props.widget.type !== 'account') {
       if (!draft.value) await loadDraft()
-      const found = props.templateKey
-        ? await dashboardService.runTemplate(props.templateKey, props.widget.id, props.filters)
+      const found = props.templateId
+        ? await dashboardService.runTemplate(props.templateId, props.widget.id, props.filters)
         : await dashboardService.run(props.dashboardId, props.widget.id, props.filters)
       if (ticket === latest) result.value = found
     }
@@ -107,7 +113,7 @@ async function run() {
   }
 }
 
-watch(() => [props.filters, props.stored], run, { immediate: true, deep: true })
+watch(() => [props.filters, props.stored, props.preview], run, { immediate: true, deep: true })
 watch(
   () => props.widget,
   () => {
@@ -116,6 +122,12 @@ watch(
   },
   { deep: true },
 )
+/** Começa a arrastar pelo título, menos quando o clique foi no botão do menu. */
+function grabTitle(event: PointerEvent) {
+  if (!props.editing || (event.target as Element).closest('button')) return
+  emit('grab', event, 'move')
+}
+
 onBeforeUnmount(() => {
   disposed = true
   if (retryTimer) clearTimeout(retryTimer)
@@ -123,8 +135,12 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <section :class="cn('relative flex min-w-0 flex-col rounded-lg border bg-card', editing && 'border-dashed border-foreground/40')">
-    <div class="flex items-center gap-2 px-5 pt-4">
+  <section
+    :class="
+      cn('relative flex min-w-0 flex-col rounded-lg border bg-card', editing && 'border-dashed border-foreground/40', dragging && 'z-10 border-solid border-foreground shadow-lg')
+    "
+  >
+    <div :class="cn('flex items-center gap-2 px-5 pt-4', editing && 'md:cursor-grab md:touch-none md:select-none', dragging && 'md:cursor-grabbing')" @pointerdown="grabTitle">
       <h3 class="min-w-0 flex-1 truncate text-[14px] font-semibold tracking-tight">{{ title }}</h3>
       <DropdownMenuRoot v-if="editing">
         <DropdownMenuTrigger as-child>
@@ -147,6 +163,7 @@ onBeforeUnmount(() => {
     </div>
     <div class="min-w-0 flex-1 overflow-auto px-5 pb-5 pt-3">
       <p v-if="widget.type === 'text'" class="whitespace-pre-line text-[14px] text-muted-foreground">{{ widget.text }}</p>
+      <p v-else-if="preview" class="text-[13px] text-muted-foreground">{{ t('dash.widget.preview') }}</p>
       <AccountStatus v-else-if="widget.type === 'account' && !editing" />
       <p v-else-if="widget.type === 'account'" class="text-[13px] text-muted-foreground">{{ t('dash.add.accountHint') }}</p>
       <p v-else-if="!stored" class="text-[13px] text-muted-foreground">{{ t('dash.widget.saveToSee') }}</p>
@@ -158,5 +175,11 @@ onBeforeUnmount(() => {
       </template>
       <p v-else-if="loading" class="text-[13px] text-muted-foreground">{{ t('dash.widget.loading') }}</p>
     </div>
+    <span
+      v-if="editing"
+      aria-hidden="true"
+      class="absolute bottom-1 right-1 hidden size-4 cursor-se-resize touch-none after:absolute after:bottom-0.5 after:right-0.5 after:size-2.5 after:border-b-2 after:border-r-2 after:border-foreground/50 md:block"
+      @pointerdown.stop="emit('grab', $event, 'resize')"
+    />
   </section>
 </template>

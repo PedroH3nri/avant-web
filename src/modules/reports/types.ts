@@ -18,6 +18,8 @@ export interface MetricDef {
   kind: MetricKind
   format: MetricFormat
   sources: MetricSource[]
+  /** Só da equipe Groone: fica fora dos modelos prontos dos clientes. */
+  internal_only: boolean
 }
 
 export interface DimensionDef {

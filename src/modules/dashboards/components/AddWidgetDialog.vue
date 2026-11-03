@@ -1,5 +1,9 @@
 <script setup lang="ts">
-/** Escolha do widget novo: relatório salvo, KPI de uma métrica, texto ou meta (só na Groone). */
+/**
+ * Escolha do widget novo: relatório salvo, KPI de uma métrica, texto, meta (só na Groone) ou conta (só
+ * nos clientes). Num modelo pronto (``forTemplate``) não há relatório salvo nem métrica personalizada,
+ * e o dos clientes só leva as métricas que eles veem.
+ */
 import { computed, ref, watch } from 'vue'
 import Button from '@/components/ui/Button.vue'
 import Dialog from '@/components/ui/Dialog.vue'
@@ -14,7 +18,7 @@ import { reportService } from '@/modules/reports/service'
 import type { MetricCatalog, SavedReport } from '@/modules/reports/types'
 
 const open = defineModel<boolean>('open', { default: false })
-const props = defineProps<{ catalog: MetricCatalog; internal: boolean; widgets: Widget[] }>()
+const props = defineProps<{ catalog: MetricCatalog; internal: boolean; widgets: Widget[]; forTemplate?: boolean }>()
 const emit = defineEmits<{ add: [widget: Widget] }>()
 const TEXT_MAX = 2000
 const MAX_REPORT_PAGES = 10
@@ -28,12 +32,12 @@ const scope = ref<GoalScope>('mine')
 
 const kinds = computed(() =>
   (['query', 'report', 'text', 'goal', 'account'] as WidgetType[])
-    .filter((item) => (item === 'goal' ? props.internal : item === 'account' ? !props.internal : true))
+    .filter((item) => (item === 'goal' ? props.internal : item === 'account' ? !props.internal : item === 'report' ? !props.forTemplate : true))
     .map((item) => ({ value: item, label: t(`dash.add.${item}` as Key), hint: t(`dash.add.${item}Hint` as Key) })),
 )
 const metrics = computed(() => [
-  ...props.catalog.metrics.map((item) => ({ value: item.key, label: item.label[lang.value] })),
-  ...props.catalog.custom_metrics.map((item) => ({ value: item.query_key, label: item.name })),
+  ...props.catalog.metrics.filter((item) => props.internal || !item.internal_only).map((item) => ({ value: item.key, label: item.label[lang.value] })),
+  ...(props.forTemplate ? [] : props.catalog.custom_metrics.map((item) => ({ value: item.query_key, label: item.name }))),
 ])
 const reportOptions = computed(() => reports.value.map((item) => ({ value: item.id, label: item.name })))
 const scopes = computed(() => (['mine', 'team'] as GoalScope[]).map((value) => ({ value, label: t(`dash.widget.${value === 'mine' ? 'goalMine' : 'goalTeam'}` as Key) })))
@@ -63,7 +67,7 @@ watch(open, (opened) => {
   metric.value = metrics.value[0]?.value ?? ''
   text.value = ''
   scope.value = 'mine'
-  void loadReports().catch(() => (reports.value = []))
+  if (!props.forTemplate) void loadReports().catch(() => (reports.value = []))
 })
 
 /** Monta o widget escolhido na primeira linha livre e fecha. */

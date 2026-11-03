@@ -40,18 +40,101 @@ function clamp(value: number, minimum: number, maximum: number): number {
   return Math.min(Math.max(value, minimum), maximum)
 }
 
-/** O widget andando na grade, sem sair das 12 colunas nem subir acima da primeira linha. */
-export function moveWidget(widgets: Widget[], id: string, columns: number, rows: number): Widget[] {
-  return widgets.map((widget) =>
-    widget.id === id ? { ...widget, x: clamp(widget.x + columns, 0, GRID_COLUMNS - widget.w), y: Math.max(widget.y + rows, 0) } : widget,
+/** O lugar e o tamanho de um widget na grade. */
+export interface Box {
+  x: number
+  y: number
+  w: number
+  h: number
+}
+
+/** Diz se as duas caixas ocupam alguma célula em comum. */
+function overlaps(first: Box, second: Box): boolean {
+  return first.x < second.x + second.w && second.x < first.x + first.w && first.y < second.y + second.h && second.y < first.y + first.h
+}
+
+/** A caixa cabendo na grade: largura de 1 a 12, altura de 1 ao máximo, sem sair pela direita nem pelo topo. */
+export function fitBox(box: Box): Box {
+  const width = clamp(box.w, 1, GRID_COLUMNS)
+  return { x: clamp(box.x, 0, GRID_COLUMNS - width), y: Math.max(box.y, 0), w: width, h: clamp(box.h, 1, MAX_HEIGHT) }
+}
+
+/** Os widgets na ordem da lista original, com as posições novas. */
+function inOriginalOrder(original: Widget[], placed: Widget[]): Widget[] {
+  const byId = new Map(placed.map((widget) => [widget.id, widget]))
+  return original.map((widget) => byId.get(widget.id) ?? widget)
+}
+
+/** Sobe cada widget até encostar no de cima ou no topo, na ordem de leitura; no empate, o mexido vem antes. */
+export function compactLayout(widgets: Widget[], movedId: string | null = null): Widget[] {
+  const ordered = [...widgets].sort(
+    (first, second) => first.y - second.y || Number(second.id === movedId) - Number(first.id === movedId) || first.x - second.x,
+  )
+  const placed: Widget[] = []
+  for (const widget of ordered) {
+    let row = widget.y
+    while (row > 0 && !placed.some((other) => overlaps({ ...widget, y: row - 1 }, other))) row -= 1
+    while (placed.some((other) => overlaps({ ...widget, y: row }, other))) row += 1
+    placed.push({ ...widget, y: row })
+  }
+  return inOriginalOrder(widgets, placed)
+}
+
+/** Põe o widget na caixa: quem estava embaixo desce (ou sobe por cima dele, se começava mais acima e
+ * cabe), e depois todos sobem para fechar os vãos. */
+export function placeWidget(widgets: Widget[], id: string, box: Box): Widget[] {
+  const target = widgets.find((widget) => widget.id === id)
+  if (!target) return widgets
+  const moved = { ...target, ...fitBox(box) }
+  const placed: Widget[] = [moved]
+  for (const widget of readingOrder(widgets.filter((other) => other.id !== id))) {
+    let candidate = { ...widget }
+    if (overlaps(candidate, moved) && candidate.y <= moved.y) {
+      const above = { ...candidate, y: moved.y - candidate.h }
+      if (above.y >= 0 && !placed.some((other) => overlaps(above, other))) candidate = above
+    }
+    let blockers = placed.filter((other) => overlaps(candidate, other))
+    while (blockers.length) {
+      candidate = { ...candidate, y: Math.max(...blockers.map((other) => other.y + other.h)) }
+      blockers = placed.filter((other) => overlaps(candidate, other))
+    }
+    placed.push(candidate)
+  }
+  return compactLayout(inOriginalOrder(widgets, placed), id)
+}
+
+/** Diz se as duas grades têm os mesmos lugares e tamanhos. */
+export function sameLayout(first: Widget[], second: Widget[]): boolean {
+  const byId = new Map(second.map((widget) => [widget.id, widget]))
+  return (
+    first.length === second.length &&
+    first.every((widget) => {
+      const other = byId.get(widget.id)
+      return !!other && other.x === widget.x && other.y === widget.y && other.w === widget.w && other.h === widget.h
+    })
   )
 }
 
-/** O widget mais largo ou mais estreito, mais alto ou mais baixo, sempre cabendo na grade. */
+/** O widget andando pelo menu (teclado e celular): anda de passo em passo até a grade mudar, ou fica. */
+export function moveWidget(widgets: Widget[], id: string, columns: number, rows: number): Widget[] {
+  const widget = widgets.find((item) => item.id === id)
+  if (!widget) return widgets
+  let previous = fitBox(widget)
+  for (let step = 1; step <= GRID_COLUMNS + MAX_HEIGHT * MAX_WIDGETS; step += 1) {
+    const box = fitBox({ ...widget, x: widget.x + columns * step, y: widget.y + rows * step })
+    if (box.x === previous.x && box.y === previous.y) break
+    previous = box
+    const result = placeWidget(widgets, id, box)
+    if (!sameLayout(result, widgets)) return result
+  }
+  return widgets
+}
+
+/** O widget mais largo ou mais estreito, mais alto ou mais baixo, cabendo na grade e empurrando os outros. */
 export function resizeWidget(widgets: Widget[], id: string, columns: number, rows: number): Widget[] {
-  return widgets.map((widget) =>
-    widget.id === id ? { ...widget, w: clamp(widget.w + columns, 1, GRID_COLUMNS - widget.x), h: clamp(widget.h + rows, 1, MAX_HEIGHT) } : widget,
-  )
+  const widget = widgets.find((item) => item.id === id)
+  if (!widget) return widgets
+  return placeWidget(widgets, id, { x: widget.x, y: widget.y, w: clamp(widget.w + columns, 1, GRID_COLUMNS - widget.x), h: widget.h + rows })
 }
 
 /** O dashboard sem o widget. */
