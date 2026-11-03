@@ -118,22 +118,30 @@ function Status({ tone, children }: { tone: 'ok' | 'warn' | 'bad' | 'neutral' | 
 
 type RevenueTrend = 'scaling' | 'steady' | 'reducing' | 'stopped'
 type RevenueStatusData = { trend: RevenueTrend; perDay: number; change: number | null }
-const REVENUE_TREND: Record<RevenueTrend, [string, 'ok' | 'neutral' | 'warn' | 'bad']> = {
-  scaling: ['Escalando', 'ok'],
-  steady: ['Mantendo', 'neutral'],
-  reducing: ['Reduzindo', 'warn'],
-  stopped: ['Parado', 'bad'],
+const REVENUE_TREND: Record<RevenueTrend, { label: string; emoji: string; className: string }> = {
+  scaling: { label: 'Escalando', emoji: '🚀', className: 'bg-ok-soft text-ok' },
+  steady: { label: 'Mantendo', emoji: '⚖️', className: 'bg-secondary text-secondary-foreground' },
+  reducing: { label: 'Reduzindo', emoji: '📉', className: 'bg-ochre-soft text-ochre' },
+  stopped: { label: 'Parado', emoji: '💤', className: 'bg-bad-soft text-bad' },
 }
 const usdPerDay = (value: number) => `US$ ${value.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`
 
+function RevenueBadge({ emoji, label, className }: { emoji: string; label: string; className: string }) {
+  return (
+    <span className={cn('inline-flex h-6 items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 text-[12px] font-medium', className)}>
+      <span aria-hidden="true" className="text-[13px] leading-none">{emoji}</span>{label}
+    </span>
+  )
+}
+
 function RevenueStatus({ data }: { data: RevenueStatusData | null }) {
-  if (!data) return <span className="text-[13px] text-muted-foreground">Sem receita ainda</span>
-  const [label, tone] = REVENUE_TREND[data.trend]
+  if (!data) return <RevenueBadge emoji="🌱" label="Sem receita ainda" className="border border-dashed text-muted-foreground" />
+  const trend = REVENUE_TREND[data.trend]
   const change = data.change === null ? '' : ` · ${data.change > 0 ? '+' : ''}${data.change}%`
   return (
     <div title="Média diária dos últimos 30 dias contra os 30 anteriores. Parado: menos de US$ 100 somados nos últimos 30 dias.">
-      <Status tone={tone}>{label}</Status>
-      <div className="mt-0.5 pl-4 text-[12px] text-muted-foreground tnum">{usdPerDay(data.perDay)}/dia{change}</div>
+      <RevenueBadge {...trend} />
+      <div className="mt-1 pl-1 text-[12px] text-muted-foreground tnum">{usdPerDay(data.perDay)}/dia{change}</div>
     </div>
   )
 }
