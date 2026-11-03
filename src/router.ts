@@ -49,6 +49,9 @@ const routes: RouteRecordRaw[] = [
       { path: 'interno/pessoas', component: () => import('@/modules/internal/people/views/PeopleView.vue'), meta: { internal: true, permission: 'internal.users.manage' } },
       { path: 'interno/tarefas', component: () => import('@/modules/internal/tasks/views/TasksView.vue'), meta: { internal: true, permission: 'internal.tasks.view' } },
       { path: 'interno/tarefas/:id', component: () => import('@/modules/internal/tasks/views/TaskView.vue'), meta: { internal: true, permission: 'internal.tasks.view' } },
+      { path: 'interno/checklists', component: () => import('@/modules/internal/checklists/views/ChecklistsView.vue'), meta: { internal: true, permission: 'internal.checklists.view' } },
+      { path: 'interno/checklists/itens', component: () => import('@/modules/internal/checklists/views/ChecklistItemsView.vue'), meta: { internal: true, permission: 'internal.checklists.view' } },
+      { path: 'interno/checklists/:id', component: () => import('@/modules/internal/checklists/views/ChecklistView.vue'), meta: { internal: true, permission: 'internal.checklists.view' } },
       { path: 'interno/alertas', component: () => import('@/modules/alerts/views/AlertsView.vue'), meta: { internal: true, permission: 'reports.view' } },
       { path: 'alertas', redirect: '/interno/alertas' },
       {
