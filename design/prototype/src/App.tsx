@@ -118,24 +118,24 @@ function Status({ tone, children }: { tone: 'ok' | 'warn' | 'bad' | 'neutral' | 
 
 type RevenueTrend = 'scaling' | 'steady' | 'reducing' | 'stopped'
 type RevenueStatusData = { trend: RevenueTrend; perDay: number; change: number | null }
-const REVENUE_TREND: Record<RevenueTrend, { label: string; emoji: string; className: string }> = {
-  scaling: { label: 'Escalando', emoji: '🚀', className: 'bg-ok-soft text-ok' },
-  steady: { label: 'Mantendo', emoji: '⚖️', className: 'bg-secondary text-secondary-foreground' },
-  reducing: { label: 'Reduzindo', emoji: '📉', className: 'bg-ochre-soft text-ochre' },
-  stopped: { label: 'Parado', emoji: '💤', className: 'bg-bad-soft text-bad' },
+const REVENUE_TREND: Record<RevenueTrend, { label: string; className: string }> = {
+  scaling: { label: 'Escalando', className: 'bg-ok-soft text-ok' },
+  steady: { label: 'Mantendo', className: 'bg-secondary text-secondary-foreground' },
+  reducing: { label: 'Reduzindo', className: 'bg-ochre-soft text-ochre' },
+  stopped: { label: 'Parado', className: 'bg-bad-soft text-bad' },
 }
 const usdPerDay = (value: number) => `US$ ${value.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`
 
-function RevenueBadge({ emoji, label, className }: { emoji: string; label: string; className: string }) {
+function RevenueBadge({ label, className }: { label: string; className: string }) {
   return (
-    <span className={cn('inline-flex h-6 items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 text-[12px] font-medium', className)}>
-      <span aria-hidden="true" className="text-[13px] leading-none">{emoji}</span>{label}
+    <span className={cn('inline-flex h-6 items-center whitespace-nowrap rounded-full px-2.5 text-[12px] font-medium', className)}>
+      {label}
     </span>
   )
 }
 
 function RevenueStatus({ data }: { data: RevenueStatusData | null }) {
-  if (!data) return <RevenueBadge emoji="🌱" label="Sem receita ainda" className="border border-dashed text-muted-foreground" />
+  if (!data) return <RevenueBadge label="Sem receita ainda" className="border border-dashed text-muted-foreground" />
   const trend = REVENUE_TREND[data.trend]
   const change = data.change === null ? '' : ` · ${data.change > 0 ? '+' : ''}${data.change}%`
   return (
