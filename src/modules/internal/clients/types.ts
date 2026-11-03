@@ -2,6 +2,7 @@
 
 import type { Lang, UserRef } from '@/lib/types'
 import type { CompanyStatus, FiscalData } from '@/modules/company/types'
+import type { RevenueStatus } from '@/modules/revenue/types'
 import type { Invitation, Member } from '@/modules/team/types'
 
 /** Pessoa da equipe de uma Empresa cliente, vista pela equipe Groone (GET /internal/teams). */
@@ -44,6 +45,8 @@ export interface Client {
   profile: ClientProfile | null
   /** Vazio sem imagem: o painel mostra a inicial do nome. */
   image_url: string | null
+  /** Só na lista; vazio sem receita nos últimos 60 dias. */
+  revenue_status?: RevenueStatus | null
 }
 
 export interface ClientDetail extends Client {
