@@ -22,6 +22,7 @@ import NativeSelect from '@/components/ui/NativeSelect.vue'
 import SeatBar from '@/components/ui/SeatBar.vue'
 import Status from '@/components/ui/Status.vue'
 import TableState from '@/components/ui/TableState.vue'
+import RevenueStatusBadge from '@/modules/revenue/components/RevenueStatusBadge.vue'
 import { ApiError } from '@/lib/api'
 import { latestCall } from '@/lib/latest'
 import { emptyProfile, profileBody, profileOk, STATUS_TONE } from '@/modules/internal/clients/rules'
@@ -41,14 +42,14 @@ type Tab = 'all' | CompanyStatus
 
 const SEARCH_DELAY_MS = 300
 const ALL = 'all'
-const COLUMNS = ['client', 'contact', 'manager', 'employees', 'status']
+const COLUMNS = ['client', 'contact', 'manager', 'employees', 'status', 'revenue']
 const SORTS: ViewSort[] = [
   { key: 'created_at', direction: 'desc' },
   { key: 'created_at', direction: 'asc' },
   { key: 'name', direction: 'asc' },
   { key: 'name', direction: 'desc' },
 ]
-const DEFAULT_VIEW: ViewDefinition = { columns: ['client', 'contact', 'employees', 'status'], filters: {}, sort: SORTS[0] ?? null }
+const DEFAULT_VIEW: ViewDefinition = { columns: ['client', 'contact', 'employees', 'status', 'revenue'], filters: {}, sort: SORTS[0] ?? null }
 
 const session = useSession()
 const canManage = computed(() => session.can('internal.clients.manage'))
@@ -334,6 +335,7 @@ const referrerName = (client: Client) => (client.profile?.referred_by_company_id
             <th v-if="shown('manager')" :class="th">{{ t('int.column.manager') }}</th>
             <th v-if="shown('employees')" :class="th">{{ t('int.employees') }}</th>
             <th v-if="shown('status')" :class="th">{{ t('int.situation') }}</th>
+            <th v-if="shown('revenue')" :class="th">{{ t('int.column.revenue') }}</th>
             <th :class="[th, 'w-16']"><span class="sr-only">{{ t('int.open') }}</span></th>
           </tr>
         </thead>
@@ -384,6 +386,7 @@ const referrerName = (client: Client) => (client.profile?.referred_by_company_id
             <td v-if="shown('status')" :class="td">
               <Status :tone="STATUS_TONE[client.status]">{{ t(`int.status.${client.status}`) }}</Status>
             </td>
+            <td v-if="shown('revenue')" :class="td"><RevenueStatusBadge :status="client.revenue_status" /></td>
             <td :class="td">
               <RouterLink
                 :to="`/interno/clientes/${client.id}`"

@@ -28,9 +28,11 @@ export const NAV_GROUPS: NavGroup[] = [
       { to: '/interno', key: 'int.clients', icon: Building2, internal: true },
       { to: '/equipe', key: 'nav.team', icon: Users, clientOnly: true },
       { to: '/interno/equipes', key: 'nav.team', icon: Users, internal: true },
-      { to: '/networks', key: 'nav.networks', icon: Network },
+      { to: '/networks', key: 'nav.networks', icon: Network, clientOnly: true },
+      { to: '/interno/networks', key: 'nav.networks', icon: Network, internal: true },
       { to: '/interno/contratos', key: 'int.contracts', icon: FileSignature, internal: true },
-      { to: '/sites', key: 'nav.sites', icon: Globe },
+      { to: '/sites', key: 'nav.sites', icon: Globe, clientOnly: true },
+      { to: '/interno/sites', key: 'nav.sites', icon: Globe, internal: true },
     ],
   },
   {
