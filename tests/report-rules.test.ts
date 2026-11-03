@@ -32,9 +32,9 @@ import type { MetricCatalog, ReportRow, ReportTemplate, SavedReport } from '@/mo
 const label = { pt: 'x', en: 'x', es: 'x' }
 const catalog: MetricCatalog = {
   metrics: [
-    { key: 'revenue', label, kind: 'sum', format: 'currency', sources: ['gam'] },
-    { key: 'ecpm', label, kind: 'ratio', format: 'currency', sources: ['gam'] },
-    { key: 'page_views', label, kind: 'sum', format: 'number', sources: ['gam', 'page_views'] },
+    { key: 'revenue', label, kind: 'sum', format: 'currency', sources: ['gam'], internal_only: false },
+    { key: 'ecpm', label, kind: 'ratio', format: 'currency', sources: ['gam'], internal_only: false },
+    { key: 'page_views', label, kind: 'sum', format: 'number', sources: ['gam', 'page_views'], internal_only: false },
   ],
   custom_metrics: [{ query_key: 'custom.rpm', name: 'RPM', description: null, format: 'currency', decimals: 2, sources: ['gam'] }],
   dimensions: [

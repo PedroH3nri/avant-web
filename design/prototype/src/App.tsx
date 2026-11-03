@@ -49,9 +49,10 @@ const SCREENS = [
   ['invoice', 'Painel interno · Invoice'],
   ['invoices', 'Painel interno · Invoices da equipe'],
   ['servicosinvoice', 'Painel interno · Serviços de invoice'],
+  ['modelosdash', 'Painel interno · Modelos de dashboard'],
 ] as const
 type Screen = (typeof SCREENS)[number][0]
-const INTERNAL_SCREENS: Screen[] = ['interno', 'cliente', 'contratos', 'resultados', 'papelcomissao', 'minhacomissao', 'comissoes', 'minhasinvoices', 'invoice', 'invoices', 'servicosinvoice']
+const INTERNAL_SCREENS: Screen[] = ['interno', 'cliente', 'contratos', 'resultados', 'papelcomissao', 'minhacomissao', 'comissoes', 'minhasinvoices', 'invoice', 'invoices', 'servicosinvoice', 'modelosdash']
 const isScreen = (s: string): s is Screen => SCREENS.some(([k]) => k === s)
 type T = (k: Key) => string
 
@@ -305,6 +306,7 @@ const CLIENT_RAIL: RailGroup[] = [
 const INTERNAL_RAIL: RailGroup[] = [
   { key: 'clientes', label: 'Clientes', icon: Users, items: [{ id: 'interno', label: 'Clientes', also: ['cliente'] }, { id: 'contratos', label: 'Contratos' }, { id: 'resultados', label: 'Resultado dos clientes' }] },
   { key: 'comissoes', label: 'Comissões', icon: Wallet, items: [{ id: 'minhacomissao', label: 'Minha comissão' }, { id: 'minhasinvoices', label: 'Minhas invoices' }, { id: 'comissoes', label: 'Comissões da equipe' }, { id: 'invoices', label: 'Invoices', also: ['servicosinvoice', 'invoice'] }] },
+  { key: 'relatoriosgroone', label: 'Relatórios', icon: BarChart3, items: [{ id: 'modelosdash', label: 'Modelos de dashboard' }] },
   { key: 'equipegroone', label: 'Equipe', icon: ShieldCheck, items: [{ id: 'papelcomissao', label: 'Papéis da Equipe Groone' }] },
 ]
 const RAIL_WIDTH = 88
@@ -4053,6 +4055,106 @@ function AccountManagerCard() {
   )
 }
 
+/* ---------- Modelos de dashboard (avant-core#180, avant-web#159) ---------- */
+
+type TplAudience = 'groone' | 'clients'
+type TplBlock = { id: string; title: string; x: number; y: number; w: number; h: number }
+type ProtoTemplate = { id: string; name: string; audience: TplAudience; roles: string[]; home: boolean; updated: string; blocks: TplBlock[] }
+const GROONE_TPL_ROLES = ['Comercial', 'Suporte', 'Financeiro Groone']
+const CLIENT_TPL_ROLES = ['Dono', 'Administrador', 'Financeiro', 'Analista', 'Gestor de tráfego']
+const INITIAL_TEMPLATES: ProtoTemplate[] = [
+  { id: 't1', name: 'Visão geral da Groone', audience: 'groone', roles: [], home: true, updated: '02/11/2026', blocks: [{ id: 'a', title: 'Receita Groone', x: 0, y: 0, w: 3, h: 2 }, { id: 'b', title: 'Meta da equipe', x: 3, y: 0, w: 5, h: 2 }, { id: 'c', title: 'Receita por cliente', x: 0, y: 2, w: 8, h: 4 }] },
+  { id: 't2', name: 'Por responsável', audience: 'groone', roles: ['Comercial'], home: false, updated: '02/11/2026', blocks: [] },
+  { id: 't3', name: 'Visão geral', audience: 'clients', roles: [], home: true, updated: '02/11/2026', blocks: [] },
+  { id: 't4', name: 'Financeiro do mês', audience: 'clients', roles: ['Financeiro', 'Dono'], home: false, updated: '03/11/2026', blocks: [] },
+]
+/** Modelos prontos de dashboard: a lista por público (Groone ou clientes) e o editor com arrastar pelo título e redimensionar pelo canto. */
+function DashboardTemplatesScreen() {
+  const [templates, setTemplates] = useState(INITIAL_TEMPLATES)
+  const [tab, setTab] = useState<TplAudience>('groone')
+  const [editing, setEditing] = useState<ProtoTemplate | null>(null)
+  const list = templates.filter((tpl) => tpl.audience === tab)
+  const markHome = (id: string) => { const target = templates.find((tpl) => tpl.id === id)!; setTemplates(templates.map((tpl) => (tpl.audience === target.audience ? { ...tpl, home: tpl.id === id } : tpl))); toast.success('Modelo de início trocado', { description: 'Abre para quem ainda não tem dashboard.' }) }
+  if (editing) {
+    const roles = editing.audience === 'groone' ? GROONE_TPL_ROLES : CLIENT_TPL_ROLES
+    return (
+      <>
+        <PageHeader title="Editando o modelo" back={<button onClick={() => setEditing(null)} className="inline-flex items-center gap-1 text-[13px] text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4" />Modelos de dashboard</button>} actions={<><Button variant="outline">Adicionar bloco</Button><Button variant="outline" onClick={() => setEditing(null)}>Cancelar</Button><Button onClick={() => { setTemplates(templates.map((tpl) => (tpl.id === editing.id ? { ...editing, updated: 'Agora' } : tpl))); setEditing(null); toast.success('Modelo salvo', { description: 'Os dashboards já copiados dele não mudam.' }) }}>Salvar modelo</Button></>} />
+        <Body>
+          <Card title="Modelo" desc="O nome em português é obrigatório; sem inglês ou espanhol, vale o português.">
+            <div className="grid gap-4 md:grid-cols-3">
+              <Field id="tpl-pt" label="Nome (PT)"><Input id="tpl-pt" className="h-10" value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} /></Field>
+              <Field id="tpl-en" label="Nome (EN)"><Input id="tpl-en" className="h-10" placeholder={editing.name} /></Field>
+              <Field id="tpl-es" label="Nome (ES)"><Input id="tpl-es" className="h-10" placeholder={editing.name} /></Field>
+            </div>
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
+              <Field id="tpl-aud" label="Para quem" hint="Mudar o público tira a marca de modelo de início.">
+                <Select value={editing.audience} onValueChange={(v) => setEditing({ ...editing, audience: v as TplAudience, roles: [], home: false })}><SelectTrigger id="tpl-aud" className="h-10"><SelectValue /></SelectTrigger>
+                  <SelectContent><SelectItem value="groone">Equipe Groone</SelectItem><SelectItem value="clients">Clientes</SelectItem></SelectContent>
+                </Select>
+              </Field>
+              <fieldset className="grid gap-2">
+                <legend className="mb-2 text-[14px] font-medium">Papéis que veem</legend>
+                <div className="flex flex-wrap gap-2">
+                  {roles.map((role) => { const on = editing.roles.includes(role); return <button key={role} type="button" aria-pressed={on} onClick={() => setEditing({ ...editing, roles: on ? editing.roles.filter((r) => r !== role) : [...editing.roles, role] })} className={cn('h-8 rounded-md border px-3 text-[13px]', on ? 'border-foreground bg-secondary' : 'text-muted-foreground hover:text-foreground')}>{role}</button> })}
+                </div>
+                <p className="text-[13px] text-muted-foreground">{editing.roles.length ? 'Só esses papéis veem o modelo.' : 'Nenhum marcado: todos veem.'}</p>
+              </fieldset>
+            </div>
+          </Card>
+          <p className="flex items-center gap-2 rounded-lg border border-dashed border-foreground/40 bg-card px-4 py-3 text-[14px]"><LayoutGrid className="h-4 w-4" />Arraste o bloco pelo título e mude o tamanho pelo canto. Um bloco que cai em cima de outro empurra o de baixo; os blocos sobem para fechar os vãos.{editing.audience === 'clients' && ' Os números aparecem só no painel do cliente.'}</p>
+          <div className="relative grid grid-cols-1 gap-4 md:auto-rows-[72px] md:grid-cols-12">
+            {editing.blocks.map((block) => (
+              <section key={block.id} className="relative flex flex-col rounded-lg border border-dashed border-foreground/40 bg-card md:[grid-column:var(--col)] md:[grid-row:var(--row)]" style={{ '--col': `${block.x + 1} / span ${block.w}`, '--row': `${block.y + 1} / span ${block.h}` } as React.CSSProperties}>
+                <div className="flex cursor-grab items-center gap-2 px-5 pt-4"><h3 className="flex-1 truncate text-[14px] font-semibold">{block.title}</h3><Button variant="ghost" size="sm" aria-label={`Opções de ${block.title}`}><MoreHorizontal className="h-4 w-4" /></Button></div>
+                <p className="px-5 pb-5 pt-3 text-[13px] text-muted-foreground">{editing.audience === 'clients' ? 'Prévia só no painel do cliente.' : '—'}</p>
+                <span aria-hidden className="absolute bottom-1 right-1 hidden h-3 w-3 cursor-se-resize border-b-2 border-r-2 border-foreground/50 md:block" />
+              </section>
+            ))}
+            <div className="hidden rounded-lg border-2 border-dashed border-foreground/30 bg-muted/60 md:block" style={{ gridColumn: '9 / span 4', gridRow: '1 / span 2' }} aria-hidden />
+          </div>
+        </Body>
+      </>
+    )
+  }
+  return (
+    <>
+      <PageHeader title="Modelos de dashboard" sub="Os dashboards prontos que a equipe Groone e os clientes podem copiar. Um modelo de cada público abre no início de quem ainda não tem dashboard." actions={<Button onClick={() => setEditing({ id: `t${Date.now()}`, name: 'Modelo novo', audience: tab, roles: [], home: false, updated: 'Agora', blocks: [] })}><Plus className="h-4 w-4" />Novo modelo</Button>} />
+      <Body>
+        <div className="flex flex-wrap rounded-md border bg-card p-0.5" role="tablist" aria-label="Público">
+          {([['groone', 'Equipe Groone'], ['clients', 'Clientes']] as const).map(([key, label]) => (
+            <button key={key} role="tab" aria-selected={tab === key} onClick={() => setTab(key)} className={cn('h-8 rounded-[4px] px-3 text-[13px] font-medium', tab === key ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground')}>{label}</button>
+          ))}
+        </div>
+        <Table min={720}>
+          <thead><tr><th className={th}>Nome</th><th className={th}>Quem vê</th><th className={th}>Blocos</th><th className={th}>Atualizado</th><th className={cn(th, 'w-12')}><span className="sr-only">Ações</span></th></tr></thead>
+          <tbody>
+            {list.map((tpl) => (
+              <tr key={tpl.id} className="hover:bg-muted">
+                <td className={td}><button className="font-medium hover:underline" onClick={() => setEditing(tpl)}>{tpl.name}</button>{tpl.home && <span className="ml-2"><Badge>Início</Badge></span>}</td>
+                <td className={cn(td, 'text-muted-foreground')}>{tpl.roles.length ? tpl.roles.join(', ') : 'Todos'}</td>
+                <td className={cn(td, 'tnum text-muted-foreground')}>{tpl.blocks.length}</td>
+                <td className={cn(td, 'whitespace-nowrap text-[13px] text-muted-foreground')}>{tpl.updated}</td>
+                <td className={td}>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild><Button variant="ghost" size="sm" aria-label={`Ações de ${tpl.name}`}><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onSelect={() => setEditing(tpl)}>Editar</DropdownMenuItem>
+                      {!tpl.home && <DropdownMenuItem onSelect={() => markHome(tpl.id)}>Usar no início</DropdownMenuItem>}
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem className="text-bad" onSelect={() => setTemplates(templates.filter((item) => item.id !== tpl.id))}>Excluir</DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </Table>
+      </Body>
+    </>
+  )
+}
+
 export default function App() {
   const initial = typeof location !== 'undefined' && isScreen(location.hash.slice(1)) ? (location.hash.slice(1) as Screen) : 'equipe'
   const [screen, setScreen] = useState<Screen>(initial)
@@ -4139,6 +4241,7 @@ export default function App() {
       case 'invoice': return <InvoiceScreen key={invoiceView.id} state={invoiceState} id={invoiceView.id} from={invoiceView.from} />
       case 'invoices': return <InvoicesScreen state={invoiceState} />
       case 'servicosinvoice': return <InvoiceServicesScreen state={invoiceState} />
+      case 'modelosdash': return <DashboardTemplatesScreen />
     }
   })()
 

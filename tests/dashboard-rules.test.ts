@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   accountWidget,
   cleanFilters,
+  compactLayout,
   filtersChanged,
   goalWidget,
   gridArea,
@@ -9,6 +10,7 @@ import {
   moveWidget,
   newWidgetId,
   nextRow,
+  placeWidget,
   readingOrder,
   removeWidget,
   reportWidget,
@@ -44,10 +46,52 @@ describe('regras dos dashboards', () => {
 
   it('move e redimensiona sem sair da grade', () => {
     expect(moveWidget([chart], 'report_1', 10, -3)[0]).toMatchObject({ x: 6, y: 0 })
-    expect(moveWidget([chart], 'report_1', -10, 2)[0]).toMatchObject({ x: 0, y: 2 })
+    expect(moveWidget([chart], 'report_1', -10, 2)[0]).toMatchObject({ x: 0, y: 0 })
     expect(resizeWidget([chart], 'report_1', 10, 20)[0]).toMatchObject({ w: 9, h: 12 })
     expect(resizeWidget([chart], 'report_1', -10, -10)[0]).toMatchObject({ w: 1, h: 1 })
     expect(removeWidget([kpi, chart], 'kpi_1')).toEqual([chart])
+  })
+
+  it('fecha os vãos subindo os widgets, sem sobrepor', () => {
+    const loose = [{ ...kpi, y: 3 }, { ...note, y: 9 }]
+    expect(compactLayout(loose).map((widget) => [widget.id, widget.y])).toEqual([
+      ['kpi_1', 0],
+      ['text_1', 2],
+    ])
+  })
+
+  it('empurra para baixo quem estava no lugar e depois compacta', () => {
+    const top: Widget = { ...kpi, w: 6 }
+    const bottom: Widget = { ...note, w: 6 }
+    const side: Widget = { ...chart, x: 6, w: 6 }
+    const dropped = placeWidget([top, bottom, side], 'report_1', { x: 0, y: 0, w: 6, h: 4 })
+    expect(dropped.map((widget) => [widget.id, widget.x, widget.y])).toEqual([
+      ['kpi_1', 0, 4],
+      ['text_1', 0, 6],
+      ['report_1', 0, 0],
+    ])
+  })
+
+  it('troca de lugar com o de baixo ao arrastar para cima dele', () => {
+    const first: Widget = { ...kpi, w: 6 }
+    const second: Widget = { ...note, w: 6 }
+    const swapped = placeWidget([first, second], 'kpi_1', { x: 0, y: 2, w: 6, h: 2 })
+    expect(swapped.map((widget) => [widget.id, widget.y])).toEqual([
+      ['kpi_1', 2],
+      ['text_1', 0],
+    ])
+    expect(moveWidget([first, second], 'text_1', 0, -1).map((widget) => widget.y)).toEqual([2, 0])
+    expect(moveWidget([first, second], 'kpi_1', 0, 1).map((widget) => widget.y)).toEqual([2, 0])
+  })
+
+  it('redimensionar empurra os vizinhos para baixo', () => {
+    const left: Widget = { ...kpi, w: 6 }
+    const right: Widget = { ...note, x: 6, y: 0, w: 6 }
+    const wider = resizeWidget([left, right], 'kpi_1', 2, 0)
+    expect(wider.map((widget) => [widget.id, widget.x, widget.y, widget.w])).toEqual([
+      ['kpi_1', 0, 0, 8],
+      ['text_1', 6, 2, 6],
+    ])
   })
 
   it('limpa os filtros e percebe quando mudaram', () => {

@@ -2,7 +2,17 @@
 
 import { api, type Query } from '@/lib/api'
 import type { Items } from '@/lib/types'
-import type { Dashboard, DashboardFilters, DashboardInput, DashboardPage, DashboardTemplate, HomeDashboard } from '@/modules/dashboards/types'
+import type {
+  Dashboard,
+  DashboardFilters,
+  DashboardInput,
+  DashboardPage,
+  DashboardTemplate,
+  HomeDashboard,
+  ManagedTemplate,
+  TemplateInput,
+  TemplateRoles,
+} from '@/modules/dashboards/types'
 import type { ReportResult } from '@/modules/reports/types'
 
 /** Serviço dos dashboards. */
@@ -25,14 +35,32 @@ export const dashboardService = {
   remove: (id: string) => api.delete(`/dashboards/${id}`),
   /** Cópia privada de quem duplica. */
   duplicate: (id: string) => api.post<Dashboard>(`/dashboards/${id}/duplicate`, {}),
-  /** Os modelos prontos da Empresa ativa. */
+  /** Os modelos prontos que a pessoa vê, pelo público da Empresa e pelo papel. */
   templates: () => api.get<Pick<Items<DashboardTemplate>, 'items'>>('/dashboards/templates'),
   /** Cria um dashboard privado a partir de um modelo. */
-  fromTemplate: (key: string) => api.post<Dashboard>(`/dashboards/templates/${key}`, {}),
+  fromTemplate: (id: string) => api.post<Dashboard>(`/dashboards/templates/${id}`, {}),
   /** Roda um widget com os filtros da tela (ou, sem eles, os gravados). */
   run: (id: string, widgetId: string, filters: DashboardFilters | null) =>
     api.post<ReportResult>(`/dashboards/${id}/widgets/${widgetId}/run`, { filters }),
   /** Roda um widget de um modelo pronto, sem salvar nada. */
-  runTemplate: (key: string, widgetId: string, filters: DashboardFilters | null) =>
-    api.post<ReportResult>(`/dashboards/templates/${key}/widgets/${widgetId}/run`, { filters }),
+  runTemplate: (id: string, widgetId: string, filters: DashboardFilters | null) =>
+    api.post<ReportResult>(`/dashboards/templates/${id}/widgets/${widgetId}/run`, { filters }),
+}
+
+/** Gestão dos modelos prontos no painel interno (``internal.dashboard_templates.manage``). */
+export const templateService = {
+  /** Todos os modelos, os da Groone primeiro e o de início no topo de cada público. */
+  list: () => api.get<Pick<Items<ManagedTemplate>, 'items'>>('/internal/dashboard-templates'),
+  /** Um modelo, para editar. */
+  get: (id: string) => api.get<ManagedTemplate>(`/internal/dashboard-templates/${id}`),
+  /** Os papéis que podem limitar quem vê um modelo. */
+  roles: () => api.get<TemplateRoles>('/internal/dashboard-templates/roles'),
+  /** Salva um modelo novo. */
+  create: (input: TemplateInput) => api.post<ManagedTemplate>('/internal/dashboard-templates', input),
+  /** Troca tudo do modelo; os dashboards já copiados dele não mudam. */
+  update: (id: string, input: TemplateInput) => api.put<ManagedTemplate>(`/internal/dashboard-templates/${id}`, input),
+  /** Apaga um modelo. */
+  remove: (id: string) => api.delete(`/internal/dashboard-templates/${id}`),
+  /** Marca o modelo de início do público dele. */
+  setHome: (id: string) => api.put<ManagedTemplate>(`/internal/dashboard-templates/${id}/home`, {}),
 }

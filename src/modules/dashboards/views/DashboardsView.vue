@@ -2,7 +2,8 @@
 /**
  * Dashboards: os widgets numa grade de 12 colunas, com filtros que valem para todos. Sem id (a tela
  * inicial), abre o escolhido pela pessoa ou o padrão da Empresa; sem nenhum, mostra o primeiro
- * modelo pronto. Quem pode editar arruma a grade e salva os filtros.
+ * modelo de início do público dela. Quem pode editar arruma a grade (arrastando ou pelo menu de cada
+ * widget) e salva os filtros; quem mantém os modelos prontos salva o dashboard como modelo.
  */
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -24,10 +25,10 @@ import { ApiError } from '@/lib/api'
 import { errorText, lang, t } from '@/lib/i18n'
 import AddWidgetDialog from '@/modules/dashboards/components/AddWidgetDialog.vue'
 import DashboardFiltersBar from '@/modules/dashboards/components/DashboardFiltersBar.vue'
-import DashboardWidget from '@/modules/dashboards/components/DashboardWidget.vue'
+import DashboardGrid from '@/modules/dashboards/components/DashboardGrid.vue'
 import NewDashboardDialog from '@/modules/dashboards/components/NewDashboardDialog.vue'
-import { emptyDefinition, filtersChanged, gridArea, moveWidget, readingOrder, removeWidget, resizeWidget, withLayout } from '@/modules/dashboards/rules'
-import { dashboardService } from '@/modules/dashboards/service'
+import { emptyDefinition, filtersChanged, withLayout } from '@/modules/dashboards/rules'
+import { dashboardService, templateService } from '@/modules/dashboards/service'
 import type { Dashboard, DashboardFilters, DashboardTemplate, FilterDimension, Widget } from '@/modules/dashboards/types'
 import { clientService } from '@/modules/internal/clients/service'
 import { staffService } from '@/modules/internal/staff/service'
@@ -66,7 +67,8 @@ const removingBusy = ref(false)
 const internal = computed(() => session.company?.is_internal === true)
 const canManage = computed(() => session.can('dashboards.manage'))
 const definition = computed(() => dashboard.value?.definition ?? template.value?.definition ?? null)
-const widgets = computed(() => readingOrder(editing.value ? draftWidgets.value : (definition.value?.widgets ?? [])))
+const widgets = computed(() => (editing.value ? draftWidgets.value : (definition.value?.widgets ?? [])))
+const canTemplate = computed(() => internal.value && session.can('internal.dashboard_templates.manage'))
 const storedIds = computed(() => new Set((definition.value?.widgets ?? []).map((widget) => widget.id)))
 const shownFilters = computed<DashboardFilters | null>(() => (definition.value && filtersChanged(filters.value, definition.value.filters) ? filters.value : null))
 const templateName = computed(() => (template.value ? template.value.name[lang.value] : null))
@@ -156,7 +158,7 @@ async function saveTemplate() {
   if (!template.value) return
   creatingBusy.value = true
   try {
-    const created = await dashboardService.fromTemplate(template.value.key)
+    const created = await dashboardService.fromTemplate(template.value.id)
     await dashboardService.choose(created.id)
     dashboards.value = [created, ...dashboards.value]
     chosenId.value = created.id
@@ -229,6 +231,24 @@ async function duplicate() {
     dashboards.value = [copy, ...dashboards.value]
     toast.success(t('dash.duplicated'))
     await router.push(`/dashboards/${copy.id}`)
+  } catch (error) {
+    toast.error(apiMessage(error))
+  }
+}
+
+/** Salva o dashboard como um modelo pronto da equipe Groone e abre o modelo para ajustar. */
+async function saveAsTemplate() {
+  const found = dashboard.value
+  if (!found) return
+  try {
+    const created = await templateService.create({
+      name: { pt: found.name, en: '', es: '' },
+      definition: withLayout(found.definition, found.definition.widgets, found.definition.filters),
+      audience: 'groone',
+      role_ids: [],
+    })
+    toast.success(t('tpl.created'))
+    await router.push(`/interno/modelos-de-dashboard/${created.id}`)
   } catch (error) {
     toast.error(apiMessage(error))
   }
@@ -312,6 +332,7 @@ async function remove() {
             <MenuItem @select="chooseMine">{{ chosenId === dashboard.id ? t('dash.unchoose') : t('dash.choose') }}</MenuItem>
             <MenuItem v-if="canManage && dashboard.visibility === 'company' && !dashboard.is_default" @select="makeDefault">{{ t('dash.makeDefault') }}</MenuItem>
             <MenuItem v-if="canManage" @select="duplicate">{{ t('dash.duplicate') }}</MenuItem>
+            <MenuItem v-if="canTemplate" @select="saveAsTemplate">{{ t('tpl.saveAs') }}</MenuItem>
             <template v-if="dashboard.editable">
               <DropdownMenuSeparator class="-mx-1 my-1 h-px bg-border" />
               <MenuItem danger @select="removing = true">{{ t('common.delete') }}</MenuItem>
@@ -330,7 +351,7 @@ async function remove() {
     </Card>
     <template v-else-if="definition && catalog">
       <div v-if="editing && dashboard" class="grid gap-3 rounded-lg border border-dashed border-foreground/40 bg-card px-4 py-3">
-        <p class="flex items-center gap-2 text-[14px]"><LayoutGrid class="size-4" aria-hidden="true" />{{ t('dash.editHint') }}</p>
+        <p class="flex items-center gap-2 text-[14px]"><LayoutGrid class="size-4 shrink-0" aria-hidden="true" /><span class="md:hidden">{{ t('dash.editHintMenu') }}</span><span class="hidden md:inline">{{ t('dash.editHint') }}</span></p>
         <div class="flex flex-wrap gap-2">
           <Input v-model="draftName" :maxlength="NAME_MAX" class="max-w-[320px]" :aria-label="t('dash.new.name')" />
           <NativeSelect v-if="dashboard.visibility !== 'roles'" v-model="draftVisibility" :options="visibilities" class="w-[220px]" :aria-label="t('dash.visibility.label')" />
@@ -340,24 +361,17 @@ async function remove() {
       <p v-if="!widgets.length" class="rounded-lg border bg-card px-5 py-10 text-center text-[14px] text-muted-foreground">
         {{ editing ? t('dash.noWidgetsEditing') : t('dash.noWidgets') }}
       </p>
-      <div v-else class="grid grid-cols-1 gap-4 md:auto-rows-[72px] md:grid-cols-12">
-        <DashboardWidget
-          v-for="widget in widgets"
-          :key="widget.id"
-          :dashboard-id="dashboard?.id ?? ''"
-          :template-key="dashboard ? undefined : template?.key"
-          :widget="widget"
-          :filters="shownFilters"
-          :catalog="catalog"
-          :editing="editing"
-          :stored="storedIds.has(widget.id)"
-          class="min-h-[160px] md:min-h-0 md:[grid-column:var(--col)] md:[grid-row:var(--row)]"
-          :style="{ '--col': gridArea(widget).gridColumn, '--row': gridArea(widget).gridRow }"
-          @move="(columns, rows) => (draftWidgets = moveWidget(draftWidgets, widget.id, columns, rows))"
-          @resize="(columns, rows) => (draftWidgets = resizeWidget(draftWidgets, widget.id, columns, rows))"
-          @remove="draftWidgets = removeWidget(draftWidgets, widget.id)"
-        />
-      </div>
+      <DashboardGrid
+        v-else
+        :widgets="widgets"
+        :editing="editing"
+        :catalog="catalog"
+        :filters="shownFilters"
+        :stored="storedIds"
+        :dashboard-id="dashboard?.id"
+        :template-id="dashboard ? undefined : template?.id"
+        @update:widgets="(changed) => (draftWidgets = changed)"
+      />
     </template>
   </PageBody>
   <AddWidgetDialog v-if="catalog" v-model:open="adding" :catalog="catalog" :internal="internal" :widgets="draftWidgets" @add="(widget) => (draftWidgets = [...draftWidgets, widget])" />

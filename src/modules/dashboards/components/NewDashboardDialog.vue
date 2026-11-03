@@ -12,7 +12,7 @@ import type { DashboardTemplate } from '@/modules/dashboards/types'
 
 const open = defineModel<boolean>('open', { default: false })
 defineProps<{ busy: boolean }>()
-const emit = defineEmits<{ blank: [name: string]; template: [key: string] }>()
+const emit = defineEmits<{ blank: [name: string]; template: [id: string] }>()
 const NAME_MAX = 120
 
 const templates = ref<DashboardTemplate[]>([])
@@ -51,12 +51,12 @@ function create() {
       </button>
       <button
         v-for="template in templates"
-        :key="template.key"
+        :key="template.id"
         type="button"
         role="radio"
-        :aria-checked="chosen === template.key"
-        :class="cn('rounded-md border px-4 py-3 text-left hover:bg-accent', chosen === template.key && 'border-foreground')"
-        @click="chosen = template.key"
+        :aria-checked="chosen === template.id"
+        :class="cn('rounded-md border px-4 py-3 text-left hover:bg-accent', chosen === template.id && 'border-foreground')"
+        @click="chosen = template.id"
       >
         <div class="text-[14px] font-medium">{{ template.name[lang] ?? template.name.pt }}</div>
         <div class="text-[13px] text-muted-foreground">{{ t('dash.new.widgets', { n: template.definition.widgets.length }) }}</div>
