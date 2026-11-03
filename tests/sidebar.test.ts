@@ -47,6 +47,8 @@ describe('menu do painel', () => {
       ['/interno/clientes/c', 'Clientes'],
       ['/interno/pessoas', 'Clientes'],
       ['/interno/contratos', 'Contratos'],
+      ['/interno/networks', 'Networks do GAM'],
+      ['/interno/sites', 'Sites'],
       ['/relatorios/123', 'Relatórios customizados'],
       ['/dashboards/123', 'Dashboard'],
       ['/interno/alertas', 'Alertas'],
