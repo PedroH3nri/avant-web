@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /** Painel interno: os sites de todos os clientes, com o cliente, a network e o status de faturamento. */
-import { onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useDebounceFn } from '@vueuse/core'
 import { Globe, Search } from 'lucide-vue-next'
 import CompanyIcon from '@/components/CompanyIcon.vue'
@@ -20,8 +20,11 @@ import { clientInventoryService } from '@/modules/internal/inventory/service'
 import type { ClientSite } from '@/modules/internal/inventory/types'
 import RevenueStatusBadge from '@/modules/revenue/components/RevenueStatusBadge.vue'
 import { approval } from '@/modules/sites/rules'
+import { useSession } from '@/stores/session'
 
 const SEARCH_DELAY_MS = 300
+const session = useSession()
+const canSeeChecklists = computed(() => session.can('internal.checklists.view'))
 const sites = ref<ClientSite[] | null>(null)
 const page = ref(1)
 const total = ref(0)
@@ -71,10 +74,11 @@ watch(page, load)
           <th :class="th">{{ t('sites.col.approval') }}</th>
           <th :class="th">{{ t('int.column.revenue') }}</th>
           <th :class="[th, 'text-right']">{{ t('sites.col.units') }}</th>
+          <th v-if="canSeeChecklists" :class="th">{{ t('check.col.checklist') }}</th>
         </tr>
       </thead>
       <tbody>
-        <TableState :cols="5" :loading="!sites" :empty="sites?.length === 0" :icon="Globe" :title="t('inv.sitesNone')" />
+        <TableState :cols="canSeeChecklists ? 6 : 5" :loading="!sites" :empty="sites?.length === 0" :icon="Globe" :title="t('inv.sitesNone')" />
         <tr v-for="site in sites ?? []" :key="site.id" class="hover:bg-muted">
           <td :class="td">
             <div class="font-medium">{{ site.domain }}</div>
@@ -91,6 +95,13 @@ watch(page, load)
           </td>
           <td :class="td"><RevenueStatusBadge :status="site.revenue_status" /></td>
           <td :class="[td, 'tnum text-right']">{{ site.ad_units }}</td>
+          <td v-if="canSeeChecklists" :class="td">
+            <RouterLink v-if="site.checklist" :to="`/interno/checklists/${site.checklist.id}`" class="hover:underline">
+              <Status v-if="site.checklist.complete" tone="ok">{{ t('check.done') }}</Status>
+              <Status v-else tone="ochre">{{ t('check.okCount', { done: site.checklist.done, total: site.checklist.total }) }}</Status>
+            </RouterLink>
+            <span v-else class="text-[13px] text-muted-foreground">–</span>
+          </td>
         </tr>
       </tbody>
     </DataTable>
