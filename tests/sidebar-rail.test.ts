@@ -76,7 +76,7 @@ describe('SidebarRail', () => {
     const testRouter = router()
     await testRouter.push('/interno/contratos')
     const wrapper = mount(SidebarRail, { global: { plugins: [testRouter] } })
-    expect(railLabels(wrapper)).toEqual(['Dashboard', 'Clientes', 'Relatórios', 'Comissões', 'Empresa'])
+    expect(railLabels(wrapper)).toEqual(['Dashboard', 'Clientes', 'Relatórios', 'Ferramentas', 'Comissões', 'Empresa'])
     expect(wrapper.find('nav [aria-current]').text()).toBe('Clientes')
     expect(wrapper.find('#rail-panel').attributes('aria-hidden')).toBe('true')
   })
@@ -87,16 +87,18 @@ describe('SidebarRail', () => {
     const testRouter = router()
     await testRouter.push('/interno')
     const wrapper = mount(SidebarRail, { global: { plugins: [testRouter] } })
-    const [, clients, reports] = wrapper.findAll('nav[aria-label="Menu principal"] > *')
+    const [, clients, reports, tools] = wrapper.findAll('nav[aria-label="Menu principal"] > *')
     await hoverAndWait(clients!)
     expect(wrapper.find('#rail-panel').attributes('aria-hidden')).toBe('false')
     expect(panelLabels(wrapper)).toEqual(['Clientes', 'Equipes', 'Networks do GAM', 'Contratos', 'Sites'])
     expect(wrapper.find('#rail-panel [aria-current="page"]').text()).toBe('Clientes')
     await hoverAndWait(reports!)
-    expect(panelLabels(wrapper)).toEqual(['Ad Manager', 'Page Views', 'Resultado', 'Resultado dos clientes', 'Metas', 'Relatórios customizados', 'Alertas', 'Envios agendados', 'Modelos de dashboard'])
+    expect(panelLabels(wrapper)).toEqual(['Ad Manager', 'Page Views', 'Resultado', 'Resultado dos clientes', 'Metas', 'Relatórios customizados'])
     const separator = wrapper.find('#rail-panel hr')
     expect(separator.exists()).toBe(true)
     expect(separator.element.nextElementSibling?.textContent).toBe('Relatórios customizados')
+    await hoverAndWait(tools!)
+    expect(panelLabels(wrapper)).toEqual(['Alertas', 'Envios agendados', 'Modelos de dashboard'])
   })
 
   it('fecha o painel ao abrir uma tela e não abre painel para o Dashboard', async () => {
@@ -121,7 +123,7 @@ describe('SidebarRail', () => {
     const testRouter = router()
     await testRouter.push('/')
     const wrapper = mount(SidebarRail, { global: { plugins: [testRouter] } })
-    const company = wrapper.findAll('nav[aria-label="Menu principal"] > *')[4]!
+    const company = wrapper.findAll('nav[aria-label="Menu principal"] > *')[5]!
     await company.trigger('click')
     await flushPromises()
     expect(testRouter.currentRoute.value.path).toBe('/interno/equipe')
