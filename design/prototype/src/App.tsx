@@ -135,7 +135,7 @@ function RevenueBadge({ label, className }: { label: string; className: string }
 }
 
 function RevenueStatus({ data }: { data: RevenueStatusData | null }) {
-  if (!data) return <RevenueBadge label="Sem receita ainda" className="border border-dashed text-muted-foreground" />
+  if (!data) return <RevenueBadge label="Sem receita" className="border border-dashed text-muted-foreground" />
   const trend = REVENUE_TREND[data.trend]
   const change = data.change === null ? '' : ` · ${data.change > 0 ? '+' : ''}${data.change}%`
   return (
