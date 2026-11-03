@@ -81,3 +81,18 @@ export interface ManagerChange {
   stops: number
   arrives: number
 }
+
+export interface NotePerson {
+  id: string
+  name: string
+}
+
+export interface ClientNote {
+  id: string
+  message: string
+  created_at: string
+  author: NotePerson | null
+  edited_at: string | null
+  editor: NotePerson | null
+  editable: boolean
+}
