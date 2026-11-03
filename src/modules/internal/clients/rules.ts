@@ -1,4 +1,5 @@
 /** Regras de tela do cadastro de cliente; quem confere de verdade é a API. */
+import { t } from '@/lib/i18n'
 import type { CompanyStatus } from '@/modules/company/types'
 import type { ClientProfile, ClientProfileInput } from '@/modules/internal/clients/types'
 
@@ -67,4 +68,13 @@ export function profileBody(profile: ClientProfileInput): ClientProfileInput {
     notes: blank(profile.notes),
     referral_percentage: profile.referred_by_company_id ? (profile.referral_percentage ?? '2').trim().replace(',', '.') : null,
   }
+}
+
+/** Tamanho mínimo e máximo de uma observação, iguais aos do avant-core. */
+export const NOTE_MIN = 5
+export const NOTE_MAX = 5000
+
+/** Nome de quem escreveu ou editou; a pessoa pode ter sido apagada. */
+export function personName(person: { name: string } | null): string {
+  return person?.name ?? t('note.removedPerson')
 }

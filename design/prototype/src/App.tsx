@@ -50,9 +50,11 @@ const SCREENS = [
   ['invoices', 'Painel interno · Invoices da equipe'],
   ['servicosinvoice', 'Painel interno · Serviços de invoice'],
   ['modelosdash', 'Painel interno · Modelos de dashboard'],
+  ['tarefas', 'Painel interno · Tarefas'],
+  ['tarefa', 'Painel interno · Tarefa'],
 ] as const
 type Screen = (typeof SCREENS)[number][0]
-const INTERNAL_SCREENS: Screen[] = ['interno', 'cliente', 'contratos', 'resultados', 'papelcomissao', 'minhacomissao', 'comissoes', 'minhasinvoices', 'invoice', 'invoices', 'servicosinvoice', 'modelosdash']
+const INTERNAL_SCREENS: Screen[] = ['interno', 'cliente', 'contratos', 'resultados', 'papelcomissao', 'minhacomissao', 'comissoes', 'minhasinvoices', 'invoice', 'invoices', 'servicosinvoice', 'modelosdash', 'tarefas', 'tarefa']
 const isScreen = (s: string): s is Screen => SCREENS.some(([k]) => k === s)
 type T = (k: Key) => string
 
@@ -338,7 +340,7 @@ const CLIENT_RAIL: RailGroup[] = [
 const INTERNAL_RAIL: RailGroup[] = [
   { key: 'clientes', label: 'Clientes', icon: Users, items: [{ id: 'interno', label: 'Clientes', also: ['cliente'] }, { id: 'contratos', label: 'Contratos' }, { id: 'resultados', label: 'Resultado dos clientes' }] },
   { key: 'comissoes', label: 'Comissões', icon: Wallet, items: [{ id: 'minhacomissao', label: 'Minha comissão' }, { id: 'minhasinvoices', label: 'Minhas invoices' }, { id: 'comissoes', label: 'Comissões da equipe' }, { id: 'invoices', label: 'Invoices', also: ['servicosinvoice', 'invoice'] }] },
-  { key: 'ferramentas', label: 'Ferramentas', icon: Wrench, items: [{ id: 'modelosdash', label: 'Modelos de dashboard' }] },
+  { key: 'ferramentas', label: 'Ferramentas', icon: Wrench, items: [{ id: 'tarefas', label: 'Tarefas', also: ['tarefa'] }, { id: 'modelosdash', label: 'Modelos de dashboard' }] },
   { key: 'equipegroone', label: 'Equipe', icon: ShieldCheck, items: [{ id: 'papelcomissao', label: 'Papéis da Equipe Groone' }] },
 ]
 const RAIL_WIDTH = 88
@@ -1278,6 +1280,136 @@ function InternalScreen({ t, go }: { t: T; go: (s: Screen) => void }) {
   )
 }
 
+/* ---------- Documentos e observações do cliente (core#188) ---------- */
+
+type DocumentKind = 'identity' | 'address'
+type DocumentState = 'missing' | 'pending' | 'approved' | 'rejected'
+type ProtoDocument = { kind: DocumentKind; state: DocumentState; file: string | null; sentAt: string | null; reason: string | null; reviewer: string | null }
+
+const DOCUMENT_LABEL: Record<DocumentKind, string> = { identity: 'Documento de identidade', address: 'Comprovante de residência' }
+const DOCUMENT_HINT: Record<DocumentKind, string> = { identity: 'RG, CNH ou passaporte, com foto e legível.', address: 'Conta de luz, água ou banco dos últimos 3 meses, no nome do titular.' }
+const DOCUMENT_STATE: Record<DocumentState, [string, 'ok' | 'bad' | 'ochre' | 'neutral']> = { missing: ['Não enviado', 'neutral'], pending: ['Em análise', 'ochre'], approved: ['Aprovado', 'ok'], rejected: ['Recusado', 'bad'] }
+
+const INITIAL_DOCUMENTS: ProtoDocument[] = [
+  { kind: 'identity', state: 'pending', file: 'rg-frente-verso.pdf', sentAt: '02/11/2026 18:40', reason: null, reviewer: null },
+  { kind: 'address', state: 'rejected', file: 'conta-luz.jpg', sentAt: '02/11/2026 18:42', reason: 'A conta está no nome de outra pessoa. Envie uma no nome do titular da Empresa.', reviewer: 'Ana Souza' },
+]
+
+function DocumentRow({ doc, actions }: { doc: ProtoDocument; actions: React.ReactNode }) {
+  const [label, tone] = DOCUMENT_STATE[doc.state]
+  return (
+    <li className="flex flex-col gap-3 py-4 first:pt-0 last:pb-0 sm:flex-row sm:items-start sm:justify-between">
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-3"><span className="text-[14px] font-medium">{DOCUMENT_LABEL[doc.kind]}</span><Status tone={tone}>{label}</Status></div>
+        <p className="mt-1 text-[13px] text-muted-foreground">{doc.file ? <><span className="font-mono">{doc.file}</span> · enviado em <span className="tnum">{doc.sentAt}</span></> : DOCUMENT_HINT[doc.kind]}</p>
+        {doc.state === 'rejected' && doc.reason && <p className="mt-2 max-w-[60ch] rounded-md border border-bad/30 bg-bad/5 px-3 py-2 text-[13px]">{doc.reason}</p>}
+      </div>
+      <div className="flex shrink-0 gap-2">{actions}</div>
+    </li>
+  )
+}
+
+function ClientDocumentsCard() {
+  const [docs, setDocs] = useState<ProtoDocument[]>(INITIAL_DOCUMENTS)
+  const send = (kind: DocumentKind) => {
+    setDocs(docs.map((doc) => doc.kind === kind ? { ...doc, state: 'pending', file: kind === 'identity' ? 'identidade.pdf' : 'comprovante.pdf', sentAt: '03/11/2026 14:10', reason: null } : doc))
+    toast.success('Documento enviado', { description: 'A equipe Groone vai analisar e você recebe um e-mail com a resposta.' })
+  }
+  return (
+    <Card title="Documentos" desc="Como a Groone repassa a você o pagamento das networks Manage Inventory, precisamos confirmar quem recebe. Só a equipe Groone que analisa pagamentos vê estes arquivos." footerNote="JPG, PNG ou PDF, até 5 MB cada.">
+      <ul className="divide-y">
+        {docs.map((doc) => (
+          <DocumentRow key={doc.kind} doc={doc} actions={<>
+            {doc.file && <Button size="sm" variant="outline"><Download className="h-4 w-4" />Baixar</Button>}
+            {doc.state !== 'approved' && <Button size="sm" variant={doc.state === 'pending' ? 'outline' : 'default'} onClick={() => send(doc.kind)}>{doc.file ? 'Enviar outro' : 'Enviar'}</Button>}
+          </>} />
+        ))}
+      </ul>
+    </Card>
+  )
+}
+
+function StaffDocumentsCard() {
+  const [docs, setDocs] = useState<ProtoDocument[]>(INITIAL_DOCUMENTS)
+  const [rejecting, setRejecting] = useState<DocumentKind | null>(null)
+  const [reason, setReason] = useState('')
+  const decide = (kind: DocumentKind, state: DocumentState, why: string | null) => {
+    setDocs(docs.map((doc) => doc.kind === kind ? { ...doc, state, reason: why, reviewer: 'Você' } : doc))
+    toast.success(state === 'approved' ? 'Documento aprovado' : 'Documento recusado', { description: 'O cliente recebe um e-mail.' })
+  }
+  return (
+    <Card title="Documentos" desc="Pedidos porque o cliente tem network Manage Inventory e a Groone repassa o pagamento. Só o cliente envia; aqui a equipe baixa, aprova ou recusa. Cada download fica na auditoria." className="lg:col-span-2">
+      <ul className="divide-y">
+        {docs.map((doc) => (
+          <DocumentRow key={doc.kind} doc={doc} actions={<>
+            {doc.file && <Button size="sm" variant="outline"><Download className="h-4 w-4" />Baixar</Button>}
+            {doc.state === 'pending' && <><Button size="sm" variant="outline" onClick={() => { setReason(''); setRejecting(doc.kind) }}>Recusar</Button><Button size="sm" onClick={() => decide(doc.kind, 'approved', null)}><Check className="h-4 w-4" />Aprovar</Button></>}
+            {(doc.state === 'approved' || doc.state === 'rejected') && doc.reviewer && <span className="self-center text-[12px] text-muted-foreground">por {doc.reviewer}</span>}
+          </>} />
+        ))}
+      </ul>
+      <Dialog open={rejecting !== null} onOpenChange={(open) => !open && setRejecting(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Recusar {rejecting ? DOCUMENT_LABEL[rejecting].toLowerCase() : ''}?</DialogTitle>
+            <DialogDescription>O cliente vê o motivo e pode enviar outro arquivo.</DialogDescription></DialogHeader>
+          <Field id="doc-reason" label="Motivo"><Textarea id="doc-reason" rows={3} value={reason} onChange={(event) => setReason(event.target.value)} placeholder="O que está errado e o que enviar no lugar." /></Field>
+          <DialogFooter><Button variant="outline" onClick={() => setRejecting(null)}>Cancelar</Button><Button variant="destructive" disabled={reason.trim().length < 5} onClick={() => { if (rejecting) decide(rejecting, 'rejected', reason.trim()); setRejecting(null) }}>Recusar</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </Card>
+  )
+}
+
+type ProtoNote = { id: number; author: string; createdAt: string; message: string; editedBy: string | null; editedAt: string | null }
+
+const INITIAL_NOTES: ProtoNote[] = [
+  { id: 2, author: 'Ana Souza', createdAt: '02/11/2026 16:20', message: 'Cliente pediu para receber o pagamento em conta nos EUA a partir de dezembro.\nAguardando os dados fiscais novos.', editedBy: 'Pedro Henrique', editedAt: '03/11/2026 09:05' },
+  { id: 1, author: 'Você', createdAt: '28/10/2026 11:02', message: 'Ligação de boas-vindas feita. Vai migrar os outros dois sites para o MCM em novembro.', editedBy: null, editedAt: null },
+]
+
+function NotesCard() {
+  const [notes, setNotes] = useState<ProtoNote[]>(INITIAL_NOTES)
+  const [draft, setDraft] = useState('')
+  const [editing, setEditing] = useState<ProtoNote | null>(null)
+  const [deleting, setDeleting] = useState<ProtoNote | null>(null)
+  const add = () => { setNotes([{ id: Date.now(), author: 'Você', createdAt: '03/11/2026 14:15', message: draft.trim(), editedBy: null, editedAt: null }, ...notes]); setDraft('') }
+  return (
+    <Card title="Observações" desc="Notas da equipe Groone sobre o cliente. O cliente nunca vê. Edita quem escreveu ou quem tem a permissão; apaga quem tem a permissão." className="lg:col-span-2">
+      <div className="grid gap-3">
+        <Textarea aria-label="Nova observação" rows={3} value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Escreva uma observação sobre o cliente..." />
+        <div className="flex justify-end"><Button size="sm" disabled={draft.trim().length < 5} onClick={add}><Plus className="h-4 w-4" />Adicionar</Button></div>
+      </div>
+      <ul className="mt-5 divide-y border-t">
+        {notes.map((note) => (
+          <li key={note.id} className="py-4 last:pb-0">
+            <div className="flex items-start justify-between gap-3">
+              <div className="text-[13px]"><span className="font-medium">{note.author}</span><span className="text-muted-foreground"> · <span className="tnum">{note.createdAt}</span></span></div>
+              <DropdownMenu><DropdownMenuTrigger asChild><Button size="icon" variant="ghost" className="h-8 w-8" aria-label="Ações da observação"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
+                <DropdownMenuContent align="end"><DropdownMenuItem onSelect={() => setEditing({ ...note })}><Pencil className="h-4 w-4" />Editar</DropdownMenuItem><DropdownMenuItem className="text-bad" onSelect={() => setDeleting(note)}><Trash2 className="h-4 w-4" />Apagar</DropdownMenuItem></DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+            <p className="mt-1 whitespace-pre-line text-[14px]">{note.message}</p>
+            {note.editedBy && <p className="mt-2 text-[12px] text-muted-foreground">Editada por {note.editedBy} em <span className="tnum">{note.editedAt}</span></p>}
+          </li>
+        ))}
+      </ul>
+      <Dialog open={editing !== null} onOpenChange={(open) => !open && setEditing(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Editar observação</DialogTitle><DialogDescription>{editing && editing.author !== 'Você' ? `Escrita por ${editing.author}. A observação vai mostrar que você editou.` : 'A observação mostra a data da última edição.'}</DialogDescription></DialogHeader>
+          <Textarea aria-label="Observação" rows={4} value={editing?.message ?? ''} onChange={(event) => editing && setEditing({ ...editing, message: event.target.value })} />
+          <DialogFooter><Button variant="outline" onClick={() => setEditing(null)}>Cancelar</Button><Button onClick={() => { if (editing) setNotes(notes.map((note) => note.id === editing.id ? { ...editing, editedBy: editing.author === 'Você' ? null : 'Você', editedAt: '03/11/2026 14:20' } : note)); setEditing(null) }}>Salvar</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={deleting !== null} onOpenChange={(open) => !open && setDeleting(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Apagar observação?</DialogTitle><DialogDescription>Ela some para toda a equipe. A auditoria guarda quem apagou.</DialogDescription></DialogHeader>
+          <DialogFooter><Button variant="outline" onClick={() => setDeleting(null)}>Cancelar</Button><Button variant="destructive" onClick={() => { if (deleting) setNotes(notes.filter((note) => note.id !== deleting.id)); setDeleting(null) }}>Apagar</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </Card>
+  )
+}
+
 function ClientScreen({ go }: { go: (s: Screen) => void }) {
   const [clientImage, setClientImage] = useState<string | null>(null)
   const [situation, setSituation] = useState<ClientSituation>('pending')
@@ -1311,6 +1443,8 @@ function ClientScreen({ go }: { go: (s: Screen) => void }) {
         <Card title="Networks" desc="Ligadas pelo MCM com o e-mail do contato. Mudar a situação do cliente liga ou desliga as networks." className="lg:col-span-2">
           <p className="text-[14px] text-muted-foreground">Nenhuma network ainda. Quando o cliente aceitar o MCM da Groone, ela aparece aqui sozinha.</p>
         </Card>
+        <StaffDocumentsCard />
+        <NotesCard />
       </Body>
       <Dialog open={confirm !== null} onOpenChange={(o) => !o && setConfirm(null)}>
         <DialogContent><DialogHeader><DialogTitle>Deixar Tech Notícias {confirm ? SITUATION[confirm][0].toLowerCase() : ''}?</DialogTitle>
@@ -1345,6 +1479,7 @@ function FiscalScreen() {
             <Field id="fi-routing" label="Agência ou routing number"><Input id="fi-routing" className="h-10 tnum" defaultValue="0001" /></Field>
           </form>
         </Card>
+        <ClientDocumentsCard />
       </Body>
     </>
   )
@@ -4104,6 +4239,158 @@ const INITIAL_TEMPLATES: ProtoTemplate[] = [
   { id: 't4', name: 'Financeiro do mês', audience: 'clients', roles: ['Financeiro', 'Dono'], home: false, updated: '03/11/2026', blocks: [] },
 ]
 /** Modelos prontos de dashboard: a lista por público (Groone ou clientes) e o editor com arrastar pelo título e redimensionar pelo canto. */
+/* ---------- Tarefas de suporte da equipe Groone (core#189) ---------- */
+
+type TaskStatus = 'open' | 'working' | 'delivered' | 'closed'
+type TaskPriority = 'high' | 'normal' | 'low'
+type ProtoTaskEvent = { id: number; kind: 'comment' | 'change'; author: string; at: string; text: string }
+type ProtoTask = { id: number; subject: string; description: string; priority: TaskPriority; status: TaskStatus; client: string | null; network: string | null; site: string | null; creator: string; assignee: string | null; createdAt: string; updatedAt: string; events: ProtoTaskEvent[] }
+
+const TASK_STATUS: Record<TaskStatus, [string, 'ok' | 'bad' | 'ochre' | 'neutral' | 'warn']> = { open: ['Aberta', 'ochre'], working: ['Trabalhando', 'warn'], delivered: ['Entregue', 'ok'], closed: ['Fechada', 'neutral'] }
+const TASK_PRIORITY: Record<TaskPriority, string> = { high: 'Alta', normal: 'Normal', low: 'Baixa' }
+const TASK_STAFF = ['Ana Souza', 'Bruno Lima', 'Pedro Henrique', 'Você']
+
+const INITIAL_TASKS: ProtoTask[] = [
+  { id: 41, subject: 'Anúncio âncora sobrepondo o menu no mobile', description: 'O cliente mandou print: no iPhone o âncora cobre o botão do menu. Conferir o CSS do bloco Content1 e a altura do anchor.', priority: 'high', status: 'working', client: 'Tech Notícias', network: '21987654321', site: 'technoticias.com.br', creator: 'Ana Souza', assignee: 'Você', createdAt: '03/11/2026 09:12', updatedAt: 'há 20 min', events: [
+    { id: 1, kind: 'change', author: 'Ana Souza', at: '03/11/2026 09:12', text: 'criou a tarefa e atribuiu a Você' },
+    { id: 2, kind: 'comment', author: 'Ana Souza', at: '03/11/2026 09:14', text: 'Prints no drive do cliente, pasta "anúncios".' },
+    { id: 3, kind: 'change', author: 'Você', at: '03/11/2026 10:02', text: 'mudou a situação de Aberta para Trabalhando' },
+    { id: 4, kind: 'comment', author: 'Você', at: '03/11/2026 14:30', text: 'Era o z-index do tema. Mandei o ajuste para o cliente aplicar; volto amanhã para conferir.' },
+  ] },
+  { id: 40, subject: 'Cadastrar domínio novo no MCM', description: 'Cliente comprou receitasdavo.com e quer monetizar ainda este mês.', priority: 'normal', status: 'open', client: 'Receitas & Cia', network: '22011223344', site: null, creator: 'Você', assignee: 'Bruno Lima', createdAt: '02/11/2026 17:40', updatedAt: 'ontem', events: [{ id: 1, kind: 'change', author: 'Você', at: '02/11/2026 17:40', text: 'criou a tarefa e atribuiu a Bruno Lima' }] },
+  { id: 38, subject: 'Revisar ads.txt depois da troca de hospedagem', description: 'A linha da Groone sumiu do ads.txt.', priority: 'high', status: 'delivered', client: 'Portal Esporte', network: '21555000111', site: 'portalesporte.com', creator: 'Pedro Henrique', assignee: 'Você', createdAt: '30/10/2026 11:05', updatedAt: '31/10/2026', events: [{ id: 1, kind: 'change', author: 'Pedro Henrique', at: '30/10/2026 11:05', text: 'criou a tarefa e atribuiu a Você' }, { id: 2, kind: 'change', author: 'Você', at: '31/10/2026 16:20', text: 'mudou a situação de Trabalhando para Entregue' }] },
+  { id: 35, subject: 'Treinar a equipe nova do cliente no painel', description: 'Duas pessoas novas na equipe do cliente.', priority: 'low', status: 'closed', client: 'Blog do Viajante', network: null, site: null, creator: 'Você', assignee: 'Ana Souza', createdAt: '27/10/2026 08:30', updatedAt: '29/10/2026', events: [{ id: 1, kind: 'change', author: 'Você', at: '27/10/2026 08:30', text: 'criou a tarefa e atribuiu a Ana Souza' }] },
+]
+
+function TasksScreen({ tasks, setTasks, open }: { tasks: ProtoTask[]; setTasks: (tasks: ProtoTask[]) => void; open: (id: number) => void }) {
+  const [scope, setScope] = useState<'mine' | 'all'>('mine')
+  const [status, setStatus] = useState<'active' | TaskStatus | 'any'>('active')
+  const [priority, setPriority] = useState<'any' | TaskPriority>('any')
+  const [query, setQuery] = useState('')
+  const [creating, setCreating] = useState(false)
+  const [form, setForm] = useState({ subject: '', description: '', priority: 'normal' as TaskPriority, client: '', site: '', assignee: '' })
+  const visible = tasks.filter((task) =>
+    (scope === 'all' || task.creator === 'Você' || task.assignee === 'Você') &&
+    (status === 'any' || (status === 'active' ? task.status === 'open' || task.status === 'working' : task.status === status)) &&
+    (priority === 'any' || task.priority === priority) &&
+    (query === '' || `${task.subject} ${task.client ?? ''} ${task.site ?? ''}`.toLowerCase().includes(query.toLowerCase())))
+  const create = () => {
+    const id = Math.max(...tasks.map((task) => task.id)) + 1
+    const assignee = form.assignee || null
+    setTasks([{ id, subject: form.subject.trim(), description: form.description.trim(), priority: form.priority, status: 'open', client: form.client || null, network: null, site: form.site.trim() || null, creator: 'Você', assignee, createdAt: '03/11/2026 15:10', updatedAt: 'agora', events: [{ id: 1, kind: 'change', author: 'Você', at: '03/11/2026 15:10', text: assignee ? `criou a tarefa e atribuiu a ${assignee}` : 'criou a tarefa' }] }, ...tasks])
+    setCreating(false)
+    setForm({ subject: '', description: '', priority: 'normal', client: '', site: '', assignee: '' })
+    toast.success('Tarefa criada', { description: assignee && assignee !== 'Você' ? `${assignee} recebe um e-mail.` : undefined })
+  }
+  return (
+    <>
+      <PageHeader title="Tarefas" sub="Pedidos de suporte da equipe Groone para os clientes. Você vê as que criou e as que são suas; quem tem a permissão vê todas." actions={<Button onClick={() => setCreating(true)}><Plus className="h-4 w-4" />Nova tarefa</Button>} />
+      <Body>
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex rounded-md border bg-card p-0.5" role="tablist" aria-label="Quais tarefas">
+            {([['mine', 'Minhas'], ['all', 'Todas']] as const).map(([key, label]) => (
+              <button key={key} role="tab" aria-selected={scope === key} onClick={() => setScope(key)} className={cn('h-8 rounded-[4px] px-3 text-[13px] font-medium', scope === key ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground')}>{label}</button>
+            ))}
+          </div>
+          <div className="relative w-full sm:w-[260px]"><Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input aria-label="Buscar tarefas" className="h-9 pl-9" placeholder="Assunto, cliente ou site" value={query} onChange={(event) => setQuery(event.target.value)} /></div>
+          <Select value={status} onValueChange={(value) => setStatus(value as typeof status)}><SelectTrigger aria-label="Situação" className="h-9 w-[230px]"><SelectValue /></SelectTrigger>
+            <SelectContent><SelectItem value="active">Abertas e em andamento</SelectItem>{(Object.keys(TASK_STATUS) as TaskStatus[]).map((key) => <SelectItem key={key} value={key}>{TASK_STATUS[key][0]}</SelectItem>)}<SelectItem value="any">Todas as situações</SelectItem></SelectContent>
+          </Select>
+          <Select value={priority} onValueChange={(value) => setPriority(value as typeof priority)}><SelectTrigger aria-label="Prioridade" className="h-9 w-[160px]"><SelectValue /></SelectTrigger>
+            <SelectContent><SelectItem value="any">Toda prioridade</SelectItem>{(Object.keys(TASK_PRIORITY) as TaskPriority[]).map((key) => <SelectItem key={key} value={key}>{TASK_PRIORITY[key]}</SelectItem>)}</SelectContent>
+          </Select>
+        </div>
+        <Table min={860}>
+          <thead><tr><th className={th}>Tarefa</th><th className={th}>Cliente</th><th className={th}>Prioridade</th><th className={th}>Situação</th><th className={th}>Responsável</th><th className={th}>Atualizada</th></tr></thead>
+          <tbody>
+            {visible.map((task) => (
+              <tr key={task.id} className="hover:bg-muted">
+                <td className={td}><button className="text-left font-medium hover:underline" onClick={() => open(task.id)}><span className="tnum text-muted-foreground">#{task.id}</span> {task.subject}</button></td>
+                <td className={cn(td, 'text-muted-foreground')}>{task.client ?? '—'}{task.site && <span className="block font-mono text-[12px]">{task.site}</span>}</td>
+                <td className={td}>{task.priority === 'high' ? <span className="font-medium text-bad">Alta</span> : <span className="text-muted-foreground">{TASK_PRIORITY[task.priority]}</span>}</td>
+                <td className={td}><Status tone={TASK_STATUS[task.status][1]}>{TASK_STATUS[task.status][0]}</Status></td>
+                <td className={cn(td, 'text-muted-foreground')}>{task.assignee ?? 'Sem responsável'}</td>
+                <td className={cn(td, 'whitespace-nowrap text-[13px] text-muted-foreground')}>{task.updatedAt}</td>
+              </tr>
+            ))}
+            {!visible.length && <tr><td className={cn(td, 'py-10 text-center text-muted-foreground')} colSpan={6}>Nenhuma tarefa com esses filtros.</td></tr>}
+          </tbody>
+        </Table>
+      </Body>
+      <Dialog open={creating} onOpenChange={setCreating}>
+        <DialogContent className="max-w-[560px]">
+          <DialogHeader><DialogTitle>Nova tarefa</DialogTitle><DialogDescription>Cliente e site são opcionais: um domínio que ainda não existe fica como "a cadastrar".</DialogDescription></DialogHeader>
+          <div className="grid gap-4">
+            <Field id="task-subject" label="Assunto"><Input id="task-subject" className="h-10" value={form.subject} onChange={(event) => setForm({ ...form, subject: event.target.value })} /></Field>
+            <Field id="task-description" label="Descrição"><Textarea id="task-description" rows={4} value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} /></Field>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field id="task-client" label="Cliente"><Select value={form.client || 'none'} onValueChange={(value) => setForm({ ...form, client: value === 'none' ? '' : value })}><SelectTrigger id="task-client" className="h-10"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="none">Nenhum</SelectItem>{['Tech Notícias', 'Receitas & Cia', 'Portal Esporte', 'Blog do Viajante'].map((name) => <SelectItem key={name} value={name}>{name}</SelectItem>)}</SelectContent></Select></Field>
+              <Field id="task-site" label="Site ou domínio" hint="Um site do cliente ou um domínio a cadastrar."><Input id="task-site" className="h-10 font-mono" placeholder="exemplo.com" value={form.site} onChange={(event) => setForm({ ...form, site: event.target.value })} /></Field>
+              <Field id="task-priority" label="Prioridade"><Select value={form.priority} onValueChange={(value) => setForm({ ...form, priority: value as TaskPriority })}><SelectTrigger id="task-priority" className="h-10"><SelectValue /></SelectTrigger><SelectContent>{(Object.keys(TASK_PRIORITY) as TaskPriority[]).map((key) => <SelectItem key={key} value={key}>{TASK_PRIORITY[key]}</SelectItem>)}</SelectContent></Select></Field>
+              <Field id="task-assignee" label="Responsável" hint="Recebe um e-mail."><Select value={form.assignee || 'none'} onValueChange={(value) => setForm({ ...form, assignee: value === 'none' ? '' : value })}><SelectTrigger id="task-assignee" className="h-10"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="none">Sem responsável</SelectItem>{TASK_STAFF.map((name) => <SelectItem key={name} value={name}>{name}</SelectItem>)}</SelectContent></Select></Field>
+            </div>
+          </div>
+          <DialogFooter><Button variant="outline" onClick={() => setCreating(false)}>Cancelar</Button><Button disabled={form.subject.trim().length < 3} onClick={create}>Criar tarefa</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  )
+}
+
+function TaskScreen({ task, update, back }: { task: ProtoTask; update: (task: ProtoTask) => void; back: () => void }) {
+  const [comment, setComment] = useState('')
+  const change = (patch: Partial<ProtoTask>, text: string, mail?: string) => {
+    update({ ...task, ...patch, updatedAt: 'agora', events: [...task.events, { id: task.events.length + 1, kind: 'change', author: 'Você', at: '03/11/2026 15:20', text }] })
+    toast.success('Tarefa atualizada', { description: mail })
+  }
+  const send = () => {
+    update({ ...task, updatedAt: 'agora', events: [...task.events, { id: task.events.length + 1, kind: 'comment', author: 'Você', at: '03/11/2026 15:22', text: comment.trim() }] })
+    setComment('')
+    const notified = [task.creator, task.assignee].filter((name, index, list): name is string => !!name && name !== 'Você' && list.indexOf(name) === index)
+    toast.success('Comentário enviado', { description: notified.length ? `${notified.join(' e ')} ${notified.length > 1 ? 'recebem' : 'recebe'} um e-mail.` : undefined })
+  }
+  const row = (label: string, value: React.ReactNode) => <div className="grid gap-1 py-2 text-[14px] sm:grid-cols-[120px_1fr]"><dt className="text-muted-foreground">{label}</dt><dd className="min-w-0">{value}</dd></div>
+  return (
+    <>
+      <PageHeader title={task.subject} sub={`#${task.id} · criada por ${task.creator} em ${task.createdAt}`}
+        back={<button onClick={back} className="inline-flex items-center gap-1 text-[13px] text-muted-foreground hover:text-foreground"><ArrowLeft className="h-3.5 w-3.5" />Tarefas</button>} />
+      <Body>
+        <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+          <div className="grid content-start gap-6">
+            <Card title="Descrição"><p className="whitespace-pre-line text-[14px]">{task.description || '—'}</p></Card>
+            <Card title="Comentários e histórico" desc="Cada comentário vai por e-mail para quem criou e para o responsável, menos para quem comentou.">
+              <ol className="grid gap-4">
+                {task.events.map((event) => event.kind === 'comment' ? (
+                  <li key={event.id} className="rounded-md border p-3">
+                    <div className="text-[13px]"><span className="font-medium">{event.author}</span><span className="text-muted-foreground"> · <span className="tnum">{event.at}</span></span></div>
+                    <p className="mt-1 whitespace-pre-line text-[14px]">{event.text}</p>
+                  </li>
+                ) : (
+                  <li key={event.id} className="flex gap-2 px-3 text-[13px] text-muted-foreground"><span className="font-medium text-foreground">{event.author}</span>{event.text}<span className="tnum">· {event.at}</span></li>
+                ))}
+              </ol>
+              <div className="mt-5 grid gap-3 border-t pt-5">
+                <Textarea aria-label="Novo comentário" rows={3} value={comment} onChange={(event) => setComment(event.target.value)} placeholder="Escreva um comentário..." />
+                <div className="flex justify-end"><Button size="sm" disabled={comment.trim().length < 3} onClick={send}>Comentar</Button></div>
+              </div>
+            </Card>
+          </div>
+          <Card title="Detalhes" className="self-start">
+            <dl className="-my-2 divide-y">
+              {row('Situação', <Select value={task.status} onValueChange={(value) => change({ status: value as TaskStatus }, `mudou a situação de ${TASK_STATUS[task.status][0]} para ${TASK_STATUS[value as TaskStatus][0]}`)}><SelectTrigger aria-label="Situação" className="h-9"><SelectValue /></SelectTrigger><SelectContent>{(Object.keys(TASK_STATUS) as TaskStatus[]).map((key) => <SelectItem key={key} value={key}>{TASK_STATUS[key][0]}</SelectItem>)}</SelectContent></Select>)}
+              {row('Prioridade', <Select value={task.priority} onValueChange={(value) => change({ priority: value as TaskPriority }, `mudou a prioridade para ${TASK_PRIORITY[value as TaskPriority]}`)}><SelectTrigger aria-label="Prioridade" className="h-9"><SelectValue /></SelectTrigger><SelectContent>{(Object.keys(TASK_PRIORITY) as TaskPriority[]).map((key) => <SelectItem key={key} value={key}>{TASK_PRIORITY[key]}</SelectItem>)}</SelectContent></Select>)}
+              {row('Responsável', <Select value={task.assignee ?? 'none'} onValueChange={(value) => { const next = value === 'none' ? null : value; change({ assignee: next }, next ? `atribuiu a ${next}` : 'tirou o responsável', next && next !== 'Você' ? `${next} recebe um e-mail.` : undefined) }}><SelectTrigger aria-label="Responsável" className="h-9"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="none">Sem responsável</SelectItem>{TASK_STAFF.map((name) => <SelectItem key={name} value={name}>{name}</SelectItem>)}</SelectContent></Select>)}
+              {row('Cliente', task.client ? <button className="text-link hover:underline">{task.client}</button> : '—')}
+              {row('Network', task.network ? <span className="font-mono">{task.network}</span> : '—')}
+              {row('Site', task.site ? <span className="break-all font-mono">{task.site}</span> : <span className="text-muted-foreground">A cadastrar</span>)}
+            </dl>
+          </Card>
+        </div>
+      </Body>
+    </>
+  )
+}
+
 function DashboardTemplatesScreen() {
   const [templates, setTemplates] = useState(INITIAL_TEMPLATES)
   const [tab, setTab] = useState<TplAudience>('groone')
@@ -4195,6 +4482,8 @@ export default function App() {
   const [screen, setScreen] = useState<Screen>(initial)
   const [lang, setLang] = useState<Lang>('pt')
   const [members, setMembers] = useState(INITIAL_MEMBERS)
+  const [tasks, setTasks] = useState<ProtoTask[]>(INITIAL_TASKS)
+  const [taskId, setTaskId] = useState(41)
   const [accent, setAccent] = useState('padrao')
   const [theme, setTheme] = useState('system')
   const [groups, setGroups] = useState(INITIAL_GROUPS)
@@ -4277,6 +4566,8 @@ export default function App() {
       case 'invoices': return <InvoicesScreen state={invoiceState} />
       case 'servicosinvoice': return <InvoiceServicesScreen state={invoiceState} />
       case 'modelosdash': return <DashboardTemplatesScreen />
+      case 'tarefas': return <TasksScreen tasks={tasks} setTasks={setTasks} open={(taskId) => { setTaskId(taskId); go('tarefa') }} />
+      case 'tarefa': { const task = tasks.find((item) => item.id === taskId) ?? tasks[0]; return <TaskScreen key={task.id} task={task} update={(next) => setTasks(tasks.map((item) => (item.id === next.id ? next : item)))} back={() => go('tarefas')} /> }
     }
   })()
 
