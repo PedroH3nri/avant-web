@@ -52,9 +52,12 @@ const SCREENS = [
   ['modelosdash', 'Painel interno · Modelos de dashboard'],
   ['tarefas', 'Painel interno · Tarefas'],
   ['tarefa', 'Painel interno · Tarefa'],
+  ['checklists', 'Painel interno · Checklists'],
+  ['checklist', 'Painel interno · Checklist do site'],
+  ['checklistitens', 'Painel interno · Itens do checklist'],
 ] as const
 type Screen = (typeof SCREENS)[number][0]
-const INTERNAL_SCREENS: Screen[] = ['interno', 'cliente', 'contratos', 'resultados', 'papelcomissao', 'minhacomissao', 'comissoes', 'minhasinvoices', 'invoice', 'invoices', 'servicosinvoice', 'modelosdash', 'tarefas', 'tarefa']
+const INTERNAL_SCREENS: Screen[] = ['interno', 'cliente', 'contratos', 'resultados', 'papelcomissao', 'minhacomissao', 'comissoes', 'minhasinvoices', 'invoice', 'invoices', 'servicosinvoice', 'modelosdash', 'tarefas', 'tarefa', 'checklists', 'checklist', 'checklistitens']
 const isScreen = (s: string): s is Screen => SCREENS.some(([k]) => k === s)
 type T = (k: Key) => string
 
@@ -338,7 +341,7 @@ const CLIENT_RAIL: RailGroup[] = [
   { key: 'empresa', label: 'Empresa', icon: Settings, items: [{ id: 'configuracoes', label: 'Configurações' }, { id: 'fiscais', label: 'Dados fiscais' }] },
 ]
 const INTERNAL_RAIL: RailGroup[] = [
-  { key: 'clientes', label: 'Clientes', icon: Users, items: [{ id: 'interno', label: 'Clientes', also: ['cliente'] }, { id: 'contratos', label: 'Contratos' }, { id: 'resultados', label: 'Resultado dos clientes' }] },
+  { key: 'clientes', label: 'Clientes', icon: Users, items: [{ id: 'interno', label: 'Clientes', also: ['cliente'] }, { id: 'contratos', label: 'Contratos' }, { id: 'resultados', label: 'Resultado dos clientes' }, { id: 'checklists', label: 'Checklists', also: ['checklist', 'checklistitens'] }] },
   { key: 'comissoes', label: 'Comissões', icon: Wallet, items: [{ id: 'minhacomissao', label: 'Minha comissão' }, { id: 'minhasinvoices', label: 'Minhas invoices' }, { id: 'comissoes', label: 'Comissões da equipe' }, { id: 'invoices', label: 'Invoices', also: ['servicosinvoice', 'invoice'] }] },
   { key: 'ferramentas', label: 'Ferramentas', icon: Wrench, items: [{ id: 'tarefas', label: 'Tarefas', also: ['tarefa'] }, { id: 'modelosdash', label: 'Modelos de dashboard' }] },
   { key: 'equipegroone', label: 'Equipe', icon: ShieldCheck, items: [{ id: 'papelcomissao', label: 'Papéis da Equipe Groone' }] },
@@ -4391,6 +4394,235 @@ function TaskScreen({ task, update, back }: { task: ProtoTask; update: (task: Pr
   )
 }
 
+/* ---------- Checklist de domínio automatizado (core#190) ---------- */
+
+type CheckKind = 'link' | 'categories' | 'search' | 'home' | 'author' | 'date' | 'pagination' | 'ads_txt' | 'manual'
+type AutoResult = 'ok' | 'failed' | 'unknown'
+type ProtoCheckItem = { id: number; name: string; kind: CheckKind; words: string[]; active: boolean }
+type ProtoCheckResult = { itemId: number; auto: AutoResult | null; evidence: string; mark: { by: string; at: string } | null }
+type ProtoSiteChecklist = { id: number; domain: string; client: string; clientLang: string; revenue: number; checkedAt: string | null; results: ProtoCheckResult[]; notes: { author: string; at: string; text: string }[] }
+
+const CHECK_KIND: Record<CheckKind, [string, string]> = {
+  link: ['Link com palavras', 'Procura na página inicial um link cujo texto ou endereço tenha uma das palavras.'],
+  categories: ['Categorias', 'Links de categoria ou tag (/category/, /categoria/) ou um menu com várias seções.'],
+  search: ['Buscador', 'Formulário de busca (campo de busca, ?s= ou role=search).'],
+  home: ['Início', 'Link para a página inicial no menu ou no logo.'],
+  author: ['Autor (no artigo)', 'rel=author, meta author ou o autor no schema.org do artigo.'],
+  date: ['Data (no artigo)', 'article:published_time, <time> ou a data no schema.org do artigo.'],
+  pagination: ['Paginação', 'rel=next, /page/2 ou links numerados.'],
+  ads_txt: ['ads.txt', 'O ads.txt do site tem a linha da Groone (e as do Google no Manage Inventory).'],
+  manual: ['Manual', 'Ninguém confere sozinho: a pessoa marca.'],
+}
+const AUTO_STATUS: Record<AutoResult, [string, 'ok' | 'bad' | 'ochre']> = { ok: ['Ok', 'ok'], failed: ['Falhou', 'bad'], unknown: ['Não deu para conferir', 'ochre'] }
+const CHECK_MONTHS = ['Novembro de 2026', 'Outubro de 2026', 'Setembro de 2026']
+
+const INITIAL_CHECK_ITEMS: ProtoCheckItem[] = [
+  { id: 1, name: 'Políticas de cookies', kind: 'link', words: ['cookies', 'cookie', 'galletas'], active: true },
+  { id: 2, name: 'Políticas de privacidade', kind: 'link', words: ['privacidade', 'privacy', 'privacidad'], active: true },
+  { id: 3, name: 'Aviso legal', kind: 'link', words: ['aviso legal', 'legal notice', 'disclaimer'], active: true },
+  { id: 4, name: 'Contato', kind: 'link', words: ['contato', 'contact', 'contacto', 'fale conosco'], active: true },
+  { id: 5, name: 'Sobre nós', kind: 'link', words: ['sobre', 'about', 'quiénes somos', 'quem somos'], active: true },
+  { id: 6, name: 'Termos de uso', kind: 'link', words: ['termos', 'terms', 'términos'], active: true },
+  { id: 7, name: 'Categorias', kind: 'categories', words: [], active: true },
+  { id: 8, name: 'Buscador', kind: 'search', words: [], active: true },
+  { id: 9, name: 'Início', kind: 'home', words: [], active: true },
+  { id: 10, name: 'Autor', kind: 'author', words: [], active: true },
+  { id: 11, name: 'Data', kind: 'date', words: [], active: true },
+  { id: 12, name: 'Paginação', kind: 'pagination', words: [], active: true },
+  { id: 13, name: 'ads.txt', kind: 'ads_txt', words: [], active: true },
+]
+
+/** Os resultados de um site: tudo ok menos os itens dados. */
+function checkResults(failed: Record<number, [AutoResult, string]>, marks: Record<number, { by: string; at: string }> = {}): ProtoCheckResult[] {
+  return INITIAL_CHECK_ITEMS.map((item) => {
+    const [auto, evidence] = failed[item.id] ?? ['ok', item.kind === 'link' ? `Achou /${item.words[0].replace(' ', '-')}` : item.kind === 'ads_txt' ? 'Linha groone.com, pub-2100, DIRECT encontrada' : 'Encontrado na página']
+    return { itemId: item.id, auto, evidence, mark: marks[item.id] ?? null }
+  })
+}
+
+const INITIAL_SITE_CHECKLISTS: ProtoSiteChecklist[] = [
+  { id: 1, domain: 'technoticias.com.br', client: 'Tech Notícias', clientLang: 'Português', revenue: 18420, checkedAt: '01/11/2026 03:12', results: checkResults({ 1: ['failed', 'Nenhum link com cookies, cookie ou galletas na página inicial'], 10: ['failed', 'O artigo /review-iphone-17 não diz o autor'] }), notes: [] },
+  { id: 2, domain: 'portalesporte.com', client: 'Portal Esporte', clientLang: 'Português', revenue: 12890, checkedAt: '01/11/2026 03:14', results: checkResults({}), notes: [] },
+  { id: 3, domain: 'receitasdavo.com', client: 'Receitas & Cia', clientLang: 'Español', revenue: 9310, checkedAt: '01/11/2026 03:15', results: checkResults({ 8: ['failed', 'Sem formulário de busca'], 13: ['failed', 'O ads.txt não tem a linha groone.com, pub-2100, DIRECT'] }, { 8: { by: 'Ana Souza', at: '02/11/2026 10:40' } }), notes: [{ author: 'Ana Souza', at: '02/11/2026 10:42', text: 'El buscador está en el menú lateral, solo en móvil.' }] },
+  { id: 4, domain: 'blogdoviajante.com', client: 'Blog do Viajante', clientLang: 'Português', revenue: 4120, checkedAt: '01/11/2026 03:16', results: INITIAL_CHECK_ITEMS.map((item) => ({ itemId: item.id, auto: 'unknown' as const, evidence: 'O site respondeu 503 três vezes', mark: null })), notes: [] },
+  { id: 5, domain: 'financasdodia.com', client: 'Tech Notícias', clientLang: 'Português', revenue: 2760, checkedAt: '01/11/2026 03:17', results: checkResults({ 12: ['failed', 'Nem rel=next nem /page/2 na página inicial'] }, { 12: { by: 'Você', at: '03/11/2026 09:05' } }), notes: [] },
+]
+
+/** O resultado que vale: o "ok" marcado por alguém vence o automático. */
+const effective = (result: ProtoCheckResult): AutoResult | 'marked' => (result.mark ? 'marked' : result.auto ?? 'failed')
+/** Quantos itens ativos estão ok, marcados ou automáticos. */
+function checklistProgress(checklist: ProtoSiteChecklist, items: ProtoCheckItem[]) {
+  const active = items.filter((item) => item.active)
+  const results = active.map((item) => checklist.results.find((result) => result.itemId === item.id) ?? { itemId: item.id, auto: null, evidence: '', mark: null })
+  const done = results.filter((result) => ['ok', 'marked'].includes(effective(result))).length
+  return { done, total: active.length, review: results.length - done, complete: done === active.length }
+}
+
+function ChecklistsScreen({ checklists, items, open, openItems }: { checklists: ProtoSiteChecklist[]; items: ProtoCheckItem[]; open: (id: number) => void; openItems: () => void }) {
+  const [month, setMonth] = useState(CHECK_MONTHS[0])
+  const [state, setState] = useState<'all' | 'pending' | 'done'>('all')
+  const [query, setQuery] = useState('')
+  const money = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'USD' })
+  const rows = checklists.map((checklist) => ({ checklist, progress: checklistProgress(checklist, items) }))
+  const visible = rows.filter(({ checklist, progress }) => (state === 'all' || (state === 'done') === progress.complete) && `${checklist.domain} ${checklist.client}`.toLowerCase().includes(query.toLowerCase()))
+  const doneCount = rows.filter((row) => row.progress.complete).length
+  return (
+    <>
+      <PageHeader title="Checklists" sub="Um checklist por mês para cada site com faturamento no mês anterior, do maior para o menor. O Avant confere sozinho no dia 1; você revisa o que falhou." actions={<Button variant="outline" onClick={openItems}>Itens do checklist</Button>} />
+      <Body>
+        <div className="grid gap-px overflow-hidden rounded-lg border bg-border sm:grid-cols-3">
+          <div className="bg-card p-4"><div className="text-[13px] font-medium text-muted-foreground">Feitos</div><div className="mt-1 text-[24px] font-semibold tracking-tight tnum">{doneCount} de {rows.length}</div></div>
+          <div className="bg-card p-4"><div className="text-[13px] font-medium text-muted-foreground">Para revisar</div><div className="mt-1 text-[24px] font-semibold tracking-tight tnum">{rows.length - doneCount}</div></div>
+          <div className="bg-card p-4"><div className="text-[13px] font-medium text-muted-foreground">Conferência automática</div><div className="mt-1 text-[15px] font-medium">01/11/2026 às 03:12</div><div className="text-[13px] text-muted-foreground">Próxima em 01/12/2026</div></div>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative w-full sm:w-[260px]"><Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input aria-label="Buscar sites" className="h-9 pl-9" placeholder="Site ou cliente" value={query} onChange={(event) => setQuery(event.target.value)} /></div>
+          <Select value={month} onValueChange={setMonth}><SelectTrigger aria-label="Mês" className="h-9 w-[200px]"><SelectValue /></SelectTrigger><SelectContent>{CHECK_MONTHS.map((name) => <SelectItem key={name} value={name}>{name}</SelectItem>)}</SelectContent></Select>
+          <Select value={state} onValueChange={(value) => setState(value as typeof state)}><SelectTrigger aria-label="Situação" className="h-9 w-[180px]"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Todos</SelectItem><SelectItem value="pending">Para revisar</SelectItem><SelectItem value="done">Feitos</SelectItem></SelectContent></Select>
+        </div>
+        <Table min={820}>
+          <thead><tr><th className={th}>Site</th><th className={cn(th, 'text-right')}>Faturamento em outubro</th><th className={th}>Itens ok</th><th className={th}>Situação</th><th className={th}>Conferido</th></tr></thead>
+          <tbody>
+            {visible.map(({ checklist, progress }) => (
+              <tr key={checklist.id} className="hover:bg-muted">
+                <td className={td}><button className="text-left hover:underline" onClick={() => open(checklist.id)}><span className="block break-all font-mono text-[13px] font-medium">{checklist.domain}</span><span className="text-[13px] text-muted-foreground">{checklist.client}</span></button></td>
+                <td className={cn(td, 'text-right tnum')}>{money.format(checklist.revenue)}</td>
+                <td className={td}>
+                  <div className="flex items-center gap-3"><div className="h-1.5 w-24 overflow-hidden rounded-full bg-secondary"><div className={cn('h-full rounded-full', progress.complete ? 'bg-ok' : 'bg-foreground')} style={{ width: `${(progress.done / progress.total) * 100}%` }} /></div><span className="tnum text-[13px] text-muted-foreground">{progress.done}/{progress.total}</span></div>
+                </td>
+                <td className={td}>{progress.complete ? <Status tone="ok">Feito</Status> : <Status tone="ochre">{progress.review} para revisar</Status>}</td>
+                <td className={cn(td, 'whitespace-nowrap tnum text-[13px] text-muted-foreground')}>{checklist.checkedAt ?? 'Ainda não'}</td>
+              </tr>
+            ))}
+            {!visible.length && <tr><td className={cn(td, 'py-10 text-center text-muted-foreground')} colSpan={5}>Nenhum site com esses filtros.</td></tr>}
+          </tbody>
+        </Table>
+      </Body>
+    </>
+  )
+}
+
+function ChecklistScreen({ checklist, items, update, back }: { checklist: ProtoSiteChecklist; items: ProtoCheckItem[]; update: (checklist: ProtoSiteChecklist) => void; back: () => void }) {
+  const [note, setNote] = useState('')
+  const [checking, setChecking] = useState(false)
+  const progress = checklistProgress(checklist, items)
+  const active = items.filter((item) => item.active)
+  const rows = active.map((item) => ({ item, result: checklist.results.find((result) => result.itemId === item.id) ?? { itemId: item.id, auto: null, evidence: '', mark: null } }))
+  const review = rows.filter(({ result }) => !['ok', 'marked'].includes(effective(result)))
+  const fine = rows.filter(({ result }) => ['ok', 'marked'].includes(effective(result)))
+  const setMark = (itemId: number, mark: ProtoCheckResult['mark']) => {
+    update({ ...checklist, results: checklist.results.map((result) => (result.itemId === itemId ? { ...result, mark } : result)) })
+    toast.success(mark ? 'Item marcado como ok' : 'Marcação tirada')
+  }
+  const checkNow = () => {
+    setChecking(true)
+    setTimeout(() => { setChecking(false); update({ ...checklist, checkedAt: '03/11/2026 15:40' }); toast.success('Conferência feita', { description: 'Os itens automáticos foram conferidos de novo.' }) }, 900)
+  }
+  const row = ({ item, result }: (typeof rows)[number]) => {
+    const now = effective(result)
+    return (
+      <li key={item.id} className="grid gap-2 py-3 sm:grid-cols-[1fr_auto] sm:items-center">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <span className="font-medium">{item.name}</span>
+            {now === 'marked' ? <Status tone="ok">Marcado</Status> : now === 'ok' ? <Status tone="ok">Ok</Status> : result.auto ? <Status tone={AUTO_STATUS[result.auto][1]}>{AUTO_STATUS[result.auto][0]}</Status> : <Status tone="neutral">Para marcar</Status>}
+            <span className="text-[12px] text-muted-foreground">{item.kind === 'manual' ? 'Manual' : 'Automático'}</span>
+          </div>
+          <p className="mt-0.5 break-words text-[13px] text-muted-foreground">
+            {result.evidence || CHECK_KIND[item.kind][1]}
+            {result.mark && <> · marcado por {result.mark.by} em <span className="tnum">{result.mark.at}</span></>}
+          </p>
+        </div>
+        <div className="flex gap-2">
+          {result.mark ? <Button size="sm" variant="ghost" onClick={() => setMark(item.id, null)}>Tirar marcação</Button> : now !== 'ok' && <Button size="sm" variant="outline" onClick={() => setMark(item.id, { by: 'Você', at: '03/11/2026 15:42' })}><Check className="h-4 w-4" />Marcar ok</Button>}
+        </div>
+      </li>
+    )
+  }
+  return (
+    <>
+      <PageHeader title={checklist.domain} sub={`${checklist.client} · Novembro de 2026 · ${progress.done} de ${progress.total} itens ok`}
+        back={<button onClick={back} className="inline-flex items-center gap-1 text-[13px] text-muted-foreground hover:text-foreground"><ArrowLeft className="h-3.5 w-3.5" />Checklists</button>}
+        actions={<><Button variant="outline" asChild><a href={`https://${checklist.domain}`} target="_blank" rel="noreferrer"><ExternalLink className="h-4 w-4" />Abrir o site</a></Button><Button onClick={checkNow} disabled={checking}>{checking ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}Conferir agora</Button></>} />
+      <Body>
+        <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
+          <div className="grid min-w-0 content-start gap-6">
+            {progress.complete && <div className="flex items-center gap-2 rounded-md border bg-card px-4 py-3 text-[14px]"><Check className="h-4 w-4 text-ok" />Checklist do mês feito. Conferido em <span className="tnum">{checklist.checkedAt}</span>.</div>}
+            {review.length > 0 && (
+              <Card title="Para revisar" desc="O Avant não achou ou não conseguiu abrir o site. Confira e marque ok se estiver certo: fica registrado quem marcou.">
+                <ul className="-my-3 divide-y">{review.map(row)}</ul>
+              </Card>
+            )}
+            <Card title="Ok" desc={checklist.checkedAt ? `Conferência automática em ${checklist.checkedAt}, na página inicial e num artigo.` : 'Ainda não conferido.'}>
+              {fine.length ? <ul className="-my-3 divide-y">{fine.map(row)}</ul> : <p className="text-[14px] text-muted-foreground">Nenhum item ok ainda.</p>}
+            </Card>
+          </div>
+          <Card title="Observações do mês" desc={`Entram no relatório do cliente: escreva em ${checklist.clientLang}.`} className="self-start">
+            <div className="grid gap-3">
+              <Textarea aria-label="Nova observação" rows={3} value={note} onChange={(event) => setNote(event.target.value)} placeholder="O que o cliente precisa ajustar..." />
+              <div className="flex justify-end"><Button size="sm" disabled={note.trim().length < 3} onClick={() => { update({ ...checklist, notes: [{ author: 'Você', at: '03/11/2026 15:45', text: note.trim() }, ...checklist.notes] }); setNote(''); toast.success('Observação adicionada') }}>Adicionar</Button></div>
+            </div>
+            {checklist.notes.length ? (
+              <ul className="mt-5 divide-y border-t">{checklist.notes.map((item, index) => <li key={index} className="py-3 last:pb-0"><div className="text-[13px]"><span className="font-medium">{item.author}</span><span className="text-muted-foreground"> · <span className="tnum">{item.at}</span></span></div><p className="mt-1 whitespace-pre-line text-[14px]">{item.text}</p></li>)}</ul>
+            ) : <p className="mt-5 border-t pt-4 text-[14px] text-muted-foreground">Nenhuma observação neste mês.</p>}
+          </Card>
+        </div>
+      </Body>
+    </>
+  )
+}
+
+function ChecklistItemsScreen({ items, setItems, back }: { items: ProtoCheckItem[]; setItems: (items: ProtoCheckItem[]) => void; back: () => void }) {
+  const [editing, setEditing] = useState<ProtoCheckItem | null>(null)
+  const [words, setWords] = useState('')
+  const start = (item: ProtoCheckItem) => { setEditing(item); setWords(item.words.join(', ')) }
+  const save = () => {
+    if (!editing) return
+    const next = { ...editing, name: editing.name.trim(), words: editing.kind === 'link' ? words.split(',').map((word) => word.trim()).filter(Boolean) : [] }
+    setItems(items.some((item) => item.id === next.id) ? items.map((item) => (item.id === next.id ? next : item)) : [...items, next])
+    setEditing(null)
+    toast.success('Item salvo', { description: 'Vale para o checklist deste mês e os próximos.' })
+  }
+  const move = (index: number, step: number) => { const next = [...items]; const [moved] = next.splice(index, 1); next.splice(index + step, 0, moved); setItems(next) }
+  return (
+    <>
+      <PageHeader title="Itens do checklist" sub="Uma lista para todos os sites. Mudanças valem para o mês atual e os próximos; os meses passados guardam o que foi conferido."
+        back={<button onClick={back} className="inline-flex items-center gap-1 text-[13px] text-muted-foreground hover:text-foreground"><ArrowLeft className="h-3.5 w-3.5" />Checklists</button>}
+        actions={<Button onClick={() => start({ id: Math.max(...items.map((item) => item.id)) + 1, name: '', kind: 'link', words: [], active: true })}><Plus className="h-4 w-4" />Novo item</Button>} />
+      <Body>
+        <Table min={760}>
+          <thead><tr><th className={cn(th, 'w-[72px]')}>Ordem</th><th className={th}>Item</th><th className={th}>Como confere</th><th className={th}>Situação</th><th className={cn(th, 'w-[60px]')}><span className="sr-only">Ações</span></th></tr></thead>
+          <tbody>
+            {items.map((item, index) => (
+              <tr key={item.id} className="hover:bg-muted">
+                <td className={td}><div className="flex gap-1"><Button size="icon" variant="ghost" className="h-7 w-7" disabled={index === 0} aria-label="Subir" onClick={() => move(index, -1)}>↑</Button><Button size="icon" variant="ghost" className="h-7 w-7" disabled={index === items.length - 1} aria-label="Descer" onClick={() => move(index, 1)}>↓</Button></div></td>
+                <td className={cn(td, 'font-medium')}>{item.name}</td>
+                <td className={cn(td, 'text-muted-foreground')}>{CHECK_KIND[item.kind][0]}{item.kind === 'link' && <span className="block text-[12px]">{item.words.join(', ')}</span>}</td>
+                <td className={td}>{item.active ? <Status tone="ok">Ativo</Status> : <Status tone="neutral">Desligado</Status>}</td>
+                <td className={td}><Button size="icon" variant="ghost" className="h-8 w-8" aria-label={`Editar ${item.name}`} onClick={() => start(item)}><Pencil className="h-4 w-4" /></Button></td>
+              </tr>
+            ))}
+          </tbody>
+        </Table>
+      </Body>
+      <Dialog open={!!editing} onOpenChange={(opened) => !opened && setEditing(null)}>
+        <DialogContent className="max-w-[520px]">
+          <DialogHeader><DialogTitle>{editing && items.some((item) => item.id === editing.id) ? 'Editar item' : 'Novo item'}</DialogTitle><DialogDescription>{editing ? CHECK_KIND[editing.kind][1] : ''}</DialogDescription></DialogHeader>
+          {editing && (
+            <div className="grid gap-4">
+              <Field id="item-name" label="Nome"><Input id="item-name" className="h-10" value={editing.name} onChange={(event) => setEditing({ ...editing, name: event.target.value })} /></Field>
+              <Field id="item-kind" label="Como confere"><Select value={editing.kind} onValueChange={(value) => setEditing({ ...editing, kind: value as CheckKind })}><SelectTrigger id="item-kind" className="h-10"><SelectValue /></SelectTrigger><SelectContent>{(Object.keys(CHECK_KIND) as CheckKind[]).map((key) => <SelectItem key={key} value={key}>{CHECK_KIND[key][0]}</SelectItem>)}</SelectContent></Select></Field>
+              {editing.kind === 'link' && <Field id="item-words" label="Palavras" hint="Separadas por vírgula, em português, inglês e espanhol."><Input id="item-words" className="h-10" value={words} onChange={(event) => setWords(event.target.value)} placeholder="cookies, cookie, galletas" /></Field>}
+              <label className="flex items-center gap-2 text-[14px]"><input type="checkbox" checked={editing.active} onChange={(event) => setEditing({ ...editing, active: event.target.checked })} />Ativo</label>
+            </div>
+          )}
+          <DialogFooter><Button variant="outline" onClick={() => setEditing(null)}>Cancelar</Button><Button disabled={!editing || editing.name.trim().length < 2 || (editing.kind === 'link' && !words.trim())} onClick={save}>Salvar item</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  )
+}
+
 function DashboardTemplatesScreen() {
   const [templates, setTemplates] = useState(INITIAL_TEMPLATES)
   const [tab, setTab] = useState<TplAudience>('groone')
@@ -4484,6 +4716,9 @@ export default function App() {
   const [members, setMembers] = useState(INITIAL_MEMBERS)
   const [tasks, setTasks] = useState<ProtoTask[]>(INITIAL_TASKS)
   const [taskId, setTaskId] = useState(41)
+  const [checklists, setChecklists] = useState<ProtoSiteChecklist[]>(INITIAL_SITE_CHECKLISTS)
+  const [checklistId, setChecklistId] = useState(1)
+  const [checkItems, setCheckItems] = useState<ProtoCheckItem[]>(INITIAL_CHECK_ITEMS)
   const [accent, setAccent] = useState('padrao')
   const [theme, setTheme] = useState('system')
   const [groups, setGroups] = useState(INITIAL_GROUPS)
@@ -4567,6 +4802,9 @@ export default function App() {
       case 'servicosinvoice': return <InvoiceServicesScreen state={invoiceState} />
       case 'modelosdash': return <DashboardTemplatesScreen />
       case 'tarefas': return <TasksScreen tasks={tasks} setTasks={setTasks} open={(taskId) => { setTaskId(taskId); go('tarefa') }} />
+      case 'checklists': return <ChecklistsScreen checklists={checklists} items={checkItems} open={(checklistId) => { setChecklistId(checklistId); go('checklist') }} openItems={() => go('checklistitens')} />
+      case 'checklist': { const checklist = checklists.find((item) => item.id === checklistId) ?? checklists[0]; return <ChecklistScreen key={checklist.id} checklist={checklist} items={checkItems} update={(next) => setChecklists(checklists.map((item) => (item.id === next.id ? next : item)))} back={() => go('checklists')} /> }
+      case 'checklistitens': return <ChecklistItemsScreen items={checkItems} setItems={setCheckItems} back={() => go('checklists')} />
       case 'tarefa': { const task = tasks.find((item) => item.id === taskId) ?? tasks[0]; return <TaskScreen key={task.id} task={task} update={(next) => setTasks(tasks.map((item) => (item.id === next.id ? next : item)))} back={() => go('tarefas')} /> }
     }
   })()
