@@ -49,6 +49,21 @@ const routes: RouteRecordRaw[] = [
       { path: 'interno/pessoas', component: () => import('@/modules/internal/people/views/PeopleView.vue'), meta: { internal: true, permission: 'internal.users.manage' } },
       { path: 'interno/alertas', component: () => import('@/modules/alerts/views/AlertsView.vue'), meta: { internal: true, permission: 'reports.view' } },
       { path: 'alertas', redirect: '/interno/alertas' },
+      {
+        path: 'interno/modelos-de-dashboard',
+        component: () => import('@/modules/dashboards/views/TemplatesView.vue'),
+        meta: { internal: true, permission: 'internal.dashboard_templates.manage' },
+      },
+      {
+        path: 'interno/modelos-de-dashboard/novo',
+        component: () => import('@/modules/dashboards/views/TemplateEditorView.vue'),
+        meta: { internal: true, permission: 'internal.dashboard_templates.manage' },
+      },
+      {
+        path: 'interno/modelos-de-dashboard/:id',
+        component: () => import('@/modules/dashboards/views/TemplateEditorView.vue'),
+        meta: { internal: true, permission: 'internal.dashboard_templates.manage' },
+      },
       { path: 'interno/envios', component: () => import('@/modules/schedules/views/SchedulesView.vue'), meta: { internal: true, permission: 'reports.view' } },
       { path: 'interno/metas', component: () => import('@/modules/internal/goals/views/GoalsView.vue'), meta: { internal: true } },
       { path: 'interno/resultados', component: () => import('@/modules/internal/results/views/ClientsResultsView.vue'), meta: { internal: true, permission: 'internal.results.view' } },

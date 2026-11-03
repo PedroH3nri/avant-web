@@ -23,7 +23,7 @@ import ReportView from '@/modules/reports/views/ReportView.vue'
 
 const label = (text: string) => ({ pt: text, en: text, es: text })
 const catalog: MetricCatalog = {
-  metrics: [{ key: 'revenue', label: label('Receita'), kind: 'sum', format: 'currency', sources: ['gam'] }],
+  metrics: [{ key: 'revenue', label: label('Receita'), kind: 'sum', format: 'currency', sources: ['gam'], internal_only: false }],
   custom_metrics: [],
   dimensions: [{ key: 'site', label: label('Site'), sources: ['gam'], filterable: true }],
   operators: ['in'],

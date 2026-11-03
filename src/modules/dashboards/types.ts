@@ -70,12 +70,46 @@ export interface DashboardPage extends Page<Dashboard> {
 }
 
 export interface DashboardTemplate {
-  key: string
+  id: string
+  /** Só nos modelos que vieram com o Avant. */
+  key: string | null
   name: Localized
   definition: DashboardDefinition
 }
 
-/** O que abre na tela inicial: o dashboard da pessoa ou, sem nenhum, o primeiro modelo. */
+export type TemplateAudience = 'groone' | 'clients'
+
+/** Um modelo pronto como a equipe Groone vê na gestão: público, papéis e o de início. */
+export interface ManagedTemplate {
+  id: string
+  key: string | null
+  name: { pt: string; en: string; es: string }
+  definition: DashboardDefinition
+  audience: TemplateAudience
+  role_ids: string[]
+  is_home: boolean
+  updated_at: string
+}
+
+export interface TemplateInput {
+  name: { pt: string; en: string; es: string }
+  definition: DashboardDefinition
+  audience: TemplateAudience
+  role_ids: string[]
+}
+
+export interface TemplateRole {
+  id: string
+  name: Record<string, string>
+}
+
+/** Os papéis que limitam quem vê: os da equipe Groone e os predefinidos dos clientes. */
+export interface TemplateRoles {
+  groone: TemplateRole[]
+  clients: TemplateRole[]
+}
+
+/** O que abre na tela inicial: o dashboard da pessoa ou, sem nenhum, o modelo de início. */
 export interface HomeDashboard {
   dashboard: Dashboard | null
   template: DashboardTemplate | null
