@@ -9,7 +9,7 @@ import ReportMenu from '@/modules/reports/components/ReportMenu.vue'
 import ReportThumb from '@/modules/reports/components/ReportThumb.vue'
 import type { MetricCatalog, RelativePeriod, SavedReport } from '@/modules/reports/types'
 
-const props = defineProps<{ report: SavedReport; catalog: MetricCatalog | null; pinned: boolean; owner: string; ownerAvatar: string; canDuplicate: boolean }>()
+const props = defineProps<{ report: SavedReport; catalog: MetricCatalog | null; pinned: boolean; owner: string; ownerAvatar: string; ownerImage: string | null; canDuplicate: boolean }>()
 const emit = defineEmits<{ edit: []; duplicate: []; pin: []; download: [format: 'csv' | 'xlsx']; remove: [] }>()
 
 const period = computed(() => {
@@ -40,7 +40,7 @@ const period = computed(() => {
       </div>
       <p class="line-clamp-2 flex-1 text-[13px] text-muted-foreground">{{ report.description ?? '' }}</p>
       <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-muted-foreground">
-        <span class="flex items-center gap-1.5 text-foreground"><Avatar :name="ownerAvatar" :size="18" />{{ owner }}</span>
+        <span class="flex items-center gap-1.5 text-foreground"><Avatar :name="ownerAvatar" :image-url="ownerImage" :size="18" />{{ owner }}</span>
         <span class="inline-flex items-center gap-1"><Lock v-if="report.visibility === 'private'" class="size-3.5" aria-hidden="true" />{{ t(`report.visibility.${report.visibility}` as Key) }}</span>
         <span>{{ period }}</span>
         <span class="ml-auto">{{ formatDate(report.updated_at, false) }}</span>

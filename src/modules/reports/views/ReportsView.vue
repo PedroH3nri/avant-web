@@ -28,6 +28,8 @@ import ReportMenu from '@/modules/reports/components/ReportMenu.vue'
 import ReportThumb from '@/modules/reports/components/ReportThumb.vue'
 import { exportUrl, reportService } from '@/modules/reports/service'
 import type { MetricCatalog, ReportTemplate, SavedReport } from '@/modules/reports/types'
+import type { UserRef } from '@/lib/types'
+import Avatar from '@/components/ui/Avatar.vue'
 import { teamService } from '@/modules/team/service'
 import { useSession } from '@/stores/session'
 
@@ -47,7 +49,7 @@ const templates = ref<ReportTemplate[] | null>(null)
 const pinned = ref<SavedReport[]>([])
 const catalog = ref<MetricCatalog | null>(null)
 const layout = ref<Layout>(storedLayout())
-const owners = ref<Record<string, string>>({})
+const owners = ref<Record<string, UserRef>>({})
 const loadError = ref<string | null>(null)
 const tab = ref<Tab>('all')
 const search = ref('')
@@ -154,7 +156,7 @@ async function load() {
   if (!session.can('team.view')) return
   try {
     const members = await teamService.memberOptions()
-    owners.value = Object.fromEntries(members.items.map((member) => [member.user.id, member.user.name]))
+    owners.value = Object.fromEntries(members.items.map((member) => [member.user.id, member.user]))
   } catch {
     owners.value = {}
   }
@@ -162,7 +164,13 @@ async function load() {
 
 /** Nome do dono: "Você", o nome pela equipe ou "Outra pessoa". */
 const ownerName = (report: SavedReport) =>
-  report.owner_user_id === myId.value ? t('report.you') : (owners.value[report.owner_user_id] ?? t('report.someoneElse'))
+  report.owner_user_id === myId.value ? t('report.you') : (owners.value[report.owner_user_id]?.name ?? t('report.someoneElse'))
+
+/** O nome para as iniciais e a foto de perfil do dono, quando a equipe deixa saber quem é. */
+const ownerPerson = (report: SavedReport) =>
+  report.owner_user_id === myId.value
+    ? { name: session.me?.user.name ?? '', imageUrl: session.me?.user.image_url ?? null }
+    : { name: ownerName(report), imageUrl: owners.value[report.owner_user_id]?.image_url ?? null }
 
 /** Fixa no topo ou solta; no limite de fixados, a API diz por quê. */
 async function togglePin(report: SavedReport) {
@@ -283,7 +291,8 @@ onMounted(load)
             :catalog="catalog"
             :pinned="pinnedIds.has(report.id)"
             :owner="ownerName(report)"
-            :owner-avatar="report.owner_user_id === myId ? (session.me?.user.name ?? '') : ownerName(report)"
+            :owner-avatar="ownerPerson(report).name"
+            :owner-image="ownerPerson(report).imageUrl"
             :can-duplicate="canManage"
             @edit="router.push(`/relatorios/${report.id}/editar`)"
             @duplicate="duplicate(report)"
@@ -321,7 +330,9 @@ onMounted(load)
                 <Pin v-if="pinnedIds.has(report.id)" class="ml-1.5 inline size-3.5 text-muted-foreground" :aria-label="t('report.pinned')" />
               </td>
               <td :class="td"><Badge>{{ t(`report.chart.${report.chart_type}` as Key) }}</Badge></td>
-              <td :class="[td, 'whitespace-nowrap']">{{ ownerName(report) }}</td>
+              <td :class="[td, 'whitespace-nowrap']">
+                <span class="inline-flex items-center gap-2"><Avatar :name="ownerPerson(report).name" :image-url="ownerPerson(report).imageUrl" :size="20" />{{ ownerName(report) }}</span>
+              </td>
               <td :class="[td, 'whitespace-nowrap text-muted-foreground']">
                 <Lock v-if="report.visibility === 'private'" class="mr-1.5 inline size-3.5" aria-hidden="true" />{{ t(`report.visibility.${report.visibility}` as Key) }}
               </td>
