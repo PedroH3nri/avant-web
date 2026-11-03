@@ -98,7 +98,7 @@ describe('SidebarRail', () => {
     expect(separator.exists()).toBe(true)
     expect(separator.element.nextElementSibling?.textContent).toBe('Relatórios customizados')
     await hoverAndWait(tools!)
-    expect(panelLabels(wrapper)).toEqual(['Alertas', 'Envios agendados', 'Modelos de dashboard'])
+    expect(panelLabels(wrapper)).toEqual(['Tarefas', 'Alertas', 'Envios agendados', 'Modelos de dashboard'])
   })
 
   it('fecha o painel ao abrir uma tela e não abre painel para o Dashboard', async () => {
