@@ -75,15 +75,15 @@ const ROLES = [
 const LIMIT = 10
 
 type NetStatus = 'ok' | 'testing' | 'error'
-const NETWORKS: { name: string; code: string; via: string; status: NetStatus; sites: number | null; units: number | null; checked: string }[] = [
-  { name: 'Blog Exemplo Principal', code: '21987654321', via: 'Contrato MCM', status: 'ok', sites: 3, units: 22, checked: 'Hoje, 14:05' },
-  { name: 'Blog Exemplo Receitas', code: '22334455667', via: 'Conta de serviço', status: 'testing', sites: null, units: null, checked: 'Agora' },
-  { name: 'Portal Antigo', code: '20111222333', via: 'Conta de serviço', status: 'error', sites: null, units: null, checked: 'Ontem, 09:12' },
+const NETWORKS: { name: string; code: string; via: string; status: NetStatus; sites: number | null; units: number | null; checked: string; revenue: RevenueStatusData | null }[] = [
+  { name: 'Blog Exemplo Principal', code: '21987654321', via: 'Contrato MCM', status: 'ok', sites: 3, units: 22, checked: 'Hoje, 14:05', revenue: { trend: 'scaling', perDay: 1840, change: 34 } },
+  { name: 'Blog Exemplo Receitas', code: '22334455667', via: 'Conta de serviço', status: 'testing', sites: null, units: null, checked: 'Agora', revenue: null },
+  { name: 'Portal Antigo', code: '20111222333', via: 'Conta de serviço', status: 'error', sites: null, units: null, checked: 'Ontem, 09:12', revenue: { trend: 'stopped', perDay: 2, change: -99 } },
 ]
 const SITES = [
-  { domain: 'blogexemplo.com', network: 'Blog Exemplo Principal', approval: 'ok' as const, units: 12 },
-  { domain: 'receitas.blogexemplo.com', network: 'Blog Exemplo Principal', approval: 'ok' as const, units: 7 },
-  { domain: 'viagens.blogexemplo.com', network: 'Blog Exemplo Principal', approval: 'review' as const, units: 3 },
+  { domain: 'blogexemplo.com', network: 'Blog Exemplo Principal', approval: 'ok' as const, units: 12, revenue: { trend: 'scaling', perDay: 1210, change: 41 } as RevenueStatusData },
+  { domain: 'receitas.blogexemplo.com', network: 'Blog Exemplo Principal', approval: 'ok' as const, units: 7, revenue: { trend: 'steady', perDay: 520, change: 6 } as RevenueStatusData },
+  { domain: 'viagens.blogexemplo.com', network: 'Blog Exemplo Principal', approval: 'review' as const, units: 3, revenue: { trend: 'reducing', perDay: 110, change: -27 } as RevenueStatusData },
 ]
 const SERVICE_ACCOUNT = 'avant-gam@groone-avant.iam.gserviceaccount.com'
 
@@ -111,6 +111,30 @@ function Status({ tone, children }: { tone: 'ok' | 'warn' | 'bad' | 'neutral' | 
       <span className={cn('h-2 w-2 rounded-full', dot)} aria-hidden="true" />
       {children}
     </span>
+  )
+}
+
+/* ---------- Status de faturamento ---------- */
+
+type RevenueTrend = 'scaling' | 'steady' | 'reducing' | 'stopped'
+type RevenueStatusData = { trend: RevenueTrend; perDay: number; change: number | null }
+const REVENUE_TREND: Record<RevenueTrend, [string, 'ok' | 'neutral' | 'warn' | 'bad']> = {
+  scaling: ['Escalando', 'ok'],
+  steady: ['Mantendo', 'neutral'],
+  reducing: ['Reduzindo', 'warn'],
+  stopped: ['Parado', 'bad'],
+}
+const usdPerDay = (value: number) => `US$ ${value.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`
+
+function RevenueStatus({ data }: { data: RevenueStatusData | null }) {
+  if (!data) return <span className="text-[13px] text-muted-foreground">Sem receita ainda</span>
+  const [label, tone] = REVENUE_TREND[data.trend]
+  const change = data.change === null ? '' : ` · ${data.change > 0 ? '+' : ''}${data.change}%`
+  return (
+    <div title="Média diária dos últimos 30 dias contra os 30 anteriores. Parado: menos de US$ 100 somados nos últimos 30 dias.">
+      <Status tone={tone}>{label}</Status>
+      <div className="mt-0.5 pl-4 text-[12px] text-muted-foreground tnum">{usdPerDay(data.perDay)}/dia{change}</div>
+    </div>
   )
 }
 
@@ -926,8 +950,8 @@ function NetworksScreen({ t, go }: { t: T; go: (s: Screen) => void }) {
           <div className="min-w-0 flex-1 text-[14px]"><span className="font-medium">Portal Antigo está sem acesso.</span> <span className="text-muted-foreground">A conta de serviço da Groone deixou de ser administradora dessa network no Ad Manager. Adicione-a de novo e teste a conexão.</span></div>
           <Button size="sm" variant="outline" onClick={() => go('conectar')}>Reconectar</Button>
         </div>
-        <Table min={760}>
-          <thead><tr><th className={th}>Network</th><th className={th}>Network code</th><th className={th}>Conexão</th><th className={th}>Status</th><th className={cn(th, 'text-right')}>Sites</th><th className={cn(th, 'text-right')}>Ad units</th><th className={th}>Última checagem</th></tr></thead>
+        <Table min={900}>
+          <thead><tr><th className={th}>Network</th><th className={th}>Network code</th><th className={th}>Conexão</th><th className={th}>Status</th><th className={th}>Faturamento</th><th className={cn(th, 'text-right')}>Sites</th><th className={cn(th, 'text-right')}>Ad units</th><th className={th}>Última checagem</th></tr></thead>
           <tbody>
             {NETWORKS.map((n) => (
               <tr key={n.code} className="hover:bg-muted">
@@ -935,6 +959,7 @@ function NetworksScreen({ t, go }: { t: T; go: (s: Screen) => void }) {
                 <td className={td}><Code>{n.code}</Code></td>
                 <td className={cn(td, 'text-muted-foreground')}>{n.via}</td>
                 <td className={td}>{netStatus(n.status)}</td>
+                <td className={td}><RevenueStatus data={n.revenue} /></td>
                 <td className={cn(td, 'text-right tnum')}>{n.sites ?? '–'}</td>
                 <td className={cn(td, 'text-right tnum')}>{n.units ?? '–'}</td>
                 <td className={cn(td, 'text-muted-foreground')}>{n.checked}</td>
@@ -944,13 +969,14 @@ function NetworksScreen({ t, go }: { t: T; go: (s: Screen) => void }) {
         </Table>
         <h2 className="mt-4 text-[20px] font-semibold tracking-tight">{t('net.sites')}</h2>
         <Table>
-          <thead><tr><th className={th}>Site</th><th className={th}>Network</th><th className={th}>Aprovação no Ad Manager</th><th className={cn(th, 'text-right')}>Ad units</th></tr></thead>
+          <thead><tr><th className={th}>Site</th><th className={th}>Network</th><th className={th}>Aprovação no Ad Manager</th><th className={th}>Faturamento</th><th className={cn(th, 'text-right')}>Ad units</th></tr></thead>
           <tbody>
             {SITES.map((s) => (
               <tr key={s.domain} className="hover:bg-muted">
                 <td className={td}><span className="inline-flex items-center gap-1.5 font-medium">{s.domain}<ExternalLink className="h-3.5 w-3.5 text-muted-foreground" /></span></td>
                 <td className={cn(td, 'text-muted-foreground')}>{s.network}</td>
                 <td className={td}>{s.approval === 'ok' ? <Status tone="ok">Aprovado</Status> : <Status tone="warn">Em análise pelo Google</Status>}</td>
+                <td className={td}><RevenueStatus data={s.revenue} /></td>
                 <td className={cn(td, 'text-right tnum')}>{s.units}</td>
               </tr>
             ))}
@@ -1139,13 +1165,13 @@ function SettingsScreen({ t, accent, setAccent, theme, setTheme, image, setImage
 /* ---------- Painel interno ---------- */
 
 type ClientSituation = 'active' | 'pending' | 'inactive' | 'banned'
-type ProtoClient = { name: string; contact: string; email: string; situation: ClientSituation; used: number; limit: number; referredBy: string | null }
+type ProtoClient = { name: string; contact: string; email: string; situation: ClientSituation; used: number; limit: number; referredBy: string | null; revenue: RevenueStatusData | null }
 const PROTO_CLIENTS: ProtoClient[] = [
-  { name: 'Blog Exemplo', contact: 'Pedro Henrique', email: 'pedro@blogexemplo.com', situation: 'active', used: 5, limit: 10, referredBy: null },
-  { name: 'Receitas da Vó', contact: 'Ana Ribeiro', email: 'ana@receitasdavo.com.br', situation: 'active', used: 2, limit: 5, referredBy: 'Blog Exemplo' },
-  { name: 'Tech Notícias', contact: 'Caio Prado', email: 'contato@technoticias.com', situation: 'pending', used: 0, limit: 3, referredBy: null },
-  { name: 'Guia do Pet', contact: 'Marina Luz', email: 'marina@guiadopet.com.br', situation: 'inactive', used: 6, limit: 6, referredBy: null },
-  { name: 'Apostas Já', contact: 'Leo Melo', email: 'leo@apostasja.com', situation: 'banned', used: 1, limit: 3, referredBy: null },
+  { name: 'Blog Exemplo', contact: 'Pedro Henrique', email: 'pedro@blogexemplo.com', situation: 'active', used: 5, limit: 10, referredBy: null, revenue: { trend: 'scaling', perDay: 2350, change: 28 } },
+  { name: 'Receitas da Vó', contact: 'Ana Ribeiro', email: 'ana@receitasdavo.com.br', situation: 'active', used: 2, limit: 5, referredBy: 'Blog Exemplo', revenue: { trend: 'steady', perDay: 640, change: -4 } },
+  { name: 'Tech Notícias', contact: 'Caio Prado', email: 'contato@technoticias.com', situation: 'pending', used: 0, limit: 3, referredBy: null, revenue: null },
+  { name: 'Guia do Pet', contact: 'Marina Luz', email: 'marina@guiadopet.com.br', situation: 'inactive', used: 6, limit: 6, referredBy: null, revenue: { trend: 'reducing', perDay: 380, change: -31 } },
+  { name: 'Apostas Já', contact: 'Leo Melo', email: 'leo@apostasja.com', situation: 'banned', used: 1, limit: 3, referredBy: null, revenue: { trend: 'stopped', perDay: 0, change: -100 } },
 ]
 const SITUATION: Record<ClientSituation, [string, 'ok' | 'ochre' | 'neutral' | 'bad']> = {
   active: ['Ativo', 'ok'],
@@ -1163,7 +1189,7 @@ function NewClientForm({ clients, onDone }: { clients: ProtoClient[]; onDone: (c
     <Card title="Novo cliente" desc="O cliente fica pendente. Nenhum e-mail sai agora: envie o convite de dono pela página do cliente quando quiser."
       footerNote="Os dados fiscais o próprio cliente preenche, em Configurações."
       footer={<><Button variant="outline" onClick={() => onDone(null)}>Cancelar</Button><Button form="new-client" type="submit" disabled={!ok}>Cadastrar cliente</Button></>}>
-      <form id="new-client" className="grid gap-6" onSubmit={(e) => { e.preventDefault(); if (ok) onDone({ name: form.name.trim(), contact: `${form.first} ${form.last}`, email: form.email.trim().toLowerCase(), situation: 'pending', used: 0, limit: Number(form.limit), referredBy: form.referrer === 'none' ? null : form.referrer }) }}>
+      <form id="new-client" className="grid gap-6" onSubmit={(e) => { e.preventDefault(); if (ok) onDone({ name: form.name.trim(), contact: `${form.first} ${form.last}`, email: form.email.trim().toLowerCase(), situation: 'pending', used: 0, limit: Number(form.limit), revenue: null, referredBy: form.referrer === 'none' ? null : form.referrer }) }}>
         <fieldset className="grid gap-4 md:grid-cols-[1fr_110px]">
           <legend className="mb-3 text-[13px] font-medium text-muted-foreground">Empresa</legend>
           <Field id="nc-name" label="Nome do cliente"><Input id="nc-name" className="h-10" autoFocus value={form.name} onChange={set('name')} placeholder="Portal da Cidade" /></Field>
@@ -1225,7 +1251,7 @@ function InternalScreen({ t, go }: { t: T; go: (s: Screen) => void }) {
           </div>
         </div>
         <Table min={760}>
-          <thead><tr><th className={th}>Cliente</th><th className={th}>Contato</th><th className={th}>Funcionários</th><th className={th}>Situação</th><th className={cn(th, 'w-16')}><span className="sr-only">Abrir</span></th></tr></thead>
+          <thead><tr><th className={th}>Cliente</th><th className={th}>Contato</th><th className={th}>Funcionários</th><th className={th}>Situação</th><th className={th}>Faturamento</th><th className={cn(th, 'w-16')}><span className="sr-only">Abrir</span></th></tr></thead>
           <tbody>
             {list.map((c) => (
               <tr key={c.name} className="hover:bg-muted">
@@ -1233,6 +1259,7 @@ function InternalScreen({ t, go }: { t: T; go: (s: Screen) => void }) {
                 <td className={td}><div>{c.contact}</div><div className="text-[13px] text-muted-foreground">{c.email}</div></td>
                 <td className={td}><span className="tnum text-[13px] text-muted-foreground">{c.used}/{c.limit}</span></td>
                 <td className={td}><Status tone={SITUATION[c.situation][1]}>{SITUATION[c.situation][0]}</Status></td>
+                <td className={td}><RevenueStatus data={c.revenue} /></td>
                 <td className={td}><Button variant="ghost" size="sm" onClick={() => go('cliente')}>Abrir</Button></td>
               </tr>
             ))}
