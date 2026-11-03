@@ -55,9 +55,11 @@ const SCREENS = [
   ['checklists', 'Painel interno · Checklists'],
   ['checklist', 'Painel interno · Checklist do site'],
   ['checklistitens', 'Painel interno · Itens do checklist'],
+  ['ferramentasgam', 'Painel interno · Ferramentas do GAM'],
+  ['execucaogam', 'Painel interno · Execução no GAM'],
 ] as const
 type Screen = (typeof SCREENS)[number][0]
-const INTERNAL_SCREENS: Screen[] = ['interno', 'cliente', 'contratos', 'resultados', 'papelcomissao', 'minhacomissao', 'comissoes', 'minhasinvoices', 'invoice', 'invoices', 'servicosinvoice', 'modelosdash', 'tarefas', 'tarefa', 'checklists', 'checklist', 'checklistitens']
+const INTERNAL_SCREENS: Screen[] = ['interno', 'cliente', 'contratos', 'resultados', 'papelcomissao', 'minhacomissao', 'comissoes', 'minhasinvoices', 'invoice', 'invoices', 'servicosinvoice', 'modelosdash', 'tarefas', 'tarefa', 'checklists', 'checklist', 'checklistitens', 'ferramentasgam', 'execucaogam']
 const isScreen = (s: string): s is Screen => SCREENS.some(([k]) => k === s)
 type T = (k: Key) => string
 
@@ -343,7 +345,7 @@ const CLIENT_RAIL: RailGroup[] = [
 const INTERNAL_RAIL: RailGroup[] = [
   { key: 'clientes', label: 'Clientes', icon: Users, items: [{ id: 'interno', label: 'Clientes', also: ['cliente'] }, { id: 'contratos', label: 'Contratos' }, { id: 'resultados', label: 'Resultado dos clientes' }, { id: 'checklists', label: 'Checklists', also: ['checklist', 'checklistitens'] }] },
   { key: 'comissoes', label: 'Comissões', icon: Wallet, items: [{ id: 'minhacomissao', label: 'Minha comissão' }, { id: 'minhasinvoices', label: 'Minhas invoices' }, { id: 'comissoes', label: 'Comissões da equipe' }, { id: 'invoices', label: 'Invoices', also: ['servicosinvoice', 'invoice'] }] },
-  { key: 'ferramentas', label: 'Ferramentas', icon: Wrench, items: [{ id: 'tarefas', label: 'Tarefas', also: ['tarefa'] }, { id: 'modelosdash', label: 'Modelos de dashboard' }] },
+  { key: 'ferramentas', label: 'Ferramentas', icon: Wrench, items: [{ id: 'tarefas', label: 'Tarefas', also: ['tarefa'] }, { id: 'modelosdash', label: 'Modelos de dashboard' }, { id: 'ferramentasgam', label: 'Ferramentas do GAM', also: ['execucaogam'] }] },
   { key: 'equipegroone', label: 'Equipe', icon: ShieldCheck, items: [{ id: 'papelcomissao', label: 'Papéis da Equipe Groone' }] },
 ]
 const RAIL_WIDTH = 88
@@ -4709,6 +4711,259 @@ function DashboardTemplatesScreen() {
   )
 }
 
+/* ---------- Ferramentas do GAM (core#191) ---------- */
+
+type GamFormat = 'light' | 'gtag'
+type GamToolKind = 'config' | 'setup' | 'keyvalues' | 'sync' | 'install' | 'adstxt'
+type GamStepState = 'pending' | 'running' | 'done' | 'existed' | 'failed'
+type GamStep = { key: string; label: string; state: GamStepState; detail: string }
+type GamRun = { id: number; tool: GamToolKind; network: string; sites: string[]; format: GamFormat | null; by: string; at: string; state: 'running' | 'done' | 'failed'; steps: GamStep[] }
+type ProtoGamSite = { domain: string; parent: boolean; blocks: number; format: GamFormat | null }
+type ProtoGamNetwork = { code: string; name: string; client: string; currency: string; seller: string; keyValues: number; order: boolean; sites: ProtoGamSite[] }
+
+const GAM_TOOLS: Record<GamToolKind, { name: string; desc: string; writes: boolean; icon: typeof Wrench }> = {
+  config: { name: 'Configuração completa', desc: 'Key values, order AdExchange, blocos pai e filho, line items e criativo, associa tudo e aprova a order. Para network nova.', writes: true, icon: Wrench },
+  setup: { name: 'Setup de anúncio', desc: 'Cria os blocos e liga aos line items dos sites escolhidos, no formato Tag Light ou GTag. Para site novo numa network pronta.', writes: true, icon: Plus },
+  keyvalues: { name: 'Gerar key values', desc: 'Confere e cria as 8 keys (utm_*, land_uri, id_post_wp, content_hash) e os valores de id_post_wp.', writes: true, icon: List },
+  sync: { name: 'Sincronizar agora', desc: 'Busca sites e blocos novos no GAM sem esperar a importação das 6 horas.', writes: false, icon: RefreshCw },
+  install: { name: 'Arquivo de instalação', desc: 'O passo a passo do AdInserter de cada site, em português, inglês ou espanhol. Vários sites saem num .zip.', writes: false, icon: Download },
+  adstxt: { name: 'Linhas do ads.txt', desc: 'As linhas que o cliente põe no ads.txt, com o seller ID da network filha.', writes: false, icon: Copy },
+}
+const GAM_FORMATS: Record<GamFormat, { name: string; desc: string; blocks: string[] }> = {
+  light: { name: 'Tag Light', desc: '14 blocos por site (Offerwall, Fixed, Interstitial, Anchor, Rewards, Content 1 a 9) e um line item "Display" para a network toda.', blocks: ['Offerwall', 'Fixed', 'Interstitial', 'Anchor', 'Rewards', 'Content1', 'Content2', 'Content3', 'Content4', 'Content5', 'Content6', 'Content7', 'Content8', 'Content9'] },
+  gtag: { name: 'GTag', desc: '27 blocos por site, separados em Desktop e Mobile, e um line item por tipo de bloco (27 na network).', blocks: ['Offerwall', ...['Fixed', 'Interstitial', 'Anchor', 'Rewards', 'Content1', 'Content2', 'Content3', 'Content4', 'Content5', 'Content6', 'Content7', 'Content8', 'Content9'].flatMap((name) => [`${name}_Desktop`, `${name}_Mobile`])] },
+}
+const GAM_STEP_STATE: Record<GamStepState, [string, 'ok' | 'bad' | 'neutral' | 'ochre']> = { pending: ['Pendente', 'neutral'], running: ['Executando', 'ochre'], done: ['Concluído', 'ok'], existed: ['Já existia', 'ok'], failed: ['Falhou', 'bad'] }
+
+const GAM_NETWORKS: ProtoGamNetwork[] = [
+  { code: '21987654321', name: 'Tech Notícias MCM', client: 'Tech Notícias', currency: 'BRL', seller: 'pub-4417829301', keyValues: 8, order: true, sites: [{ domain: 'technoticias.com.br', parent: true, blocks: 27, format: 'gtag' }, { domain: 'financasdodia.com', parent: true, blocks: 14, format: 'light' }, { domain: 'games.technoticias.com.br', parent: false, blocks: 0, format: null }] },
+  { code: '22311009876', name: 'Receitas & Cia', client: 'Receitas & Cia', currency: 'USD', seller: 'pub-9031127745', keyValues: 0, order: false, sites: [{ domain: 'receitasdavo.com', parent: false, blocks: 0, format: null }] },
+]
+
+/** Os passos de uma ferramenta, na ordem do Genius, para os sites e o formato escolhidos. */
+function gamSteps(tool: GamToolKind, network: ProtoGamNetwork, sites: string[], format: GamFormat | null): GamStep[] {
+  const blocks = format ? GAM_FORMATS[format].blocks.length : 0
+  const step = (key: string, label: string, detail = ''): GamStep => ({ key, label, state: 'pending', detail })
+  const perSite = sites.flatMap((domain) => [step(`parent-${domain}`, `Bloco pai ${domain}`), step(`child-${domain}`, `${blocks} blocos filhos de ${domain}`)])
+  const delivery = [step('order', 'Order AdExchange'), ...perSite, step('lineitems', format === 'light' ? 'Line item Display' : `${blocks} line items`), step('creative', 'Criativo "Display All requested sizes"'), step('association', 'Associar criativo aos line items'), step('approve', 'Aprovar a order')]
+  if (tool === 'config') return [step('info', `Conectar na network ${network.code}`), step('keyvalues', 'Key values'), step('domains', 'Sites aprovados no GAM'), ...delivery]
+  if (tool === 'setup') return [step('info', `Conectar na network ${network.code}`), ...delivery]
+  if (tool === 'keyvalues') return [step('info', `Conectar na network ${network.code}`), step('keys', '8 keys'), step('values', 'Valores de id_post_wp (1 a 9999)')]
+  return [step('info', `Conectar na network ${network.code}`), step('sites', 'Sites'), step('blocks', 'Blocos')]
+}
+
+/** O que cada passo encontra no exemplo: o que já existe no GAM é reaproveitado. */
+function gamStepResult(step: GamStep, network: ProtoGamNetwork): Pick<GamStep, 'state' | 'detail'> {
+  if (step.key === 'info') return { state: 'done', detail: `${network.name} · ${network.currency}` }
+  if (step.key === 'order') return network.order ? { state: 'existed', detail: 'Order 3456789012, aprovada' } : { state: 'done', detail: 'Order 3456790001 criada' }
+  if (step.key === 'keyvalues' || step.key === 'keys') return network.keyValues === 8 ? { state: 'existed', detail: 'As 8 keys já existiam' } : { state: 'done', detail: `${8 - network.keyValues} keys criadas` }
+  if (step.key === 'values') return { state: 'done', detail: '9.999 valores, 0 repetidos' }
+  if (step.key.startsWith('parent-')) { const site = network.sites.find((item) => `parent-${item.domain}` === step.key); return site?.parent ? { state: 'existed', detail: 'Bloco 22198765 já existia' } : { state: 'done', detail: 'Bloco 22198790 criado' } }
+  if (step.key.startsWith('child-')) return { state: 'done', detail: 'Criados com a data de hoje no nome (_20261103)' }
+  if (step.key === 'domains' || step.key === 'sites') return { state: 'done', detail: `${network.sites.length} sites, 1 novo` }
+  if (step.key === 'blocks') return { state: 'done', detail: '41 blocos, 0 novos' }
+  if (step.key === 'association') return { state: 'done', detail: 'Associações que faltavam criadas' }
+  if (step.key === 'approve') return network.order ? { state: 'existed', detail: 'Já estava aprovada' } : { state: 'done', detail: 'Aprovada' }
+  return { state: 'done', detail: '' }
+}
+
+const INITIAL_GAM_RUNS: GamRun[] = [
+  { id: 12, tool: 'setup', network: '21987654321', sites: ['financasdodia.com'], format: 'light', by: 'Ana Souza', at: '28/10/2026 14:02', state: 'done', steps: [] },
+  { id: 11, tool: 'keyvalues', network: '21987654321', sites: [], format: null, by: 'Você', at: '20/10/2026 09:31', state: 'done', steps: [] },
+  { id: 10, tool: 'config', network: '21987654321', sites: ['technoticias.com.br'], format: 'gtag', by: 'Pedro Henrique', at: '02/10/2026 16:45', state: 'done', steps: [] },
+]
+
+/** Uma linha de site para escolher no setup, com o que ele já tem no GAM. */
+function GamSitePick({ site, picked, toggle }: { site: ProtoGamSite; picked: boolean; toggle: () => void }) {
+  return (
+    <label className="flex cursor-pointer items-start gap-3 rounded-md border px-3 py-2.5 hover:bg-muted">
+      <input type="checkbox" className="mt-1 h-4 w-4 accent-foreground" checked={picked} onChange={toggle} />
+      <span className="min-w-0">
+        <span className="block break-all font-mono text-[13px] font-medium">{site.domain}</span>
+        <span className="text-[13px] text-muted-foreground">{site.blocks ? `${site.blocks} blocos · ${GAM_FORMATS[site.format!].name}` : site.parent ? 'Só o bloco pai' : 'Nada no GAM ainda'}</span>
+      </span>
+    </label>
+  )
+}
+
+/** Tela das ferramentas do GAM: escolhe a network, roda uma ferramenta e vê as execuções. */
+function GamToolsScreen({ runs, start, open }: { runs: GamRun[]; start: (run: GamRun) => void; open: (id: number) => void }) {
+  const [code, setCode] = useState(GAM_NETWORKS[0].code)
+  const [tool, setTool] = useState<GamToolKind | null>(null)
+  const [sites, setSites] = useState<string[]>([])
+  const [format, setFormat] = useState<GamFormat>('gtag')
+  const [language, setLanguage] = useState('pt')
+  const network = GAM_NETWORKS.find((item) => item.code === code)!
+  const networkRuns = runs.filter((run) => run.network === code)
+  const choose = (kind: GamToolKind) => {
+    setTool(kind)
+    setSites(network.sites.filter((site) => !site.blocks).map((site) => site.domain))
+    if (kind === 'sync') { run(kind) }
+  }
+  const run = (kind: GamToolKind) => {
+    const withSites = kind === 'config' || kind === 'setup'
+    const picked = withSites ? sites : []
+    const id = Math.max(0, ...runs.map((item) => item.id)) + 1
+    start({ id, tool: kind, network: code, sites: picked, format: withSites ? format : null, by: 'Você', at: '03/11/2026 15:50', state: 'running', steps: gamSteps(kind, network, picked, withSites ? format : null) })
+    setTool(null)
+    open(id)
+  }
+  const adsLines = [`groone.com, ${network.seller}, DIRECT`, 'google.com, pub-8927435346654667, RESELLER, f08c47fec0942fa0', 'google.com, pub-8927435346654667, DIRECT, f08c47fec0942fa0']
+  const picking = tool === 'config' || tool === 'setup'
+  const blockCount = GAM_FORMATS[format].blocks.length
+  return (
+    <>
+      <PageHeader title="Ferramentas do GAM" sub="Configura e confere as networks dos clientes no Ad Manager. O que escreve no GAM confere antes o que já existe e fica na auditoria." />
+      <Body>
+        <div className="grid gap-4 rounded-lg border bg-card p-4 sm:grid-cols-[minmax(0,320px)_1fr] sm:items-center">
+          <Select value={code} onValueChange={setCode}><SelectTrigger aria-label="Network" className="h-9"><SelectValue /></SelectTrigger><SelectContent>{GAM_NETWORKS.map((item) => <SelectItem key={item.code} value={item.code}>{item.name} · {item.code}</SelectItem>)}</SelectContent></Select>
+          <div className="flex flex-wrap gap-x-6 gap-y-1 text-[13px] text-muted-foreground">
+            <span>Cliente <span className="text-foreground">{network.client}</span></span>
+            <span>Moeda <span className="text-foreground">{network.currency}</span></span>
+            <span>Sites <span className="tnum text-foreground">{network.sites.length}</span></span>
+            <span>Key values <span className="tnum text-foreground">{network.keyValues}/8</span></span>
+            <span>Order AdExchange {network.order ? <span className="text-foreground">aprovada</span> : <span className="text-foreground">não existe</span>}</span>
+          </div>
+        </div>
+        <div className="grid gap-px overflow-hidden rounded-lg border bg-border sm:grid-cols-2 lg:grid-cols-3">
+          {(Object.keys(GAM_TOOLS) as GamToolKind[]).map((kind) => {
+            const { name, desc, writes, icon: Icon } = GAM_TOOLS[kind]
+            return (
+              <button key={kind} onClick={() => choose(kind)} className="flex flex-col items-start gap-2 bg-card p-5 text-left hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                <span className="flex w-full items-center gap-2"><Icon className="h-4 w-4" /><span className="font-medium">{name}</span>{writes && <span className="ml-auto rounded-full border px-2 py-0.5 text-[11px] font-medium text-muted-foreground">Escreve no GAM</span>}</span>
+                <span className="text-[13px] text-muted-foreground">{desc}</span>
+              </button>
+            )
+          })}
+        </div>
+        <section className="grid gap-3">
+          <h2 className="text-[16px] font-semibold tracking-tight">Execuções nesta network</h2>
+          <Table min={720}>
+            <thead><tr><th className={th}>Ferramenta</th><th className={th}>Sites</th><th className={th}>Quem</th><th className={th}>Quando</th><th className={th}>Situação</th></tr></thead>
+            <tbody>
+              {networkRuns.map((item) => (
+                <tr key={item.id} className="hover:bg-muted">
+                  <td className={td}><button className="text-left font-medium hover:underline" onClick={() => open(item.id)}>{GAM_TOOLS[item.tool].name}</button>{item.format && <span className="block text-[13px] text-muted-foreground">{GAM_FORMATS[item.format].name}</span>}</td>
+                  <td className={cn(td, 'font-mono text-[13px]')}>{item.sites.join(', ') || '—'}</td>
+                  <td className={td}>{item.by}</td>
+                  <td className={cn(td, 'whitespace-nowrap tnum text-[13px] text-muted-foreground')}>{item.at}</td>
+                  <td className={td}>{item.state === 'running' ? <Status tone="ochre">Executando</Status> : item.state === 'done' ? <Status tone="ok">Concluída</Status> : <Status tone="bad">Falhou</Status>}</td>
+                </tr>
+              ))}
+              {!networkRuns.length && <tr><td className={cn(td, 'py-10 text-center text-muted-foreground')} colSpan={5}>Nenhuma ferramenta rodou nesta network.</td></tr>}
+            </tbody>
+          </Table>
+        </section>
+      </Body>
+
+      <Dialog open={picking} onOpenChange={(value) => !value && setTool(null)}>
+        <DialogContent className="max-w-[560px]">
+          <DialogHeader><DialogTitle>{tool && GAM_TOOLS[tool].name}</DialogTitle><DialogDescription>Na network {network.name} ({network.code}). O que já existe no GAM é reaproveitado; nada é apagado.</DialogDescription></DialogHeader>
+          <div className="grid gap-5">
+            <div className="grid gap-2">
+              <Label>Formato</Label>
+              <RadioGroup value={format} onValueChange={(value) => setFormat(value as GamFormat)} className="grid gap-2">
+                {(Object.keys(GAM_FORMATS) as GamFormat[]).map((key) => (
+                  <label key={key} className="flex cursor-pointer items-start gap-3 rounded-md border px-3 py-2.5 hover:bg-muted"><RadioGroupItem value={key} className="mt-0.5" /><span><span className="block text-[14px] font-medium">{GAM_FORMATS[key].name}</span><span className="text-[13px] text-muted-foreground">{GAM_FORMATS[key].desc}</span></span></label>
+                ))}
+              </RadioGroup>
+            </div>
+            <div className="grid gap-2">
+              <Label>Sites</Label>
+              <div className="grid max-h-[220px] gap-2 overflow-y-auto">{network.sites.map((site) => <GamSitePick key={site.domain} site={site} picked={sites.includes(site.domain)} toggle={() => setSites(sites.includes(site.domain) ? sites.filter((item) => item !== site.domain) : [...sites, site.domain])} />)}</div>
+            </div>
+            <div className="rounded-md border bg-muted px-4 py-3 text-[13px]">
+              <div className="font-medium">Vai escrever no GAM</div>
+              <ul className="mt-1 list-disc pl-5 text-muted-foreground">
+                {tool === 'config' && <li>As key values que faltarem</li>}
+                <li>{network.order ? 'Usa a order AdExchange que já existe' : 'A order AdExchange, com o anunciante google'}</li>
+                <li><span className="tnum">{sites.length * blockCount}</span> blocos ({sites.length} {sites.length === 1 ? 'site' : 'sites'} × {blockCount})</li>
+                <li>{format === 'light' ? 'O line item Display, mirando a network toda' : `Até ${blockCount} line items, um por tipo de bloco`}</li>
+                <li>O criativo, as associações e a aprovação da order</li>
+              </ul>
+            </div>
+          </div>
+          <DialogFooter><Button variant="outline" onClick={() => setTool(null)}>Cancelar</Button><Button disabled={!sites.length} onClick={() => tool && run(tool)}>Rodar no GAM</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={tool === 'keyvalues'} onOpenChange={(value) => !value && setTool(null)}>
+        <DialogContent className="max-w-[480px]">
+          <DialogHeader><DialogTitle>Gerar key values</DialogTitle><DialogDescription>Na network {network.name}. Tem {network.keyValues} das 8 keys.</DialogDescription></DialogHeader>
+          <p className="font-mono text-[13px] text-muted-foreground">utm_term, utm_source, utm_medium, utm_content, utm_campaign, land_uri, id_post_wp, content_hash</p>
+          <DialogFooter><Button variant="outline" onClick={() => setTool(null)}>Cancelar</Button><Button onClick={() => run('keyvalues')}>Rodar no GAM</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={tool === 'install'} onOpenChange={(value) => !value && setTool(null)}>
+        <DialogContent className="max-w-[520px]">
+          <DialogHeader><DialogTitle>Arquivo de instalação</DialogTitle><DialogDescription>O passo a passo do AdInserter com os blocos que já estão no GAM.</DialogDescription></DialogHeader>
+          <div className="grid gap-4">
+            <div className="grid gap-2"><Label>Sites</Label><div className="grid max-h-[200px] gap-2 overflow-y-auto">{network.sites.filter((site) => site.blocks).map((site) => <GamSitePick key={site.domain} site={site} picked={sites.includes(site.domain)} toggle={() => setSites(sites.includes(site.domain) ? sites.filter((item) => item !== site.domain) : [...sites, site.domain])} />)}</div></div>
+            <Field id="install-lang" label="Idioma"><Select value={language} onValueChange={setLanguage}><SelectTrigger id="install-lang" className="h-9"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="pt">Português</SelectItem><SelectItem value="en">English</SelectItem><SelectItem value="es">Español</SelectItem></SelectContent></Select></Field>
+            {sites.some((domain) => network.sites.find((site) => site.domain === domain)?.format === 'gtag') && <div className="flex gap-2 rounded-md border px-3 py-2.5 text-[13px]"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-ochre" /><span>O arquivo da GTag ainda está para definir. Por enquanto só os sites em Tag Light saem no arquivo.</span></div>}
+          </div>
+          <DialogFooter><Button variant="outline" onClick={() => setTool(null)}>Cancelar</Button><Button disabled={!sites.length} onClick={() => { setTool(null); toast.success(sites.length > 1 ? 'blocos.zip baixado' : `${sites[0]}.txt baixado`) }}><Download className="h-4 w-4" />Baixar</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={tool === 'adstxt'} onOpenChange={(value) => !value && setTool(null)}>
+        <DialogContent className="max-w-[600px]">
+          <DialogHeader><DialogTitle>Linhas do ads.txt</DialogTitle><DialogDescription>Para todos os sites da network {network.name}. As duas linhas do Google só valem no Manage Inventory.</DialogDescription></DialogHeader>
+          <pre className="overflow-x-auto rounded-md border bg-muted p-3 font-mono text-[13px] leading-6">{adsLines.join('\n')}</pre>
+          <DialogFooter><Button variant="outline" onClick={() => setTool(null)}>Fechar</Button><Button onClick={() => { navigator.clipboard?.writeText(adsLines.join('\n')).catch(() => undefined); toast.success('Linhas copiadas') }}><Copy className="h-4 w-4" />Copiar</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  )
+}
+
+/** Tela de uma execução: os passos andam ao vivo, como o acompanhamento do Genius. */
+function GamRunScreen({ run, update, back }: { run: GamRun; update: (run: GamRun) => void; back: () => void }) {
+  const network = GAM_NETWORKS.find((item) => item.code === run.network)!
+  const latest = useRef(run)
+  latest.current = run
+  useEffect(() => {
+    if (run.state !== 'running') return
+    const timer = setInterval(() => {
+      const current = latest.current
+      const index = current.steps.findIndex((step) => step.state === 'pending' || step.state === 'running')
+      if (index < 0) { clearInterval(timer); update({ ...current, state: 'done' }); toast.success('Ferramenta concluída'); return }
+      const steps = current.steps.map((step, position) => (position !== index ? step : step.state === 'pending' ? { ...step, state: 'running' as const } : { ...step, ...gamStepResult(step, network) }))
+      update({ ...current, steps })
+    }, 450)
+    return () => clearInterval(timer)
+  }, [run.id, run.state])
+  const steps = run.steps.length ? run.steps : gamSteps(run.tool, network, run.sites, run.format).map((step) => ({ ...step, ...gamStepResult(step, network) }))
+  const done = steps.filter((step) => step.state === 'done' || step.state === 'existed').length
+  return (
+    <>
+      <PageHeader title={GAM_TOOLS[run.tool].name} sub={`${network.name} · ${run.format ? `${GAM_FORMATS[run.format].name} · ` : ''}${run.by} em ${run.at}`}
+        back={<button onClick={back} className="inline-flex items-center gap-1 text-[13px] text-muted-foreground hover:text-foreground"><ArrowLeft className="h-3.5 w-3.5" />Ferramentas do GAM</button>} />
+      <Body>
+        <div className="flex flex-wrap items-center gap-4 rounded-lg border bg-card px-4 py-3">
+          {run.state === 'running' ? <Status tone="ochre">Executando</Status> : run.state === 'done' ? <Status tone="ok">Concluída</Status> : <Status tone="bad">Falhou</Status>}
+          <div className="h-1.5 w-40 overflow-hidden rounded-full bg-secondary"><div className={cn('h-full rounded-full transition-all', run.state === 'done' ? 'bg-ok' : 'bg-foreground')} style={{ width: `${(done / steps.length) * 100}%` }} /></div>
+          <span className="tnum text-[13px] text-muted-foreground">{done} de {steps.length} passos</span>
+          {run.sites.length > 0 && <span className="ml-auto break-all font-mono text-[13px] text-muted-foreground">{run.sites.join(', ')}</span>}
+        </div>
+        <Card pad={false}>
+          <ol className="divide-y">
+            {steps.map((step, index) => (
+              <li key={step.key} className="grid grid-cols-[28px_1fr] gap-3 px-5 py-3 sm:grid-cols-[28px_1fr_auto] sm:items-center">
+                <span className="tnum pt-0.5 text-[13px] text-muted-foreground">{index + 1}</span>
+                <div className="min-w-0"><div className="text-[14px] font-medium">{step.label}</div>{step.detail && <div className="break-words text-[13px] text-muted-foreground">{step.detail}</div>}</div>
+                <div className="col-start-2 sm:col-start-auto">{step.state === 'running' ? <span className="inline-flex items-center gap-2 text-[13px]"><Loader2 className="h-3.5 w-3.5 animate-spin" />Executando</span> : <Status tone={GAM_STEP_STATE[step.state][1]}>{GAM_STEP_STATE[step.state][0]}</Status>}</div>
+              </li>
+            ))}
+          </ol>
+        </Card>
+        {run.state === 'done' && GAM_TOOLS[run.tool].writes && <p className="text-[13px] text-muted-foreground">Registrado na auditoria. Os blocos novos entram no Avant na próxima importação (ou em Sincronizar agora).</p>}
+      </Body>
+    </>
+  )
+}
+
 export default function App() {
   const initial = typeof location !== 'undefined' && isScreen(location.hash.slice(1)) ? (location.hash.slice(1) as Screen) : 'equipe'
   const [screen, setScreen] = useState<Screen>(initial)
@@ -4719,6 +4974,8 @@ export default function App() {
   const [checklists, setChecklists] = useState<ProtoSiteChecklist[]>(INITIAL_SITE_CHECKLISTS)
   const [checklistId, setChecklistId] = useState(1)
   const [checkItems, setCheckItems] = useState<ProtoCheckItem[]>(INITIAL_CHECK_ITEMS)
+  const [gamRuns, setGamRuns] = useState<GamRun[]>(INITIAL_GAM_RUNS)
+  const [gamRunId, setGamRunId] = useState(12)
   const [accent, setAccent] = useState('padrao')
   const [theme, setTheme] = useState('system')
   const [groups, setGroups] = useState(INITIAL_GROUPS)
@@ -4805,6 +5062,8 @@ export default function App() {
       case 'checklists': return <ChecklistsScreen checklists={checklists} items={checkItems} open={(checklistId) => { setChecklistId(checklistId); go('checklist') }} openItems={() => go('checklistitens')} />
       case 'checklist': { const checklist = checklists.find((item) => item.id === checklistId) ?? checklists[0]; return <ChecklistScreen key={checklist.id} checklist={checklist} items={checkItems} update={(next) => setChecklists(checklists.map((item) => (item.id === next.id ? next : item)))} back={() => go('checklists')} /> }
       case 'checklistitens': return <ChecklistItemsScreen items={checkItems} setItems={setCheckItems} back={() => go('checklists')} />
+      case 'ferramentasgam': return <GamToolsScreen runs={gamRuns} start={(run) => setGamRuns((current) => [run, ...current])} open={(runId) => { setGamRunId(runId); go('execucaogam') }} />
+      case 'execucaogam': { const run = gamRuns.find((item) => item.id === gamRunId) ?? gamRuns[0]; return <GamRunScreen key={run.id} run={run} update={(next) => setGamRuns((current) => current.map((item) => (item.id === next.id ? next : item)))} back={() => go('ferramentasgam')} /> }
       case 'tarefa': { const task = tasks.find((item) => item.id === taskId) ?? tasks[0]; return <TaskScreen key={task.id} task={task} update={(next) => setTasks(tasks.map((item) => (item.id === next.id ? next : item)))} back={() => go('tarefas')} /> }
     }
   })()
