@@ -17,6 +17,8 @@ export interface ClientNetwork extends Omit<Network, 'last_runs'> {
   client: ClientRef
   /** Vazio sem receita nos últimos 60 dias. */
   revenue_status: RevenueStatus | null
+  /** Checklist do mês atual; vazio sem faturamento no mês anterior ou sem a permissão. */
+  checklist?: { id: string; done: number; total: number; complete: boolean } | null
 }
 
 /** Um site de cliente, com o cliente, a network e o status de faturamento (GET /internal/sites). */
@@ -27,4 +29,6 @@ export interface ClientSite extends Site {
   ad_units: number
   /** Vazio sem receita nos últimos 60 dias. */
   revenue_status: RevenueStatus | null
+  /** Checklist do mês atual; vazio sem faturamento no mês anterior ou sem a permissão. */
+  checklist?: { id: string; done: number; total: number; complete: boolean } | null
 }
