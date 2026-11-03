@@ -39,6 +39,7 @@ import {
 } from '@/modules/reports/rules'
 import { exportUrl, reportService } from '@/modules/reports/service'
 import type { MetricCatalog, ReportResult, SavedReport } from '@/modules/reports/types'
+import type { UserRef } from '@/lib/types'
 import { teamService } from '@/modules/team/service'
 import { useSession } from '@/stores/session'
 
@@ -52,7 +53,8 @@ const loadError = ref<string | null>(null)
 const runError = ref<string | null>(null)
 const running = ref(false)
 const pinned = ref(false)
-const ownerName = ref<string | null>(null)
+const owner = ref<UserRef | null>(null)
+const ownerName = computed(() => owner.value?.name ?? null)
 const period = ref<ViewPeriod>('last_30_days')
 const compare = ref(false)
 const saving = ref(false)
@@ -137,9 +139,9 @@ async function loadOwner() {
   if (!report.value || mine.value || !session.can('team.view')) return
   try {
     const members = await teamService.memberOptions()
-    ownerName.value = members.items.find((member) => member.user.id === report.value?.owner_user_id)?.user.name ?? null
+    owner.value = members.items.find((member) => member.user.id === report.value?.owner_user_id)?.user ?? null
   } catch {
-    ownerName.value = null
+    owner.value = null
   }
 }
 
@@ -238,7 +240,11 @@ onBeforeUnmount(() => {
       <template #meta>
         <div class="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-[13px] text-muted-foreground">
           <span class="flex items-center gap-1.5 text-foreground">
-            <Avatar :name="mine ? (session.me?.user.name ?? '') : (ownerName ?? t('report.someoneElse'))" :size="20" />{{ mine ? t('report.yours') : (ownerName ?? t('report.someoneElse')) }}
+            <Avatar
+              :name="mine ? (session.me?.user.name ?? '') : (ownerName ?? t('report.someoneElse'))"
+              :image-url="mine ? (session.me?.user.image_url ?? null) : (owner?.image_url ?? null)"
+              :size="20"
+            />{{ mine ? t('report.yours') : (ownerName ?? t('report.someoneElse')) }}
           </span>
           <span class="inline-flex items-center gap-1"><Lock v-if="report.visibility === 'private'" class="size-3.5" aria-hidden="true" />{{ t(`report.visibility.${report.visibility}` as Key) }}</span>
           <span>{{ t('report.updatedOn', { date: formatDate(report.updated_at) }) }}</span>
