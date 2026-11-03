@@ -1278,6 +1278,136 @@ function InternalScreen({ t, go }: { t: T; go: (s: Screen) => void }) {
   )
 }
 
+/* ---------- Documentos e observações do cliente (core#188) ---------- */
+
+type DocumentKind = 'identity' | 'address'
+type DocumentState = 'missing' | 'pending' | 'approved' | 'rejected'
+type ProtoDocument = { kind: DocumentKind; state: DocumentState; file: string | null; sentAt: string | null; reason: string | null; reviewer: string | null }
+
+const DOCUMENT_LABEL: Record<DocumentKind, string> = { identity: 'Documento de identidade', address: 'Comprovante de residência' }
+const DOCUMENT_HINT: Record<DocumentKind, string> = { identity: 'RG, CNH ou passaporte, com foto e legível.', address: 'Conta de luz, água ou banco dos últimos 3 meses, no nome do titular.' }
+const DOCUMENT_STATE: Record<DocumentState, [string, 'ok' | 'bad' | 'ochre' | 'neutral']> = { missing: ['Não enviado', 'neutral'], pending: ['Em análise', 'ochre'], approved: ['Aprovado', 'ok'], rejected: ['Recusado', 'bad'] }
+
+const INITIAL_DOCUMENTS: ProtoDocument[] = [
+  { kind: 'identity', state: 'pending', file: 'rg-frente-verso.pdf', sentAt: '02/11/2026 18:40', reason: null, reviewer: null },
+  { kind: 'address', state: 'rejected', file: 'conta-luz.jpg', sentAt: '02/11/2026 18:42', reason: 'A conta está no nome de outra pessoa. Envie uma no nome do titular da Empresa.', reviewer: 'Ana Souza' },
+]
+
+function DocumentRow({ doc, actions }: { doc: ProtoDocument; actions: React.ReactNode }) {
+  const [label, tone] = DOCUMENT_STATE[doc.state]
+  return (
+    <li className="flex flex-col gap-3 py-4 first:pt-0 last:pb-0 sm:flex-row sm:items-start sm:justify-between">
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-3"><span className="text-[14px] font-medium">{DOCUMENT_LABEL[doc.kind]}</span><Status tone={tone}>{label}</Status></div>
+        <p className="mt-1 text-[13px] text-muted-foreground">{doc.file ? <><span className="font-mono">{doc.file}</span> · enviado em <span className="tnum">{doc.sentAt}</span></> : DOCUMENT_HINT[doc.kind]}</p>
+        {doc.state === 'rejected' && doc.reason && <p className="mt-2 max-w-[60ch] rounded-md border border-bad/30 bg-bad/5 px-3 py-2 text-[13px]">{doc.reason}</p>}
+      </div>
+      <div className="flex shrink-0 gap-2">{actions}</div>
+    </li>
+  )
+}
+
+function ClientDocumentsCard() {
+  const [docs, setDocs] = useState<ProtoDocument[]>(INITIAL_DOCUMENTS)
+  const send = (kind: DocumentKind) => {
+    setDocs(docs.map((doc) => doc.kind === kind ? { ...doc, state: 'pending', file: kind === 'identity' ? 'identidade.pdf' : 'comprovante.pdf', sentAt: '03/11/2026 14:10', reason: null } : doc))
+    toast.success('Documento enviado', { description: 'A equipe Groone vai analisar e você recebe um e-mail com a resposta.' })
+  }
+  return (
+    <Card title="Documentos" desc="Como a Groone repassa a você o pagamento das networks Manage Inventory, precisamos confirmar quem recebe. Só a equipe Groone que analisa pagamentos vê estes arquivos." footerNote="JPG, PNG ou PDF, até 5 MB cada.">
+      <ul className="divide-y">
+        {docs.map((doc) => (
+          <DocumentRow key={doc.kind} doc={doc} actions={<>
+            {doc.file && <Button size="sm" variant="outline"><Download className="h-4 w-4" />Baixar</Button>}
+            {doc.state !== 'approved' && <Button size="sm" variant={doc.state === 'pending' ? 'outline' : 'default'} onClick={() => send(doc.kind)}>{doc.file ? 'Enviar outro' : 'Enviar'}</Button>}
+          </>} />
+        ))}
+      </ul>
+    </Card>
+  )
+}
+
+function StaffDocumentsCard() {
+  const [docs, setDocs] = useState<ProtoDocument[]>(INITIAL_DOCUMENTS)
+  const [rejecting, setRejecting] = useState<DocumentKind | null>(null)
+  const [reason, setReason] = useState('')
+  const decide = (kind: DocumentKind, state: DocumentState, why: string | null) => {
+    setDocs(docs.map((doc) => doc.kind === kind ? { ...doc, state, reason: why, reviewer: 'Você' } : doc))
+    toast.success(state === 'approved' ? 'Documento aprovado' : 'Documento recusado', { description: 'O cliente recebe um e-mail.' })
+  }
+  return (
+    <Card title="Documentos" desc="Pedidos porque o cliente tem network Manage Inventory e a Groone repassa o pagamento. Só o cliente envia; aqui a equipe baixa, aprova ou recusa. Cada download fica na auditoria." className="lg:col-span-2">
+      <ul className="divide-y">
+        {docs.map((doc) => (
+          <DocumentRow key={doc.kind} doc={doc} actions={<>
+            {doc.file && <Button size="sm" variant="outline"><Download className="h-4 w-4" />Baixar</Button>}
+            {doc.state === 'pending' && <><Button size="sm" variant="outline" onClick={() => { setReason(''); setRejecting(doc.kind) }}>Recusar</Button><Button size="sm" onClick={() => decide(doc.kind, 'approved', null)}><Check className="h-4 w-4" />Aprovar</Button></>}
+            {(doc.state === 'approved' || doc.state === 'rejected') && doc.reviewer && <span className="self-center text-[12px] text-muted-foreground">por {doc.reviewer}</span>}
+          </>} />
+        ))}
+      </ul>
+      <Dialog open={rejecting !== null} onOpenChange={(open) => !open && setRejecting(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Recusar {rejecting ? DOCUMENT_LABEL[rejecting].toLowerCase() : ''}?</DialogTitle>
+            <DialogDescription>O cliente vê o motivo e pode enviar outro arquivo.</DialogDescription></DialogHeader>
+          <Field id="doc-reason" label="Motivo"><Textarea id="doc-reason" rows={3} value={reason} onChange={(event) => setReason(event.target.value)} placeholder="O que está errado e o que enviar no lugar." /></Field>
+          <DialogFooter><Button variant="outline" onClick={() => setRejecting(null)}>Cancelar</Button><Button variant="destructive" disabled={reason.trim().length < 5} onClick={() => { if (rejecting) decide(rejecting, 'rejected', reason.trim()); setRejecting(null) }}>Recusar</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </Card>
+  )
+}
+
+type ProtoNote = { id: number; author: string; createdAt: string; message: string; editedBy: string | null; editedAt: string | null }
+
+const INITIAL_NOTES: ProtoNote[] = [
+  { id: 2, author: 'Ana Souza', createdAt: '02/11/2026 16:20', message: 'Cliente pediu para receber o pagamento em conta nos EUA a partir de dezembro.\nAguardando os dados fiscais novos.', editedBy: 'Pedro Henrique', editedAt: '03/11/2026 09:05' },
+  { id: 1, author: 'Você', createdAt: '28/10/2026 11:02', message: 'Ligação de boas-vindas feita. Vai migrar os outros dois sites para o MCM em novembro.', editedBy: null, editedAt: null },
+]
+
+function NotesCard() {
+  const [notes, setNotes] = useState<ProtoNote[]>(INITIAL_NOTES)
+  const [draft, setDraft] = useState('')
+  const [editing, setEditing] = useState<ProtoNote | null>(null)
+  const [deleting, setDeleting] = useState<ProtoNote | null>(null)
+  const add = () => { setNotes([{ id: Date.now(), author: 'Você', createdAt: '03/11/2026 14:15', message: draft.trim(), editedBy: null, editedAt: null }, ...notes]); setDraft('') }
+  return (
+    <Card title="Observações" desc="Notas da equipe Groone sobre o cliente. O cliente nunca vê. Edita quem escreveu ou quem tem a permissão; apaga quem tem a permissão." className="lg:col-span-2">
+      <div className="grid gap-3">
+        <Textarea aria-label="Nova observação" rows={3} value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Escreva uma observação sobre o cliente..." />
+        <div className="flex justify-end"><Button size="sm" disabled={draft.trim().length < 5} onClick={add}><Plus className="h-4 w-4" />Adicionar</Button></div>
+      </div>
+      <ul className="mt-5 divide-y border-t">
+        {notes.map((note) => (
+          <li key={note.id} className="py-4 last:pb-0">
+            <div className="flex items-start justify-between gap-3">
+              <div className="text-[13px]"><span className="font-medium">{note.author}</span><span className="text-muted-foreground"> · <span className="tnum">{note.createdAt}</span></span></div>
+              <DropdownMenu><DropdownMenuTrigger asChild><Button size="icon" variant="ghost" className="h-8 w-8" aria-label="Ações da observação"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
+                <DropdownMenuContent align="end"><DropdownMenuItem onSelect={() => setEditing({ ...note })}><Pencil className="h-4 w-4" />Editar</DropdownMenuItem><DropdownMenuItem className="text-bad" onSelect={() => setDeleting(note)}><Trash2 className="h-4 w-4" />Apagar</DropdownMenuItem></DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+            <p className="mt-1 whitespace-pre-line text-[14px]">{note.message}</p>
+            {note.editedBy && <p className="mt-2 text-[12px] text-muted-foreground">Editada por {note.editedBy} em <span className="tnum">{note.editedAt}</span></p>}
+          </li>
+        ))}
+      </ul>
+      <Dialog open={editing !== null} onOpenChange={(open) => !open && setEditing(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Editar observação</DialogTitle><DialogDescription>{editing && editing.author !== 'Você' ? `Escrita por ${editing.author}. A observação vai mostrar que você editou.` : 'A observação mostra a data da última edição.'}</DialogDescription></DialogHeader>
+          <Textarea aria-label="Observação" rows={4} value={editing?.message ?? ''} onChange={(event) => editing && setEditing({ ...editing, message: event.target.value })} />
+          <DialogFooter><Button variant="outline" onClick={() => setEditing(null)}>Cancelar</Button><Button onClick={() => { if (editing) setNotes(notes.map((note) => note.id === editing.id ? { ...editing, editedBy: editing.author === 'Você' ? null : 'Você', editedAt: '03/11/2026 14:20' } : note)); setEditing(null) }}>Salvar</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={deleting !== null} onOpenChange={(open) => !open && setDeleting(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Apagar observação?</DialogTitle><DialogDescription>Ela some para toda a equipe. A auditoria guarda quem apagou.</DialogDescription></DialogHeader>
+          <DialogFooter><Button variant="outline" onClick={() => setDeleting(null)}>Cancelar</Button><Button variant="destructive" onClick={() => { if (deleting) setNotes(notes.filter((note) => note.id !== deleting.id)); setDeleting(null) }}>Apagar</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </Card>
+  )
+}
+
 function ClientScreen({ go }: { go: (s: Screen) => void }) {
   const [clientImage, setClientImage] = useState<string | null>(null)
   const [situation, setSituation] = useState<ClientSituation>('pending')
@@ -1311,6 +1441,8 @@ function ClientScreen({ go }: { go: (s: Screen) => void }) {
         <Card title="Networks" desc="Ligadas pelo MCM com o e-mail do contato. Mudar a situação do cliente liga ou desliga as networks." className="lg:col-span-2">
           <p className="text-[14px] text-muted-foreground">Nenhuma network ainda. Quando o cliente aceitar o MCM da Groone, ela aparece aqui sozinha.</p>
         </Card>
+        <StaffDocumentsCard />
+        <NotesCard />
       </Body>
       <Dialog open={confirm !== null} onOpenChange={(o) => !o && setConfirm(null)}>
         <DialogContent><DialogHeader><DialogTitle>Deixar Tech Notícias {confirm ? SITUATION[confirm][0].toLowerCase() : ''}?</DialogTitle>
@@ -1345,6 +1477,7 @@ function FiscalScreen() {
             <Field id="fi-routing" label="Agência ou routing number"><Input id="fi-routing" className="h-10 tnum" defaultValue="0001" /></Field>
           </form>
         </Card>
+        <ClientDocumentsCard />
       </Body>
     </>
   )
