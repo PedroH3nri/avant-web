@@ -10,9 +10,9 @@ import type { DashboardFilters, DashboardRun, Widget, WidgetError } from '@/modu
 export interface RunTarget {
   dashboardId?: string
   templateId?: string
-  widgets: Widget[]
+  /** Os widgets como estão gravados no dashboard ou no modelo. */
+  saved: Widget[]
   filters: DashboardFilters | null
-  stored: Set<string>
   preview?: boolean
 }
 
@@ -22,10 +22,13 @@ export const runsQuery = (widget: Widget) => widget.type === 'query' || widget.t
 /** O texto do erro de um widget: o da API quando já explica, senão o do código. */
 export const widgetErrorText = (error: WidgetError) => (error.code === 'invalid_input' && error.message ? error.message : errorText(error.code))
 
-/** A chave que muda quando é preciso rodar de novo: alvo, filtros e widgets gravados com consulta. */
-function runKey(target: RunTarget) {
-  const ids = target.widgets.filter((widget) => runsQuery(widget) && target.stored.has(widget.id)).map((widget) => widget.id)
-  return JSON.stringify([target.dashboardId ?? '', target.templateId ?? '', target.filters, ids.sort(), Boolean(target.preview)])
+/** Os widgets gravados que rodam na API, com o que muda o resultado deles. */
+const savedQueries = (target: RunTarget) =>
+  target.saved.filter(runsQuery).map((widget) => [widget.id, widget.query ?? null, widget.report_id ?? null])
+
+/** A chave que muda quando é preciso rodar de novo: alvo, filtros e consultas gravadas. */
+export function runKey(target: RunTarget) {
+  return JSON.stringify([target.dashboardId ?? '', target.templateId ?? '', target.filters, savedQueries(target), Boolean(target.preview)])
 }
 
 /** Roda o dashboard (ou o modelo) inteiro; só a última resposta vale e o limite de taxa agenda nova tentativa. */
@@ -41,9 +44,9 @@ export function useDashboardRun(target: () => RunTarget) {
   async function load() {
     if (retryTimer) clearTimeout(retryTimer)
     const current = target()
-    const hasQuery = current.widgets.some((widget) => runsQuery(widget) && current.stored.has(widget.id))
-    if (disposed || current.preview || !hasQuery || !(current.templateId || current.dashboardId)) return
     const ticket = ++latest
+    loading.value = false
+    if (disposed || current.preview || !savedQueries(current).length || !(current.templateId || current.dashboardId)) return
     failure.value = null
     loading.value = true
     try {

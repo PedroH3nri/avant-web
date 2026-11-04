@@ -7,7 +7,7 @@
 import { computed, ref } from 'vue'
 import DashboardWidget from '@/modules/dashboards/components/DashboardWidget.vue'
 import { useWidgetDrag } from '@/modules/dashboards/drag'
-import { useDashboardRun, widgetErrorText } from '@/modules/dashboards/run'
+import { runsQuery, useDashboardRun, widgetErrorText } from '@/modules/dashboards/run'
 import { gridArea, moveWidget, readingOrder, removeWidget, resizeWidget } from '@/modules/dashboards/rules'
 import type { DashboardFilters, Widget } from '@/modules/dashboards/types'
 import type { MetricCatalog } from '@/modules/reports/types'
@@ -17,8 +17,8 @@ const props = defineProps<{
   editing: boolean
   catalog: MetricCatalog
   filters: DashboardFilters | null
-  /** Os widgets já gravados (os novos só rodam depois de salvar). */
-  stored: Set<string>
+  /** Os widgets como estão gravados: só eles rodam, e rodam de novo quando a gravação muda. */
+  saved: Widget[]
   dashboardId?: string
   templateId?: string
   /** Só o desenho dos widgets, sem rodar nada. */
@@ -34,10 +34,12 @@ const source = computed({
 const drag = useWidgetDrag(grid, source)
 const ordered = computed(() => readingOrder(props.editing ? drag.shown.value : props.widgets))
 const activeId = drag.activeId
+const stored = computed(() => new Set(props.saved.map((widget) => widget.id)))
 const { run, failure, loading } = useDashboardRun(() => props)
 
-/** O erro do widget: o da requisição inteira ou o dele. */
+/** O erro do widget com consulta: o da requisição inteira ou o dele. */
 function widgetFailure(widget: Widget) {
+  if (!runsQuery(widget)) return null
   const own = run.value.errors[widget.id]
   return failure.value ?? (own ? widgetErrorText(own) : null)
 }

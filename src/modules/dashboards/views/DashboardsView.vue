@@ -69,7 +69,6 @@ const canManage = computed(() => session.can('dashboards.manage'))
 const definition = computed(() => dashboard.value?.definition ?? template.value?.definition ?? null)
 const widgets = computed(() => (editing.value ? draftWidgets.value : (definition.value?.widgets ?? [])))
 const canTemplate = computed(() => internal.value && session.can('internal.dashboard_templates.manage'))
-const storedIds = computed(() => new Set((definition.value?.widgets ?? []).map((widget) => widget.id)))
 const shownFilters = computed<DashboardFilters | null>(() => (definition.value && filtersChanged(filters.value, definition.value.filters) ? filters.value : null))
 const templateName = computed(() => (template.value ? template.value.name[lang.value] : null))
 const switchOptions = computed(() => dashboards.value.map((item) => ({ value: item.id, label: item.name })))
@@ -367,7 +366,7 @@ async function remove() {
         :editing="editing"
         :catalog="catalog"
         :filters="shownFilters"
-        :stored="storedIds"
+        :saved="definition?.widgets ?? []"
         :dashboard-id="dashboard?.id"
         :template-id="dashboard ? undefined : template?.id"
         @update:widgets="(changed) => (draftWidgets = changed)"
