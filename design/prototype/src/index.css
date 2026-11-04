@@ -112,7 +112,7 @@
     color-scheme: dark;
   }
   /* Tema GroOne: tons escuros do azul-marinho da marca (#0A213D), com o menu lateral na cor da
-     barra de cima e um azul bem escuro nos botões (a cor dos botões escolhida troca pelo tom dela no GroOne). */
+     barra de cima e um azul bem escuro nos botões (a cor secundária escolhida troca pelo tom dela no GroOne). */
   :root[data-theme="groone"] {
     --background: 216 76% 5%;
     --foreground: 210 35% 94%;

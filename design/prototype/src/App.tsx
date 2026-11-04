@@ -94,7 +94,7 @@ const SITES = [
 ]
 const SERVICE_ACCOUNT = 'avant-gam@groone-avant.iam.gserviceaccount.com'
 
-/* ---------- cor dos botões (por Empresa), com um tom para cada tema ---------- */
+/* ---------- cor secundária do sistema (por Empresa), com um tom para cada tema ---------- */
 
 const ACCENTS = [
   { id: 'padrao', label: 'Padrão', light: '0 0% 9%', fgLight: '0 0% 100%', dark: '0 0% 93%', fgDark: '0 0% 4%', groone: '215 78% 27%', fgGroone: '0 0% 100%' },
@@ -105,7 +105,6 @@ const ACCENTS = [
   { id: 'roxo', label: 'Roxo', light: '262 70% 52%', fgLight: '0 0% 100%', dark: '262 85% 74%', fgDark: '0 0% 4%', groone: '262 55% 38%', fgGroone: '0 0% 100%' },
   { id: 'rosa', label: 'Rosa', light: '330 72% 45%', fgLight: '0 0% 100%', dark: '330 85% 70%', fgDark: '0 0% 4%', groone: '330 65% 36%', fgGroone: '0 0% 100%' },
   { id: 'laranja', label: 'Laranja', light: '22 92% 44%', fgLight: '0 0% 100%', dark: '26 95% 60%', fgDark: '0 0% 4%', groone: '22 85% 36%', fgGroone: '0 0% 100%' },
-  { id: 'vermelho', label: 'Vermelho', light: '0 72% 45%', fgLight: '0 0% 100%', dark: '0 85% 66%', fgDark: '0 0% 4%', groone: '0 65% 38%', fgGroone: '0 0% 100%' },
   { id: 'dourado', label: 'Dourado', light: '44 88% 46%', fgLight: '0 0% 9%', dark: '45 95% 58%', fgDark: '0 0% 4%', groone: '43 80% 45%', fgGroone: '214 72% 9%' },
   { id: 'grafite', label: 'Grafite', light: '215 16% 32%', fgLight: '0 0% 100%', dark: '215 16% 70%', fgDark: '0 0% 4%', groone: '215 25% 30%', fgGroone: '0 0% 100%' },
 ]
@@ -1152,8 +1151,8 @@ function SettingsScreen({ t, accent, setAccent, theme, setTheme, image, setImage
           <Card title="E-mail de contato" desc="Para onde a Groone manda avisos da conta e da network." footerNote="Só a Groone usa esse e-mail." footer={<Button size="sm" onClick={() => saved('E-mail')}>Salvar</Button>}>
             <div className="max-w-md"><Input id="set-mail" aria-label="E-mail de contato" className="h-10" defaultValue="financeiro@blogexemplo.com" /></div>
           </Card>
-          <div id="cfg-aparencia" className="scroll-mt-8"><Card title="Cor dos botões" desc="Usada nos botões principais e nas vagas da equipe, num tom próprio para cada tema. Vale para todos da Empresa." footerNote="As amostras mostram a cor no seu tema de agora.">
-            <RadioGroup value={accent} onValueChange={setAccent} className="flex flex-wrap gap-2" aria-label="Cor dos botões">
+          <div id="cfg-aparencia" className="scroll-mt-8"><Card title="Cor secundária do sistema" desc="Usada nos botões principais, na seleção e nas vagas da equipe, num tom próprio para cada tema. Vale para todos da Empresa." footerNote="As amostras mostram a cor no seu tema de agora.">
+            <RadioGroup value={accent} onValueChange={setAccent} className="flex flex-wrap gap-2" aria-label="Cor secundária do sistema">
               {ACCENTS.map((a) => (
                 <Label key={a.id} htmlFor={`accent-${a.id}`} className={cn('flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-[14px] font-normal hover:bg-accent has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring', accent === a.id && 'border-foreground')}>
                   <RadioGroupItem id={`accent-${a.id}`} value={a.id} className="sr-only" />
