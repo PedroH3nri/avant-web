@@ -8,8 +8,10 @@ import LangSwitch from '@/components/LangSwitch.vue'
 import SidebarRail from '@/components/SidebarRail.vue'
 import Button from '@/components/ui/Button.vue'
 import { t } from '@/lib/i18n'
+import { useSession } from '@/stores/session'
 
 const open = ref(false)
+const session = useSession()
 </script>
 
 <template>
@@ -34,7 +36,7 @@ const open = ref(false)
         <CompanySwitcher />
         <LangSwitch class="ml-auto w-[132px]" />
       </header>
-      <RouterView />
+      <RouterView :key="session.company?.id ?? 'none'" />
     </div>
   </div>
 </template>

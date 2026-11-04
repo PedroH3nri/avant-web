@@ -93,3 +93,20 @@ describe('session entre abas', () => {
     expect(session.me?.active_company_id).toBe('d')
   })
 })
+
+describe('aceite de convite', () => {
+  beforeEach(() => setActivePinia(createPinia()))
+  afterEach(() => vi.restoreAllMocks())
+
+  it('entra na Empresa do convite e avisa as outras abas', async () => {
+    const session = useSession()
+    session.set(me([]))
+    const other = new BroadcastChannel('avant-session')
+    const received = new Promise((resolve) => (other.onmessage = (event) => resolve(event.data)))
+    vi.spyOn(authService, 'acceptInvitation').mockResolvedValueOnce({ ...me([]), active_company_id: 'e' })
+    await session.acceptInvitation('tok', {})
+    expect(session.me?.active_company_id).toBe('e')
+    expect(await received).toEqual({ type: 'company', companyId: 'e' })
+    other.close()
+  })
+})
