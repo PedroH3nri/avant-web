@@ -15,6 +15,7 @@ import { validCode } from '@/modules/networks/rules'
 import type { Network, SyncRun } from '@/modules/networks/types'
 import { cn } from '@/lib/utils'
 import { networkService } from '@/modules/networks/service'
+import { nextPollDelay } from '@/lib/poll'
 
 type State = 'wait' | 'run' | 'ok' | 'fail'
 interface Check {
@@ -30,7 +31,9 @@ const busy = ref(false)
 const submitError = ref<string | null>(null)
 const copied = ref(false)
 const slow = ref(false)
-let poll: ReturnType<typeof setInterval> | null = null
+let poll: ReturnType<typeof setTimeout> | null = null
+let pollDelay = 0
+let watchedSince = 0
 let slowTimer: ReturnType<typeof setTimeout> | null = null
 
 onMounted(async () => {
@@ -82,7 +85,7 @@ const running = computed(() => busy.value || (!!checks.value && !failed.value &&
 
 /** Para de acompanhar o progresso. */
 function stopWatching() {
-  if (poll) clearInterval(poll)
+  if (poll) clearTimeout(poll)
   if (slowTimer) clearTimeout(slowTimer)
   poll = slowTimer = null
 }
@@ -102,11 +105,27 @@ onEvent('network.updated', ({ network_id }) => {
   if (network_id === network.value?.id) void refresh()
 })
 
-/** Recarrega a network a cada 5 segundos e marca como lenta depois de 2 minutos. */
+/** Agenda a próxima consulta com espera crescente; depois do teto, só os avisos em tempo real. */
+function scheduleRefresh() {
+  const delay = nextPollDelay(pollDelay, Date.now() - watchedSince)
+  if (delay === null) {
+    poll = null
+    return
+  }
+  pollDelay = delay
+  poll = setTimeout(async () => {
+    await refresh()
+    if (poll) scheduleRefresh()
+  }, delay)
+}
+
+/** Recarrega a network com espera crescente e marca como lenta depois de 2 minutos. */
 function watchProgress() {
   stopWatching()
   slow.value = false
-  poll = setInterval(refresh, 5000)
+  pollDelay = 0
+  watchedSince = Date.now()
+  scheduleRefresh()
   slowTimer = setTimeout(() => (slow.value = true), 120_000)
 }
 

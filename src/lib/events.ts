@@ -35,6 +35,8 @@ const LONGEST_RETRY_MS = 60_000
 
 const handlers = new Map<Type, Set<Handler<Type>>>()
 let source: EventSource | null = null
+/** Os tipos que já têm listener na conexão atual: um só por tipo. */
+let listening = new Set<Type>()
 let retryMs = FIRST_RETRY_MS
 let retryTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -43,6 +45,7 @@ function open() {
   if (source || typeof EventSource === 'undefined') return
   const opened = new EventSource(`${API}/events`, { withCredentials: true })
   source = opened
+  listening = new Set()
   opened.onopen = () => {
     retryMs = FIRST_RETRY_MS
   }
@@ -63,9 +66,11 @@ function retryLater() {
   retryMs = Math.min(retryMs * 2, LONGEST_RETRY_MS)
 }
 
-/** Repassa os eventos de um tipo para quem se inscreveu. */
+/** Repassa os eventos de um tipo para quem se inscreveu; um listener só por tipo e conexão. */
 function listen(type: Type) {
-  source?.addEventListener(type, (event) => {
+  if (!source || listening.has(type)) return
+  listening.add(type)
+  source.addEventListener(type, (event) => {
     let data: unknown
     try {
       data = JSON.parse((event as MessageEvent<string>).data)

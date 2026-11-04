@@ -16,7 +16,8 @@ import { RUN_TONE, STEP_TONE, finishedSteps, formatName, runStateLabel, stepDeta
 import { gamToolService } from '@/modules/internal/gam_tools/service'
 import type { GamToolRun } from '@/modules/internal/gam_tools/types'
 
-const POLL_MS = 5000
+// Reserva para quando o aviso em tempo real não chega; o SSE é a fonte principal.
+const POLL_MS = 30_000
 
 const route = useRoute()
 const run = ref<GamToolRun | null>(null)
@@ -45,7 +46,7 @@ async function load() {
 
 onMounted(async () => {
   await load()
-  polling = setInterval(() => run.value?.state === 'running' && void load(), POLL_MS)
+  if (run.value?.state === 'running') polling = setInterval(() => void load(), POLL_MS)
 })
 onBeforeUnmount(() => clearInterval(polling))
 onEvent('gam_tool_run.updated', (data) => {
@@ -54,6 +55,7 @@ onEvent('gam_tool_run.updated', (data) => {
 watch(
   () => run.value?.state,
   (state, before) => {
+    if (state !== 'running') clearInterval(polling)
     if (before !== 'running') return
     if (state === 'done') toast.success(t('gamt.run.finished'))
     if (state === 'failed') toast.error(t('gamt.run.failedToast'))
