@@ -2,6 +2,8 @@
  * Avisos em tempo real da Empresa ativa (GET /api/v1/events, Server-Sent Events).
  * Uma conexão só para o painel inteiro, aberta enquanto alguma tela escuta. Ao trocar
  * de Empresa, ``reconnectEvents()`` fecha e abre de novo (o servidor filtra pela sessão).
+ * Se o servidor recusar a conexão (429 com abas demais, 401), o navegador desiste de vez:
+ * aqui ela é reaberta com espera crescente, de 5 s a 1 minuto, enquanto alguém escuta.
  */
 
 import { getCurrentScope, onScopeDispose } from 'vue'
@@ -28,14 +30,37 @@ interface EventMap {
 type Type = keyof EventMap
 type Handler<T extends Type> = (data: EventMap[T]) => void
 
+const FIRST_RETRY_MS = 5_000
+const LONGEST_RETRY_MS = 60_000
+
 const handlers = new Map<Type, Set<Handler<Type>>>()
 let source: EventSource | null = null
+let retryMs = FIRST_RETRY_MS
+let retryTimer: ReturnType<typeof setTimeout> | null = null
 
 /** Abre a conexão SSE e escuta os tipos que têm interessados. */
 function open() {
   if (source || typeof EventSource === 'undefined') return
-  source = new EventSource(`${API}/events`, { withCredentials: true })
+  const opened = new EventSource(`${API}/events`, { withCredentials: true })
+  source = opened
+  opened.onopen = () => {
+    retryMs = FIRST_RETRY_MS
+  }
+  opened.onerror = () => {
+    if (opened.readyState === EventSource.CLOSED && source === opened) retryLater()
+  }
   for (const type of handlers.keys()) listen(type)
+}
+
+/** O servidor fechou de vez: reabre depois de esperar, cada vez um pouco mais. */
+function retryLater() {
+  source = null
+  if (retryTimer || handlers.size === 0) return
+  retryTimer = setTimeout(() => {
+    retryTimer = null
+    if (handlers.size > 0) open()
+  }, retryMs)
+  retryMs = Math.min(retryMs * 2, LONGEST_RETRY_MS)
 }
 
 /** Repassa os eventos de um tipo para quem se inscreveu. */
@@ -51,10 +76,13 @@ function listen(type: Type) {
   })
 }
 
-/** Fecha a conexão SSE. */
+/** Fecha a conexão SSE e cancela a reabertura agendada. */
 function close() {
   source?.close()
   source = null
+  if (retryTimer) clearTimeout(retryTimer)
+  retryTimer = null
+  retryMs = FIRST_RETRY_MS
 }
 
 /** Inscreve uma função num tipo de evento; devolve a função que cancela. */
