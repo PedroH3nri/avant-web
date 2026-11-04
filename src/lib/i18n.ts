@@ -3328,6 +3328,11 @@ const errors: Record<string, readonly [string, string, string]> = {
     'Se acabó el tiempo para el código. Entra de nuevo con la contraseña.',
   ],
   mfa_required: ['Confirme o código do 2FA para continuar.', 'Confirm your 2FA code to continue.', 'Confirma el código 2FA para continuar.'],
+  company_changed: [
+    'A Empresa ativa mudou em outra aba. Esta aba passou a mostrar a mesma Empresa.',
+    'The active company changed in another tab. This tab now shows the same company.',
+    'La empresa activa cambió en otra pestaña. Esta pestaña ahora muestra la misma empresa.',
+  ],
   no_active_company: ['Escolha uma Empresa para continuar.', 'Choose a company to continue.', 'Elige una empresa para continuar.'],
   staff_only: ['Só para a equipe Groone.', 'Groone team only.', 'Solo para el equipo Groone.'],
   already_member: ['Esta pessoa já está na Empresa.', 'This person is already in the company.', 'Esta persona ya está en la empresa.'],

@@ -4,6 +4,7 @@ import { useSession } from '@/stores/session'
 import { lang } from '@/lib/i18n'
 import { theme } from '@/lib/theme'
 import { accountService } from '@/modules/account/service'
+import { authService } from '@/modules/auth/service'
 import type { AccentId, Me, Theme } from '@/lib/types'
 
 function me(permissions: string[], accent: AccentId = 'default', chosenTheme: Theme = 'system'): Me {
@@ -66,5 +67,29 @@ describe('session.can', () => {
     expect(session.me?.theme).toBe('system')
     expect(theme.value).toBe('system')
     expect(lang.value).toBe('es')
+  })
+})
+
+describe('session entre abas', () => {
+  beforeEach(() => setActivePinia(createPinia()))
+  afterEach(() => vi.restoreAllMocks())
+
+  it('avisa as outras abas ao trocar de Empresa', async () => {
+    const session = useSession()
+    session.set(me([]))
+    const other = new BroadcastChannel('avant-session')
+    const received = new Promise((resolve) => (other.onmessage = (event) => resolve(event.data)))
+    vi.spyOn(authService, 'switchCompany').mockResolvedValueOnce({ ...me([]), active_company_id: 'd' })
+    await session.switchCompany('d')
+    expect(await received).toEqual({ type: 'company', companyId: 'd' })
+    other.close()
+  })
+
+  it('segue a Empresa que outra aba escolheu', async () => {
+    const session = useSession()
+    session.set(me([]))
+    vi.spyOn(authService, 'me').mockResolvedValueOnce({ ...me(['*']), active_company_id: 'd' })
+    await session.followOtherTab()
+    expect(session.me?.active_company_id).toBe('d')
   })
 })
