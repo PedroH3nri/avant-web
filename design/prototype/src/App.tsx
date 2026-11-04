@@ -105,6 +105,9 @@ const ACCENTS = [
   { id: 'roxo', label: 'Roxo', light: '262 70% 52%', fgLight: '0 0% 100%', dark: '262 85% 74%', fgDark: '0 0% 4%', groone: '262 55% 38%', fgGroone: '0 0% 100%' },
   { id: 'rosa', label: 'Rosa', light: '330 72% 45%', fgLight: '0 0% 100%', dark: '330 85% 70%', fgDark: '0 0% 4%', groone: '330 65% 36%', fgGroone: '0 0% 100%' },
   { id: 'laranja', label: 'Laranja', light: '22 92% 44%', fgLight: '0 0% 100%', dark: '26 95% 60%', fgDark: '0 0% 4%', groone: '22 85% 36%', fgGroone: '0 0% 100%' },
+  { id: 'vermelho', label: 'Vermelho', light: '0 72% 45%', fgLight: '0 0% 100%', dark: '0 85% 66%', fgDark: '0 0% 4%', groone: '0 65% 38%', fgGroone: '0 0% 100%' },
+  { id: 'dourado', label: 'Dourado', light: '44 88% 46%', fgLight: '0 0% 9%', dark: '45 95% 58%', fgDark: '0 0% 4%', groone: '43 80% 45%', fgGroone: '214 72% 9%' },
+  { id: 'grafite', label: 'Grafite', light: '215 16% 32%', fgLight: '0 0% 100%', dark: '215 16% 70%', fgDark: '0 0% 4%', groone: '215 25% 30%', fgGroone: '0 0% 100%' },
 ]
 function accentCss(a: (typeof ACCENTS)[number]) {
   const l = `--primary:${a.light};--primary-foreground:${a.fgLight};`
