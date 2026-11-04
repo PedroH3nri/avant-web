@@ -47,6 +47,8 @@ export interface GamToolRun {
   state: GamRunState
   error_code: string | null
   requested_by: { id: string; name: string } | null
+  /** A network e o cliente, na lista de execuções. */
+  network?: { id: string; network_code: string; display_name: string | null; client_name: string } | null
   created_at: string
   updated_at: string | null
   finished_at: string | null

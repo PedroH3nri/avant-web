@@ -10,8 +10,8 @@ export const gamToolService = {
   networks: (query: string, page = 1) => api.get<Page<GamToolNetwork>>('/internal/gam-tools/networks', { q: query, page }),
   /** A network com os sites e os blocos que o Avant já importou. */
   network: (networkId: string) => api.get<GamToolNetworkDetail>(`/internal/gam-tools/networks/${networkId}`),
-  /** Uma página das execuções da network. */
-  runs: (networkId: string, page = 1) => api.get<Page<GamToolRun>>('/internal/gam-tools/runs', { network: networkId, page }),
+  /** Uma página das execuções da network, ou de todas sem ``networkId``. */
+  runs: (networkId: string | undefined, page = 1) => api.get<Page<GamToolRun>>('/internal/gam-tools/runs', networkId ? { network: networkId, page } : { page }),
   /** Uma execução com os passos. */
   run: (runId: string) => api.get<GamToolRun>(`/internal/gam-tools/runs/${runId}`),
   /** Abre a execução; o worker roda e a tela acompanha. */
