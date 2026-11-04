@@ -4,6 +4,9 @@
  *
  * Todo erro da API tem o formato {"error": {"code", "message", "details"}}; a tela
  * traduz pelo code.
+ *
+ * Toda requisição leva em X-Avant-Company a Empresa que a aba acha ativa: se outra aba trocou
+ * a Empresa da sessão, a API responde 409 company_changed em vez de usar a Empresa errada.
  */
 
 export const API = '/api/v1'
@@ -65,9 +68,31 @@ export function setUnauthorizedHandler(handler: () => void) {
   onUnauthorized = handler
 }
 
+/** A Empresa que esta aba acha ativa; o store da sessão informa. */
+let tabCompany: () => string | null = () => null
+/** Define de onde vem a Empresa ativa desta aba. */
+export function setTabCompany(read: () => string | null) {
+  tabCompany = read
+}
+
+/** Quem quer saber quando a Empresa mudou em outra aba (o roteador recarrega a sessão). */
+let onCompanyChanged: (() => void) | null = null
+/** Define o que fazer quando a API responde company_changed. */
+export function setCompanyChangedHandler(handler: () => void) {
+  onCompanyChanged = handler
+}
+
+/** Os cabeçalhos comuns: JSON e a Empresa da aba. */
+function baseHeaders(): Record<string, string> {
+  const headers: Record<string, string> = { Accept: 'application/json' }
+  const company = tabCompany()
+  if (company) headers['X-Avant-Company'] = company
+  return headers
+}
+
 /** Chama a API com cookie e CSRF e converte erros em ApiError. */
 export async function request<T>(method: string, path: string, options: RequestOptions = {}): Promise<T> {
-  const headers: Record<string, string> = { Accept: 'application/json' }
+  const headers = baseHeaders()
   if (options.body !== undefined) headers['Content-Type'] = 'application/json'
   if (options.file) headers['Content-Type'] = options.file.type || 'application/octet-stream'
   if (!SAFE.has(method)) {
@@ -100,6 +125,7 @@ export async function request<T>(method: string, path: string, options: RequestO
       retry ? Number(retry) : null,
     )
     if (response.status === 401 && onUnauthorized && !path.startsWith('/auth/')) onUnauthorized()
+    if (error.code === 'company_changed') onCompanyChanged?.()
     throw error
   }
   return data as T
@@ -109,7 +135,7 @@ export async function request<T>(method: string, path: string, options: RequestO
 export async function download(path: string, query?: Query): Promise<{ blob: Blob; name: string }> {
   let response: Response
   try {
-    response = await fetch(url(path, query), { credentials: 'same-origin' })
+    response = await fetch(url(path, query), { headers: baseHeaders(), credentials: 'same-origin' })
   } catch {
     throw new ApiError(0, 'network_error', 'sem conexão com o servidor')
   }
@@ -117,6 +143,7 @@ export async function download(path: string, query?: Query): Promise<{ blob: Blo
     const data = await response.json().catch(() => null)
     const apiError = (data?.error ?? {}) as { code?: string; message?: string }
     if (response.status === 401 && onUnauthorized) onUnauthorized()
+    if (apiError.code === 'company_changed') onCompanyChanged?.()
     throw new ApiError(response.status, apiError.code ?? 'http_error', apiError.message ?? response.statusText)
   }
   const disposition = response.headers.get('Content-Disposition') ?? ''
