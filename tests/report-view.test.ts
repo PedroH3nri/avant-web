@@ -36,7 +36,7 @@ const report: SavedReport = {
   id: 'r1',
   name: 'Receita por site',
   description: 'Os sites que mais rendem',
-  query: { source: 'gam', metrics: ['revenue'], period: { preset: 'last_30_days' }, dimensions: ['site'], filters: [], compare: false, order: [], limit: 100 },
+  query: { source: 'gam', metrics: ['revenue'], period: { preset: 'last_30_days' }, dimensions: ['site'], filters: [], compare: 'none', compare_start: null, compare_end: null, order: [], limit: 100 },
   chart_type: 'table',
   chart_options: {},
   visibility: 'company',

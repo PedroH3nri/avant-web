@@ -8,7 +8,9 @@ import type {
   CustomMetricCheckInput,
   CustomMetricInput,
   MetricCatalog,
+  ReportBatch,
   ReportPage,
+  ReportQuery,
   ReportResult,
   ReportTemplate,
   SavedReport,
@@ -21,6 +23,8 @@ export const reportService = {
   catalog: () => api.get<MetricCatalog>('/metrics/catalog'),
   /** Roda uma consulta sem salvar. */
   query: (body: unknown) => api.post<ReportResult>('/reports/query', body),
+  /** Roda as consultas de uma tela numa requisição só (uma consulta do limite). */
+  batch: (sections: ReportQuery[]) => api.post<ReportBatch>('/reports/query/batch', { sections }),
   /** Uma página dos relatórios salvos que a pessoa vê, com a aba (`scope`), a busca (`q`) e as contagens. */
   list: (query?: Query) => api.get<ReportPage>('/reports', query),
   /** Os relatórios que a pessoa fixou no topo, na ordem em que fixou. */
