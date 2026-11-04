@@ -105,6 +105,25 @@ export async function request<T>(method: string, path: string, options: RequestO
   return data as T
 }
 
+/** Baixa um arquivo da API: o conteúdo e o nome do Content-Disposition; erro vira ApiError. */
+export async function download(path: string, query?: Query): Promise<{ blob: Blob; name: string }> {
+  let response: Response
+  try {
+    response = await fetch(url(path, query), { credentials: 'same-origin' })
+  } catch {
+    throw new ApiError(0, 'network_error', 'sem conexão com o servidor')
+  }
+  if (!response.ok) {
+    const data = await response.json().catch(() => null)
+    const apiError = (data?.error ?? {}) as { code?: string; message?: string }
+    if (response.status === 401 && onUnauthorized) onUnauthorized()
+    throw new ApiError(response.status, apiError.code ?? 'http_error', apiError.message ?? response.statusText)
+  }
+  const disposition = response.headers.get('Content-Disposition') ?? ''
+  const name = /filename="([^"]+)"/.exec(disposition)?.[1] ?? 'arquivo'
+  return { blob: await response.blob(), name }
+}
+
 export const api = {
   get: <T>(path: string, query?: Query, signal?: AbortSignal) => request<T>('GET', path, { query, signal }),
   post: <T>(path: string, body?: unknown) => request<T>('POST', path, { body: body ?? {} }),
