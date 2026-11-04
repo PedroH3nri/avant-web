@@ -79,4 +79,18 @@ describe('events', () => {
     expect(FakeSource.opened).toBe(3)
     vi.useRealTimers()
   })
+
+  it('não registra o mesmo tipo duas vezes na mesma conexão', async () => {
+    vi.stubGlobal('EventSource', FakeSource)
+    const { onEvent } = await import('@/lib/events')
+    const offOther = onEvent('network.updated', () => undefined)
+    const got: string[] = []
+    const first = onEvent('metrics.updated', (d) => got.push(d.network_id))
+    first()
+    const second = onEvent('metrics.updated', (d) => got.push(d.network_id))
+    FakeSource.last!.emit('metrics.updated', '{"network_id":"n1"}')
+    expect(got).toEqual(['n1'])
+    second()
+    offOther()
+  })
 })
