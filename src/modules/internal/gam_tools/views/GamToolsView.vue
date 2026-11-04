@@ -1,5 +1,6 @@
 <script setup lang="ts">
-/** Ferramentas do GAM: escolhe a network do cliente, roda uma ferramenta e vê as execuções. */
+/** Ferramentas do GAM: as ações e as execuções sempre na tela; as ações ativam quando a network
+ * do cliente é escolhida, e a tabela mostra as execuções de todas até a escolha. */
 import { computed, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useDebounceFn } from '@vueuse/core'
@@ -72,7 +73,10 @@ const cards = computed(() => TOOL_CARDS.filter((card) => !writes(card) || sessio
 const networkOptions = computed(() => {
   const list = [...options.value]
   if (network.value && !list.some((item) => item.id === network.value?.id)) list.unshift(network.value)
-  return list.map((item) => ({ value: item.id, label: `${item.client.name} · ${item.display_name ?? item.network_code} (${item.network_code})` }))
+  return [
+    { value: '', label: t('gamt.pickNetwork') },
+    ...list.map((item) => ({ value: item.id, label: `${item.client.name} · ${item.display_name ?? item.network_code} (${item.network_code})` })),
+  ]
 })
 const picking = computed({ get: () => tool.value === 'config' || tool.value === 'setup', set: (open: boolean) => !open && close() })
 const keyValuesOpen = computed({ get: () => tool.value === 'key_values', set: (open: boolean) => !open && close() })
@@ -91,19 +95,19 @@ async function searchNetworks() {
   try {
     const found = await gamToolService.networks(query.value.trim())
     options.value = found.items
-    if (!networkId.value && found.items[0]) networkId.value = found.items[0].id
   } catch (error) {
     loadError.value = errorText(error instanceof ApiError ? error.code : 'unknown')
   }
 }
 const debouncedSearch = useDebounceFn(searchNetworks, SEARCH_DELAY_MS)
 
-/** Carrega a network escolhida e as execuções dela. */
+/** Carrega a network escolhida e as execuções dela, ou as execuções de todas sem network. */
 async function load() {
-  if (!networkId.value) return
   loadError.value = null
+  const chosenId = networkId.value || undefined
   try {
-    const [detail, found] = await Promise.all([gamToolService.network(networkId.value), gamToolService.runs(networkId.value, page.value)])
+    const [detail, found] = await Promise.all([chosenId ? gamToolService.network(chosenId) : Promise.resolve(null), gamToolService.runs(chosenId, page.value)])
+    if ((networkId.value || undefined) !== chosenId) return
     network.value = detail
     runs.value = found.items
     total.value = found.total
@@ -116,14 +120,16 @@ async function load() {
 onMounted(searchNetworks)
 watch(query, () => void debouncedSearch())
 watch(networkId, (value) => {
-  if (value) void router.replace({ query: { ...route.query, network: value } })
+  const { network: _previous, ...rest } = route.query
+  void router.replace({ query: value ? { ...rest, network: value } : rest })
+  network.value = null
   runs.value = null
   if (page.value === 1) void load()
   else page.value = 1
 }, { immediate: true })
 watch(page, load)
 onEvent('gam_tool_run.updated', (data) => {
-  if (data.network_id === networkId.value) void load()
+  if (!networkId.value || data.network_id === networkId.value) void load()
 })
 
 /** Fecha o diálogo da ferramenta. */
@@ -212,17 +218,18 @@ async function copyAds() {
         <div class="flex gap-1"><dt>{{ t('gamt.sites') }}</dt><dd class="tnum text-foreground">{{ network.sites.length }}</dd></div>
       </dl>
     </div>
-    <p v-if="!networkId && options.length === 0 && !loadError" class="text-[14px] text-muted-foreground">{{ t('gamt.noNetworks') }}</p>
+    <p v-if="!networkId && options.length === 0 && query && !loadError" class="text-[14px] text-muted-foreground">{{ t('gamt.noNetworks') }}</p>
     <LoadError v-if="loadError" :message="loadError" @retry="load" />
-    <template v-else-if="network">
+    <template v-else>
       <p v-if="inventory" class="rounded-md border bg-card px-4 py-3 text-[13px] text-muted-foreground">{{ t('gamt.inventoryNote') }}</p>
+      <p v-if="!networkId" class="text-[13px] text-muted-foreground">{{ t('gamt.pickToRun') }}</p>
       <div class="grid gap-px overflow-hidden rounded-lg border bg-border sm:grid-cols-2 lg:grid-cols-3">
         <button
           v-for="card in cards"
           :key="card"
           type="button"
-          :disabled="busy"
-          class="flex flex-col items-start gap-2 bg-card p-5 text-left hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring disabled:opacity-60"
+          :disabled="busy || !network"
+          class="flex flex-col items-start gap-2 bg-card p-5 text-left enabled:hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
           @click="choose(card)"
         >
           <span class="flex w-full items-center gap-2">
@@ -234,11 +241,12 @@ async function copyAds() {
         </button>
       </div>
       <section class="grid gap-3">
-        <h2 class="text-[16px] font-semibold tracking-tight">{{ t('gamt.runs') }}</h2>
+        <h2 class="text-[16px] font-semibold tracking-tight">{{ networkId ? t('gamt.runs') : t('gamt.runsAll') }}</h2>
         <DataTable :min="720">
           <thead>
             <tr>
               <th :class="th">{{ t('gamt.col.tool') }}</th>
+              <th v-if="!networkId" :class="th">{{ t('gamt.col.network') }}</th>
               <th :class="th">{{ t('gamt.sites') }}</th>
               <th :class="th">{{ t('gamt.col.who') }}</th>
               <th :class="th">{{ t('gamt.col.when') }}</th>
@@ -246,11 +254,15 @@ async function copyAds() {
             </tr>
           </thead>
           <tbody>
-            <TableState :cols="5" :loading="!runs" :empty="runs?.length === 0" :icon="Wrench" :title="t('gamt.runsEmpty')" />
+            <TableState :cols="networkId ? 5 : 6" :loading="!runs" :empty="runs?.length === 0" :icon="Wrench" :title="networkId ? t('gamt.runsEmpty') : t('gamt.runsEmptyAll')" />
             <tr v-for="item in runs ?? []" :key="item.id" class="hover:bg-muted">
               <td :class="td">
                 <RouterLink :to="`/interno/ferramentas-gam/execucoes/${item.id}`" class="font-medium hover:underline focus-visible:underline focus-visible:outline-none">{{ toolName(item.kind) }}</RouterLink>
                 <span v-if="item.format" class="block text-[13px] text-muted-foreground">{{ formatName(item.format) }}</span>
+              </td>
+              <td v-if="!networkId" :class="td">
+                <span class="block">{{ item.network?.client_name ?? '–' }}</span>
+                <span v-if="item.network" class="block text-[13px] text-muted-foreground">{{ item.network.display_name ?? item.network.network_code }} ({{ item.network.network_code }})</span>
               </td>
               <td :class="[td, 'break-all font-mono text-[13px]']">{{ item.domains.join(', ') || '–' }}</td>
               <td :class="td">{{ item.requested_by?.name ?? '–' }}</td>
