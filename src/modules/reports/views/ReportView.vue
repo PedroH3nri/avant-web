@@ -7,7 +7,7 @@ import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
 import { DropdownMenuRoot, DropdownMenuTrigger } from 'reka-ui'
-import { ArrowLeft, Check, Copy, Download, Lock, Pencil, Pin, PinOff } from 'lucide-vue-next'
+import { ArrowLeft, Copy, Download, Lock, Pencil, Pin, PinOff } from 'lucide-vue-next'
 import LoadError from '@/components/LoadError.vue'
 import PageBody from '@/components/PageBody.vue'
 import PageHeader from '@/components/PageHeader.vue'
@@ -22,11 +22,15 @@ import { ApiError } from '@/lib/api'
 import { errorText, formatDate, lang, locale, t, type Key } from '@/lib/i18n'
 import { change, formatMetric, PERIOD_PRESETS, toNumber } from '@/lib/metrics'
 import { cn } from '@/lib/utils'
+import ComparePicker from '@/modules/reports/components/ComparePicker.vue'
 import ReportChart from '@/modules/reports/components/ReportChart.vue'
 import ReportTable from '@/modules/reports/components/ReportTable.vue'
 import {
   axisSplit,
+  comparing,
+  comparisonReady,
   fromReport,
+  NO_COMPARISON,
   metricInfo,
   savedPeriod,
   scaleHue,
@@ -35,6 +39,7 @@ import {
   toQuery,
   viewChanged,
   viewDraft,
+  type Comparison,
   type ViewPeriod,
 } from '@/modules/reports/rules'
 import { exportUrl, reportService } from '@/modules/reports/service'
@@ -56,7 +61,7 @@ const pinned = ref(false)
 const owner = ref<UserRef | null>(null)
 const ownerName = computed(() => owner.value?.name ?? null)
 const period = ref<ViewPeriod>('last_30_days')
-const compare = ref(false)
+const compare = ref<Comparison>({ ...NO_COMPARISON })
 const saving = ref(false)
 let latest = 0
 let disposed = false
@@ -86,7 +91,7 @@ const totals = computed(() => {
       key,
       label: info.label,
       text: formatMetric(value, info.format, locale.value, false, found.currency),
-      delta: draft.compare ? change(value, toNumber(found.previous_totals?.[key])) : null,
+      delta: comparing(draft) ? change(value, toNumber(found.previous_totals?.[key])) : null,
       dot: seriesColor(draft.styles[key]?.color),
       color: scale && value !== null ? `hsl(${scaleHue(scale, value)} 75% 38%)` : undefined,
     }
@@ -170,7 +175,7 @@ async function run() {
 function resetView() {
   if (!saved.value) return
   period.value = savedPeriod(saved.value)
-  compare.value = saved.value.compare
+  compare.value = { ...saved.value.compare }
 }
 
 /** Grava o período e a comparação desta visita no relatório. */
@@ -218,7 +223,7 @@ function download(format: 'csv' | 'xlsx') {
 }
 
 watch([period, compare], () => {
-  if (report.value) void run()
+  if (report.value && comparisonReady(compare.value)) void run()
 })
 watch(() => route.params.id, () => void load(), { immediate: true })
 onBeforeUnmount(() => {
@@ -270,14 +275,7 @@ onBeforeUnmount(() => {
     <PageBody>
       <div class="flex flex-wrap items-center gap-2">
         <NativeSelect :model-value="period" :options="periods" :aria-label="t('perf.period')" class="w-full sm:w-[240px]" @update:model-value="(value) => (period = value as ViewPeriod)" />
-        <button
-          type="button"
-          :aria-pressed="compare"
-          :class="cn('flex h-10 items-center gap-2 rounded-md border bg-background px-3 text-[13px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', compare ? 'text-foreground' : 'text-muted-foreground hover:text-foreground')"
-          @click="compare = !compare"
-        >
-          <span :class="cn('flex size-4 items-center justify-center rounded-[4px] border', compare && 'border-primary bg-primary text-primary-foreground')"><Check v-if="compare" class="size-3" /></span>{{ t('perf.compare') }}
-        </button>
+        <ComparePicker v-model="compare" />
         <Badge v-for="chip in chips" :key="chip.key">{{ chip.text }}</Badge>
         <span v-if="changed" class="flex flex-wrap items-center gap-2 text-[13px] text-muted-foreground sm:ml-auto">
           {{ t('report.seenDifferent') }}

@@ -18,7 +18,8 @@ import { onEvent } from '@/lib/events'
 import { errorText, locale, t } from '@/lib/i18n'
 import { change, countryName, dailySeries, daysOf, formatMetric, hourLabel, hourlyItems, peakHour, shortDay, toNumber } from '@/lib/metrics'
 import { td, th } from '@/lib/table'
-import type { RelativePeriod, ReportQuery, ReportResult } from '@/modules/reports/types'
+import type { RelativePeriod, ReportQuery, ReportRange, ReportResult } from '@/modules/reports/types'
+import { presetRange, previousRange, sameRange, utcToday } from '@/modules/reports/rules'
 import { reportService } from '@/modules/reports/service'
 
 const METRIC = 'page_views'
@@ -38,25 +39,32 @@ let latestLoad = 0
 const empty = computed(() => !!daily.value && daily.value.rows.length === 0)
 
 /** Consulta das visitas no motor de relatórios, no período escolhido. */
-function query(body: Omit<ReportQuery, 'period' | 'source' | 'metrics'>, range?: { start: string; end: string }): Promise<ReportResult> {
-  return reportService.query({ ...body, source: 'page_views', metrics: [METRIC], period: range ?? { preset: period.value } })
+function section(body: Omit<ReportQuery, 'period' | 'source' | 'metrics'>, range?: ReportRange): ReportQuery {
+  return { ...body, source: 'page_views', metrics: [METRIC], period: range ?? { preset: period.value } }
 }
 
-/** Carrega as consultas da tela; resposta atrasada de outro período é ignorada. */
+/** Carrega as seções da tela numa requisição só; resposta atrasada de outro período é ignorada. */
 async function load() {
   const current = ++latestLoad
   loading.value = true
   loadError.value = null
   try {
-    const [days, hours, sites, countries] = await Promise.all([
-      query({ dimensions: ['date'], compare: compare.value, order: [{ field: 'date', descending: false }], limit: 400 }),
-      query({ dimensions: ['hour'], order: [{ field: 'hour', descending: false }], limit: 24 }),
-      query({ dimensions: ['site'], compare: compare.value, order: [{ field: METRIC }], limit: 100 }),
-      query({ dimensions: ['country'], order: [{ field: METRIC }], limit: 8 }),
-    ])
-    const before = compare.value && days.previous_period
-      ? await query({ dimensions: ['date'], order: [{ field: 'date', descending: false }], limit: 400 }, days.previous_period)
-      : null
+    const mode = compare.value ? 'previous' : 'none'
+    const byDay = { dimensions: ['date'], order: [{ field: 'date', descending: false }], limit: 400 }
+    const expected = previousRange(presetRange(period.value, utcToday()))
+    const sections = [
+      section({ ...byDay, compare: mode }),
+      section({ dimensions: ['hour'], order: [{ field: 'hour', descending: false }], limit: 24 }),
+      section({ dimensions: ['site'], compare: mode, order: [{ field: METRIC }], limit: 100 }),
+      section({ dimensions: ['country'], order: [{ field: METRIC }], limit: 8 }),
+    ]
+    if (compare.value) sections.push(section(byDay, expected))
+    const { results } = await reportService.batch(sections)
+    const [days, hours, sites, countries] = results as [ReportResult, ReportResult, ReportResult, ReportResult]
+    let before = compare.value ? (results[4] ?? null) : null
+    if (before && days.previous_period && !sameRange(days.previous_period, expected)) {
+      before = await reportService.query(section(byDay, days.previous_period))
+    }
     if (current !== latestLoad) return
     daily.value = days
     byHour.value = hours

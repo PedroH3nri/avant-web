@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { api, ApiError, readCookie, setUnauthorizedHandler } from '@/lib/api'
+import { api, ApiError, readCookie, setCompanyChangedHandler, setTabCompany, setUnauthorizedHandler } from '@/lib/api'
 
 function respond(status: number, body: unknown, headers: Record<string, string> = {}) {
   const fn = vi.fn(async () => new Response(body === null ? null : JSON.stringify(body), { status, headers }))
@@ -58,6 +58,46 @@ describe('api', () => {
     expect(handler).not.toHaveBeenCalled()
     await api.get('/company').catch(() => null)
     expect(handler).toHaveBeenCalledOnce()
+  })
+
+  it('manda a Empresa da aba em toda requisição', async () => {
+    const fetch = respond(200, { ok: true })
+    setTabCompany(() => 'c1')
+    await api.get('/company')
+    await api.patch('/company', { name: 'A' })
+    setTabCompany(() => null)
+    await api.get('/company')
+    const sent = fetch.mock.calls.map((call) => ((call as unknown as [string, RequestInit])[1].headers as Record<string, string>)['X-Avant-Company'])
+    expect(sent).toEqual(['c1', 'c1', undefined])
+  })
+
+  it('avisa quando a Empresa mudou em outra aba', async () => {
+    const handler = vi.fn()
+    setCompanyChangedHandler(handler)
+    respond(409, { error: { code: 'client_contact_taken', message: '' } })
+    await api.post('/clients', {}).catch(() => null)
+    expect(handler).not.toHaveBeenCalled()
+    respond(409, { error: { code: 'company_changed', message: '' } })
+    const error = await api.post('/clients', {}).catch((e: unknown) => e)
+    expect((error as ApiError).code).toBe('company_changed')
+    expect(handler).toHaveBeenCalledOnce()
+  })
+
+  it('não avisa quando a própria aba já trocou de Empresa durante a requisição', async () => {
+    const handler = vi.fn()
+    setCompanyChangedHandler(handler)
+    let company = 'c1'
+    setTabCompany(() => company)
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        company = 'c2'
+        return new Response(JSON.stringify({ error: { code: 'company_changed', message: '' } }), { status: 409 })
+      }),
+    )
+    await api.get('/company').catch(() => null)
+    expect(handler).not.toHaveBeenCalled()
+    setTabCompany(() => null)
   })
 
   it('sem conexão vira network_error', async () => {

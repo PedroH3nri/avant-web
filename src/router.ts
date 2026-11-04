@@ -1,5 +1,8 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
-import { setUnauthorizedHandler } from '@/lib/api'
+import { toast } from 'vue-sonner'
+import { setCompanyChangedHandler, setTabCompany, setUnauthorizedHandler } from '@/lib/api'
+import { errorText } from '@/lib/i18n'
+import { onCompanyAnnounced } from '@/lib/tabs'
 import { useSession } from '@/stores/session'
 
 // Os caminhos de /entrar, /entrar/2fa, /convite/{token}, /redefinir-senha/{token} e
@@ -133,4 +136,29 @@ setUnauthorizedHandler(() => {
   session.set(null)
   const here = router.currentRoute.value
   if (!here.meta.public) void router.push({ path: '/entrar', query: { next: here.fullPath } })
+})
+
+setTabCompany(() => useSession().me?.active_company_id ?? null)
+
+/** Evita repetir o aviso quando várias requisições recebem company_changed juntas. */
+let following: Promise<void> | null = null
+
+/** Outra aba trocou a Empresa da sessão: esta aba acompanha, avisa e volta ao início. */
+function followOtherTab(): Promise<void> {
+  following ??= (async () => {
+    const session = useSession()
+    await session.followOtherTab().catch(() => null)
+    toast.warning(errorText('company_changed'))
+    if (session.me && router.currentRoute.value.path !== '/') await router.push('/')
+  })().finally(() => {
+    following = null
+  })
+  return following
+}
+
+setCompanyChangedHandler(() => void followOtherTab())
+
+onCompanyAnnounced((companyId) => {
+  const session = useSession()
+  if (session.me && companyId !== session.me.active_company_id) void followOtherTab()
 })

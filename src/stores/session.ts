@@ -5,6 +5,7 @@ import { computed, ref } from 'vue'
 import { ApiError } from '@/lib/api'
 import { reconnectEvents } from '@/lib/events'
 import { chooseLang } from '@/lib/i18n'
+import { announceCompany } from '@/lib/tabs'
 import { applyAccent, theme } from '@/lib/theme'
 import type { AccentId, Lang, Me, Theme, UserRef } from '@/lib/types'
 import { accountService } from '@/modules/account/service'
@@ -132,11 +133,24 @@ export const useSession = defineStore('session', () => {
     }
   }
 
-  /** Troca a Empresa ativa e reabre os eventos. */
+  /** Troca a Empresa ativa, reabre os eventos e avisa as outras abas. */
   async function switchCompany(companyId: string) {
     set(await authService.switchCompany(companyId))
     reconnectEvents()
+    announceCompany(me.value?.active_company_id ?? null)
   }
 
-  return { me, loaded, company, internalCompany, clientCompanies, lastClientId, displayCurrency, can, canIn, set, load, login, verifyMfa, logout, switchCompany, setDisplayCurrency, setAppearance, setUser }
+  /** Aceita o convite já logado: a sessão entra na Empresa nova e as outras abas acompanham. */
+  async function acceptInvitation(token: string, body: Record<string, unknown>) {
+    set(await authService.acceptInvitation(token, body))
+    announceCompany(me.value?.active_company_id ?? null)
+  }
+
+  /** Outra aba trocou a Empresa da sessão: recarrega a pessoa e reabre os eventos. */
+  async function followOtherTab() {
+    await load()
+    reconnectEvents()
+  }
+
+  return { me, loaded, company, internalCompany, clientCompanies, lastClientId, displayCurrency, can, canIn, set, load, login, verifyMfa, logout, switchCompany, followOtherTab, acceptInvitation, setDisplayCurrency, setAppearance, setUser }
 })

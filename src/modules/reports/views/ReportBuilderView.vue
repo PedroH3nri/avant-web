@@ -31,6 +31,7 @@ import SaveReportDialog, { type SaveForm } from '@/modules/reports/components/Sa
 import {
   builderState,
   canExport,
+  comparisonReady,
   emptyDraft,
   fromReport,
   fromTemplate,
@@ -166,6 +167,12 @@ async function preview() {
     previewing.value = false
     result.value = null
     previewError.value = t('report.pickMetric')
+    return
+  }
+  if (!comparisonReady(draft.value.compare)) {
+    latest++
+    previewing.value = false
+    previewError.value = t('compare.pickDates')
     return
   }
   const request = ++latest

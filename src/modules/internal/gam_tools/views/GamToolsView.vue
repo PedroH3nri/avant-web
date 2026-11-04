@@ -1,6 +1,7 @@
 <script setup lang="ts">
 /** Ferramentas do GAM: as ações e as execuções sempre na tela; as ações ativam quando a network
  * do cliente é escolhida, e a tabela mostra as execuções de todas até a escolha. */
+import { saveFile } from '@/lib/utils'
 import { computed, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useDebounceFn } from '@vueuse/core'
@@ -36,7 +37,6 @@ import {
   installable,
   languageLabel,
   runStateLabel,
-  saveFile,
   toolDesc,
   toolName,
   writes,

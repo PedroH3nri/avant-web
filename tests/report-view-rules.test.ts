@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { emptyDraft, savedPeriod, thumbPath, thumbShape, viewChanged, viewDraft } from '@/modules/reports/rules'
+import { emptyDraft, NO_COMPARISON, presetRange, previousRange, savedPeriod, thumbPath, thumbShape, viewChanged, viewDraft, type Comparison } from '@/modules/reports/rules'
 import type { ReportPreview } from '@/modules/reports/types'
 import { pageCount, pageSlice } from '@/lib/pagination'
+
+const NONE: Comparison = NO_COMPARISON
+const PREVIOUS: Comparison = { mode: 'previous', start: null, end: null }
 
 /** Miniatura com os pontos dados. */
 const preview = (values: string[]): ReportPreview => ({
@@ -32,19 +35,20 @@ describe('miniatura e leitura do relatório salvo', () => {
   })
 
   it('muda o período só na visita e sabe voltar ao salvo', () => {
-    const saved = { ...emptyDraft('R'), period: 'last_7_days' as const, compare: false }
+    const saved = { ...emptyDraft('R'), period: 'last_7_days' as const, compare: NONE }
     expect(savedPeriod(saved)).toBe('last_7_days')
-    expect(viewChanged(saved, 'last_7_days', false)).toBe(false)
-    const shown = viewDraft(saved, 'last_month', true)
-    expect(shown).toMatchObject({ period: 'last_month', compare: true, fixedPeriod: null, name: 'R' })
-    expect(viewChanged(saved, 'last_month', false)).toBe(true)
+    expect(viewChanged(saved, 'last_7_days', NONE)).toBe(false)
+    const shown = viewDraft(saved, 'last_month', PREVIOUS)
+    expect(shown).toMatchObject({ period: 'last_month', compare: PREVIOUS, fixedPeriod: null, name: 'R' })
+    expect(viewChanged(saved, 'last_month', NONE)).toBe(true)
+    expect(viewChanged(saved, 'last_7_days', { mode: 'custom', start: '2026-01-01', end: '2026-01-31' })).toBe(true)
   })
 
   it('mantém as datas fixas do relatório enquanto a visita não troca o período', () => {
     const saved = { ...emptyDraft('R'), fixedPeriod: { start: '2026-09-01', end: '2026-09-30' } }
     expect(savedPeriod(saved)).toBe('fixed')
-    expect(viewDraft(saved, 'fixed', true).fixedPeriod).toEqual(saved.fixedPeriod)
-    expect(viewDraft(saved, 'yesterday', false).fixedPeriod).toBeNull()
+    expect(viewDraft(saved, 'fixed', PREVIOUS).fixedPeriod).toEqual(saved.fixedPeriod)
+    expect(viewDraft(saved, 'yesterday', NONE).fixedPeriod).toBeNull()
   })
 })
 
@@ -55,5 +59,15 @@ describe('páginas de uma lista que já chegou inteira', () => {
     expect(pageSlice(items, 3)).toEqual([20, 21, 22])
     expect(pageCount(23)).toBe(3)
     expect(pageCount(0)).toBe(0)
+  })
+})
+
+describe('datas dos períodos relativos', () => {
+  it('conta os períodos como o motor e acha o anterior de mesmo tamanho', () => {
+    expect(presetRange('last_7_days', '2026-11-04')).toEqual({ start: '2026-10-28', end: '2026-11-03' })
+    expect(presetRange('last_month', '2026-03-15')).toEqual({ start: '2026-02-01', end: '2026-02-28' })
+    expect(presetRange('this_month', '2026-11-04')).toEqual({ start: '2026-11-01', end: '2026-11-04' })
+    expect(previousRange({ start: '2026-10-28', end: '2026-11-03' })).toEqual({ start: '2026-10-21', end: '2026-10-27' })
+    expect(previousRange({ start: '2026-03-01', end: '2026-03-01' })).toEqual({ start: '2026-02-28', end: '2026-02-28' })
   })
 })

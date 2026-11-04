@@ -7,7 +7,7 @@ import { lang, locale, t } from '@/lib/i18n'
 import { formatMetric, toNumber } from '@/lib/metrics'
 import { pageCount, pageSlice } from '@/lib/pagination'
 import { td, th } from '@/lib/table'
-import { dimensionText, metricInfo, scaleHue, type ReportDraft } from '@/modules/reports/rules'
+import { comparing, dimensionText, metricInfo, scaleHue, type ReportDraft } from '@/modules/reports/rules'
 import type { MetricCatalog, ReportResult } from '@/modules/reports/types'
 
 const props = defineProps<{ draft: ReportDraft; result: ReportResult; catalog: MetricCatalog }>()
@@ -31,13 +31,13 @@ function background(key: string, value: string | null | undefined) {
 </script>
 
 <template>
-  <DataTable :min="Math.max(480, (dimensions.length + metrics.length * (draft.compare ? 2 : 1)) * 140)">
+  <DataTable :min="Math.max(480, (dimensions.length + metrics.length * (comparing(draft) ? 2 : 1)) * 140)">
     <thead>
       <tr>
         <th v-for="dimension in dimensions" :key="dimension.key" :class="th">{{ dimension.label }}</th>
         <template v-for="metric in metrics" :key="metric.key">
           <th :class="[th, 'text-right']">{{ metric.label }}</th>
-          <th v-if="draft.compare" :class="[th, 'text-right']">{{ t('report.previousOf', { metric: metric.label }) }}</th>
+          <th v-if="comparing(draft)" :class="[th, 'text-right']">{{ t('report.previousOf', { metric: metric.label }) }}</th>
         </template>
       </tr>
     </thead>
@@ -45,7 +45,7 @@ function background(key: string, value: string | null | undefined) {
       <tr v-if="!draft.dimensions.length" class="hover:bg-muted">
         <template v-for="metric in metrics" :key="metric.key">
           <td :class="[td, 'text-right tnum whitespace-nowrap']" :style="background(metric.key, result.totals[metric.key])">{{ show(metric.key, result.totals[metric.key]) }}</td>
-          <td v-if="draft.compare" :class="[td, 'text-right tnum whitespace-nowrap text-muted-foreground']">{{ show(metric.key, result.previous_totals?.[metric.key]) }}</td>
+          <td v-if="comparing(draft)" :class="[td, 'text-right tnum whitespace-nowrap text-muted-foreground']">{{ show(metric.key, result.previous_totals?.[metric.key]) }}</td>
         </template>
       </tr>
       <tr v-for="(row, index) in shownRows" :key="`${page}-${index}`" class="hover:bg-muted">
@@ -54,7 +54,7 @@ function background(key: string, value: string | null | undefined) {
         </td>
         <template v-for="metric in metrics" :key="metric.key">
           <td :class="[td, 'text-right tnum whitespace-nowrap']" :style="background(metric.key, row.metrics[metric.key])">{{ show(metric.key, row.metrics[metric.key]) }}</td>
-          <td v-if="draft.compare" :class="[td, 'text-right tnum whitespace-nowrap text-muted-foreground']">{{ show(metric.key, row.previous?.[metric.key]) }}</td>
+          <td v-if="comparing(draft)" :class="[td, 'text-right tnum whitespace-nowrap text-muted-foreground']">{{ show(metric.key, row.previous?.[metric.key]) }}</td>
         </template>
       </tr>
     </tbody>

@@ -56,6 +56,15 @@ async function send(event: Event) {
     sending.value = null
   }
 }
+
+/** Baixa o arquivo do documento; um erro aparece no aviso. */
+async function fetchFile(kind: DocumentKind) {
+  try {
+    await download(documentService.filePath(kind))
+  } catch (error) {
+    toast.error(errorText(error instanceof ApiError ? error.code : 'unknown'))
+  }
+}
 </script>
 
 <template>
@@ -63,7 +72,7 @@ async function send(event: Event) {
     <input ref="picker" type="file" class="hidden" :accept="DOCUMENT_ACCEPT" @change="send" />
     <ul class="divide-y">
       <DocumentRow v-for="row in rows" :key="row.kind" :kind="row.kind" :document="row.document">
-        <Button v-if="row.document" size="sm" variant="outline" @click="download(documentService.fileUrl(row.kind))">
+        <Button v-if="row.document" size="sm" variant="outline" @click="fetchFile(row.kind)">
           <Download />{{ t('doc.download') }}
         </Button>
         <Button

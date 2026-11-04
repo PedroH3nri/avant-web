@@ -11,6 +11,7 @@ import type { Lang } from '@/lib/types'
 import type {
   ChartOptions,
   ChartType,
+  CompareMode,
   MetricCatalog,
   MetricFormat,
   MetricScale,
@@ -19,6 +20,7 @@ import type {
   RelativePeriod,
   ReportPreview,
   ReportQuery,
+  ReportRange,
   ReportRow,
   ReportTemplate,
   SavedQuery,
@@ -33,6 +35,32 @@ export interface DraftFilter {
   values: string[]
 }
 
+/** A comparação escolhida: o modo e, no período escolhido, as datas. */
+export interface Comparison {
+  mode: CompareMode
+  start: string | null
+  end: string | null
+}
+
+/** Sem comparação. */
+export const NO_COMPARISON: Comparison = { mode: 'none', start: null, end: null }
+
+/** Os modos de comparação na ordem do seletor. */
+export const COMPARE_MODES: CompareMode[] = ['none', 'previous', 'last_year', 'custom']
+
+/** Diz se o rascunho compara com outro período. */
+export const comparing = (draft: Pick<ReportDraft, 'compare'>) => draft.compare.mode !== 'none'
+
+/** A comparação está pronta para rodar: no período escolhido, as duas datas em ordem. */
+export function comparisonReady(comparison: Comparison): boolean {
+  if (comparison.mode !== 'custom') return true
+  return !!comparison.start && !!comparison.end && comparison.start <= comparison.end
+}
+
+/** Duas comparações iguais. */
+export const sameComparison = (first: Comparison, second: Comparison) =>
+  first.mode === second.mode && (first.mode !== 'custom' || (first.start === second.start && first.end === second.end))
+
 export interface ReportDraft {
   id: string | null
   name: string
@@ -43,7 +71,7 @@ export interface ReportDraft {
   period: RelativePeriod
   /** Datas fixas de um relatório salvo assim; o construtor ainda não as escolhe. */
   fixedPeriod: { start: string; end: string } | null
-  compare: boolean
+  compare: Comparison
   chart: ChartType
   stacked: boolean
   limit: number
@@ -76,7 +104,7 @@ export function emptyDraft(name = ''): ReportDraft {
     filters: [],
     period: 'last_30_days',
     fixedPeriod: null,
-    compare: false,
+    compare: { ...NO_COMPARISON },
     chart: 'line',
     stacked: false,
     limit: DEFAULT_LIMIT,
@@ -188,7 +216,9 @@ function savedQuery(draft: ReportDraft, catalog: MetricCatalog): SavedQuery {
     period: draft.fixedPeriod ?? { preset: draft.period },
     dimensions: draft.dimensions,
     filters: filters.map((item) => ({ field: item.field, operator: 'in', values: item.values })),
-    compare: draft.compare,
+    compare: draft.compare.mode,
+    compare_start: draft.compare.mode === 'custom' ? draft.compare.start : null,
+    compare_end: draft.compare.mode === 'custom' ? draft.compare.end : null,
     order: orderOf(draft),
     limit: draft.limit,
   }
@@ -227,9 +257,16 @@ function fromQuery(query: SavedQuery): Pick<ReportDraft, 'metrics' | 'dimensions
     filters: query.filters.map((item) => ({ field: item.field, values: [...item.values] })),
     period: query.period.preset ?? 'last_30_days',
     fixedPeriod: fixed,
-    compare: query.compare,
+    compare: comparisonOf(query),
     limit: query.limit,
   }
+}
+
+/** A comparação da consulta salva; ``true``/``false`` são do formato antigo. */
+export function comparisonOf(query: Pick<SavedQuery, 'compare' | 'compare_start' | 'compare_end'>): Comparison {
+  const raw = query.compare as CompareMode | boolean
+  const mode: CompareMode = raw === true ? 'previous' : raw === false || !raw ? 'none' : raw
+  return { mode, start: query.compare_start ?? null, end: query.compare_end ?? null }
 }
 
 /** O rascunho de uma consulta salva com o gráfico dela (como a de um widget de dashboard). */
@@ -401,7 +438,7 @@ export function thumbPath(values: (number | null)[], width: number, height: numb
 export type ViewPeriod = RelativePeriod | 'fixed'
 
 /** O rascunho que a leitura roda: o salvo com o período e a comparação escolhidos só nesta visita. */
-export function viewDraft(saved: ReportDraft, period: ViewPeriod, compare: boolean): ReportDraft {
+export function viewDraft(saved: ReportDraft, period: ViewPeriod, compare: Comparison): ReportDraft {
   if (period === 'fixed') return { ...saved, compare }
   return { ...saved, period, fixedPeriod: null, compare }
 }
@@ -412,6 +449,43 @@ export function savedPeriod(saved: ReportDraft): ViewPeriod {
 }
 
 /** A leitura está diferente do que o relatório salvou. */
-export function viewChanged(saved: ReportDraft, period: ViewPeriod, compare: boolean): boolean {
-  return period !== savedPeriod(saved) || compare !== saved.compare
+export function viewChanged(saved: ReportDraft, period: ViewPeriod, compare: Comparison): boolean {
+  return period !== savedPeriod(saved) || !sameComparison(compare, saved.compare)
 }
+
+/** O dia de hoje como o motor conta (UTC), em ISO. */
+export const utcToday = (now = new Date()) => now.toISOString().slice(0, 10)
+
+/** O dia ISO somado de ``days`` dias. */
+function shiftDay(iso: string, days: number): string {
+  const day = new Date(`${iso}T00:00:00Z`)
+  day.setUTCDate(day.getUTCDate() + days)
+  return day.toISOString().slice(0, 10)
+}
+
+/** As datas de um período relativo, contadas como o motor do avant-core conta. */
+export function presetRange(preset: RelativePeriod, today: string): ReportRange {
+  const yesterday = shiftDay(today, -1)
+  const firstOfMonth = `${today.slice(0, 8)}01`
+  const lastMonthEnd = shiftDay(firstOfMonth, -1)
+  const ranges: Record<RelativePeriod, ReportRange> = {
+    today: { start: today, end: today },
+    yesterday: { start: yesterday, end: yesterday },
+    last_7_days: { start: shiftDay(today, -7), end: yesterday },
+    last_30_days: { start: shiftDay(today, -30), end: yesterday },
+    this_month: { start: firstOfMonth, end: today },
+    last_month: { start: `${lastMonthEnd.slice(0, 8)}01`, end: lastMonthEnd },
+  }
+  return ranges[preset]
+}
+
+/** O período de mesmo tamanho logo antes, como a comparação com o anterior. */
+export function previousRange(range: ReportRange): ReportRange {
+  const days = Math.round((Date.parse(`${range.end}T00:00:00Z`) - Date.parse(`${range.start}T00:00:00Z`)) / 86_400_000)
+  const end = shiftDay(range.start, -1)
+  return { start: shiftDay(end, -days), end }
+}
+
+/** Duas faixas de datas iguais. */
+export const sameRange = (first: ReportRange | null, second: ReportRange | null) =>
+  !!first && !!second && first.start === second.start && first.end === second.end

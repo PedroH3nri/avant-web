@@ -72,15 +72,6 @@ export function installable(sites: GamToolSite[]): GamToolSite[] {
   return sites.filter((site) => site.format !== 'gtag')
 }
 
-/** Baixa um arquivo que veio da API. */
-export function saveFile(blob: Blob, name: string) {
-  const link = document.createElement('a')
-  link.href = URL.createObjectURL(blob)
-  link.download = name
-  link.click()
-  setTimeout(() => URL.revokeObjectURL(link.href), 1000)
-}
-
 /** O nome da ferramenta. */
 export function toolName(tool: ToolCard): string {
   return t(`gamt.tool.${tool}` as Key)

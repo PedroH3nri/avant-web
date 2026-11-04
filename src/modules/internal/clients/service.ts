@@ -1,6 +1,6 @@
 /** Chamadas da API dos clientes no painel interno. */
 
-import { api, API, type Query } from '@/lib/api'
+import { api, type Query } from '@/lib/api'
 import type { Items, Page } from '@/lib/types'
 import type { ClientDocument, ClientDocumentsOverview, DocumentKind } from '@/modules/documents/types'
 import type { AuditEntry, Client, ClientDetail, ClientMember, ClientNote, ClientOption, ManagerChange, OwnerInvitation } from '@/modules/internal/clients/types'
@@ -42,7 +42,7 @@ export const clientService = {
   /** Os documentos do cliente e se ele precisa enviá-los. */
   documents: (companyId: string) => api.get<ClientDocumentsOverview>(`/internal/clients/${companyId}/documents`),
   /** Endereço do download de um documento do cliente (o cookie da sessão vai junto). */
-  documentUrl: (companyId: string, kind: DocumentKind) => `${API}/internal/clients/${companyId}/documents/${kind}/file`,
+  documentPath: (companyId: string, kind: DocumentKind) => `/internal/clients/${companyId}/documents/${kind}/file`,
   /** Aprova o documento em análise. */
   approveDocument: (companyId: string, kind: DocumentKind) => api.post<ClientDocument>(`/internal/clients/${companyId}/documents/${kind}/approve`),
   /** Recusa o documento com o motivo. */

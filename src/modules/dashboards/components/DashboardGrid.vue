@@ -2,11 +2,12 @@
 /**
  * A grade de 12 colunas com os widgets do dashboard ou do modelo. Editando, da tela média para cima
  * arrasta pelo título e redimensiona pelo canto com a prévia na grade; no celular, os widgets ficam em
- * uma coluna e mudam só pelo menu de cada um.
+ * uma coluna e mudam só pelo menu de cada um. Os widgets com consulta rodam juntos, numa requisição.
  */
 import { computed, ref } from 'vue'
 import DashboardWidget from '@/modules/dashboards/components/DashboardWidget.vue'
 import { useWidgetDrag } from '@/modules/dashboards/drag'
+import { useDashboardRun, widgetErrorText } from '@/modules/dashboards/run'
 import { gridArea, moveWidget, readingOrder, removeWidget, resizeWidget } from '@/modules/dashboards/rules'
 import type { DashboardFilters, Widget } from '@/modules/dashboards/types'
 import type { MetricCatalog } from '@/modules/reports/types'
@@ -33,6 +34,13 @@ const source = computed({
 const drag = useWidgetDrag(grid, source)
 const ordered = computed(() => readingOrder(props.editing ? drag.shown.value : props.widgets))
 const activeId = drag.activeId
+const { run, failure, loading } = useDashboardRun(() => props)
+
+/** O erro do widget: o da requisição inteira ou o dele. */
+function widgetFailure(widget: Widget) {
+  const own = run.value.errors[widget.id]
+  return failure.value ?? (own ? widgetErrorText(own) : null)
+}
 </script>
 
 <template>
@@ -40,8 +48,6 @@ const activeId = drag.activeId
     <DashboardWidget
       v-for="widget in ordered"
       :key="widget.id"
-      :dashboard-id="dashboardId ?? ''"
-      :template-id="templateId"
       :widget="widget"
       :filters="filters"
       :catalog="catalog"
@@ -49,6 +55,9 @@ const activeId = drag.activeId
       :stored="stored.has(widget.id)"
       :preview="preview"
       :dragging="activeId === widget.id"
+      :result="run.results[widget.id] ?? null"
+      :failure="widgetFailure(widget)"
+      :loading="loading"
       class="min-h-[160px] md:min-h-0 md:[grid-column:var(--col)] md:[grid-row:var(--row)]"
       :style="{ '--col': gridArea(widget).gridColumn, '--row': gridArea(widget).gridRow }"
       @grab="(event, mode) => drag.begin(event, widget, mode)"

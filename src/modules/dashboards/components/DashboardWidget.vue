@@ -1,12 +1,12 @@
 <script setup lang="ts">
 /**
- * Um widget do dashboard: roda a consulta (do relatório salvo ou a própria) com os filtros da tela
- * e mostra o gráfico ou a tabela; o de texto mostra a nota, o de meta o andamento da meta e o de
- * conta a situação da Empresa. Num modelo pronto (``templateId``), roda pelo modelo; na prévia
- * (``preview``, um modelo dos clientes aberto pela Groone) não roda nada. Editando, ganha o menu de
+ * Um widget do dashboard: mostra o gráfico ou a tabela com o resultado que a grade rodou para todos
+ * os widgets de uma vez; o de texto mostra a nota, o de meta o andamento da meta e o de conta a
+ * situação da Empresa. Na prévia (``preview``, um modelo dos clientes aberto pela Groone) não mostra
+ * números. Editando, ganha o menu de
  * mover, mudar o tamanho e tirar e, da tela média para cima, arrasta pelo título e cresce pelo canto.
  */
-import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { DropdownMenuRoot, DropdownMenuSeparator, DropdownMenuTrigger } from 'reka-ui'
 import { MoreHorizontal } from 'lucide-vue-next'
 import Button from '@/components/ui/Button.vue'
@@ -16,7 +16,6 @@ import { ApiError } from '@/lib/api'
 import { errorText, lang, t } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 import type { DragMode } from '@/modules/dashboards/drag'
-import { dashboardService } from '@/modules/dashboards/service'
 import type { DashboardFilters, Widget } from '@/modules/dashboards/types'
 import GoalBar from '@/modules/internal/goals/components/GoalBar.vue'
 import { goalService } from '@/modules/internal/goals/service'
@@ -29,9 +28,6 @@ import { reportService } from '@/modules/reports/service'
 import type { MetricCatalog, ReportResult } from '@/modules/reports/types'
 
 const props = defineProps<{
-  dashboardId: string
-  /** O modelo pronto que a tela inicial mostra antes de existir um dashboard. */
-  templateId?: string
   /** Só o desenho do widget, sem rodar: os números aparecem no painel de quem vê o modelo. */
   preview?: boolean
   /** O widget está sendo arrastado ou redimensionado. */
@@ -42,6 +38,12 @@ const props = defineProps<{
   editing: boolean
   /** O widget já está gravado no dashboard (os novos só rodam depois de salvar). */
   stored: boolean
+  /** O resultado da consulta do widget, rodado pela grade. */
+  result: ReportResult | null
+  /** Por que a consulta do widget não rodou. */
+  failure: string | null
+  /** A grade está rodando as consultas. */
+  loading: boolean
 }>()
 const emit = defineEmits<{ move: [columns: number, rows: number]; resize: [columns: number, rows: number]; remove: []; grab: [event: PointerEvent, mode: DragMode] }>()
 
@@ -49,13 +51,12 @@ const today = new Date().toISOString().slice(0, 10)
 const month = today.slice(0, 7)
 const draft = ref<ReportDraft | null>(null)
 const reportName = ref<string | null>(null)
-const result = ref<ReportResult | null>(null)
 const goal = ref<GoalProgress | null>(null)
-const failure = ref<string | null>(null)
-const loading = ref(false)
+const goalFailure = ref<string | null>(null)
+const goalLoading = ref(false)
+const failure = computed(() => (props.widget.type === 'goal' ? goalFailure.value : props.failure))
+const loading = computed(() => (props.widget.type === 'goal' ? goalLoading.value : props.loading))
 let latest = 0
-let retryTimer: ReturnType<typeof setTimeout> | null = null
-let disposed = false
 
 const title = computed(() => {
   const widget = props.widget
@@ -67,10 +68,6 @@ const title = computed(() => {
   const metric = widget.query?.metrics[0]
   return metric ? metricInfo(metric, props.catalog, lang.value).label : t('dash.widget.query')
 })
-
-/** O motivo do erro da API, com o texto dela quando já explica. */
-const apiMessage = (error: unknown) =>
-  error instanceof ApiError ? (error.code === 'invalid_input' && error.message ? error.message : errorText(error.code, { s: Math.max(error.retryAfter ?? 2, 1) })) : errorText('unknown')
 
 /** Monta o rascunho do gráfico: o do relatório salvo ou o da consulta própria. */
 async function loadDraft() {
@@ -86,34 +83,24 @@ async function loadDraft() {
   }
 }
 
-/** Roda o widget; só a última resposta vale e o limite de taxa agenda nova tentativa. */
-async function run() {
-  if (retryTimer) clearTimeout(retryTimer)
-  if (disposed || !props.stored || props.preview) return
+/** Busca o andamento da meta do widget de meta; só a última resposta vale. */
+async function loadGoal() {
+  if (!props.stored || props.preview || props.widget.type !== 'goal') return
   const ticket = ++latest
-  failure.value = null
-  loading.value = true
+  goalFailure.value = null
+  goalLoading.value = true
   try {
-    if (props.widget.type === 'goal') {
-      const found = props.widget.goal_scope === 'team' ? (await goalService.team(month)).company : (await goalService.mine(month)).progress
-      if (ticket === latest) goal.value = found
-    } else if (props.widget.type !== 'text' && props.widget.type !== 'account') {
-      if (!draft.value) await loadDraft()
-      const found = props.templateId
-        ? await dashboardService.runTemplate(props.templateId, props.widget.id, props.filters)
-        : await dashboardService.run(props.dashboardId, props.widget.id, props.filters)
-      if (ticket === latest) result.value = found
-    }
+    const found = props.widget.goal_scope === 'team' ? (await goalService.team(month)).company : (await goalService.mine(month)).progress
+    if (ticket === latest) goal.value = found
   } catch (error) {
-    if (ticket !== latest) return
-    if (error instanceof ApiError && error.code === 'rate_limited') retryTimer = setTimeout(run, Math.max(error.retryAfter ?? 2, 1) * 1000)
-    else failure.value = apiMessage(error)
+    if (ticket === latest) goalFailure.value = error instanceof ApiError ? errorText(error.code, { s: Math.max(error.retryAfter ?? 2, 1) }) : errorText('unknown')
   } finally {
-    if (ticket === latest) loading.value = false
+    if (ticket === latest) goalLoading.value = false
   }
 }
 
-watch(() => [props.filters, props.stored, props.preview], run, { immediate: true, deep: true })
+watch(() => [props.filters, props.stored, props.preview], loadGoal, { immediate: true, deep: true })
+void loadDraft().catch(() => undefined)
 watch(
   () => props.widget,
   () => {
@@ -128,10 +115,6 @@ function grabTitle(event: PointerEvent) {
   emit('grab', event, 'move')
 }
 
-onBeforeUnmount(() => {
-  disposed = true
-  if (retryTimer) clearTimeout(retryTimer)
-})
 </script>
 
 <template>
