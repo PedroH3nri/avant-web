@@ -896,16 +896,16 @@ const dict = {
   'set.nameTitle': ['Nome da Empresa', 'Company name', 'Nombre de la empresa'],
   'set.nameNote': ['Use de 2 a 120 caracteres.', 'Use 2 to 120 characters.', 'Usa de 2 a 120 caracteres.'],
   'set.nameEmpty': ['Informe o nome da Empresa.', 'Enter the company name.', 'Escribe el nombre de la empresa.'],
-  'set.accent': ['Cor do sistema', 'System color', 'Color del sistema'],
+  'set.accent': ['Cor secundária do sistema', 'System secondary color', 'Color secundario del sistema'],
   'set.accentDesc': [
-    'Usada nos botões principais e nas vagas da equipe. Só para você, em qualquer Empresa.',
-    'Used on primary buttons and team seats. Just for you, in every company.',
-    'Se usa en los botones principales y las plazas del equipo. Solo para ti, en cualquier empresa.',
+    'Usada nos botões principais, na seleção e nas vagas da equipe, num tom próprio para cada tema. Só para você, em qualquer Empresa.',
+    'Used on primary buttons, selection and team seats, with its own shade in each theme. Just for you, in every company.',
+    'Se usa en los botones principales, la selección y las plazas del equipo, con un tono propio en cada tema. Solo para ti, en cualquier empresa.',
   ],
   'set.accentNote': [
-    'Muda na hora e fica guardada na sua conta.',
-    'Changes right away and is saved to your account.',
-    'Cambia al instante y se guarda en tu cuenta.',
+    'Muda na hora e fica guardada na sua conta. As amostras mostram a cor no seu tema de agora.',
+    'Changes right away and is saved to your account. Swatches show the color in your current theme.',
+    'Cambia al instante y se guarda en tu cuenta. Las muestras enseñan el color en tu tema actual.',
   ],
   'set.accentReadonly': [
     'Só quem gerencia a Empresa troca o nome.',
@@ -977,6 +977,7 @@ const dict = {
   ],
   'set.theme.light': ['Claro', 'Light', 'Claro'],
   'set.theme.dark': ['Escuro', 'Dark', 'Oscuro'],
+  'set.theme.groone': ['GroOne', 'GroOne', 'GroOne'],
   'set.theme.system': ['Sistema', 'System', 'Sistema'],
   'set.langDesc': [
     'Só para você, guardado na sua conta. Os e-mails do Avant também chegam nesse idioma.',
@@ -985,9 +986,14 @@ const dict = {
   ],
   'accent.default': ['Padrão', 'Default', 'Predeterminado'],
   'accent.blue': ['Azul', 'Blue', 'Azul'],
+  'accent.navy': ['Marinho', 'Navy', 'Marino'],
+  'accent.cyan': ['Ciano', 'Cyan', 'Cian'],
   'accent.green': ['Verde', 'Green', 'Verde'],
   'accent.purple': ['Roxo', 'Purple', 'Morado'],
+  'accent.pink': ['Rosa', 'Pink', 'Rosa'],
   'accent.orange': ['Laranja', 'Orange', 'Naranja'],
+  'accent.gold': ['Dourado', 'Gold', 'Dorado'],
+  'accent.graphite': ['Grafite', 'Graphite', 'Grafito'],
 
   // Equipe
   'team.title': ['Equipes', 'Teams', 'Equipos'],

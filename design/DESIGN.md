@@ -133,13 +133,15 @@ The Ápice (chosen by the owner on 2026-10-26, avant-web#56): an A without a cro
 ## Colors
 
 ### Primary
-Ink (#171717) is the primary: primary buttons, the active tab underline, the company's seats in the usage bar. In dark mode it flips to #EDEDED with dark text. Each Empresa may swap the primary for Azul, Verde, Roxo or Laranja in Configurações; only `--primary` and its foreground change.
+Ink (#171717) is the primary: primary buttons, the active tab underline, the company's seats in the usage bar. In dark mode it flips to #EDEDED with dark text. Each person may swap the primary for a **system secondary color** ("Cor secundária do sistema") in Configurações: Azul, Marinho, Ciano, Verde, Roxo, Rosa, Laranja, Dourado or Grafite (no red: it reads as delete). Every color has its own shade in each theme, and the swatches show the shade of the current theme; only `--primary`, its foreground and, in GroOne, `--ring` change.
+
+**GroOne theme** (Pedro, 04/11): a third theme beside Light and Dark, in the tones of the brand navy (#0A213D, from the GroOne logo). Background near-black navy, cards a step below #0A213D, the sidebar the same color as the top bar, and the default primary a deep blue (`215 78% 27%`) with white text. Marinho and Grafite get a light inner border on the primary button in this theme (`--primary-edge`), because they sink into the navy background. Charts use the dark-mode series colors.
 
 ### Neutral
 White surface for headers, page bands and cards; #FAFAFA band behind the work area and inside card footers; #EBEBEB hairlines; #666666 secondary text.
 
 ### Named Rules
-- **Blue is for links and focus only.** Never a fill, never a button.
+- **Blue is for links and focus only** in the Light and Dark themes with the default color. The GroOne theme and the Azul/Marinho secondary colors are the exceptions, chosen by the person.
 - **State is a dot plus a word.** Conectada (ok), Testando conexão (warn), Sem acesso (bad), Convite enviado / pendente (pending). Never color alone.
 
 ## Typography
@@ -190,5 +192,5 @@ KPI tiles sit in one hairline-divided strip: 13px muted label, 24px semibold val
 
 ### Don't:
 - Don't add colored sidebars, gradients on surfaces, or soft-shadowed cards.
-- Don't use blue for anything but links and focus.
+- Don't use blue for anything but links and focus, except in the GroOne theme or when the person chose a blue secondary color.
 - Don't use eyebrows above headings or big-number tiles as page structure.

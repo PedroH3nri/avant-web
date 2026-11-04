@@ -1,5 +1,6 @@
 <script setup lang="ts">
-/** Cartão da cor do sistema da pessoa: muda na hora e fica guardada na conta. */
+/** Cartão da cor secundária do sistema da pessoa: muda na hora, fica guardada na conta e tem um tom
+ * por tema; as amostras mostram a cor no tema de agora. */
 import { computed } from 'vue'
 import { toast } from 'vue-sonner'
 import { Check } from 'lucide-vue-next'
@@ -7,12 +8,13 @@ import { RadioGroupItem, RadioGroupRoot } from 'reka-ui'
 import Card from '@/components/ui/Card.vue'
 import { ApiError } from '@/lib/api'
 import { errorText, t } from '@/lib/i18n'
-import { ACCENTS, type AccentId } from '@/lib/theme'
+import { ACCENTS, shownTheme, swatchColor, theme, type AccentId } from '@/lib/theme'
 import { cn } from '@/lib/utils'
 import { useSession } from '@/stores/session'
 
 const session = useSession()
 const accent = computed(() => session.me?.accent ?? 'default')
+const shown = computed(() => shownTheme(theme.value))
 
 /** Aplica a cor escolhida e guarda na conta; se a API recusar, a anterior volta. */
 async function choose(value: unknown) {
@@ -38,7 +40,7 @@ async function choose(value: unknown) {
           )
         "
       >
-        <span class="h-4 w-4 rounded-full ring-1 ring-inset ring-foreground/10" :style="{ background: accentOption.id === 'default' ? 'hsl(var(--foreground))' : accentOption.hex }" />
+        <span class="h-4 w-4 rounded-full ring-1 ring-inset ring-foreground/10" :style="{ background: swatchColor(accentOption, shown) }" />
         {{ t(`accent.${accentOption.id}`) }}
         <Check v-if="accent === accentOption.id" class="h-3.5 w-3.5" aria-hidden="true" />
       </RadioGroupItem>
