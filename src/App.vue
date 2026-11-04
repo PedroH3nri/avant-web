@@ -5,7 +5,7 @@ import { Toaster } from 'vue-sonner'
 import 'vue-sonner/style.css'
 import { theme } from '@/lib/theme'
 
-const toasterTheme = computed(() => theme.value)
+const toasterTheme = computed(() => (theme.value === 'groone' ? 'dark' : theme.value))
 </script>
 
 <template>
