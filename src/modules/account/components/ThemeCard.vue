@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** Cartão do tema (Claro, Escuro, Sistema) com uma prévia de cada opção, como no protótipo. */
+/** Cartão do tema (Claro, Escuro, GroOne, Sistema) com uma prévia de cada opção, como no protótipo. */
 import { toast } from 'vue-sonner'
 import { RadioGroupIndicator, RadioGroupItem, RadioGroupRoot } from 'reka-ui'
 import Card from '@/components/ui/Card.vue'
@@ -14,6 +14,7 @@ const session = useSession()
 /** Fundo da prévia de cada tema; o do sistema mostra metade clara e metade escura. */
 function previewClass(option: Theme): string {
   if (option === 'dark') return 'bg-neutral-950'
+  if (option === 'groone') return 'bg-[#030b17]'
   if (option === 'light') return 'bg-white'
   return 'bg-gradient-to-r from-white from-50% to-neutral-950 to-50%'
 }
@@ -30,7 +31,7 @@ async function choose(value: unknown) {
 
 <template>
   <Card :title="t('set.theme')" :desc="t('set.themeDesc')">
-    <RadioGroupRoot :model-value="theme" class="grid gap-3 sm:grid-cols-3" :aria-label="t('set.theme')" @update:model-value="choose">
+    <RadioGroupRoot :model-value="theme" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" :aria-label="t('set.theme')" @update:model-value="choose">
       <RadioGroupItem
         v-for="themeOption in THEMES"
         :key="themeOption"
@@ -43,8 +44,8 @@ async function choose(value: unknown) {
         "
       >
         <span :class="cn('block h-16 overflow-hidden rounded-md border', previewClass(themeOption))" aria-hidden="true">
-          <span :class="cn('mx-2 mt-2 block h-2 w-10 rounded-full', themeOption === 'dark' ? 'bg-neutral-700' : 'bg-neutral-200')" />
-          <span :class="cn('mx-2 mt-1.5 block h-2 w-16 rounded-full', themeOption === 'dark' ? 'bg-neutral-800' : 'bg-neutral-100')" />
+          <span :class="cn('mx-2 mt-2 block h-2 w-10 rounded-full', themeOption === 'dark' ? 'bg-neutral-700' : themeOption === 'groone' ? 'bg-[#1170D2]' : 'bg-neutral-200')" />
+          <span :class="cn('mx-2 mt-1.5 block h-2 w-16 rounded-full', themeOption === 'dark' ? 'bg-neutral-800' : themeOption === 'groone' ? 'bg-[#0A213D]' : 'bg-neutral-100')" />
         </span>
         <span class="flex items-center gap-2 text-[14px]">
           <span class="grid h-4 w-4 place-items-center rounded-full border border-foreground/40">

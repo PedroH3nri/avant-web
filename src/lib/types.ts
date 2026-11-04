@@ -7,10 +7,10 @@ export type Localized = Partial<Record<Lang, string>>
 export type SiteScope = 'all' | 'assigned'
 
 /** Tema do painel escolhido pela pessoa. */
-export type Theme = 'light' | 'dark' | 'system'
+export type Theme = 'light' | 'dark' | 'groone' | 'system'
 
 /** Cor de destaque escolhida pela pessoa. */
-export type AccentId = 'default' | 'blue' | 'green' | 'purple' | 'orange'
+export type AccentId = 'default' | 'blue' | 'navy' | 'cyan' | 'green' | 'purple' | 'pink' | 'orange' | 'gold' | 'graphite'
 
 export interface Items<T> {
   items: T[]
