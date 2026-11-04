@@ -99,19 +99,20 @@ const SERVICE_ACCOUNT = 'avant-gam@groone-avant.iam.gserviceaccount.com'
 const ACCENTS = [
   { id: 'padrao', label: 'Padrão', light: '0 0% 9%', fgLight: '0 0% 100%', dark: '0 0% 93%', fgDark: '0 0% 4%', groone: '215 78% 27%', fgGroone: '0 0% 100%' },
   { id: 'azul', label: 'Azul', light: '212 100% 45%', fgLight: '0 0% 100%', dark: '212 100% 62%', fgDark: '0 0% 4%', groone: '212 85% 40%', fgGroone: '0 0% 100%' },
-  { id: 'marinho', label: 'Marinho', light: '213 72% 14%', fgLight: '0 0% 100%', dark: '213 55% 45%', fgDark: '0 0% 100%', groone: '213 62% 21%', fgGroone: '0 0% 100%' },
+  { id: 'marinho', label: 'Marinho', light: '213 72% 14%', fgLight: '0 0% 100%', dark: '213 55% 45%', fgDark: '0 0% 100%', groone: '213 62% 21%', fgGroone: '0 0% 100%', edgeGroone: '213 45% 60%' },
   { id: 'ciano', label: 'Ciano', light: '192 85% 32%', fgLight: '0 0% 100%', dark: '189 75% 52%', fgDark: '0 0% 4%', groone: '192 80% 28%', fgGroone: '0 0% 100%' },
   { id: 'verde', label: 'Verde', light: '152 76% 28%', fgLight: '0 0% 100%', dark: '150 60% 52%', fgDark: '0 0% 4%', groone: '152 70% 25%', fgGroone: '0 0% 100%' },
   { id: 'roxo', label: 'Roxo', light: '262 70% 52%', fgLight: '0 0% 100%', dark: '262 85% 74%', fgDark: '0 0% 4%', groone: '262 55% 38%', fgGroone: '0 0% 100%' },
   { id: 'rosa', label: 'Rosa', light: '330 72% 45%', fgLight: '0 0% 100%', dark: '330 85% 70%', fgDark: '0 0% 4%', groone: '330 65% 36%', fgGroone: '0 0% 100%' },
   { id: 'laranja', label: 'Laranja', light: '22 92% 44%', fgLight: '0 0% 100%', dark: '26 95% 60%', fgDark: '0 0% 4%', groone: '22 85% 36%', fgGroone: '0 0% 100%' },
   { id: 'dourado', label: 'Dourado', light: '44 88% 46%', fgLight: '0 0% 9%', dark: '45 95% 58%', fgDark: '0 0% 4%', groone: '43 80% 45%', fgGroone: '214 72% 9%' },
-  { id: 'grafite', label: 'Grafite', light: '215 16% 32%', fgLight: '0 0% 100%', dark: '215 16% 70%', fgDark: '0 0% 4%', groone: '215 25% 30%', fgGroone: '0 0% 100%' },
+  { id: 'grafite', label: 'Grafite', light: '215 16% 32%', fgLight: '0 0% 100%', dark: '215 16% 70%', fgDark: '0 0% 4%', groone: '215 25% 30%', fgGroone: '0 0% 100%', edgeGroone: '215 25% 65%' },
 ]
 function accentCss(a: (typeof ACCENTS)[number]) {
   const l = `--primary:${a.light};--primary-foreground:${a.fgLight};`
   const d = `--primary:${a.dark};--primary-foreground:${a.fgDark};`
-  const g = `--primary:${a.groone};--primary-foreground:${a.fgGroone};--ring:${a.groone};`
+  const edge = 'edgeGroone' in a ? `--primary-edge:${a.edgeGroone};` : ''
+  const g = `--primary:${a.groone};--primary-foreground:${a.fgGroone};--ring:${a.groone};${edge}`
   return `:root{${l}} @media (prefers-color-scheme: dark){:root:not([data-theme="light"]):not([data-theme="groone"]){${d}}} :root[data-theme="dark"]{${d}} :root[data-theme="groone"]{${g}}`
 }
 

@@ -38,6 +38,8 @@
     --bad: 358 75% 47%;
     --bad-soft: 0 100% 97%;
     --radius: 0.375rem;
+    /* Borda do botão principal: some, menos quando a cor some no fundo do tema. */
+    --primary-edge: 0 0% 0% / 0;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
