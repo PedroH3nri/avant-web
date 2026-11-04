@@ -18,7 +18,7 @@ Painel Vue 3 do Groone Avant. Leia o README antes de mudar algo.
   linhas sobre o que faz, nada de comentário ao lado do código. Conferido por `pnpm clean-code`.
 - Antes de abrir PR: `pnpm lint && pnpm clean-code && pnpm typecheck && pnpm test && pnpm build`.
 - Nada de segredos no repositório. Comentários em português.
-- PRs vão para `develop`.
+- PRs vão para `pre-develop`; a promoção para `develop` passa por revisão e CI (skill `avant-fluxo-de-trabalho`).
 
 ## Contexto, issues e skills
 
