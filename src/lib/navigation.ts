@@ -57,6 +57,7 @@ export const NAV_GROUPS: NavGroup[] = [
     icon: Wrench,
     items: [
       { to: '/interno/tarefas', key: 'nav.tasks', icon: ListTodo, internal: true },
+      { to: '/interno/ferramentas-gam', key: 'nav.gamTools', icon: Wrench, internal: true },
       { to: '/interno/alertas', key: 'nav.alerts', icon: BellRing, internal: true },
       { to: '/interno/envios', key: 'nav.schedules', icon: MailCheck, internal: true },
       { to: '/interno/modelos-de-dashboard', key: 'nav.dashboardTemplates', icon: LayoutTemplate, internal: true },
