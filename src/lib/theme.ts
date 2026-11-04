@@ -45,13 +45,14 @@ export function accentFor(id: string | null | undefined): Accent {
   return ACCENTS.find((accent) => accent.id === id) ?? ACCENTS[0]!
 }
 
-/** CSS que troca a cor primária em cada tema; no GroOne o padrão já vem do ``styles.css``. */
+/** CSS que troca a cor primária em cada tema; no GroOne o padrão já vem do ``styles.css``. O foco
+ * (``--ring``) fica com o azul do tema, para continuar visível com qualquer cor. */
 export function accentCss(accent: Accent): string {
   if (accent.id === 'default') return ''
   const light = `--primary:${accent.light};--primary-foreground:${accent.lightText};`
   const dark = `--primary:${accent.dark};--primary-foreground:${accent.darkText};`
   const edge = accent.grooneEdge ? `--primary-edge:${accent.grooneEdge};` : ''
-  const groone = `--primary:${accent.groone};--primary-foreground:${accent.grooneText};--ring:${accent.groone};${edge}`
+  const groone = `--primary:${accent.groone};--primary-foreground:${accent.grooneText};${edge}`
   return `:root{${light}}@media (prefers-color-scheme: dark){:root:not([data-theme="light"]):not([data-theme="groone"]){${dark}}}:root[data-theme="dark"]{${dark}}:root[data-theme="groone"]{${groone}}`
 }
 
