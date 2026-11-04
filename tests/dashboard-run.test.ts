@@ -1,7 +1,7 @@
 /** Testes da execução do dashboard inteiro numa requisição. */
 
 import { describe, expect, it } from 'vitest'
-import { runsQuery, widgetErrorText } from '@/modules/dashboards/run'
+import { runKey, runsQuery, widgetErrorText } from '@/modules/dashboards/run'
 import type { Widget } from '@/modules/dashboards/types'
 
 /** Um widget mínimo do tipo pedido. */
@@ -24,5 +24,15 @@ describe('widgetErrorText', () => {
 
   it('usa o texto do código nos outros erros', () => {
     expect(widgetErrorText({ code: 'not_found', message: 'x' })).not.toBe('x')
+  })
+})
+
+describe('runKey', () => {
+  it('muda quando a consulta gravada muda e ignora widgets sem consulta', () => {
+    const saved = [{ ...widgetOf('query'), query: { metrics: ['revenue'] } }] as Widget[]
+    const key = runKey({ dashboardId: 'd1', saved, filters: null })
+    const edited = [{ ...widgetOf('query'), query: { metrics: ['impressions'] } }] as Widget[]
+    expect(runKey({ dashboardId: 'd1', saved: edited, filters: null })).not.toBe(key)
+    expect(runKey({ dashboardId: 'd1', saved: [...saved, { ...widgetOf('text'), id: 'w2' }], filters: null })).toBe(key)
   })
 })
