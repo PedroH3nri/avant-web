@@ -13,6 +13,10 @@ describe('tema e cor secundária', () => {
     expect(css).toContain(':not([data-theme="groone"])')
   })
 
+  it('o foco, a seleção e o cursor ficam com o azul do tema, não com a cor escolhida', () => {
+    for (const accent of ACCENTS) expect(accentCss(accent)).not.toContain('--ring')
+  })
+
   it('marinho e grafite ganham borda clara só no GroOne', () => {
     expect(accentCss(accentFor('navy'))).toMatch(/:root\[data-theme="groone"\]\{[^}]*--primary-edge:213 45% 60%/)
     expect(accentCss(accentFor('blue'))).not.toContain('--primary-edge')

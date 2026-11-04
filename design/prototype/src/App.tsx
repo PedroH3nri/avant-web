@@ -112,7 +112,7 @@ function accentCss(a: (typeof ACCENTS)[number]) {
   const l = `--primary:${a.light};--primary-foreground:${a.fgLight};`
   const d = `--primary:${a.dark};--primary-foreground:${a.fgDark};`
   const edge = 'edgeGroone' in a ? `--primary-edge:${a.edgeGroone};` : ''
-  const g = `--primary:${a.groone};--primary-foreground:${a.fgGroone};--ring:${a.groone};${edge}`
+  const g = `--primary:${a.groone};--primary-foreground:${a.fgGroone};${edge}`
   return `:root{${l}} @media (prefers-color-scheme: dark){:root:not([data-theme="light"]):not([data-theme="groone"]){${d}}} :root[data-theme="dark"]{${d}} :root[data-theme="groone"]{${g}}`
 }
 
