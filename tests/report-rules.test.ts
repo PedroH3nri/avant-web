@@ -27,7 +27,7 @@ import {
   wordAt,
   type ReportDraft,
 } from '@/modules/reports/rules'
-import type { MetricCatalog, ReportRow, ReportTemplate, SavedReport } from '@/modules/reports/types'
+import type { CompareMode, MetricCatalog, ReportRow, ReportTemplate, SavedReport } from '@/modules/reports/types'
 
 const label = { pt: 'x', en: 'x', es: 'x' }
 const catalog: MetricCatalog = {
@@ -132,7 +132,7 @@ describe('regras do construtor de relatórios', () => {
       id: 'r1',
       name: 'Receita',
       description: null,
-      query: { source: 'gam', metrics: ['revenue'], period: { preset: 'last_7_days' }, dimensions: ['site'], filters: [{ field: 'site', operator: 'in', values: ['a'] }], compare: true, order: [], limit: 10 },
+      query: { source: 'gam', metrics: ['revenue'], period: { preset: 'last_7_days' }, dimensions: ['site'], filters: [{ field: 'site', operator: 'in', values: ['a'] }], compare: true as unknown as CompareMode, compare_start: null, compare_end: null, order: [], limit: 10 },
       chart_type: 'bar',
       chart_options: {},
       visibility: 'roles',
@@ -143,7 +143,7 @@ describe('regras do construtor de relatórios', () => {
       updated_at: '2026-10-28T00:00:00Z',
       editable: false,
     }
-    expect(fromReport(saved)).toMatchObject({ id: 'r1', period: 'last_7_days', compare: true, filters: [{ field: 'site', values: ['a'] }], styles: {}, roleIds: ['p1'], editable: false, limit: 10 })
+    expect(fromReport(saved)).toMatchObject({ id: 'r1', period: 'last_7_days', compare: { mode: 'previous', start: null, end: null }, filters: [{ field: 'site', values: ['a'] }], styles: {}, roleIds: ['p1'], editable: false, limit: 10 })
     const template: ReportTemplate = { key: 'k', name: { pt: 'Receita por site', en: 'Revenue by site', es: 'x' }, query: saved.query, chart_type: 'table', chart_options: { metrics: { revenue: { color: 'red' } } } }
     expect(fromTemplate(template, 'en')).toMatchObject({ id: null, name: 'Revenue by site', visibility: 'private', editable: true, styles: { revenue: { color: 'red' } } })
   })
@@ -201,7 +201,7 @@ describe('regras do construtor de relatórios', () => {
     expect(builderState(draft({ name: 'Novo' }), null, catalog)).toBe('new')
     expect(builderState(saved, snapshot, catalog)).toBe('saved')
     expect(builderState({ ...saved, name: 'Receita ' }, snapshot, catalog)).toBe('saved')
-    expect(builderState({ ...saved, compare: true }, snapshot, catalog)).toBe('dirty')
+    expect(builderState({ ...saved, compare: { mode: 'previous', start: null, end: null } }, snapshot, catalog)).toBe('dirty')
     expect(builderState({ ...saved, styles: { revenue: { color: 'lime' } } }, snapshot, catalog)).toBe('dirty')
     expect(canExport('saved')).toBe(true)
     expect(canExport('dirty')).toBe(false)

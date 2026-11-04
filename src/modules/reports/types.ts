@@ -48,16 +48,26 @@ export interface ReportPeriod {
   end?: string | null
 }
 
+/** Com que período a consulta compara: nenhum, o anterior, o do ano passado ou um escolhido. */
+export type CompareMode = 'none' | 'previous' | 'last_year' | 'custom'
+
 export interface ReportQuery {
   source?: MetricSource
   metrics: string[]
   period: ReportPeriod
   dimensions?: string[]
   filters?: { field: string; operator: FilterOperator; values: string[] }[]
-  compare?: boolean
+  compare?: CompareMode
+  compare_start?: string | null
+  compare_end?: string | null
   order?: { field: string; descending?: boolean }[]
   limit?: number
   currency?: string
+}
+
+/** Os resultados das consultas de uma tela, na ordem pedida. */
+export interface ReportBatch {
+  results: ReportResult[]
 }
 
 /** Valores decimais chegam como texto, para não perder centavos no caminho. */
@@ -126,7 +136,9 @@ export interface SavedQuery {
   period: ReportPeriod
   dimensions: string[]
   filters: { field: string; operator: FilterOperator; values: string[] }[]
-  compare: boolean
+  compare: CompareMode
+  compare_start: string | null
+  compare_end: string | null
   order: { field: string; descending: boolean }[]
   limit: number
 }

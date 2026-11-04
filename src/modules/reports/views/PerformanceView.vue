@@ -19,7 +19,8 @@ import { errorText, lang, locale, t } from '@/lib/i18n'
 import { change, countryName, dailySeries, daysOf, formatMetric, shortDay, toNumber } from '@/lib/metrics'
 import { td, th } from '@/lib/table'
 import { useSession } from '@/stores/session'
-import type { MetricCatalog, MetricDef, MetricValues, RelativePeriod, ReportQuery, ReportResult } from '@/modules/reports/types'
+import type { MetricCatalog, MetricDef, MetricValues, RelativePeriod, ReportQuery, ReportRange, ReportResult } from '@/modules/reports/types'
+import { presetRange, previousRange, sameRange, utcToday } from '@/modules/reports/rules'
 import { reportService } from '@/modules/reports/service'
 
 const KPI_KEYS = ['revenue', 'impressions', 'ecpm', 'ctr', 'active_view']
@@ -44,26 +45,34 @@ const kpis = computed<MetricDef[]>(() =>
 const chosenMetric = computed(() => kpis.value.find((metric) => metric.key === chosen.value) ?? kpis.value[0])
 const empty = computed(() => !!daily.value && daily.value.rows.length === 0)
 
-/** Consulta do motor de relatórios no período escolhido. */
-function query(body: Omit<ReportQuery, 'period'>, range?: { start: string; end: string }): Promise<ReportResult> {
-  return reportService.query({ ...body, currency: session.displayCurrency, period: range ?? { preset: period.value } })
+/** Consulta do motor de relatórios no período escolhido, na moeda de quem vê. */
+function section(body: Omit<ReportQuery, 'period'>, range?: ReportRange): ReportQuery {
+  return { ...body, currency: session.displayCurrency, period: range ?? { preset: period.value } }
 }
 
-/** Carrega o catálogo (uma vez) e as consultas da tela; resposta atrasada de outro período é ignorada. */
+/** Carrega o catálogo (uma vez) e as seções da tela numa requisição só; resposta atrasada de outro
+ * período é ignorada. */
 async function load() {
   const current = ++latestLoad
   loading.value = true
   loadError.value = null
   try {
     catalog.value ??= await reportService.catalog()
-    const [days, sites, countries] = await Promise.all([
-      query({ metrics: KPI_KEYS, dimensions: ['date'], compare: compare.value, order: [{ field: 'date', descending: false }], limit: 400 }),
-      query({ metrics: KPI_KEYS, dimensions: ['site'], compare: compare.value, order: [{ field: 'revenue' }], limit: 100 }),
-      query({ metrics: ['revenue'], dimensions: ['country'], order: [{ field: 'revenue' }], limit: 8 }),
-    ])
-    const before = compare.value && days.previous_period
-      ? await query({ metrics: KPI_KEYS, dimensions: ['date'], order: [{ field: 'date', descending: false }], limit: 400 }, days.previous_period)
-      : null
+    const mode = compare.value ? 'previous' : 'none'
+    const byDay = { metrics: KPI_KEYS, dimensions: ['date'], order: [{ field: 'date', descending: false }], limit: 400 }
+    const expected = previousRange(presetRange(period.value, utcToday()))
+    const sections = [
+      section({ ...byDay, compare: mode }),
+      section({ metrics: KPI_KEYS, dimensions: ['site'], compare: mode, order: [{ field: 'revenue' }], limit: 100 }),
+      section({ metrics: ['revenue'], dimensions: ['country'], order: [{ field: 'revenue' }], limit: 8 }),
+    ]
+    if (compare.value) sections.push(section(byDay, expected))
+    const { results } = await reportService.batch(sections)
+    const [days, sites, countries] = results as [ReportResult, ReportResult, ReportResult]
+    let before = compare.value ? (results[3] ?? null) : null
+    if (before && days.previous_period && !sameRange(days.previous_period, expected)) {
+      before = await reportService.query(section(byDay, days.previous_period))
+    }
     if (current !== latestLoad) return
     daily.value = days
     bySite.value = sites

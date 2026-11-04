@@ -8,7 +8,7 @@ import LineChart, { type LineSeries } from '@/components/charts/LineChart.vue'
 import PieChart from '@/components/charts/PieChart.vue'
 import { lang, locale, t } from '@/lib/i18n'
 import { change, formatMetric, toNumber } from '@/lib/metrics'
-import { axisSplit, dimensionText, metricInfo, scaleHue, seriesColor, splitSeries, SPLIT_COLORS, type ReportDraft } from '@/modules/reports/rules'
+import { axisSplit, comparing, dimensionText, metricInfo, scaleHue, seriesColor, splitSeries, SPLIT_COLORS, type ReportDraft } from '@/modules/reports/rules'
 import type { MetricCatalog, ReportResult } from '@/modules/reports/types'
 
 const props = defineProps<{
@@ -77,7 +77,7 @@ const lines = computed(() => {
     color: seriesColor(metric.style.color),
     dashed: index > 0 && !metric.style.color,
   }))
-  if (props.draft.compare && first.value && rows.some((row) => row.previous)) {
+  if (comparing(props.draft) && first.value && rows.some((row) => row.previous)) {
     const key = first.value.key
     series.push({ key: 'previous', name: t('perf.previous'), values: rows.map((row) => toNumber(row.previous?.[key])), tone: 'muted', dashed: true })
   }
@@ -91,7 +91,7 @@ const firstFormat = computed(() => formatter(first.value?.key ?? ''))
   <div v-else-if="draft.chart === 'kpi' && kpi" :class="compact ? 'py-1' : 'py-10 text-center'">
     <div v-if="!compact" class="text-[13px] font-medium text-muted-foreground">{{ kpi.label }}</div>
     <div :class="['font-semibold tracking-[-0.04em] tnum', compact ? 'text-[32px] leading-none' : 'mt-2 text-[44px]']" :style="{ color: kpi.color }">{{ kpi.text }}</div>
-    <div v-if="draft.compare && kpi.delta !== null" class="mt-2 text-[13px] tnum" :class="kpi.delta >= 0 ? 'text-ok' : 'text-bad'">
+    <div v-if="comparing(draft) && kpi.delta !== null" class="mt-2 text-[13px] tnum" :class="kpi.delta >= 0 ? 'text-ok' : 'text-bad'">
       <span aria-hidden="true">{{ kpi.delta >= 0 ? '↑' : '↓' }}</span> {{ t('report.vsPrevious', { value: `${Math.abs(kpi.delta).toFixed(1)}%` }) }}
     </div>
   </div>

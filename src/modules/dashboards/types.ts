@@ -1,7 +1,7 @@
 /** Formatos da API dos dashboards, iguais ao `dto.py` do avant-api. */
 
 import type { Localized, Page } from '@/lib/types'
-import type { ChartType, RelativePeriod, ReportPeriod, SavedQuery, Visibility } from '@/modules/reports/types'
+import type { ChartType, RelativePeriod, ReportPeriod, ReportResult, SavedQuery, Visibility } from '@/modules/reports/types'
 
 export type WidgetType = 'report' | 'query' | 'text' | 'goal' | 'account'
 export type GoalScope = 'mine' | 'team'
@@ -113,4 +113,16 @@ export interface TemplateRoles {
 export interface HomeDashboard {
   dashboard: Dashboard | null
   template: DashboardTemplate | null
+}
+
+/** Por que um widget não rodou, igual ao ``WidgetErrorOut`` da API. */
+export interface WidgetError {
+  code: string
+  message: string
+}
+
+/** Todos os widgets com consulta rodados numa requisição, como em ``DashboardRunOut``. */
+export interface DashboardRun {
+  results: Record<string, ReportResult>
+  errors: Record<string, WidgetError>
 }

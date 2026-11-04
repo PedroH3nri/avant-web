@@ -6,7 +6,7 @@
 import { computed } from 'vue'
 import { lang, locale, t } from '@/lib/i18n'
 import { change, formatMetric, toNumber } from '@/lib/metrics'
-import { dimensionText, metricInfo, seriesColor, thumbPath, thumbShape } from '@/modules/reports/rules'
+import { comparisonOf, dimensionText, metricInfo, seriesColor, thumbPath, thumbShape } from '@/modules/reports/rules'
 import type { MetricCatalog, MetricFormat, SavedReport } from '@/modules/reports/types'
 
 const props = defineProps<{ report: SavedReport; catalog: MetricCatalog | null; compact?: boolean }>()
@@ -36,7 +36,7 @@ const rows = computed(() =>
   }),
 )
 const total = computed(() => toNumber(preview.value?.total))
-const delta = computed(() => (props.report.query.compare ? change(total.value, toNumber(preview.value?.previous_total)) : null))
+const delta = computed(() => (comparisonOf(props.report.query).mode !== 'none' ? change(total.value, toNumber(preview.value?.previous_total)) : null))
 
 /** O valor curto na moeda da miniatura. */
 const formatted = (value: number | null) => formatMetric(value, format.value, locale.value, true, preview.value?.currency)

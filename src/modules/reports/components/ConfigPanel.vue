@@ -1,5 +1,6 @@
 <script setup lang="ts">
 /** Configuração do construtor: visualização, período, comparação, filtros e limite de linhas. */
+import ComparePicker from '@/modules/reports/components/ComparePicker.vue'
 import { computed, ref } from 'vue'
 import { Plus, X } from 'lucide-vue-next'
 import Button from '@/components/ui/Button.vue'
@@ -101,9 +102,7 @@ const title = 'px-4 pb-1.5 pt-4 text-[12px] font-medium uppercase tracking-wide 
         :aria-label="t('perf.period')"
         @update:model-value="(value) => emit('update', { period: value as RelativePeriod })"
       />
-      <label class="flex items-center gap-2 text-[13px]">
-        <input type="checkbox" :checked="draft.compare" :disabled="!editable" class="size-4 accent-[hsl(var(--primary))]" @change="emit('update', { compare: ($event.target as HTMLInputElement).checked })" />{{ t('perf.compare') }}
-      </label>
+      <ComparePicker :model-value="draft.compare" :disabled="!editable" select-class="w-full" @update:model-value="(value) => emit('update', { compare: value })" />
     </div>
 
     <h3 :class="title">{{ t('report.filters') }}</h3>

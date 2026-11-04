@@ -6,6 +6,7 @@ import type {
   Dashboard,
   DashboardFilters,
   DashboardInput,
+  DashboardRun,
   DashboardPage,
   DashboardTemplate,
   HomeDashboard,
@@ -39,6 +40,10 @@ export const dashboardService = {
   templates: () => api.get<Pick<Items<DashboardTemplate>, 'items'>>('/dashboards/templates'),
   /** Cria um dashboard privado a partir de um modelo. */
   fromTemplate: (id: string) => api.post<Dashboard>(`/dashboards/templates/${id}`, {}),
+  /** Roda todos os widgets com consulta numa requisição, com os filtros da tela (ou os gravados). */
+  runAll: (id: string, filters: DashboardFilters | null) => api.post<DashboardRun>(`/dashboards/${id}/run`, { filters }),
+  /** Roda todos os widgets de um modelo pronto numa requisição, sem salvar nada. */
+  runTemplateAll: (id: string, filters: DashboardFilters | null) => api.post<DashboardRun>(`/dashboards/templates/${id}/run`, { filters }),
   /** Roda um widget com os filtros da tela (ou, sem eles, os gravados). */
   run: (id: string, widgetId: string, filters: DashboardFilters | null) =>
     api.post<ReportResult>(`/dashboards/${id}/widgets/${widgetId}/run`, { filters }),
