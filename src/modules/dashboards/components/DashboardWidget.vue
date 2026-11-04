@@ -101,14 +101,15 @@ async function loadGoal() {
 
 watch(() => [props.filters, props.stored, props.preview], loadGoal, { immediate: true, deep: true })
 void loadDraft().catch(() => undefined)
-watch(
-  () => props.widget,
-  () => {
-    draft.value = null
-    void loadDraft().catch(() => undefined)
-  },
-  { deep: true },
-)
+/** O que muda o rascunho do gráfico; mover ou redimensionar o widget não muda e não recarrega. */
+const draftKey = computed(() => {
+  const { type, report_id, query, chart_type, chart_options } = props.widget
+  return JSON.stringify([type, report_id ?? null, query ?? null, chart_type ?? null, chart_options ?? null])
+})
+watch(draftKey, () => {
+  draft.value = null
+  void loadDraft().catch(() => undefined)
+})
 /** Começa a arrastar pelo título, menos quando o clique foi no botão do menu. */
 function grabTitle(event: PointerEvent) {
   if (!props.editing || (event.target as Element).closest('button')) return
