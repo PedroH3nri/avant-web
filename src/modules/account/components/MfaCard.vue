@@ -5,7 +5,6 @@
  */
 import { computed, ref } from 'vue'
 import { toast } from 'vue-sonner'
-import QRCode from 'qrcode'
 import Badge from '@/components/ui/Badge.vue'
 import Button from '@/components/ui/Button.vue'
 import Card from '@/components/ui/Card.vue'
@@ -59,6 +58,7 @@ async function start(chosenMode: Mode) {
     busy.value = true
     try {
       setup.value = await accountService.beginMfa()
+      const { default: QRCode } = await import('qrcode')
       qr.value = await QRCode.toDataURL(setup.value.uri, {
         margin: 1,
         width: 176,
