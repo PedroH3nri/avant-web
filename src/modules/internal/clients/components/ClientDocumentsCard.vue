@@ -38,9 +38,13 @@ async function load() {
 onMounted(load)
 
 /** Baixa o arquivo e avisa a página, porque o download entra na auditoria. */
-function downloadFile(kind: DocumentKind) {
-  download(clientService.documentUrl(props.companyId, kind))
-  emit('changed')
+async function downloadFile(kind: DocumentKind) {
+  try {
+    await download(clientService.documentPath(props.companyId, kind))
+    emit('changed')
+  } catch (error) {
+    toast.error(errorText(error instanceof ApiError ? error.code : 'unknown'))
+  }
 }
 
 /** Aprova o documento e recarrega a lista. */

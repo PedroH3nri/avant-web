@@ -83,6 +83,23 @@ describe('api', () => {
     expect(handler).toHaveBeenCalledOnce()
   })
 
+  it('não avisa quando a própria aba já trocou de Empresa durante a requisição', async () => {
+    const handler = vi.fn()
+    setCompanyChangedHandler(handler)
+    let company = 'c1'
+    setTabCompany(() => company)
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        company = 'c2'
+        return new Response(JSON.stringify({ error: { code: 'company_changed', message: '' } }), { status: 409 })
+      }),
+    )
+    await api.get('/company').catch(() => null)
+    expect(handler).not.toHaveBeenCalled()
+    setTabCompany(() => null)
+  })
+
   it('sem conexão vira network_error', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => Promise.reject(new TypeError('failed'))))
     await expect(api.get('/company')).rejects.toMatchObject({ code: 'network_error', status: 0 })

@@ -83,16 +83,21 @@ export function setCompanyChangedHandler(handler: () => void) {
 }
 
 /** Os cabeçalhos comuns: JSON e a Empresa da aba. */
-function baseHeaders(): Record<string, string> {
+function baseHeaders(company: string | null): Record<string, string> {
   const headers: Record<string, string> = { Accept: 'application/json' }
-  const company = tabCompany()
   if (company) headers['X-Avant-Company'] = company
   return headers
 }
 
+/** Avisa do company_changed só se a aba ainda está na Empresa que mandou: se ela mesma trocou, não. */
+function companyChanged(sent: string | null) {
+  if (tabCompany() === sent) onCompanyChanged?.()
+}
+
 /** Chama a API com cookie e CSRF e converte erros em ApiError. */
 export async function request<T>(method: string, path: string, options: RequestOptions = {}): Promise<T> {
-  const headers = baseHeaders()
+  const sent = tabCompany()
+  const headers = baseHeaders(sent)
   if (options.body !== undefined) headers['Content-Type'] = 'application/json'
   if (options.file) headers['Content-Type'] = options.file.type || 'application/octet-stream'
   if (!SAFE.has(method)) {
@@ -125,7 +130,7 @@ export async function request<T>(method: string, path: string, options: RequestO
       retry ? Number(retry) : null,
     )
     if (response.status === 401 && onUnauthorized && !path.startsWith('/auth/')) onUnauthorized()
-    if (error.code === 'company_changed') onCompanyChanged?.()
+    if (error.code === 'company_changed') companyChanged(sent)
     throw error
   }
   return data as T
@@ -133,9 +138,10 @@ export async function request<T>(method: string, path: string, options: RequestO
 
 /** Baixa um arquivo da API: o conteúdo e o nome do Content-Disposition; erro vira ApiError. */
 export async function download(path: string, query?: Query): Promise<{ blob: Blob; name: string }> {
+  const sent = tabCompany()
   let response: Response
   try {
-    response = await fetch(url(path, query), { headers: baseHeaders(), credentials: 'same-origin' })
+    response = await fetch(url(path, query), { headers: baseHeaders(sent), credentials: 'same-origin' })
   } catch {
     throw new ApiError(0, 'network_error', 'sem conexão com o servidor')
   }
@@ -143,7 +149,7 @@ export async function download(path: string, query?: Query): Promise<{ blob: Blo
     const data = await response.json().catch(() => null)
     const apiError = (data?.error ?? {}) as { code?: string; message?: string }
     if (response.status === 401 && onUnauthorized) onUnauthorized()
-    if (apiError.code === 'company_changed') onCompanyChanged?.()
+    if (apiError.code === 'company_changed') companyChanged(sent)
     throw new ApiError(response.status, apiError.code ?? 'http_error', apiError.message ?? response.statusText)
   }
   const disposition = response.headers.get('Content-Disposition') ?? ''

@@ -1,5 +1,7 @@
 /** Regras de tela dos documentos: ordem, situação de cada um e o que o arquivo aceita. */
 
+import { download as apiDownload } from '@/lib/api'
+import { saveFile } from '@/lib/utils'
 import type { CompanyDocument, DocumentKind, DocumentStatus } from '@/modules/documents/types'
 
 /** Os dois documentos, na ordem em que aparecem. */
@@ -28,7 +30,8 @@ export function documentsByKind<T extends CompanyDocument>(documents: T[]): { ki
   return DOCUMENT_KINDS.map((kind) => ({ kind, document: documents.find((item) => item.kind === kind) ?? null }))
 }
 
-/** Baixa o arquivo: a API responde como anexo, então a página não sai do lugar. */
-export function download(fileUrl: string) {
-  window.location.assign(fileUrl)
+/** Baixa o arquivo pela API, com a Empresa da aba, e salva no computador. */
+export async function download(path: string) {
+  const file = await apiDownload(path)
+  saveFile(file.blob, file.name)
 }

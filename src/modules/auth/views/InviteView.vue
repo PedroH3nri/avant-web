@@ -56,7 +56,7 @@ async function accept() {
   const body: Record<string, unknown> = { locale: lang.value }
   if (!session.me) Object.assign(body, { name: name.value.trim(), password: password.value })
   try {
-    session.set(await authService.acceptInvitation(token, body))
+    await session.acceptInvitation(token, body)
     await router.push('/')
   } catch (failure) {
     const code = failure instanceof ApiError ? failure.code : 'unknown'
