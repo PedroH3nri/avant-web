@@ -111,6 +111,43 @@
     --bad-soft: 358 50% 14%;
     color-scheme: dark;
   }
+  /* Tema GroOne: tons do azul-marinho da marca (#0A213D), com o azul-claro do Genius (#4DA3FF)
+     nos destaques. Vale por cima da cor de destaque escolhida. */
+  :root[data-theme="groone"] {
+    --background: 214 72% 9%;
+    --foreground: 210 40% 96%;
+    --card: 213 72% 14%;
+    --card-foreground: 210 40% 96%;
+    --popover: 213 66% 16%;
+    --popover-foreground: 210 40% 96%;
+    --primary: 211 100% 65%;
+    --primary-foreground: 214 72% 9%;
+    --secondary: 213 52% 21%;
+    --secondary-foreground: 210 40% 96%;
+    --muted: 214 68% 11%;
+    --muted-foreground: 213 30% 72%;
+    --accent: 213 55% 20%;
+    --accent-foreground: 210 40% 96%;
+    --destructive: 352 84% 62%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 213 45% 22%;
+    --input: 213 42% 30%;
+    --ring: 211 100% 65%;
+    --link: 211 100% 74%;
+    --sidebar: 213 72% 14%;
+    --sidebar-foreground: 210 40% 96%;
+    --sidebar-muted: 213 30% 72%;
+    --sidebar-active: 213 55% 22%;
+    --ochre: 40 95% 60%;
+    --ochre-soft: 38 55% 16%;
+    --ok: 160 90% 42%;
+    --ok-soft: 160 60% 13%;
+    --warn: 38 92% 56%;
+    --warn-soft: 38 55% 16%;
+    --bad: 346 84% 65%;
+    --bad-soft: 346 50% 16%;
+    color-scheme: dark;
+  }
 }
 
 @layer base {

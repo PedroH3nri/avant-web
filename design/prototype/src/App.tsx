@@ -1151,12 +1151,12 @@ function SettingsScreen({ t, accent, setAccent, theme, setTheme, image, setImage
             </RadioGroup>
           </Card></div>
           <Card title="Tema" desc="Só para você, neste navegador.">
-            <RadioGroup value={theme} onValueChange={setTheme} className="grid gap-3 sm:grid-cols-3" aria-label="Tema">
-              {[['light', 'Claro'], ['dark', 'Escuro'], ['system', 'Sistema']].map(([v, l]) => (
+            <RadioGroup value={theme} onValueChange={setTheme} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" aria-label="Tema">
+              {[['light', 'Claro'], ['dark', 'Escuro'], ['groone', 'GroOne'], ['system', 'Sistema']].map(([v, l]) => (
                 <Label key={v} htmlFor={`theme-${v}`} className={cn('grid cursor-pointer gap-3 rounded-lg border p-3 font-normal hover:bg-accent has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring', theme === v && 'border-foreground')}>
-                  <span className={cn('h-16 overflow-hidden rounded-md border', v === 'dark' ? 'bg-neutral-950' : v === 'light' ? 'bg-white' : 'bg-gradient-to-r from-white from-50% to-neutral-950 to-50%')} aria-hidden="true">
-                    <span className={cn('mx-2 mt-2 block h-2 w-10 rounded-full', v === 'dark' ? 'bg-neutral-700' : 'bg-neutral-200')} />
-                    <span className={cn('mx-2 mt-1.5 block h-2 w-16 rounded-full', v === 'dark' ? 'bg-neutral-800' : 'bg-neutral-100')} />
+                  <span className={cn('h-16 overflow-hidden rounded-md border', v === 'dark' ? 'bg-neutral-950' : v === 'groone' ? 'bg-[#071730]' : v === 'light' ? 'bg-white' : 'bg-gradient-to-r from-white from-50% to-neutral-950 to-50%')} aria-hidden="true">
+                    <span className={cn('mx-2 mt-2 block h-2 w-10 rounded-full', v === 'dark' ? 'bg-neutral-700' : v === 'groone' ? 'bg-[#4DA3FF]' : 'bg-neutral-200')} />
+                    <span className={cn('mx-2 mt-1.5 block h-2 w-16 rounded-full', v === 'dark' ? 'bg-neutral-800' : v === 'groone' ? 'bg-[#0A213D]' : 'bg-neutral-100')} />
                   </span>
                   <span className="flex items-center gap-2 text-[14px]"><RadioGroupItem id={`theme-${v}`} value={v} />{l}</span>
                 </Label>
@@ -4977,7 +4977,7 @@ export default function App() {
   const [gamRuns, setGamRuns] = useState<GamRun[]>(INITIAL_GAM_RUNS)
   const [gamRunId, setGamRunId] = useState(12)
   const [accent, setAccent] = useState('padrao')
-  const [theme, setTheme] = useState('system')
+  const [theme, setTheme] = useState(() => (typeof location !== 'undefined' && new URLSearchParams(location.search).get('tema')) || 'system')
   const [groups, setGroups] = useState(INITIAL_GROUPS)
   const [groupId, setGroupId] = useState('trafego')
   const [image, setImage] = useState<string | null>(null)
@@ -5080,7 +5080,7 @@ export default function App() {
         </select>
       </div>
       <div className="flex flex-1 flex-col">{auth ? body : <Shell t={t} lang={lang} setLang={setLang} screen={screen} go={go} image={image}>{body}</Shell>}</div>
-      <Toaster position="bottom-right" theme={theme === 'system' ? 'system' : (theme as 'light' | 'dark')} toastOptions={{ className: 'font-sans' }} />
+      <Toaster position="bottom-right" theme={theme === 'system' ? 'system' : theme === 'groone' ? 'dark' : (theme as 'light' | 'dark')} toastOptions={{ className: 'font-sans' }} />
     </div>
   )
 }
