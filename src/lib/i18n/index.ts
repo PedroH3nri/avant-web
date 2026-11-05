@@ -91,7 +91,7 @@ export async function chooseLang(chosen: Lang): Promise<boolean> {
     try {
       await loadLang(chosen)
     } catch {
-      return false
+      return choice !== latestChoice
     }
     if (choice !== latestChoice) return true
   }

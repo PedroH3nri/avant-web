@@ -48,6 +48,7 @@ describe('idioma que não carrega', () => {
   })
 
   it('a última troca vale, mesmo com uma troca anterior ainda carregando', async () => {
+    localStorage.setItem('avant.lang', 'pt')
     const i18n = await i18nWithSlowEnglish()
     await i18n.startLang()
     const english = i18n.chooseLang('en')
