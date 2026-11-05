@@ -48,8 +48,8 @@ export const NO_COMPARISON: Comparison = { mode: 'none', start: null, end: null 
 /** Os modos de comparação na ordem do seletor. */
 export const COMPARE_MODES: CompareMode[] = ['none', 'previous', 'last_year', 'custom']
 
-/** Diz se o rascunho compara com outro período. */
-export const comparing = (draft: Pick<ReportDraft, 'compare'>) => draft.compare.mode !== 'none'
+/** O relatório mostra a comparação: um modo escolhido e, no período escolhido, as duas datas. */
+export const comparing = (draft: Pick<ReportDraft, 'compare'>) => draft.compare.mode !== 'none' && comparisonReady(draft.compare)
 
 /** A comparação está pronta para rodar: no período escolhido, as duas datas em ordem. */
 export function comparisonReady(comparison: Comparison): boolean {

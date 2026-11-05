@@ -44,7 +44,6 @@ const saving = ref(false)
 const audiences = computed(() => (['groone', 'clients'] as TemplateAudience[]).map((value) => ({ value, label: t(value === 'groone' ? 'tpl.groone' : 'tpl.clients') })))
 const audienceRoles = computed(() => roles.value[form.value.audience])
 const preview = computed(() => !canPreview(saved.value, form.value.audience))
-const storedIds = computed(() => new Set((saved.value?.definition.widgets ?? []).map((widget) => widget.id)))
 const ready = computed(() => form.value.name.pt.trim().length > 0)
 
 /** O motivo do erro da API, com o texto dela quando já explica. */
@@ -155,7 +154,7 @@ async function save() {
         editing
         :catalog="catalog"
         :filters="null"
-        :stored="storedIds"
+        :saved="saved?.definition.widgets ?? []"
         :template-id="saved?.id"
         :preview="preview"
       />
