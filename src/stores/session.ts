@@ -2,10 +2,9 @@
 
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
-import { toast } from 'vue-sonner'
 import { ApiError } from '@/lib/api'
 import { reconnectEvents } from '@/lib/events'
-import { chooseLang, errorText } from '@/lib/i18n'
+import { chooseLang } from '@/lib/i18n'
 import { announceCompany } from '@/lib/tabs'
 import { applyAccent, theme } from '@/lib/theme'
 import type { AccentId, Lang, Me, Theme, UserRef } from '@/lib/types'
@@ -64,7 +63,7 @@ export const useSession = defineStore('session', () => {
     applyAccent(value?.accent)
     if (value) {
       theme.value = value.theme
-      void chooseLang(value.user.locale).then((changed) => changed || toast.error(errorText('unknown')))
+      void chooseLang(value.user.locale)
     }
   }
 

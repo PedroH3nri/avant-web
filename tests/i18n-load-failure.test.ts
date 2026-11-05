@@ -10,6 +10,16 @@ async function i18nWithBrokenEnglish() {
   return import('@/lib/i18n')
 }
 
+/** O módulo de textos novo, com o chunk do inglês chegando devagar. */
+async function i18nWithSlowEnglish() {
+  vi.resetModules()
+  vi.doMock('virtual:i18n/en', async (importOriginal) => {
+    await new Promise((resolve) => setTimeout(resolve, 30))
+    return importOriginal()
+  })
+  return import('@/lib/i18n')
+}
+
 beforeEach(() => localStorage.clear())
 
 afterEach(() => {
@@ -35,6 +45,16 @@ describe('idioma que não carrega', () => {
     expect(await i18n.chooseLang('es')).toBe(true)
     expect(i18n.lang.value).toBe('es')
     expect(localStorage.getItem('avant.lang')).toBe('es')
+  })
+
+  it('a última troca vale, mesmo com uma troca anterior ainda carregando', async () => {
+    const i18n = await i18nWithSlowEnglish()
+    await i18n.startLang()
+    const english = i18n.chooseLang('en')
+    expect(await i18n.chooseLang('pt')).toBe(true)
+    expect(await english).toBe(true)
+    expect(i18n.lang.value).toBe('pt')
+    expect(localStorage.getItem('avant.lang')).toBe('pt')
   })
 
   it('sem nenhum idioma, mostra um aviso fixo com o botão de recarregar', () => {
