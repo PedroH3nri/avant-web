@@ -81,15 +81,19 @@ function messages(): Messages {
   return found
 }
 
-/** Troca de idioma: só muda e fica lembrada depois que os textos chegam; se não chegarem, fica no
- * idioma atual e devolve false. */
+let latestChoice = 0
+
+/** Troca de idioma depois que os textos chegam, se nenhuma troca mais nova veio no meio; devolve
+ * false só quando os textos não chegaram (aí fica no idioma atual). */
 export async function chooseLang(chosen: Lang): Promise<boolean> {
+  const choice = ++latestChoice
   if (!loaded[chosen]) {
     try {
       await loadLang(chosen)
     } catch {
       return false
     }
+    if (choice !== latestChoice) return true
   }
   lang.value = chosen
   try {
