@@ -1,6 +1,6 @@
 /**
  * Cliente da API do Avant. Mesma origem: o cookie de sessão vai sozinho e, nas escritas,
- * o valor do cookie avant_csrf volta no cabeçalho X-CSRF-Token (double submit).
+ * o valor do cookie de CSRF volta no cabeçalho X-CSRF-Token (double submit).
  *
  * Todo erro da API tem o formato {"error": {"code", "message", "details"}}; a tela
  * traduz pelo code.
@@ -10,7 +10,8 @@
  */
 
 export const API = '/api/v1'
-const CSRF_COOKIE = 'avant_csrf'
+// Com HTTPS (staging e produção) o cookie tem o prefixo __Host-; no local, sem HTTPS, não.
+const CSRF_COOKIES = ['__Host-avant_csrf', 'avant_csrf']
 const SAFE = new Set(['GET', 'HEAD', 'OPTIONS'])
 
 export class ApiError extends Error {
@@ -36,6 +37,15 @@ export function readCookie(name: string, source = document.cookie): string | nul
   for (const part of source.split(';')) {
     const [key, ...valueParts] = part.trim().split('=')
     if (key === name) return decodeURIComponent(valueParts.join('='))
+  }
+  return null
+}
+
+/** O token de CSRF do cookie, com ou sem o prefixo __Host-; nulo se não há sessão. */
+export function csrfToken(source = document.cookie): string | null {
+  for (const name of CSRF_COOKIES) {
+    const value = readCookie(name, source)
+    if (value !== null) return value
   }
   return null
 }
@@ -101,7 +111,7 @@ export async function request<T>(method: string, path: string, options: RequestO
   if (options.body !== undefined) headers['Content-Type'] = 'application/json'
   if (options.file) headers['Content-Type'] = options.file.type || 'application/octet-stream'
   if (!SAFE.has(method)) {
-    const csrf = readCookie(CSRF_COOKIE)
+    const csrf = csrfToken()
     if (csrf) headers['X-CSRF-Token'] = csrf
   }
   let response: Response

@@ -1,12 +1,10 @@
 /**
- * Textos do painel em PT, EN e ES. Toda string da tela passa por aqui (DESIGN.md).
- * ``t('team.seats', { n: 3 })`` troca ``{n}`` pelo valor.
+ * Textos do painel em PT, EN e ES, lado a lado. Toda string da tela passa por aqui (DESIGN.md).
+ * Este arquivo não entra no pacote: o plugin ``vite/i18n-plugin.ts`` serve um módulo por idioma
+ * (``virtual:i18n/pt``, ``en`` e ``es``) e o painel carrega só o da pessoa.
  */
 
-import { computed, ref, watch } from 'vue'
-import type { Lang, Localized } from './types'
-
-const dict = {
+export const dict = {
   // Marca
   'brand.signature': ['Avant by GroOne', 'Avant by GroOne', 'Avant by GroOne'],
   'brand.by': ['by GroOne', 'by GroOne', 'by GroOne'],
@@ -3228,7 +3226,7 @@ const dict = {
 export type Key = keyof typeof dict
 
 /** Mensagens por ``code`` do erro da API. */
-const errors: Record<string, readonly [string, string, string]> = {
+export const errors: Record<string, readonly [string, string, string]> = {
   client_contact_taken: ['Outro cliente já usa este e-mail ou telefone.', 'Another client already uses this email or phone.', 'Otro cliente ya usa este correo o teléfono.'],
   client_not_pending: ['O cliente já tem dono ou não está pendente.', 'The client already has an owner or is not pending.', 'El cliente ya tiene dueño o no está pendiente.'],
   client_without_owner: ['O cliente só fica ativo depois que o dono aceitar o convite.', 'The client can only be active after the owner accepts the invite.', 'El cliente solo queda activo después de que el dueño acepte la invitación.'],
@@ -3246,6 +3244,16 @@ const errors: Record<string, readonly [string, string, string]> = {
   ],
   invalid_credentials: ['E-mail ou senha incorretos.', 'Wrong email or password.', 'Correo o contraseña incorrectos.'],
   account_disabled: ['Esta conta está desativada. Fale com a Groone.', 'This account is disabled. Contact Groone.', 'Esta cuenta está desactivada. Habla con Groone.'],
+  exports_busy: [
+    'Muitas exportações ao mesmo tempo. Tente de novo em alguns segundos.',
+    'Too many exports at once. Try again in a few seconds.',
+    'Demasiadas exportaciones a la vez. Inténtalo de nuevo en unos segundos.',
+  ],
+  service_unavailable: [
+    'O serviço está indisponível agora. Tente de novo em instantes.',
+    'The service is unavailable right now. Try again in a moment.',
+    'El servicio no está disponible ahora. Inténtalo de nuevo en un momento.',
+  ],
   too_many_attempts: [
     'Muitas tentativas. Tente de novo em {s} s.',
     'Too many attempts. Try again in {s} s.',
@@ -3440,7 +3448,7 @@ const errors: Record<string, readonly [string, string, string]> = {
   validation_error: ['Confira os campos.', 'Check the fields.', 'Revisa los campos.'],
 }
 /** Ações do registro de atividade (audit_logs); as desconhecidas aparecem como vêm. */
-const auditActions: Record<string, readonly [string, string, string]> = {
+export const auditActions: Record<string, readonly [string, string, string]> = {
   'alert.created': ['Alerta criado', 'Alert created', 'Alerta creada'],
   'alert.updated': ['Alerta editado', 'Alert edited', 'Alerta editada'],
   'alert.deleted': ['Alerta apagado', 'Alert deleted', 'Alerta eliminada'],
@@ -3509,113 +3517,4 @@ const auditActions: Record<string, readonly [string, string, string]> = {
   'network.sync_requested': ['Importação pedida', 'Import requested', 'Importación pedida'],
 }
 
-const fallbackError = ['Algo deu errado. Tente de novo.', 'Something went wrong. Try again.', 'Algo salió mal. Inténtalo de nuevo.'] as const
-
-const index = { pt: 0, en: 1, es: 2 } as const satisfies Record<Lang, 0 | 1 | 2>
-const STORAGE = 'avant.lang'
-
-/** Idioma inicial: o salvo, senão o do navegador, senão português. */
-function initial(): Lang {
-  try {
-    const saved = localStorage.getItem(STORAGE)
-    if (saved === 'pt' || saved === 'en' || saved === 'es') return saved
-  } catch {
-    // navegador sem localStorage
-  }
-  const nav = (typeof navigator !== 'undefined' ? navigator.language : 'pt').slice(0, 2)
-  return nav === 'en' || nav === 'es' ? nav : 'pt'
-}
-
-/** A pessoa já escolheu um idioma neste navegador? */
-export function langChosen(): boolean {
-  try {
-    return localStorage.getItem(STORAGE) !== null
-  } catch {
-    return false
-  }
-}
-
-export const lang = ref<Lang>(initial())
-
-watch(
-  lang,
-  (value) => {
-    if (typeof document !== 'undefined') document.documentElement.lang = value === 'pt' ? 'pt-BR' : value
-  },
-  { immediate: true },
-)
-
-/** Troca pelo seletor: fica lembrado neste navegador. */
-export function chooseLang(chosen: Lang) {
-  lang.value = chosen
-  try {
-    localStorage.setItem(STORAGE, chosen)
-  } catch {
-    // segue sem lembrar
-  }
-}
-
-/** Troca os ``{nome}`` do texto pelos valores. */
-function fill(text: string, params?: Record<string, string | number>): string {
-  if (!params) return text
-  return text.replace(/\{(\w+)\}/g, (item, entry: string) => (entry in params ? String(params[entry]) : item))
-}
-
-/** Texto da chave no idioma atual. */
-export function t(key: Key, params?: Record<string, string | number>): string {
-  return fill(dict[key][index[lang.value]], params)
-}
-
-/** Texto com quantidade: com ``count`` igual a 1, usa a chave terminada em ``One`` quando existe. */
-export function tn(key: Key, count: number, params?: Record<string, string | number>): string {
-  const one = `${key}One`
-  const chosen = count === 1 && one in dict ? (one as Key) : key
-  return t(chosen, { n: count, ...params })
-}
-
-/** Nome do grupo de permissões no idioma atual; um grupo novo da API sem texto aqui mostra a chave. */
-export function permissionGroupLabel(group: string): string {
-  const key = `perm.group.${group}`
-  return key in dict ? t(key as Key) : group
-}
-
-/** Nome vindo da API em vários idiomas (papéis, permissões). */
-export function pick(name: Localized | null | undefined): string {
-  if (!name) return ''
-  return name[lang.value] ?? name.pt ?? Object.values(name)[0] ?? ''
-}
-
-/** Texto de uma ação da auditoria no idioma atual. */
-export function auditText(action: string): string {
-  const text = auditActions[action]
-  return text ? text[index[lang.value]] : action
-}
-
-/** Mensagem de erro da API no idioma atual. */
-export function errorText(code: string, params?: Record<string, string | number>): string {
-  return fill((errors[code] ?? fallbackError)[index[lang.value]], params)
-}
-
-export const locale = computed(() => (lang.value === 'pt' ? 'pt-BR' : lang.value === 'es' ? 'es' : 'en'))
-
-/** Data (e hora) no formato do idioma atual. */
-export function formatDate(iso: string | null, withTime = true): string {
-  if (!iso) return t('common.never')
-  const date = new Date(iso)
-  return new Intl.DateTimeFormat(locale.value, {
-    dateStyle: 'short',
-    ...(withTime ? { timeStyle: 'short' } : {}),
-  }).format(date)
-}
-
-/** "há 5 min", "há 2 h"... para checagens e atividade. */
-export function formatAgo(iso: string | null, now = Date.now()): string {
-  if (!iso) return t('common.never')
-  const secs = Math.round((new Date(iso).getTime() - now) / 1000)
-  const rtf = new Intl.RelativeTimeFormat(locale.value, { numeric: 'auto', style: 'short' })
-  const abs = Math.abs(secs)
-  if (abs < 60) return rtf.format(secs, 'second')
-  if (abs < 3600) return rtf.format(Math.round(secs / 60), 'minute')
-  if (abs < 86400) return rtf.format(Math.round(secs / 3600), 'hour')
-  return rtf.format(Math.round(secs / 86400), 'day')
-}
+export const fallbackError = ['Algo deu errado. Tente de novo.', 'Something went wrong. Try again.', 'Algo salió mal. Inténtalo de nuevo.'] as const
