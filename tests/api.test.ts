@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { api, ApiError, readCookie, setCompanyChangedHandler, setTabCompany, setUnauthorizedHandler } from '@/lib/api'
+import { api, ApiError, csrfToken, readCookie, setCompanyChangedHandler, setTabCompany, setUnauthorizedHandler } from '@/lib/api'
 
 function respond(status: number, body: unknown, headers: Record<string, string> = {}) {
   const fn = vi.fn(async () => new Response(body === null ? null : JSON.stringify(body), { status, headers }))
@@ -113,5 +113,14 @@ describe('api', () => {
   it('lê cookies', () => {
     expect(readCookie('b', 'a=1; b=x%20y; c=3')).toBe('x y')
     expect(readCookie('z', 'a=1')).toBeNull()
+  })
+})
+
+describe('cookie de CSRF', () => {
+  it('lê o cookie com o prefixo __Host- (staging e produção) e o sem prefixo (local)', () => {
+    expect(csrfToken('__Host-avant_csrf=abc; outro=1')).toBe('abc')
+    expect(csrfToken('avant_csrf=local')).toBe('local')
+    expect(csrfToken('__Host-avant_csrf=seguro; avant_csrf=velho')).toBe('seguro')
+    expect(csrfToken('outro=1')).toBeNull()
   })
 })
