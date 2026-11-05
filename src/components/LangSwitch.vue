@@ -14,7 +14,7 @@ const langs: Lang[] = ['pt', 'en', 'es']
 /** Troca o idioma na hora; com sessão, guarda na conta (e-mails também seguem esse idioma). */
 async function choose(option: Lang) {
   if (!session.me) {
-    chooseLang(option)
+    if (!(await chooseLang(option))) toast.error(errorText('unknown'))
     return
   }
   try {
