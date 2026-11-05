@@ -57,28 +57,51 @@ watch(
   { immediate: true },
 )
 
-/** Carrega os textos do idioma (uma vez); o painel espera o inicial antes de montar. */
+/** Carrega os textos do idioma (uma vez). */
 export async function loadLang(chosen: Lang): Promise<void> {
   if (loaded[chosen]) return
   loaded[chosen] = (await loaders[chosen]()).default
 }
 
-/** Os textos do idioma atual; enquanto ele carrega, os de outro idioma já carregado. */
+/** Textos do idioma inicial antes de montar o painel; se não chegarem, abre em português. */
+export async function startLang(): Promise<void> {
+  try {
+    await loadLang(lang.value)
+  } catch (error) {
+    if (lang.value === 'pt') throw error
+    await loadLang('pt')
+    lang.value = 'pt'
+  }
+}
+
+/** Os textos do idioma atual. */
 function messages(): Messages {
-  const found = loaded[lang.value] ?? loaded.pt ?? loaded.en ?? loaded.es
-  if (!found) throw new Error('textos do painel ainda não carregados (loadLang)')
+  const found = loaded[lang.value]
+  if (!found) throw new Error('textos do painel ainda não carregados (startLang)')
   return found
 }
 
-/** Troca pelo seletor: fica lembrado neste navegador e os textos chegam em seguida. */
-export function chooseLang(chosen: Lang) {
+let latestChoice = 0
+
+/** Troca de idioma depois que os textos chegam, se nenhuma troca mais nova veio no meio; devolve
+ * false só quando os textos não chegaram (aí fica no idioma atual). */
+export async function chooseLang(chosen: Lang): Promise<boolean> {
+  const choice = ++latestChoice
+  if (!loaded[chosen]) {
+    try {
+      await loadLang(chosen)
+    } catch {
+      return choice !== latestChoice
+    }
+    if (choice !== latestChoice) return true
+  }
   lang.value = chosen
-  void loadLang(chosen)
   try {
     localStorage.setItem(STORAGE, chosen)
   } catch {
     // segue sem lembrar
   }
+  return true
 }
 
 /** Troca os ``{nome}`` do texto pelos valores. */

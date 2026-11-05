@@ -11,12 +11,14 @@ defineProps<{ class?: string }>()
 const session = useSession()
 const langs: Lang[] = ['pt', 'en', 'es']
 
-/** Troca o idioma na hora; com sessão, guarda na conta (e-mails também seguem esse idioma). */
+/** Troca o idioma quando os textos chegam; com sessão, depois guarda na conta (e-mails também
+ * seguem esse idioma). Se os textos não chegam, avisa e não grava nada. */
 async function choose(option: Lang) {
-  if (!session.me) {
-    chooseLang(option)
+  if (!(await chooseLang(option))) {
+    toast.error(errorText('unknown'))
     return
   }
+  if (!session.me || lang.value !== option) return
   try {
     await session.setAppearance({ locale: option })
   } catch (error) {

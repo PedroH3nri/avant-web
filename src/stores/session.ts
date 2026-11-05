@@ -63,7 +63,7 @@ export const useSession = defineStore('session', () => {
     applyAccent(value?.accent)
     if (value) {
       theme.value = value.theme
-      chooseLang(value.user.locale)
+      void chooseLang(value.user.locale)
     }
   }
 
