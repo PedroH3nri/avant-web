@@ -1024,39 +1024,25 @@ function ConnectScreen({ t, go }: { t: T; go: (s: Screen) => void }) {
   const valid = /^\d{6,12}$/.test(code)
   const running = checks?.some((c) => c.state === 'run') ?? false
   const failed = checks?.some((c) => c.state === 'fail') ?? false
-  const done = !!checks && !running && !failed && !!checks[2]?.detail
+  const done = !!checks && !running && !failed && !!checks[1]?.detail
 
 
   const test = () => {
-    const willFail = code === '20111222333'
-    const base: Check[] = [
+    setChecks([
       { label: `Network ${code} cadastrada na sua Empresa`, state: 'run' },
-      { label: 'Convite do MCM aceito na Groone', state: 'wait' },
       { label: 'Equipe Groone confirma que a network é sua', state: 'wait' },
-    ]
-    setChecks(base)
-    const step = (i: number) => {
-      setTimeout(() => {
-        setChecks((prev) => {
-          if (!prev) return prev
-          const next = [...prev]
-          if (willFail && i === 1) {
-            next[1] = { ...next[1], state: 'fail', detail: 'O convite do MCM ainda não foi aceito. A network fica pendente e testamos de novo a cada hora.' }
-            next[2] = { ...next[2], state: 'wait' }
-            return next
-          }
-          if (i === 2) {
-            next[2] = { ...next[2], state: 'wait', detail: 'Você não precisa fazer nada. Quando a equipe confirmar, a network conecta e os sites chegam sozinhos.' }
-            return next
-          }
-          next[i] = { ...next[i], state: 'ok' }
-          if (next[i + 1]) next[i + 1] = { ...next[i + 1], state: 'run' }
-          return next
-        })
-        if (!(willFail && i === 1) && i < 2) step(i + 1)
-      }, 900)
-    }
-    step(0)
+      { label: 'Convite do MCM aceito e acesso testado', state: 'wait' },
+    ])
+    setTimeout(() => {
+      setChecks((prev) => {
+        if (!prev) return prev
+        return [
+          { ...prev[0], state: 'ok' },
+          { ...prev[1], state: 'wait', detail: 'Você não precisa fazer nada. Quando a equipe confirmar, testamos a conexão e a network aparece como conectada.' },
+          prev[2],
+        ]
+      })
+    }, 900)
   }
 
   const Step = ({ n, title, children }: { n: number; title: string; children: React.ReactNode }) => (

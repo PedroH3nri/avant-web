@@ -34,6 +34,9 @@ export interface Network {
   last_runs: Partial<Record<SyncRun['kind'], SyncRun>>
 }
 
+/** A network sem os sites e as últimas execuções, como as rotas do painel interno devolvem. */
+export type NetworkSummary = Omit<Network, 'sites' | 'last_runs'>
+
 export interface McmCandidate {
   id: string
   network_code: string
