@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /** Painel interno: as networks do GAM de todos os clientes, com o cliente e o status de faturamento. */
-import { onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useDebounceFn } from '@vueuse/core'
 import { Network as NetworkIcon, Search } from 'lucide-vue-next'
 import CompanyIcon from '@/components/CompanyIcon.vue'
@@ -32,7 +32,8 @@ const pages = ref(0)
 const loadError = ref<string | null>(null)
 const searchText = ref('')
 const awaitingOnly = ref(false)
-const canAssign = useSession().can('internal.networks.assign')
+const session = useSession()
+const canAssign = computed(() => session.can('internal.networks.assign'))
 
 const networksCall = latestCall()
 /** Busca a página atual das networks com a busca digitada. */

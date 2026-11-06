@@ -3466,9 +3466,9 @@ export const errors: Record<string, readonly [string, string, string]> = {
     'Ad Manager rechazó la cuenta de servicio. Revisa el paso 2 y prueba de nuevo.',
   ],
   awaiting_confirmation: [
-    'A equipe Groone ainda não confirmou que a network é do cliente.',
-    'The Groone team has not confirmed yet that the network belongs to the client.',
-    'El equipo de Groone aún no confirmó que la network es del cliente.',
+    'A equipe Groone ainda não confirmou esta network.',
+    'The Groone team has not confirmed this network yet.',
+    'El equipo de Groone aún no confirmó esta network.',
   ],
   mcm_not_approved: [
     'O convite do MCM da Groone ainda não foi aceito nessa network. Testamos de novo a cada hora.',
