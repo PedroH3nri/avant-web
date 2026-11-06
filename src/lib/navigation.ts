@@ -21,8 +21,8 @@ export const NAV_GROUPS: NavGroup[] = [
   { id: 'home', key: null, label: 'nav.home', icon: LayoutDashboard, items: [{ to: '/', key: 'nav.home', icon: LayoutDashboard }] },
   {
     id: 'clients',
-    key: 'nav.groupClients',
-    label: 'nav.groupClients',
+    key: 'nav.groupInventory',
+    label: 'nav.groupInventory',
     icon: Building2,
     items: [
       { to: '/interno', key: 'int.clients', icon: Building2, internal: true },
@@ -119,7 +119,7 @@ export function useNavigation(onNavigate: () => void) {
   const ready = computed(() => !!session.me && !session.me.mfa_setup_required)
   const groups = computed(() => visibleGroups(!!session.internalCompany))
   const onInternal = computed(() => route.meta.internal === true)
-  /** A Empresa cliente do grupo Clientes: a ativa ou a última por onde a pessoa passou. */
+  /** A Empresa cliente do grupo Inventário: a ativa ou a última por onde a pessoa passou. */
   const clientId = computed(() => {
     if (session.company && !session.company.is_internal) return session.company.id
     const last = session.clientCompanies.find((clientCompany) => clientCompany.id === session.lastClientId)

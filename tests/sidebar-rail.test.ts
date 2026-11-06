@@ -76,8 +76,8 @@ describe('SidebarRail', () => {
     const testRouter = router()
     await testRouter.push('/interno/contratos')
     const wrapper = mount(SidebarRail, { global: { plugins: [testRouter] } })
-    expect(railLabels(wrapper)).toEqual(['Dashboard', 'Clientes', 'Relatórios', 'Ferramentas', 'Comissões', 'Empresa'])
-    expect(wrapper.find('nav [aria-current]').text()).toBe('Clientes')
+    expect(railLabels(wrapper)).toEqual(['Dashboard', 'Inventário', 'Relatórios', 'Ferramentas', 'Comissões', 'Empresa'])
+    expect(wrapper.find('nav [aria-current]').text()).toBe('Inventário')
     expect(wrapper.find('#rail-panel').attributes('aria-hidden')).toBe('true')
   })
 
