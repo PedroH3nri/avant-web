@@ -21,7 +21,7 @@ import { ApiError } from '@/lib/api'
 import { latestCall } from '@/lib/latest'
 import { onEvent } from '@/lib/events'
 import { errorText, formatAgo, formatDate, t } from '@/lib/i18n'
-import { networkName, statusTone } from '@/modules/networks/rules'
+import { networkName, networkTone, statusKey } from '@/modules/networks/rules'
 import { td, th } from '@/lib/table'
 import type { Network, SyncRun } from '@/modules/networks/types'
 import { useSession } from '@/stores/session'
@@ -187,8 +187,8 @@ async function disconnect() {
             <td :class="[td, 'font-mono text-[13px] tnum']">{{ network.network_code }}</td>
             <td :class="[td, 'text-muted-foreground']">{{ t(`net.type.${network.connection_type}`) }}</td>
             <td :class="td">
-              <Status :tone="network.sync_requested_at && network.status === 'connected' ? 'warn' : statusTone[network.status]">
-                {{ network.sync_requested_at && network.status === 'connected' ? t('net.run.running') : t(`net.status.${network.status}`) }}
+              <Status :tone="network.sync_requested_at && network.status === 'connected' ? 'warn' : networkTone(network)">
+                {{ network.sync_requested_at && network.status === 'connected' ? t('net.run.running') : t(statusKey(network)) }}
               </Status>
             </td>
             <td :class="[td, 'text-right tnum']">{{ network.sites }}</td>

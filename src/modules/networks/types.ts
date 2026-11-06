@@ -25,10 +25,17 @@ export interface Network {
   last_checked_at: string | null
   last_synced_at: string | null
   sync_requested_at: string | null
+  /** O dono da Empresa; vazio até o cliente aceitar o convite de dono. */
+  owner_user_id: string | null
+  /** Network do MCM cadastrada pelo cliente que a equipe Groone ainda não confirmou. */
+  awaiting_confirmation: boolean
   created_at: string
   sites: number
   last_runs: Partial<Record<SyncRun['kind'], SyncRun>>
 }
+
+/** A network sem os sites e as últimas execuções, como as rotas do painel interno devolvem. */
+export type NetworkSummary = Omit<Network, 'sites' | 'last_runs'>
 
 export interface McmCandidate {
   id: string

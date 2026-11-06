@@ -92,7 +92,6 @@ const SITES = [
   { domain: 'receitas.blogexemplo.com', network: 'Blog Exemplo Principal', approval: 'ok' as const, units: 7, revenue: { trend: 'steady', perDay: 520, change: 6 } as RevenueStatusData },
   { domain: 'viagens.blogexemplo.com', network: 'Blog Exemplo Principal', approval: 'review' as const, units: 3, revenue: { trend: 'reducing', perDay: 110, change: -27 } as RevenueStatusData },
 ]
-const SERVICE_ACCOUNT = 'avant-gam@groone-avant.iam.gserviceaccount.com'
 
 /* ---------- cor secundária do sistema (por Empresa), com um tom para cada tema ---------- */
 
@@ -1022,45 +1021,28 @@ type Check = { label: string; state: 'wait' | 'run' | 'ok' | 'fail'; detail?: st
 function ConnectScreen({ t, go }: { t: T; go: (s: Screen) => void }) {
   const [code, setCode] = useState('22334455667')
   const [checks, setChecks] = useState<Check[] | null>(null)
-  const [copied, setCopied] = useState(false)
   const valid = /^\d{6,12}$/.test(code)
-  const running = checks?.some((c) => c.state === 'run' || c.state === 'wait') ?? false
+  const running = checks?.some((c) => c.state === 'run') ?? false
   const failed = checks?.some((c) => c.state === 'fail') ?? false
-  const done = !!checks && !running && !failed
+  const done = !!checks && !running && !failed && !!checks[1]?.detail
 
-  const copy = async () => {
-    try { await navigator.clipboard.writeText(SERVICE_ACCOUNT); setCopied(true); setTimeout(() => setCopied(false), 1600) } catch {
-      const el = document.getElementById('sa-email'); if (el) { const r = document.createRange(); r.selectNodeContents(el); const s = window.getSelection(); s?.removeAllRanges(); s?.addRange(r) }
-      toast('E-mail selecionado. Copie com Ctrl+C.')
-    }
-  }
 
   const test = () => {
-    const willFail = code === '20111222333'
-    const base: Check[] = [
-      { label: `Network ${code} encontrada no Ad Manager`, state: 'run' },
-      { label: 'Conta de serviço da Groone é administradora', state: 'wait' },
-      { label: 'Sites e ad units importados', state: 'wait' },
-    ]
-    setChecks(base)
-    const step = (i: number) => {
-      setTimeout(() => {
-        setChecks((prev) => {
-          if (!prev) return prev
-          const next = [...prev]
-          if (willFail && i === 1) {
-            next[1] = { ...next[1], state: 'fail', detail: 'A conta de serviço não aparece como administradora. Confira o passo 2 e teste de novo.' }
-            next[2] = { ...next[2], state: 'wait' }
-            return next
-          }
-          next[i] = { ...next[i], state: 'ok', detail: i === 2 ? '2 sites e 14 ad units.' : undefined }
-          if (next[i + 1]) next[i + 1] = { ...next[i + 1], state: 'run' }
-          return next
-        })
-        if (!(willFail && i === 1) && i < 2) step(i + 1)
-      }, 900)
-    }
-    step(0)
+    setChecks([
+      { label: `Network ${code} cadastrada na sua Empresa`, state: 'run' },
+      { label: 'Equipe Groone confirma que a network é sua', state: 'wait' },
+      { label: 'Convite do MCM aceito e acesso testado', state: 'wait' },
+    ])
+    setTimeout(() => {
+      setChecks((prev) => {
+        if (!prev) return prev
+        return [
+          { ...prev[0], state: 'ok' },
+          { ...prev[1], state: 'wait', detail: 'Você não precisa fazer nada. Quando a equipe confirmar, testamos a conexão e a network aparece como conectada.' },
+          prev[2],
+        ]
+      })
+    }, 900)
   }
 
   const Step = ({ n, title, children }: { n: number; title: string; children: React.ReactNode }) => (
@@ -1081,17 +1063,10 @@ function ConnectScreen({ t, go }: { t: T; go: (s: Screen) => void }) {
       <Body className="lg:grid-cols-[minmax(0,1fr)_360px]">
         <Card pad>
           <ol className="[&>li:last-child>span:first-child]:hidden">
-            <Step n={1} title="Copie o e-mail da conta de serviço da Groone">
-              <p className="text-[14px] text-muted-foreground">Uma conta só da Groone, usada para ler a sua network. Ela não tem acesso à sua conta do Google.</p>
-              <div className="flex min-w-0 items-center gap-2 rounded-md border bg-muted py-1 pl-3 pr-1">
-                <span id="sa-email" className="min-w-0 flex-1 truncate font-mono text-[13px]">{SERVICE_ACCOUNT}</span>
-                <Button size="sm" variant="ghost" className="h-8" onClick={copy} aria-label="Copiar e-mail da conta de serviço">{copied ? <Check /> : <Copy />}{copied ? 'Copiado' : 'Copiar'}</Button>
-              </div>
+            <Step n={1} title="Aceite o convite do MCM da Groone">
+              <p className="text-[14px] text-muted-foreground">No Ad Manager, abra <span className="text-foreground">Administrador › Multiple Customer Management</span> e aceite o convite da Groone. Se ainda não recebeu, fale com o seu responsável na Groone.</p>
             </Step>
-            <Step n={2} title="Adicione como administrador no Google Ad Manager">
-              <p className="text-[14px] text-muted-foreground">No Ad Manager, abra <span className="text-foreground">Administrador › Acesso e autorização › Usuários › Novo usuário</span>. Cole o e-mail e escolha o papel <span className="text-foreground">Administrador</span>.</p>
-            </Step>
-            <Step n={3} title="Informe o network code e teste">
+            <Step n={2} title="Informe o network code">
               <p className="text-[14px] text-muted-foreground">O network code fica no topo do Ad Manager, ao lado do nome da network.</p>
               <form className="flex flex-wrap items-start gap-3" onSubmit={(e) => { e.preventDefault(); if (valid && !running) test() }}>
                 <div className="grid min-w-[200px] flex-1 gap-2">
@@ -1107,7 +1082,7 @@ function ConnectScreen({ t, go }: { t: T; go: (s: Screen) => void }) {
         <Card pad className="h-fit">
           <h2 className="text-[14px] font-medium">Resultado do teste</h2>
           {!checks ? (
-            <p className="mt-2 text-[14px] text-muted-foreground">Depois de adicionar a conta de serviço, clique em {t('wiz.test')}. Sites e ad units chegam sozinhos quando tudo der certo.</p>
+            <p className="mt-2 text-[14px] text-muted-foreground">Informe o network code e clique em {t('wiz.test')}. Depois que a equipe Groone confirmar, sites e ad units chegam sozinhos.</p>
           ) : (
             <ul className="mt-4 grid gap-3">
               {checks.map((c) => (
@@ -1428,6 +1403,57 @@ function NotesCard() {
   )
 }
 
+type ClientNetwork = { code: string; name: string | null; state: 'confirm' | 'pending' | 'ok'; by: string }
+
+function ClientNetworksCard() {
+  const [networks, setNetworks] = useState<ClientNetwork[]>([{ code: '22334455667', name: 'Tech Notícias', state: 'confirm', by: 'Cadastrada pelo cliente' }])
+  const [adding, setAdding] = useState(false)
+  const [code, setCode] = useState('')
+  const valid = /^\d{1,20}$/.test(code)
+  const state = (network: ClientNetwork) => network.state === 'confirm' ? <Status tone="ochre">Aguardando confirmação</Status> : network.state === 'pending' ? <Status tone="warn">Testando conexão</Status> : <Status tone="ok">Conectada</Status>
+  const add = () => {
+    if (!valid) return
+    setNetworks((prev) => [{ code, name: null, state: 'pending', by: 'Cadastrada pela equipe' }, ...prev])
+    setAdding(false); setCode('')
+    toast.success('Network cadastrada', { description: 'Testamos a conexão agora. Sem o MCM aceito, ela fica pendente.' })
+  }
+  const confirm = (target: ClientNetwork) => {
+    setNetworks((prev) => prev.map((network) => network.code === target.code ? { ...network, state: 'pending' } : network))
+    toast.success('Network confirmada', { description: 'Testamos a conexão agora.' })
+  }
+  return (
+    <Card title="Networks" desc="Ligadas ao cliente e ao dono dele. A cadastrada pelo cliente só conecta depois que a equipe confirma que é dele." className="lg:col-span-2"
+      footer={<Button size="sm" variant="outline" onClick={() => setAdding(true)}><Plus className="h-4 w-4" />Adicionar network</Button>}>
+      {networks.length === 0 ? <p className="text-[14px] text-muted-foreground">Nenhuma network ainda.</p> : (
+        <Table>
+          <thead><tr><th className={th}>Network</th><th className={th}>Network code</th><th className={th}>Status</th><th className={th}>Cadastro</th><th className={th} /></tr></thead>
+          <tbody>
+            {networks.map((network) => (
+              <tr key={network.code} className="hover:bg-muted">
+                <td className={cn(td, 'font-medium')}>{network.name ?? <span className="text-muted-foreground">Sem nome ainda</span>}</td>
+                <td className={td}><Code>{network.code}</Code></td>
+                <td className={td}>{state(network)}</td>
+                <td className={cn(td, 'text-muted-foreground')}>{network.by}</td>
+                <td className={cn(td, 'text-right')}>{network.state === 'confirm' && <Button size="sm" onClick={() => confirm(network)}>Confirmar</Button>}</td>
+              </tr>
+            ))}
+          </tbody>
+        </Table>
+      )}
+      <Dialog open={adding} onOpenChange={setAdding}>
+        <DialogContent><DialogHeader><DialogTitle>Adicionar network</DialogTitle>
+          <DialogDescription>A network fica ligada a Tech Notícias e ao dono dela. Testamos a conexão logo depois.</DialogDescription></DialogHeader>
+          <form className="grid gap-2" onSubmit={(e) => { e.preventDefault(); add() }}>
+            <Label htmlFor="client-net-code">Network code</Label>
+            <Input id="client-net-code" inputMode="numeric" className="h-10 font-mono tnum" value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))} />
+          </form>
+          <DialogFooter><Button variant="outline" onClick={() => setAdding(false)}>Cancelar</Button><Button disabled={!valid} onClick={add}>Adicionar</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </Card>
+  )
+}
+
 function ClientScreen({ go }: { go: (s: Screen) => void }) {
   const [clientImage, setClientImage] = useState<string | null>(null)
   const [situation, setSituation] = useState<ClientSituation>('pending')
@@ -1458,9 +1484,7 @@ function ClientScreen({ go }: { go: (s: Screen) => void }) {
         <Card title="Dados fiscais" desc="Só o cliente preenche e muda, em Configurações. A equipe Groone só lê." className="lg:col-span-2">
           <div className="flex items-center gap-3 text-[14px] text-muted-foreground"><Lock className="h-4 w-4" />O cliente ainda não preencheu os dados fiscais.</div>
         </Card>
-        <Card title="Networks" desc="Ligadas pelo MCM com o e-mail do contato. Mudar a situação do cliente liga ou desliga as networks." className="lg:col-span-2">
-          <p className="text-[14px] text-muted-foreground">Nenhuma network ainda. Quando o cliente aceitar o MCM da Groone, ela aparece aqui sozinha.</p>
-        </Card>
+        <ClientNetworksCard />
         <StaffDocumentsCard />
         <NotesCard />
       </Body>
