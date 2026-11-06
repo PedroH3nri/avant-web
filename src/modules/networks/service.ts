@@ -12,8 +12,6 @@ export const networkService = {
   options: () => api.get<Items<Network>>('/networks/options'),
   /** Uma network com sites e últimas sincronizações. */
   show: (networkId: string) => api.get<Network>(`/networks/${networkId}`),
-  /** O e-mail da conta de serviço que o cliente adiciona no GAM. */
-  serviceAccount: () => api.get<{ email: string }>('/networks/service-account'),
   /** Conecta uma network pelo código. */
   connect: (networkCode: string) => api.post<Network>('/networks', { network_code: networkCode }),
   /** Pede uma sincronização. */
