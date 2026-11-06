@@ -17,7 +17,7 @@ export const dict = {
   'nav.sites': ['Sites', 'Sites', 'Sitios'],
   'nav.settings': ['Configurações', 'Settings', 'Configuración'],
   'nav.account': ['Minha conta', 'My account', 'Mi cuenta'],
-  'nav.groupClients': ['Clientes', 'Clients', 'Clientes'],
+  'nav.groupInventory': ['Inventário', 'Inventory', 'Inventario'],
   'nav.groupReports': ['Relatórios', 'Reports', 'Informes'],
   'nav.groupTools': ['Ferramentas', 'Tools', 'Herramientas'],
   'nav.groupCommissions': ['Comissões', 'Commissions', 'Comisiones'],
