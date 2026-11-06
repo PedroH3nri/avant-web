@@ -13,7 +13,8 @@ import { ApiError } from '@/lib/api'
 import { errorText, formatAgo, t } from '@/lib/i18n'
 import { td, th } from '@/lib/table'
 import type { CompanyDetail } from '@/modules/company/types'
-import type { Network, NetworkStatus } from '@/modules/networks/types'
+import type { Network } from '@/modules/networks/types'
+import { networkTone, statusKey } from '@/modules/networks/rules'
 import { useSession } from '@/stores/session'
 import { companyService } from '@/modules/company/service'
 import { networkService } from '@/modules/networks/service'
@@ -26,13 +27,6 @@ const error = ref<string | null>(null)
 
 const lost = computed(() => (networks.value ?? []).filter((network) => network.status === 'error'))
 const hasSeats = computed(() => company.value !== null && company.value.seat_limit !== null)
-const tone: Record<NetworkStatus, 'ok' | 'warn' | 'bad' | 'neutral'> = {
-  pending: 'warn',
-  connected: 'ok',
-  error: 'bad',
-  disconnected: 'neutral',
-}
-
 /** Carrega a Empresa e as networks. */
 async function load() {
   error.value = null
@@ -84,7 +78,7 @@ watch(() => session.me?.active_company_id, load)
               <span class="block font-medium">{{ network.display_name ?? network.network_code }}</span>
               <span class="font-mono text-[12px] text-muted-foreground tnum">{{ network.network_code }}</span>
             </td>
-            <td :class="td"><Status :tone="tone[network.status]">{{ t(`net.status.${network.status}`) }}</Status></td>
+            <td :class="td"><Status :tone="networkTone(network)">{{ t(statusKey(network)) }}</Status></td>
             <td :class="[td, 'text-right tnum']">{{ network.sites }}</td>
             <td :class="[td, 'text-muted-foreground']">{{ formatAgo(network.last_checked_at) }}</td>
           </tr>

@@ -1,8 +1,7 @@
 <script setup lang="ts">
 /** Assistente para conectar uma network do GAM, com o progresso ao vivo. */
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import { ArrowLeft, Check, Copy, Loader2, X } from 'lucide-vue-next'
-import { toast } from 'vue-sonner'
+import { computed, onBeforeUnmount, ref } from 'vue'
+import { ArrowLeft, Check, Loader2, X } from 'lucide-vue-next'
 import PageBody from '@/components/PageBody.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import Button from '@/components/ui/Button.vue'
@@ -24,64 +23,53 @@ interface Check {
   detail?: string
 }
 
-const email = ref<string | null>(null)
 const code = ref('')
 const network = ref<Network | null>(null)
 const busy = ref(false)
 const submitError = ref<string | null>(null)
-const copied = ref(false)
 const slow = ref(false)
 let poll: ReturnType<typeof setTimeout> | null = null
 let pollDelay = 0
 let watchedSince = 0
 let slowTimer: ReturnType<typeof setTimeout> | null = null
 
-onMounted(async () => {
-  try {
-    email.value = (await networkService.serviceAccount()).email
-  } catch {
-    email.value = ''
-  }
-})
-
 const valid = computed(() => validCode(code.value))
 const test = computed(() => network.value?.last_runs.test)
 
-// O teste e as importações rodam no worker; a tela acompanha pelos eventos e, de reserva, a cada 5 s.
+// O teste e as importações rodam no worker; a tela acompanha pelos eventos e, de reserva, com espera crescente.
 const checks = computed<Check[] | null>(() => {
   const current = network.value
   if (!current) return null
   const run: SyncRun | undefined = test.value
-  const c1: Check = { label: t('wiz.c1', { code: current.network_code }), state: 'run' }
-  const c2: Check = { label: t('wiz.c2'), state: 'wait' }
-  const c3: Check = { label: t('wiz.c3'), state: 'wait' }
-  if (run?.status === 'failed') {
-    const notFound = run.error_code === 'gam_network_not_found' || run.error_code === 'gam_test_network'
+  const registered: Check = { label: t('wiz.c1', { code: current.network_code }), state: 'ok' }
+  const confirmed: Check = { label: t('wiz.c2'), state: 'ok' }
+  const access: Check = { label: t('wiz.c3'), state: 'run' }
+  const imported: Check = { label: t('wiz.c4'), state: 'wait' }
+  if (current.awaiting_confirmation) {
+    Object.assign(confirmed, { state: 'wait', detail: t('wiz.c2Wait') })
+    access.state = 'wait'
+  } else if (run?.status === 'failed') {
     const detail = run.error_code ? errorText(run.error_code) : (run.error_message ?? undefined)
-    if (notFound) Object.assign(c1, { state: 'fail', detail })
-    else {
-      c1.state = 'ok'
-      Object.assign(c2, { state: 'fail', detail })
-    }
+    Object.assign(access, { state: 'fail', detail })
   } else if (run?.status === 'ok' || current.status === 'connected') {
-    c1.state = 'ok'
-    c2.state = 'ok'
+    access.state = 'ok'
     const sites = current.last_runs.sites
     const units = current.last_runs.ad_units
     if (sites?.status === 'failed' || units?.status === 'failed') {
-      const failed = sites?.status === 'failed' ? sites : units
-      Object.assign(c3, { state: 'fail', detail: failed?.error_code ? errorText(failed.error_code) : undefined })
+      const failedRun = sites?.status === 'failed' ? sites : units
+      Object.assign(imported, { state: 'fail', detail: failedRun?.error_code ? errorText(failedRun.error_code) : undefined })
     } else if (sites?.status === 'ok' && units?.status === 'ok') {
       /** Soma o que a etapa criou e atualizou. */
       const count = (syncRun: SyncRun) => (syncRun.counts.created ?? 0) + (syncRun.counts.updated ?? 0)
-      Object.assign(c3, { state: 'ok', detail: t('wiz.c3Done', { sites: current.sites, units: count(units) }) })
-    } else c3.state = 'run'
+      Object.assign(imported, { state: 'ok', detail: t('wiz.c4Done', { sites: current.sites, units: count(units) }) })
+    } else imported.state = 'run'
   }
-  return [c1, c2, c3]
+  return [registered, confirmed, access, imported]
 })
+const awaiting = computed(() => network.value?.awaiting_confirmation ?? false)
 const failed = computed(() => checks.value?.some((check) => check.state === 'fail') ?? false)
 const done = computed(() => checks.value?.every((check) => check.state === 'ok') ?? false)
-const running = computed(() => busy.value || (!!checks.value && !failed.value && !done.value))
+const running = computed(() => busy.value || (!!checks.value && !failed.value && !done.value && !awaiting.value))
 
 /** Para de acompanhar o progresso. */
 function stopWatching() {
@@ -99,7 +87,7 @@ async function refresh() {
   } catch {
     // tenta de novo no próximo aviso
   }
-  if (failed.value || done.value) stopWatching()
+  if (failed.value || done.value || awaiting.value) stopWatching()
 }
 onEvent('network.updated', ({ network_id }) => {
   if (network_id === network.value?.id) void refresh()
@@ -140,31 +128,11 @@ async function start() {
       network.value && network.value.network_code === code.value
         ? await networkService.sync(network.value.id)
         : await networkService.connect(code.value)
-    watchProgress()
+    if (!awaiting.value) watchProgress()
   } catch (error) {
     submitError.value = errorText(error instanceof ApiError ? error.code : 'unknown', { s: error instanceof ApiError ? (error.retryAfter ?? 600) : 600 })
   } finally {
     busy.value = false
-  }
-}
-
-/** Copia o email da conta de serviço. */
-async function copy() {
-  if (!email.value) return
-  try {
-    await navigator.clipboard.writeText(email.value)
-    copied.value = true
-    setTimeout(() => (copied.value = false), 1600)
-  } catch {
-    const element = document.getElementById('sa-email')
-    if (element) {
-      const range = document.createRange()
-      range.selectNodeContents(element)
-      const sel = window.getSelection()
-      sel?.removeAllRanges()
-      sel?.addRange(range)
-    }
-    toast(t('wiz.copyManual'))
   }
 }
 
@@ -195,12 +163,6 @@ const dot = (state: State) =>
           <div class="grid min-w-0 gap-3 pt-0.5">
             <h3 class="text-[16px] font-semibold tracking-tight">{{ t('wiz.s1') }}</h3>
             <p class="text-[14px] text-muted-foreground">{{ t('wiz.s1Sub') }}</p>
-            <div class="flex min-w-0 items-center gap-2 rounded-md border bg-muted py-1 pl-3 pr-1">
-              <span id="sa-email" class="min-w-0 flex-1 truncate font-mono text-[13px]">{{ email ?? t('common.loading') }}</span>
-              <Button size="sm" variant="ghost" :aria-label="t('wiz.copyLabel')" :disabled="!email" @click="copy">
-                <Check v-if="copied" /><Copy v-else />{{ copied ? t('wiz.copied') : t('wiz.copy') }}
-              </Button>
-            </div>
           </div>
         </li>
         <li class="grid grid-cols-[28px_minmax(0,1fr)] gap-4">
@@ -208,13 +170,6 @@ const dot = (state: State) =>
           <div class="grid min-w-0 gap-3 pt-0.5">
             <h3 class="text-[16px] font-semibold tracking-tight">{{ t('wiz.s2') }}</h3>
             <p class="text-[14px] text-muted-foreground">{{ t('wiz.s2Sub') }}</p>
-          </div>
-        </li>
-        <li class="grid grid-cols-[28px_minmax(0,1fr)] gap-4">
-          <span class="flex size-7 items-center justify-center rounded-full border bg-card text-[13px] font-medium tnum">3</span>
-          <div class="grid min-w-0 gap-3 pt-0.5">
-            <h3 class="text-[16px] font-semibold tracking-tight">{{ t('wiz.s3') }}</h3>
-            <p class="text-[14px] text-muted-foreground">{{ t('wiz.s3Sub') }}</p>
             <form class="flex flex-wrap items-start gap-3" novalidate @submit.prevent="start">
               <div class="grid min-w-[200px] flex-1 gap-2">
                 <Input
@@ -256,7 +211,7 @@ const dot = (state: State) =>
       </ul>
       <p v-if="slow && running" class="mt-4 text-[13px] text-muted-foreground">{{ t('wiz.slow') }}</p>
       <RouterLink
-        v-if="done"
+        v-if="done || awaiting"
         to="/networks"
         class="mt-5 inline-flex h-10 w-full items-center justify-center rounded-md bg-primary text-[14px] font-medium text-primary-foreground hover:bg-primary/90"
         >{{ t('wiz.see') }}</RouterLink

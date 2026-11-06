@@ -16,6 +16,7 @@ import CompanyImageCard from '@/components/CompanyImageCard.vue'
 import AccountManagerCard from '@/modules/internal/commissions/components/AccountManagerCard.vue'
 import ClientDocumentsCard from '@/modules/internal/clients/components/ClientDocumentsCard.vue'
 import ClientNotesCard from '@/modules/internal/clients/components/ClientNotesCard.vue'
+import ClientNetworksCard from '@/modules/internal/inventory/components/ClientNetworksCard.vue'
 import DataTable from '@/components/ui/DataTable.vue'
 import Dialog from '@/components/ui/Dialog.vue'
 import Field from '@/components/ui/Field.vue'
@@ -379,6 +380,7 @@ function who(auditEntry: AuditEntry) {
         <p v-else class="flex items-center gap-2 text-[14px] text-muted-foreground"><Lock class="size-4" aria-hidden="true" />{{ t('int.fiscalEmpty') }}</p>
       </Card>
 
+      <ClientNetworksCard :client-id="client.id" :client-name="client.name" />
       <ClientDocumentsCard v-if="canDocuments" :company-id="client.id" @changed="auditChanged" />
       <ClientNotesCard v-if="canNotes" :company-id="client.id" @changed="auditChanged" />
 

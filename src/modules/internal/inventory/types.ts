@@ -17,6 +17,8 @@ export interface ClientNetwork extends Omit<Network, 'last_runs'> {
   client: ClientRef
   /** Vazio sem receita nos últimos 60 dias. */
   revenue_status: RevenueStatus | null
+  /** E-mail do child no MCM, só nas que aguardam a confirmação da equipe. */
+  mcm_email: string | null
   /** Checklist do mês atual; vazio sem faturamento no mês anterior ou sem a permissão. */
   checklist?: { id: string; done: number; total: number; complete: boolean } | null
 }
