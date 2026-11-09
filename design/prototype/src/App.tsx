@@ -5010,7 +5010,7 @@ function GamRunScreen({ run, update, back }: { run: GamRun; update: (run: GamRun
 /* ---------- Rewards (item do Genius: janela no site que libera um conteúdo em troca de um anúncio premiado) ---------- */
 
 type RewardLayout = 'simple' | 'highlight' | 'header'
-type RewardStyle = { layout: RewardLayout; accent: string; body: string; border: string; borderWidth: number; title: string; text: string; button: string; buttonText: string; radius: number; font: string; shadow: boolean }
+type RewardStyle = { layout: RewardLayout; body: string; border: string; borderWidth: number; title: string; text: string; button: string; buttonText: string; radius: number; font: string; shadow: boolean }
 type RewardIcon = { kind: 'emoji' | 'image' | 'none'; emoji: string; image: string | null }
 type ProtoReward = { id: number; name: string; client: string; domain: string; page: string; active: boolean; icon: RewardIcon; title: string; description: string; button: string; style: RewardStyle; block: string; interval: number; redirect: string | null; updated: string }
 type ProtoRewardSite = { domain: string; client: string; blocks: string[] }
@@ -5033,10 +5033,10 @@ const REWARD_FONTS = [
   { name: 'Playfair Display', stack: "'Playfair Display', Georgia, serif" },
 ] as const
 const REWARD_PRESETS: { name: string; style: Omit<RewardStyle, 'layout' | 'radius' | 'font' | 'borderWidth' | 'shadow'> }[] = [
-  { name: 'Claro', style: { accent: '#16a34a', body: '#ffffff', border: '#e5e5e5', title: '#0a0a0a', text: '#525252', button: '#0a0a0a', buttonText: '#ffffff' } },
-  { name: 'Escuro', style: { accent: '#1976d2', body: '#0a213d', border: '#1e3a5f', title: '#ffffff', text: '#c7d2e0', button: '#1976d2', buttonText: '#ffffff' } },
-  { name: 'Quente', style: { accent: '#ea580c', body: '#fff7ed', border: '#fdba74', title: '#7c2d12', text: '#9a3412', button: '#ea580c', buttonText: '#ffffff' } },
-  { name: 'Natureza', style: { accent: '#16a34a', body: '#f0fdf4', border: '#86efac', title: '#14532d', text: '#166534', button: '#16a34a', buttonText: '#ffffff' } },
+  { name: 'Claro', style: { body: '#ffffff', border: '#e5e5e5', title: '#0a0a0a', text: '#525252', button: '#0a0a0a', buttonText: '#ffffff' } },
+  { name: 'Escuro', style: { body: '#0a213d', border: '#1e3a5f', title: '#ffffff', text: '#c7d2e0', button: '#1976d2', buttonText: '#ffffff' } },
+  { name: 'Quente', style: { body: '#fff7ed', border: '#fdba74', title: '#7c2d12', text: '#9a3412', button: '#ea580c', buttonText: '#ffffff' } },
+  { name: 'Natureza', style: { body: '#f0fdf4', border: '#86efac', title: '#14532d', text: '#166534', button: '#16a34a', buttonText: '#ffffff' } },
 ]
 const DEFAULT_REWARD_STYLE: RewardStyle = { ...REWARD_PRESETS[1].style, layout: 'simple', borderWidth: 1, radius: 24, font: 'Geist', shadow: true }
 const REWARD_LAYOUTS: { id: RewardLayout; name: string; desc: string }[] = [
@@ -5051,7 +5051,7 @@ const REWARD_EMOJIS = ['🎁', '🏆', '🎉', '🚀', '🥳', '🎊', '🔓', '
 const INITIAL_REWARDS: ProtoReward[] = [
   { id: 7, name: 'Receita completa do bolo de açaí', client: 'Açaí Mídia', domain: 'acai.com.br', page: 'receitas/bolo-de-acai', active: true, icon: { kind: 'emoji', emoji: '🎁', image: null }, title: 'Receita completa liberada', description: 'Assista a um anúncio curto e veja o passo a passo com as medidas.', button: 'Ver a receita', style: DEFAULT_REWARD_STYLE, block: 'acai_reward_artigo', interval: 30, redirect: null, updated: '08/11/2026 16:20' },
   { id: 6, name: 'Ebook de sobremesas', client: 'Açaí Mídia', domain: 'receitasdaacai.com.br', page: 'ebook-sobremesas', active: false, icon: { kind: 'emoji', emoji: '📘', image: null }, title: 'Baixe o ebook grátis', description: '40 sobremesas com açaí, prontas em 15 minutos.', button: 'Baixar agora', style: { ...REWARD_PRESETS[2].style, layout: 'highlight', borderWidth: 2, radius: 16, font: 'Poppins', shadow: true }, block: 'receitas_reward', interval: 60, redirect: 'https://receitasdaacai.com.br/ebook-sobremesas/download', updated: '02/11/2026 10:05' },
-  { id: 5, name: 'Comparativo de celulares', client: 'Tech Notícias', domain: 'technoticias.com.br', page: 'reviews/melhores-celulares-2026', active: true, icon: { kind: 'emoji', emoji: '🏆', image: null }, title: 'Ranking completo', description: 'Desbloqueie a tabela com os 20 aparelhos testados.', button: 'Desbloquear', style: { ...REWARD_PRESETS[0].style, accent: '#1976d2', layout: 'header', borderWidth: 1, radius: 16, font: 'Poppins', shadow: true }, block: 'tech_reward_1', interval: 15, redirect: null, updated: '30/10/2026 09:41' },
+  { id: 5, name: 'Comparativo de celulares', client: 'Tech Notícias', domain: 'technoticias.com.br', page: 'reviews/melhores-celulares-2026', active: true, icon: { kind: 'emoji', emoji: '🏆', image: null }, title: 'Ranking completo', description: 'Desbloqueie a tabela com os 20 aparelhos testados.', button: 'Desbloquear', style: { ...REWARD_PRESETS[1].style, body: '#ffffff', title: '#0a0a0a', text: '#525252', border: '#e5e5e5', layout: 'header', borderWidth: 1, radius: 16, font: 'Poppins', shadow: true }, block: 'tech_reward_1', interval: 15, redirect: null, updated: '30/10/2026 09:41' },
   { id: 4, name: 'Roteiro de 7 dias em Lisboa', client: 'Viagem Fácil', domain: 'viagemfacil.com', page: 'roteiros/lisboa-7-dias', active: true, icon: { kind: 'emoji', emoji: '🧳', image: null }, title: 'Roteiro em PDF', description: 'O roteiro dia a dia com mapa e dicas de restaurantes.', button: 'Quero o roteiro', style: { ...REWARD_PRESETS[3].style, layout: 'simple', borderWidth: 0, radius: 28, font: 'Lora', shadow: true }, block: 'vf_reward', interval: 120, redirect: null, updated: '21/10/2026 14:12' },
 ]
 
@@ -5105,7 +5105,7 @@ function RewardBody({ reward, lang = 'pt', onUnlock, onClose }: { reward: ProtoR
       style={{ background: style.body, border: `${style.borderWidth}px solid ${style.border}`, borderRadius: style.radius, fontFamily: rewardFont(style.font), boxShadow: style.shadow ? '0 24px 64px -16px rgba(0,0,0,0.45)' : 'none', color: style.text }}>
       <button type="button" onClick={onClose} aria-label="Fechar" className={cn('absolute z-10 rounded-full', closeClass)} style={closeStyle}><X className="h-4 w-4" /></button>
       {style.layout === 'header' && (
-        <div className="relative flex h-[120px] items-center justify-center" style={{ background: accentGradient(style.accent) }}>
+        <div className="relative flex h-[120px] items-center justify-center" style={{ background: accentGradient(style.button) }}>
           {hasIcon && <RewardIconView reward={reward} size={48} />}
         </div>
       )}
@@ -5114,17 +5114,17 @@ function RewardBody({ reward, lang = 'pt', onUnlock, onClose }: { reward: ProtoR
         {style.layout === 'highlight' && hasIcon && (
           <div className="relative mx-auto mb-5 h-[112px] w-[112px]">
             <style>{'@keyframes reward-pulse { 0% { transform: scale(1); opacity: 0.8 } 100% { transform: scale(1.4); opacity: 0 } } @media (prefers-reduced-motion: reduce) { .reward-pulse { animation: none !important } }'}</style>
-            <span className="reward-pulse absolute inset-0 rounded-full" style={{ background: mix(style.accent, style.body, 0.35), animation: 'reward-pulse 1.8s ease-out infinite' }} aria-hidden="true" />
-            <span className="reward-pulse absolute inset-0 rounded-full" style={{ background: mix(style.accent, style.body, 0.35), animation: 'reward-pulse 1.8s ease-out 0.9s infinite' }} aria-hidden="true" />
-            <div className="relative flex h-full w-full items-center justify-center rounded-full p-2" style={{ background: mix(style.accent, style.body, 0.22) }}>
-              <div className="flex h-full w-full items-center justify-center rounded-full" style={{ background: accentGradient(style.accent) }}><RewardIconView reward={reward} size={46} /></div>
+            <span className="reward-pulse absolute inset-0 rounded-full" style={{ background: mix(style.button, style.body, 0.35), animation: 'reward-pulse 3s ease-out infinite' }} aria-hidden="true" />
+            <span className="reward-pulse absolute inset-0 rounded-full" style={{ background: mix(style.button, style.body, 0.35), animation: 'reward-pulse 3s ease-out 1.5s infinite' }} aria-hidden="true" />
+            <div className="relative flex h-full w-full items-center justify-center rounded-full p-2" style={{ background: mix(style.button, style.body, 0.22) }}>
+              <div className="flex h-full w-full items-center justify-center rounded-full" style={{ background: accentGradient(style.button) }}><RewardIconView reward={reward} size={46} /></div>
             </div>
           </div>
         )}
         <h2 className="break-words text-[22px] font-bold leading-tight" style={{ color: style.title }}>{reward.title || 'Título do reward'}</h2>
         <p className="mt-2 break-words text-[15px] leading-relaxed">{reward.description || 'Descrição do reward'}</p>
         <button type="button" onClick={onUnlock} className={cn('mt-6 inline-flex h-11 w-full items-center justify-center px-5 text-[15px] font-semibold transition-opacity hover:opacity-90', style.layout === 'highlight' && 'h-12')}
-          style={{ background: style.layout === 'header' ? accentGradient(style.button) : style.button, color: style.buttonText, borderRadius: Math.min(style.radius, 14), boxShadow: style.layout === 'highlight' ? `0 10px 28px -8px ${mix(style.accent, style.body, 0.55)}` : style.layout === 'header' ? `0 8px 20px -8px ${style.button}` : 'none' }}>{reward.button || 'Desbloquear'}</button>
+          style={{ background: style.layout === 'header' ? accentGradient(style.button) : style.button, color: style.buttonText, borderRadius: Math.min(style.radius, 14), boxShadow: style.layout === 'highlight' ? `0 10px 28px -8px ${mix(style.button, style.body, 0.55)}` : style.layout === 'header' ? `0 8px 20px -8px ${style.button}` : 'none' }}>{reward.button || 'Desbloquear'}</button>
         {!framed && <p className="mt-4 text-[12px] opacity-70" lang={lang}>{REWARD_FOOTER[lang]}</p>}
       </div>
       {framed && <p className="border-t py-3 text-[12px] opacity-80" style={{ background: tint, borderColor: line }} lang={lang}>{REWARD_FOOTER[lang]}</p>}
@@ -5347,11 +5347,10 @@ function RewardEditScreen({ initial, rewards, staff, back, save, remove }: { ini
                 </div>
                 <div className="grid items-start gap-4 sm:grid-cols-2">
                   <ColorField id="rw-body" label="Cor do corpo" value={style.body} onChange={(body) => restyle({ body })} />
-                  {style.layout !== 'simple' && <ColorField id="rw-accent" label={style.layout === 'header' ? 'Cor do cabeçalho' : 'Cor do círculo do ícone'} value={style.accent} onChange={(accent) => restyle({ accent })} />}
                   <ColorField id="rw-title-color" label="Cor do título" value={style.title} onChange={(title) => restyle({ title })} />
                   <ColorField id="rw-text" label="Cor do texto" value={style.text} onChange={(text) => restyle({ text })} />
                   <ColorField id="rw-border" label="Cor da borda" value={style.border} onChange={(border) => restyle({ border })} />
-                  <ColorField id="rw-btn" label="Cor do botão" value={style.button} onChange={(button) => restyle({ button })} />
+                  <ColorField id="rw-btn" label={style.layout === 'simple' ? 'Cor do botão' : style.layout === 'header' ? 'Cor do botão e do cabeçalho' : 'Cor do botão e do círculo'} value={style.button} onChange={(button) => restyle({ button })} />
                   <ColorField id="rw-btn-text" label="Texto do botão" value={style.buttonText} onChange={(buttonText) => restyle({ buttonText })} />
                 </div>
                 {(lowButton || lowText) && <div className="flex items-start gap-2 rounded-md border border-ochre/40 bg-ochre-soft px-3 py-2 text-[13px] text-ochre"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />{lowButton ? 'O texto do botão está com pouco contraste: pode ficar difícil de ler.' : 'O texto está com pouco contraste com o corpo: pode ficar difícil de ler.'}</div>}
