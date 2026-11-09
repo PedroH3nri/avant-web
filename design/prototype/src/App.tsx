@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Toaster, toast } from 'sonner'
-import { Check, ChevronsUpDown, Copy, Loader2, Plus, RefreshCw, Search, X, AlertTriangle, ArrowLeft, MoreHorizontal, Lock, Mail, ExternalLink, Home, Users, Network, Settings, ShieldCheck, Menu, BarChart3, Wallet, Download, Trash2, Pin, PinOff, Pencil, LayoutGrid, List, Wrench, Gift, Eye, Monitor, Smartphone, Play } from 'lucide-react'
+import { Check, ChevronsUpDown, Copy, Loader2, Plus, RefreshCw, Search, X, AlertTriangle, ArrowLeft, MoreHorizontal, Lock, Mail, ExternalLink, Home, Users, Network, Settings, ShieldCheck, Menu, BarChart3, Wallet, Download, Trash2, Pin, PinOff, Pencil, LayoutGrid, List, Wrench, Gift, Monitor, Smartphone } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -61,13 +61,11 @@ const SCREENS = [
   ['execucaogam', 'Painel interno · Execução no GAM'],
   ['rewards', 'Rewards'],
   ['reward', 'Rewards · Editar reward'],
-  ['rewardpreview', 'Rewards · Pré-visualização'],
   ['rewardsinterno', 'Painel interno · Rewards'],
   ['rewardinterno', 'Painel interno · Editar reward'],
-  ['rewardpreviewinterno', 'Painel interno · Pré-visualização do reward'],
 ] as const
 type Screen = (typeof SCREENS)[number][0]
-const INTERNAL_SCREENS: Screen[] = ['interno', 'cliente', 'contratos', 'resultados', 'papelcomissao', 'minhacomissao', 'comissoes', 'minhasinvoices', 'invoice', 'invoices', 'servicosinvoice', 'modelosdash', 'tarefas', 'tarefa', 'checklists', 'checklist', 'checklistitens', 'ferramentasgam', 'execucaogam', 'rewardsinterno', 'rewardinterno', 'rewardpreviewinterno']
+const INTERNAL_SCREENS: Screen[] = ['interno', 'cliente', 'contratos', 'resultados', 'papelcomissao', 'minhacomissao', 'comissoes', 'minhasinvoices', 'invoice', 'invoices', 'servicosinvoice', 'modelosdash', 'tarefas', 'tarefa', 'checklists', 'checklist', 'checklistitens', 'ferramentasgam', 'execucaogam', 'rewardsinterno', 'rewardinterno']
 const isScreen = (s: string): s is Screen => SCREENS.some(([k]) => k === s)
 type T = (k: Key) => string
 
@@ -358,12 +356,12 @@ const CLIENT_RAIL: RailGroup[] = [
   { key: 'inicio', label: 'Início', icon: Home, items: [{ id: 'inicio', label: 'Dashboard' }] },
   { key: 'relatorios', label: 'Relatórios', icon: BarChart3, items: [{ id: 'desempenho', label: 'Ad Manager' }, { id: 'visitas', label: 'Page Views' }, { id: 'relatorios', label: 'Relatórios customizados', also: ['construtor', 'relatorio'], separated: true }] },
   { key: 'financeiro', label: 'Financeiro', icon: Wallet, items: [{ id: 'resultado', label: 'Resultado' }, { id: 'custos', label: 'Custos' }] },
-  { key: 'inventario', label: 'Inventário', icon: Network, items: [{ id: 'networks', label: 'Networks do GAM', also: ['conectar'] }, { id: 'rewards', label: 'Rewards', also: ['reward', 'rewardpreview'] }] },
+  { key: 'inventario', label: 'Inventário', icon: Network, items: [{ id: 'networks', label: 'Networks do GAM', also: ['conectar'] }, { id: 'rewards', label: 'Rewards', also: ['reward'] }] },
   { key: 'equipe', label: 'Equipe', icon: Users, items: [{ id: 'equipe', label: 'Membros', also: ['membro'] }, { id: 'grupos', label: 'Grupos', also: ['grupo', 'grupoinativo'] }] },
   { key: 'empresa', label: 'Empresa', icon: Settings, items: [{ id: 'configuracoes', label: 'Configurações' }, { id: 'fiscais', label: 'Dados fiscais' }] },
 ]
 const INTERNAL_RAIL: RailGroup[] = [
-  { key: 'clientes', label: 'Inventário', icon: Users, items: [{ id: 'interno', label: 'Clientes', also: ['cliente'] }, { id: 'contratos', label: 'Contratos' }, { id: 'resultados', label: 'Resultado dos clientes' }, { id: 'checklists', label: 'Checklists', also: ['checklist', 'checklistitens'] }, { id: 'rewardsinterno', label: 'Rewards', also: ['rewardinterno', 'rewardpreviewinterno'] }] },
+  { key: 'clientes', label: 'Inventário', icon: Users, items: [{ id: 'interno', label: 'Clientes', also: ['cliente'] }, { id: 'contratos', label: 'Contratos' }, { id: 'resultados', label: 'Resultado dos clientes' }, { id: 'checklists', label: 'Checklists', also: ['checklist', 'checklistitens'] }, { id: 'rewardsinterno', label: 'Rewards', also: ['rewardinterno'] }] },
   { key: 'comissoes', label: 'Comissões', icon: Wallet, items: [{ id: 'minhacomissao', label: 'Minha comissão' }, { id: 'minhasinvoices', label: 'Minhas invoices' }, { id: 'comissoes', label: 'Comissões da equipe' }, { id: 'invoices', label: 'Invoices', also: ['servicosinvoice', 'invoice'] }] },
   { key: 'ferramentas', label: 'Ferramentas', icon: Wrench, items: [{ id: 'tarefas', label: 'Tarefas', also: ['tarefa'] }, { id: 'modelosdash', label: 'Modelos de dashboard' }, { id: 'ferramentasgam', label: 'Ferramentas do GAM', also: ['execucaogam'] }] },
   { key: 'equipegroone', label: 'Equipe', icon: ShieldCheck, items: [{ id: 'papelcomissao', label: 'Papéis da Equipe Groone' }] },
@@ -5177,11 +5175,10 @@ function RewardsScreen({ rewards, staff, open }: { rewards: ProtoReward[]; staff
 }
 
 /** Criar ou editar um reward: formulário à esquerda e a pré-visualização ao vivo à direita. */
-function RewardEditScreen({ initial, rewards, staff, back, save, remove, preview }: { initial: ProtoReward; rewards: ProtoReward[]; staff: boolean; back: () => void; save: (reward: ProtoReward) => void; remove: (id: number) => void; preview: (reward: ProtoReward) => void }) {
+function RewardEditScreen({ initial, rewards, staff, back, save, remove }: { initial: ProtoReward; rewards: ProtoReward[]; staff: boolean; back: () => void; save: (reward: ProtoReward) => void; remove: (id: number) => void }) {
   const [reward, setReward] = useState(initial)
   const [device, setDevice] = useState<'desktop' | 'mobile'>('desktop')
   const [confirmDelete, setConfirmDelete] = useState(false)
-  const [step, setStep] = useState(0)
   const [visitorLang, setVisitorLang] = useState<VisitorLang>('pt')
   const sites = REWARD_SITES.filter((item) => staff || item.client === MY_CLIENT)
   const site = REWARD_SITES.find((item) => item.domain === reward.domain) ?? sites[0]
@@ -5196,32 +5193,19 @@ function RewardEditScreen({ initial, rewards, staff, back, save, remove, preview
   const lowButton = contrast(style.button, style.buttonText) < 4.5
   const lowText = contrast(style.body, style.title) < 3 || contrast(style.body, style.text) < 4.5
   const ready = reward.name.trim().length >= 3 && reward.page.trim() !== '' && !pageTaken && reward.title.trim() !== '' && reward.button.trim() !== '' && !intervalBad && !redirectOutside && !(reward.redirect !== null && reward.redirect.trim() === '')
-  const stepOk = [reward.name.trim().length >= 3 && reward.page.trim() !== '' && !pageTaken, reward.title.trim() !== '' && reward.button.trim() !== '', true, !intervalBad && !redirectOutside && !(reward.redirect !== null && reward.redirect.trim() === '')]
   /** Grava o reward e volta para a lista. */
   const submit = () => { save({ ...reward, page: reward.page.replace(/^\/+/, ''), updated: 'Agora' }); toast.success(initial.id ? 'Reward salvo' : 'Reward criado', { description: reward.active ? `Já aparece em ${reward.domain}/${reward.page.replace(/^\/+/, '')}.` : 'Fica pausado até você ativar.' }); back() }
   return (
     <>
       <PageHeader title={initial.id ? initial.name : 'Novo reward'} sub={`${staff ? `${site.client} · ` : ''}${reward.domain}`}
         back={<button onClick={back} className="inline-flex items-center gap-1 text-[13px] text-muted-foreground hover:text-foreground"><ArrowLeft className="h-3.5 w-3.5" />Rewards</button>}
-        actions={<><Button variant="outline" onClick={() => preview(reward)}><Eye className="h-4 w-4" />Pré-visualizar</Button>{initial.id > 0 && <><Button disabled={!ready} onClick={submit}>Salvar</Button>
+        actions={<><Button disabled={!ready} onClick={submit}>{initial.id ? 'Salvar' : 'Criar reward'}</Button>{initial.id > 0 && <>
           <DropdownMenu><DropdownMenuTrigger asChild><Button variant="outline" size="icon" aria-label="Mais ações"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
             <DropdownMenuContent align="end"><DropdownMenuItem onSelect={() => change({ active: !reward.active })}>{reward.active ? 'Pausar' : 'Ativar'}</DropdownMenuItem><DropdownMenuSeparator /><DropdownMenuItem className="text-bad focus:text-bad" onSelect={() => setConfirmDelete(true)}><Trash2 className="h-4 w-4" />Apagar reward</DropdownMenuItem></DropdownMenuContent>
           </DropdownMenu></>}</>} />
       <Body>
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,460px)]">
           <div className="grid min-w-0 content-start gap-6">
-            <nav aria-label="Etapas" className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-              {REWARD_STEPS.map((label, index) => {
-                const reachable = stepOk.slice(0, index).every(Boolean)
-                return (
-                  <button key={label} disabled={!reachable} onClick={() => setStep(index)} aria-current={step === index ? 'step' : undefined}
-                    className={cn('flex items-center gap-2 rounded-md border px-3 py-2 text-left text-[13px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50', step === index ? 'border-foreground bg-card text-foreground' : 'bg-card text-muted-foreground hover:text-foreground')}>
-                    <span className={cn('flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[11px] tnum', step === index && 'border-foreground bg-foreground text-background', step !== index && stepOk[index] && reachable && index < step && 'border-ok bg-ok text-white')}>{index < step && stepOk[index] ? <Check className="h-3 w-3" /> : index + 1}</span>{label}
-                  </button>
-                )
-              })}
-            </nav>
-            {step === 0 && (
             <Card title="Sobre" desc="O nome fica só no painel. O reward aparece na página escolhida do site.">
               <div className="grid gap-4">
                 <Field id="rw-name" label="Nome" error={reward.name.length > 0 && reward.name.trim().length < 3 && 'Use pelo menos 3 letras.'}><Input id="rw-name" value={reward.name} onChange={(event) => change({ name: event.target.value })} placeholder="Ex.: Receita completa do bolo" /></Field>
@@ -5244,9 +5228,7 @@ function RewardEditScreen({ initial, rewards, staff, back, save, remove, preview
                 </Field>
               </div>
             </Card>
-            )}
 
-            {step === 1 && (
             <Card title="Conteúdo" desc="O que o visitante lê na janela.">
               <div className="grid gap-4">
                 <Field id="rw-icon" label="Ícone">
@@ -5274,9 +5256,7 @@ function RewardEditScreen({ initial, rewards, staff, back, save, remove, preview
                 <p className="rounded-md border bg-muted px-3 py-2 text-[13px] text-muted-foreground">O rodapé "Oferta patrocinada" é fixo e aparece no idioma do navegador de quem visita (português, inglês ou espanhol).</p>
               </div>
             </Card>
-            )}
 
-            {step === 2 && (
             <Card title="Corpo" desc="Cores, borda, cantos e fonte da janela. Comece por um modelo e ajuste o que quiser.">
               <div className="grid gap-5">
                 <div className="flex flex-wrap gap-2" aria-label="Modelos">
@@ -5316,9 +5296,7 @@ function RewardEditScreen({ initial, rewards, staff, back, save, remove, preview
                 </div>
               </div>
             </Card>
-            )}
 
-            {step === 3 && (
             <Card title="Exibição" desc="Qual anúncio premiado roda e de quanto em quanto tempo a janela volta para a mesma pessoa.">
               <div className="grid gap-4">
                 <div className="grid items-start gap-4 sm:grid-cols-2">
@@ -5340,15 +5318,7 @@ function RewardEditScreen({ initial, rewards, staff, back, save, remove, preview
                 </Field>
               </div>
             </Card>
-            )}
 
-            <div className="flex items-center justify-between gap-3">
-              <Button variant="outline" disabled={step === 0} onClick={() => setStep(step - 1)}><ArrowLeft className="h-4 w-4" />Voltar</Button>
-              <span className="text-[13px] text-muted-foreground tnum">Etapa {step + 1} de {REWARD_STEPS.length}</span>
-              {step < REWARD_STEPS.length - 1
-                ? <Button disabled={!stepOk[step]} onClick={() => setStep(step + 1)}>Próximo</Button>
-                : <Button disabled={!ready} onClick={submit}>{initial.id ? 'Salvar' : 'Criar reward'}</Button>}
-            </div>
           </div>
 
           <div className="order-first min-w-0 lg:sticky lg:top-[124px] lg:order-none lg:self-start">
@@ -5362,7 +5332,6 @@ function RewardEditScreen({ initial, rewards, staff, back, save, remove, preview
               </div>
             </div>
             <RewardStage reward={reward} device={device} lang={visitorLang} compact />
-            <Button variant="outline" className="mt-3 w-full" onClick={() => preview(reward)}><Play className="h-4 w-4" />Testar como o visitante</Button>
           </div>
         </div>
       </Body>
@@ -5372,51 +5341,6 @@ function RewardEditScreen({ initial, rewards, staff, back, save, remove, preview
           <DialogFooter><Button variant="outline" onClick={() => setConfirmDelete(false)}>Cancelar</Button><Button variant="destructive" onClick={() => { remove(initial.id); toast.success('Reward apagado'); back() }}>Apagar</Button></DialogFooter>
         </DialogContent>
       </Dialog>
-    </>
-  )
-}
-
-const REWARD_STEPS = ['Sobre', 'Conteúdo', 'Corpo', 'Exibição']
-
-type PreviewStep = 'loading' | 'offer' | 'ad' | 'done' | 'closed'
-const AD_SECONDS = 5
-/** Pré-visualização como o visitante: a janela abre na página, o anúncio premiado roda e o conteúdo é liberado. */
-function RewardPreviewScreen({ reward, back }: { reward: ProtoReward; back: () => void }) {
-  const [device, setDevice] = useState<'desktop' | 'mobile'>('desktop')
-  const [step, setStep] = useState<PreviewStep>('loading')
-  const [visitorLang, setVisitorLang] = useState<VisitorLang>('pt')
-  const [seconds, setSeconds] = useState(AD_SECONDS)
-  useEffect(() => {
-    if (step === 'loading') { const timer = setTimeout(() => setStep('offer'), 900); return () => clearTimeout(timer) }
-    if (step === 'ad') {
-      if (seconds === 0) { setStep('done'); return }
-      const timer = setTimeout(() => setSeconds(seconds - 1), 1000)
-      return () => clearTimeout(timer)
-    }
-  }, [step, seconds])
-  /** Começa a simulação de novo. */
-  const restart = () => { setSeconds(AD_SECONDS); setStep('loading') }
-  const stageContent = step === 'loading' ? <Loader2 className="h-6 w-6 animate-spin text-white" />
-    : step === 'offer' ? <RewardBody reward={reward} lang={visitorLang} onUnlock={() => setStep('ad')} onClose={() => setStep('closed')} />
-    : step === 'ad' ? <div className="flex aspect-video w-full max-w-[420px] flex-col items-center justify-center rounded-lg bg-neutral-900 text-white"><div className="text-[12px] uppercase tracking-wider opacity-60">Anúncio premiado do GAM</div><div className="mt-1 font-mono text-[12px] opacity-60">{reward.block}</div><div className="mt-4 text-[32px] font-semibold tnum">{seconds}s</div><div className="mt-1 text-[13px] opacity-70">A recompensa sai quando o anúncio termina.</div></div>
-    : step === 'done' ? <div className="w-full max-w-[360px] rounded-xl bg-white p-6 text-center text-neutral-900 shadow-xl"><Check className="mx-auto h-8 w-8 text-ok" /><div className="mt-2 text-[17px] font-semibold">Recompensa liberada</div><p className="mt-1 break-all text-[14px] text-neutral-600">{reward.redirect ? `O visitante vai para ${reward.redirect}` : 'A janela fecha e a página fica liberada.'}</p></div>
-    : <div className="rounded-lg bg-white px-4 py-3 text-[14px] text-neutral-700 shadow-xl">O visitante fechou a janela. Ela volta em {reward.interval} minutos.</div>
-  return (
-    <>
-      <PageHeader title="Pré-visualização" sub={`${reward.name || 'Novo reward'} · ${reward.domain}/${reward.page}`}
-        back={<button onClick={back} className="inline-flex items-center gap-1 text-[13px] text-muted-foreground hover:text-foreground"><ArrowLeft className="h-3.5 w-3.5" />Voltar para a edição</button>}
-        actions={<><VisitorLangPicker value={visitorLang} onChange={setVisitorLang} /><div className="inline-flex rounded-md border bg-card p-0.5" role="radiogroup" aria-label="Tamanho da tela">{([['desktop', Monitor, 'Computador'], ['mobile', Smartphone, 'Celular']] as const).map(([value, Icon, label]) => <button key={value} role="radio" aria-checked={device === value} onClick={() => setDevice(value)} className={cn('flex h-8 items-center gap-2 rounded px-3 text-[13px] font-medium', device === value ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground')}><Icon className="h-4 w-4" />{label}</button>)}</div><Button variant="outline" onClick={restart}><RefreshCw className="h-4 w-4" />Ver de novo</Button></>} />
-      <Body>
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-[13px] text-muted-foreground">
-          {([['offer', 'Janela aberta'], ['ad', 'Anúncio premiado'], ['done', 'Recompensa']] as const).map(([key, label], index) => {
-            const order: PreviewStep[] = ['loading', 'offer', 'ad', 'done']
-            const reached = order.indexOf(step) >= order.indexOf(key)
-            return <span key={key} className={cn('inline-flex items-center gap-2', reached && 'text-foreground')}><span className={cn('flex h-5 w-5 items-center justify-center rounded-full border text-[11px] tnum', reached && 'border-foreground bg-foreground text-background')}>{index + 1}</span>{label}</span>
-          })}
-          <span className="ml-auto">Nada aqui chega ao site: é só uma simulação.</span>
-        </div>
-        <RewardStage reward={reward} device={device}>{stageContent}</RewardStage>
-      </Body>
     </>
   )
 }
@@ -5529,8 +5453,7 @@ export default function App() {
       case 'execucaogam': { const run = gamRuns.find((item) => item.id === gamRunId) ?? gamRuns[0]; return <GamRunScreen key={run.id} run={run} update={(next) => setGamRuns((current) => current.map((item) => (item.id === next.id ? next : item)))} back={() => go('ferramentasgam')} /> }
       case 'rewards': return <RewardsScreen rewards={rewards} staff={false} open={(id) => openReward(id, false)} />
       case 'rewardsinterno': return <RewardsScreen rewards={rewards} staff open={(id) => openReward(id, true)} />
-      case 'reward': case 'rewardinterno': { const staff = screen === 'rewardinterno'; return <RewardEditScreen key={`${rewardDraft.id}-${screen}`} initial={rewardDraft} rewards={rewards} staff={staff} back={() => go(staff ? 'rewardsinterno' : 'rewards')} save={saveReward} remove={(id) => setRewards((current) => current.filter((item) => item.id !== id))} preview={(draft) => { setRewardDraft(draft); go(staff ? 'rewardpreviewinterno' : 'rewardpreview') }} /> }
-      case 'rewardpreview': case 'rewardpreviewinterno': return <RewardPreviewScreen key={screen} reward={rewardDraft} back={() => go(screen === 'rewardpreviewinterno' ? 'rewardinterno' : 'reward')} />
+      case 'reward': case 'rewardinterno': { const staff = screen === 'rewardinterno'; return <RewardEditScreen key={`${rewardDraft.id}-${screen}`} initial={rewardDraft} rewards={rewards} staff={staff} back={() => go(staff ? 'rewardsinterno' : 'rewards')} save={saveReward} remove={(id) => setRewards((current) => current.filter((item) => item.id !== id))} /> }
       case 'tarefa': { const task = tasks.find((item) => item.id === taskId) ?? tasks[0]; return <TaskScreen key={task.id} task={task} update={(next) => setTasks(tasks.map((item) => (item.id === next.id ? next : item)))} back={() => go('tarefas')} /> }
     }
   })()
