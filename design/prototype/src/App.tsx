@@ -5013,7 +5013,7 @@ function GamRunScreen({ run, update, back }: { run: GamRun; update: (run: GamRun
 
 type RewardStyle = { body: string; border: string; borderWidth: number; title: string; text: string; button: string; buttonText: string; radius: number; font: string; shadow: boolean }
 type RewardIcon = { kind: 'emoji' | 'image' | 'none'; emoji: string; image: string | null }
-type ProtoReward = { id: number; name: string; client: string; domain: string; page: string; active: boolean; icon: RewardIcon; title: string; description: string; button: string; footer: string; style: RewardStyle; block: string; interval: number; redirect: string | null; updated: string }
+type ProtoReward = { id: number; name: string; client: string; domain: string; page: string; active: boolean; icon: RewardIcon; title: string; description: string; button: string; style: RewardStyle; block: string; interval: number; redirect: string | null; updated: string }
 type ProtoRewardSite = { domain: string; client: string; blocks: string[] }
 
 const REWARD_SITES: ProtoRewardSite[] = [
@@ -5040,12 +5040,15 @@ const REWARD_PRESETS: { name: string; style: Omit<RewardStyle, 'radius' | 'font'
   { name: 'Natureza', style: { body: '#f0fdf4', border: '#86efac', title: '#14532d', text: '#166534', button: '#16a34a', buttonText: '#ffffff' } },
 ]
 const DEFAULT_REWARD_STYLE: RewardStyle = { ...REWARD_PRESETS[1].style, borderWidth: 1, radius: 24, font: 'Geist', shadow: true }
+type VisitorLang = 'pt' | 'en' | 'es'
+const REWARD_FOOTER: Record<VisitorLang, string> = { pt: 'Oferta patrocinada', en: 'Sponsored offer', es: 'Oferta patrocinada' }
+const VISITOR_LANGS: [VisitorLang, string][] = [['pt', 'Português'], ['en', 'English'], ['es', 'Español']]
 const REWARD_EMOJIS = ['🎁', '🏆', '🎉', '🚀', '🥳', '🎊', '🔓', '⭐']
 const INITIAL_REWARDS: ProtoReward[] = [
-  { id: 7, name: 'Receita completa do bolo de açaí', client: 'Açaí Mídia', domain: 'acai.com.br', page: 'receitas/bolo-de-acai', active: true, icon: { kind: 'emoji', emoji: '🎁', image: null }, title: 'Receita completa liberada', description: 'Assista a um anúncio curto e veja o passo a passo com as medidas.', button: 'Ver a receita', footer: 'Oferta patrocinada', style: DEFAULT_REWARD_STYLE, block: 'acai_reward_artigo', interval: 30, redirect: null, updated: '08/11/2026 16:20' },
-  { id: 6, name: 'Ebook de sobremesas', client: 'Açaí Mídia', domain: 'receitasdaacai.com.br', page: 'ebook-sobremesas', active: false, icon: { kind: 'emoji', emoji: '📘', image: null }, title: 'Baixe o ebook grátis', description: '40 sobremesas com açaí, prontas em 15 minutos.', button: 'Baixar agora', footer: 'Oferta patrocinada', style: { ...REWARD_PRESETS[2].style, borderWidth: 2, radius: 16, font: 'Poppins', shadow: true }, block: 'receitas_reward', interval: 60, redirect: 'https://receitasdaacai.com.br/ebook-sobremesas/download', updated: '02/11/2026 10:05' },
-  { id: 5, name: 'Comparativo de celulares', client: 'Tech Notícias', domain: 'technoticias.com.br', page: 'reviews/melhores-celulares-2026', active: true, icon: { kind: 'emoji', emoji: '🏆', image: null }, title: 'Ranking completo', description: 'Desbloqueie a tabela com os 20 aparelhos testados.', button: 'Desbloquear', footer: 'Conteúdo patrocinado', style: { ...REWARD_PRESETS[0].style, borderWidth: 1, radius: 8, font: 'Inter', shadow: true }, block: 'tech_reward_1', interval: 15, redirect: null, updated: '30/10/2026 09:41' },
-  { id: 4, name: 'Roteiro de 7 dias em Lisboa', client: 'Viagem Fácil', domain: 'viagemfacil.com', page: 'roteiros/lisboa-7-dias', active: true, icon: { kind: 'emoji', emoji: '🧳', image: null }, title: 'Roteiro em PDF', description: 'O roteiro dia a dia com mapa e dicas de restaurantes.', button: 'Quero o roteiro', footer: 'Oferta patrocinada', style: { ...REWARD_PRESETS[3].style, borderWidth: 0, radius: 28, font: 'Lora', shadow: true }, block: 'vf_reward', interval: 120, redirect: null, updated: '21/10/2026 14:12' },
+  { id: 7, name: 'Receita completa do bolo de açaí', client: 'Açaí Mídia', domain: 'acai.com.br', page: 'receitas/bolo-de-acai', active: true, icon: { kind: 'emoji', emoji: '🎁', image: null }, title: 'Receita completa liberada', description: 'Assista a um anúncio curto e veja o passo a passo com as medidas.', button: 'Ver a receita', style: DEFAULT_REWARD_STYLE, block: 'acai_reward_artigo', interval: 30, redirect: null, updated: '08/11/2026 16:20' },
+  { id: 6, name: 'Ebook de sobremesas', client: 'Açaí Mídia', domain: 'receitasdaacai.com.br', page: 'ebook-sobremesas', active: false, icon: { kind: 'emoji', emoji: '📘', image: null }, title: 'Baixe o ebook grátis', description: '40 sobremesas com açaí, prontas em 15 minutos.', button: 'Baixar agora', style: { ...REWARD_PRESETS[2].style, borderWidth: 2, radius: 16, font: 'Poppins', shadow: true }, block: 'receitas_reward', interval: 60, redirect: 'https://receitasdaacai.com.br/ebook-sobremesas/download', updated: '02/11/2026 10:05' },
+  { id: 5, name: 'Comparativo de celulares', client: 'Tech Notícias', domain: 'technoticias.com.br', page: 'reviews/melhores-celulares-2026', active: true, icon: { kind: 'emoji', emoji: '🏆', image: null }, title: 'Ranking completo', description: 'Desbloqueie a tabela com os 20 aparelhos testados.', button: 'Desbloquear', style: { ...REWARD_PRESETS[0].style, borderWidth: 1, radius: 8, font: 'Inter', shadow: true }, block: 'tech_reward_1', interval: 15, redirect: null, updated: '30/10/2026 09:41' },
+  { id: 4, name: 'Roteiro de 7 dias em Lisboa', client: 'Viagem Fácil', domain: 'viagemfacil.com', page: 'roteiros/lisboa-7-dias', active: true, icon: { kind: 'emoji', emoji: '🧳', image: null }, title: 'Roteiro em PDF', description: 'O roteiro dia a dia com mapa e dicas de restaurantes.', button: 'Quero o roteiro', style: { ...REWARD_PRESETS[3].style, borderWidth: 0, radius: 28, font: 'Lora', shadow: true }, block: 'vf_reward', interval: 120, redirect: null, updated: '21/10/2026 14:12' },
 ]
 
 /** Fonte CSS do nome da fonte escolhida. */
@@ -5059,11 +5062,11 @@ function luminance(hex: string) {
 function contrast(first: string, second: string) { const [light, dark] = [luminance(first), luminance(second)].sort((left, right) => right - left); return (light + 0.05) / (dark + 0.05) }
 /** Reward novo, no primeiro site disponível. */
 function blankReward(site: ProtoRewardSite): ProtoReward {
-  return { id: 0, name: '', client: site.client, domain: site.domain, page: '', active: true, icon: { kind: 'emoji', emoji: '🎁', image: null }, title: 'Oferta especial', description: 'Desbloqueie sua recompensa agora mesmo!', button: 'Desbloquear', footer: 'Oferta patrocinada', style: DEFAULT_REWARD_STYLE, block: site.blocks[0], interval: 30, redirect: null, updated: 'Agora' }
+  return { id: 0, name: '', client: site.client, domain: site.domain, page: '', active: true, icon: { kind: 'emoji', emoji: '🎁', image: null }, title: 'Oferta especial', description: 'Desbloqueie sua recompensa agora mesmo!', button: 'Desbloquear', style: DEFAULT_REWARD_STYLE, block: site.blocks[0], interval: 30, redirect: null, updated: 'Agora' }
 }
 
 /** O corpo do reward, como o visitante vê no site; `onUnlock` deixa o botão clicável na pré-visualização. */
-function RewardBody({ reward, onUnlock, onClose }: { reward: ProtoReward; onUnlock?: () => void; onClose?: () => void }) {
+function RewardBody({ reward, lang = 'pt', onUnlock, onClose }: { reward: ProtoReward; lang?: VisitorLang; onUnlock?: () => void; onClose?: () => void }) {
   const style = reward.style
   return (
     <div role="dialog" aria-label={reward.title} className="relative w-full max-w-[400px] px-7 pb-5 pt-9 text-center"
@@ -5075,13 +5078,13 @@ function RewardBody({ reward, onUnlock, onClose }: { reward: ProtoReward; onUnlo
       <p className="mt-2 break-words text-[15px] leading-relaxed">{reward.description || 'Descrição do reward'}</p>
       <button type="button" onClick={onUnlock} className="mt-6 inline-flex h-11 w-full items-center justify-center px-5 text-[15px] font-semibold transition-opacity hover:opacity-90"
         style={{ background: style.button, color: style.buttonText, borderRadius: Math.min(style.radius, 14) }}>{reward.button || 'Desbloquear'}</button>
-      {reward.footer && <p className="mt-4 text-[12px] opacity-70">{reward.footer}</p>}
+      <p className="mt-4 text-[12px] opacity-70" lang={lang}>{REWARD_FOOTER[lang]}</p>
     </div>
   )
 }
 
 /** Uma página de exemplo do site, com o reward aberto por cima, no tamanho do computador ou do celular. */
-function RewardStage({ reward, device, compact = false, children }: { reward: ProtoReward; device: 'desktop' | 'mobile'; compact?: boolean; children?: React.ReactNode }) {
+function RewardStage({ reward, device, lang = 'pt', compact = false, children }: { reward: ProtoReward; device: 'desktop' | 'mobile'; lang?: VisitorLang; compact?: boolean; children?: React.ReactNode }) {
   return (
     <div className={cn('mx-auto overflow-hidden rounded-xl border bg-card shadow-sm', device === 'mobile' ? 'w-[360px] max-w-full' : 'w-full')}>
       <div className="flex items-center gap-2 border-b bg-muted px-3 py-2">
@@ -5095,9 +5098,19 @@ function RewardStage({ reward, device, compact = false, children }: { reward: Pr
           <div className="h-40 rounded-lg bg-neutral-100" />
           {[90, 96, 84, 92, 70, 88].map((width, index) => <div key={index} className="h-3 rounded bg-neutral-100" style={{ width: `${width}%` }} />)}
         </div>
-        <div className="absolute inset-0 flex items-center justify-center bg-black/45 p-4">{children ?? <RewardBody reward={reward} />}</div>
+        <div className="absolute inset-0 flex items-center justify-center bg-black/45 p-4">{children ?? <RewardBody reward={reward} lang={lang} />}</div>
       </div>
     </div>
+  )
+}
+
+/** Idioma do navegador de quem visita o site: muda só o rodapé fixo do reward. */
+function VisitorLangPicker({ value, onChange }: { value: VisitorLang; onChange: (lang: VisitorLang) => void }) {
+  return (
+    <Select value={value} onValueChange={(lang) => onChange(lang as VisitorLang)}>
+      <SelectTrigger aria-label="Idioma do navegador do visitante" className="h-9 w-[150px]"><SelectValue /></SelectTrigger>
+      <SelectContent>{VISITOR_LANGS.map(([lang, label]) => <SelectItem key={lang} value={lang}>{label}</SelectItem>)}</SelectContent>
+    </Select>
   )
 }
 
@@ -5168,6 +5181,8 @@ function RewardEditScreen({ initial, rewards, staff, back, save, remove, preview
   const [reward, setReward] = useState(initial)
   const [device, setDevice] = useState<'desktop' | 'mobile'>('desktop')
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [step, setStep] = useState(0)
+  const [visitorLang, setVisitorLang] = useState<VisitorLang>('pt')
   const sites = REWARD_SITES.filter((item) => staff || item.client === MY_CLIENT)
   const site = REWARD_SITES.find((item) => item.domain === reward.domain) ?? sites[0]
   const style = reward.style
@@ -5181,16 +5196,32 @@ function RewardEditScreen({ initial, rewards, staff, back, save, remove, preview
   const lowButton = contrast(style.button, style.buttonText) < 4.5
   const lowText = contrast(style.body, style.title) < 3 || contrast(style.body, style.text) < 4.5
   const ready = reward.name.trim().length >= 3 && reward.page.trim() !== '' && !pageTaken && reward.title.trim() !== '' && reward.button.trim() !== '' && !intervalBad && !redirectOutside && !(reward.redirect !== null && reward.redirect.trim() === '')
+  const stepOk = [reward.name.trim().length >= 3 && reward.page.trim() !== '' && !pageTaken, reward.title.trim() !== '' && reward.button.trim() !== '', true, !intervalBad && !redirectOutside && !(reward.redirect !== null && reward.redirect.trim() === '')]
   /** Grava o reward e volta para a lista. */
   const submit = () => { save({ ...reward, page: reward.page.replace(/^\/+/, ''), updated: 'Agora' }); toast.success(initial.id ? 'Reward salvo' : 'Reward criado', { description: reward.active ? `Já aparece em ${reward.domain}/${reward.page.replace(/^\/+/, '')}.` : 'Fica pausado até você ativar.' }); back() }
   return (
     <>
       <PageHeader title={initial.id ? initial.name : 'Novo reward'} sub={`${staff ? `${site.client} · ` : ''}${reward.domain}`}
         back={<button onClick={back} className="inline-flex items-center gap-1 text-[13px] text-muted-foreground hover:text-foreground"><ArrowLeft className="h-3.5 w-3.5" />Rewards</button>}
-        actions={<><Button variant="outline" onClick={() => preview(reward)}><Eye className="h-4 w-4" />Pré-visualizar</Button><Button disabled={!ready} onClick={submit}>{initial.id ? 'Salvar' : 'Criar reward'}</Button></>} />
+        actions={<><Button variant="outline" onClick={() => preview(reward)}><Eye className="h-4 w-4" />Pré-visualizar</Button>{initial.id > 0 && <><Button disabled={!ready} onClick={submit}>Salvar</Button>
+          <DropdownMenu><DropdownMenuTrigger asChild><Button variant="outline" size="icon" aria-label="Mais ações"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
+            <DropdownMenuContent align="end"><DropdownMenuItem onSelect={() => change({ active: !reward.active })}>{reward.active ? 'Pausar' : 'Ativar'}</DropdownMenuItem><DropdownMenuSeparator /><DropdownMenuItem className="text-bad focus:text-bad" onSelect={() => setConfirmDelete(true)}><Trash2 className="h-4 w-4" />Apagar reward</DropdownMenuItem></DropdownMenuContent>
+          </DropdownMenu></>}</>} />
       <Body>
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,460px)]">
           <div className="grid min-w-0 content-start gap-6">
+            <nav aria-label="Etapas" className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {REWARD_STEPS.map((label, index) => {
+                const reachable = stepOk.slice(0, index).every(Boolean)
+                return (
+                  <button key={label} disabled={!reachable} onClick={() => setStep(index)} aria-current={step === index ? 'step' : undefined}
+                    className={cn('flex items-center gap-2 rounded-md border px-3 py-2 text-left text-[13px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50', step === index ? 'border-foreground bg-card text-foreground' : 'bg-card text-muted-foreground hover:text-foreground')}>
+                    <span className={cn('flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[11px] tnum', step === index && 'border-foreground bg-foreground text-background', step !== index && stepOk[index] && reachable && index < step && 'border-ok bg-ok text-white')}>{index < step && stepOk[index] ? <Check className="h-3 w-3" /> : index + 1}</span>{label}
+                  </button>
+                )
+              })}
+            </nav>
+            {step === 0 && (
             <Card title="Sobre" desc="O nome fica só no painel. O reward aparece na página escolhida do site.">
               <div className="grid gap-4">
                 <Field id="rw-name" label="Nome" error={reward.name.length > 0 && reward.name.trim().length < 3 && 'Use pelo menos 3 letras.'}><Input id="rw-name" value={reward.name} onChange={(event) => change({ name: event.target.value })} placeholder="Ex.: Receita completa do bolo" /></Field>
@@ -5213,7 +5244,9 @@ function RewardEditScreen({ initial, rewards, staff, back, save, remove, preview
                 </Field>
               </div>
             </Card>
+            )}
 
+            {step === 1 && (
             <Card title="Conteúdo" desc="O que o visitante lê na janela.">
               <div className="grid gap-4">
                 <Field id="rw-icon" label="Ícone">
@@ -5237,13 +5270,13 @@ function RewardEditScreen({ initial, rewards, staff, back, save, remove, preview
                 </Field>
                 <Field id="rw-title" label="Título"><Input id="rw-title" value={reward.title} maxLength={80} onChange={(event) => change({ title: event.target.value })} /></Field>
                 <Field id="rw-desc" label="Descrição" hint={`${reward.description.length} de 500`}><Textarea id="rw-desc" rows={3} maxLength={500} value={reward.description} onChange={(event) => change({ description: event.target.value })} /></Field>
-                <div className="grid items-start gap-4 sm:grid-cols-2">
-                  <Field id="rw-button" label="Texto do botão"><Input id="rw-button" value={reward.button} maxLength={40} onChange={(event) => change({ button: event.target.value })} /></Field>
-                  <Field id="rw-footer" label="Rodapé" hint="Deixe vazio para não mostrar."><Input id="rw-footer" value={reward.footer} maxLength={60} onChange={(event) => change({ footer: event.target.value })} /></Field>
-                </div>
+                <Field id="rw-button" label="Texto do botão"><Input id="rw-button" value={reward.button} maxLength={40} onChange={(event) => change({ button: event.target.value })} /></Field>
+                <p className="rounded-md border bg-muted px-3 py-2 text-[13px] text-muted-foreground">O rodapé "Oferta patrocinada" é fixo e aparece no idioma do navegador de quem visita (português, inglês ou espanhol).</p>
               </div>
             </Card>
+            )}
 
+            {step === 2 && (
             <Card title="Corpo" desc="Cores, borda, cantos e fonte da janela. Comece por um modelo e ajuste o que quiser.">
               <div className="grid gap-5">
                 <div className="flex flex-wrap gap-2" aria-label="Modelos">
@@ -5283,7 +5316,9 @@ function RewardEditScreen({ initial, rewards, staff, back, save, remove, preview
                 </div>
               </div>
             </Card>
+            )}
 
+            {step === 3 && (
             <Card title="Exibição" desc="Qual anúncio premiado roda e de quanto em quanto tempo a janela volta para a mesma pessoa.">
               <div className="grid gap-4">
                 <div className="grid items-start gap-4 sm:grid-cols-2">
@@ -5305,20 +5340,28 @@ function RewardEditScreen({ initial, rewards, staff, back, save, remove, preview
                 </Field>
               </div>
             </Card>
-
-            {initial.id > 0 && (
-              <Card title="Apagar reward" desc="A janela sai do site na hora. Não dá para desfazer." footer={<Button variant="destructive" onClick={() => setConfirmDelete(true)}><Trash2 className="h-4 w-4" />Apagar</Button>} />
             )}
+
+            <div className="flex items-center justify-between gap-3">
+              <Button variant="outline" disabled={step === 0} onClick={() => setStep(step - 1)}><ArrowLeft className="h-4 w-4" />Voltar</Button>
+              <span className="text-[13px] text-muted-foreground tnum">Etapa {step + 1} de {REWARD_STEPS.length}</span>
+              {step < REWARD_STEPS.length - 1
+                ? <Button disabled={!stepOk[step]} onClick={() => setStep(step + 1)}>Próximo</Button>
+                : <Button disabled={!ready} onClick={submit}>{initial.id ? 'Salvar' : 'Criar reward'}</Button>}
+            </div>
           </div>
 
           <div className="order-first min-w-0 lg:sticky lg:top-[124px] lg:order-none lg:self-start">
             <div className="mb-3 flex items-center justify-between gap-3">
               <div><div className="text-[14px] font-semibold">Pré-visualização</div><div className="text-[13px] text-muted-foreground">Muda enquanto você edita.</div></div>
-              <div className="inline-flex rounded-md border bg-card p-0.5" role="radiogroup" aria-label="Tamanho da tela">
-                {([['desktop', Monitor, 'Computador'], ['mobile', Smartphone, 'Celular']] as const).map(([value, Icon, label]) => <button key={value} role="radio" aria-checked={device === value} aria-label={label} title={label} onClick={() => setDevice(value)} className={cn('flex h-8 w-9 items-center justify-center rounded', device === value ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground')}><Icon className="h-4 w-4" /></button>)}
+              <div className="flex items-center gap-2">
+                <VisitorLangPicker value={visitorLang} onChange={setVisitorLang} />
+                <div className="inline-flex rounded-md border bg-card p-0.5" role="radiogroup" aria-label="Tamanho da tela">
+                  {([['desktop', Monitor, 'Computador'], ['mobile', Smartphone, 'Celular']] as const).map(([value, Icon, label]) => <button key={value} role="radio" aria-checked={device === value} aria-label={label} title={label} onClick={() => setDevice(value)} className={cn('flex h-8 w-9 items-center justify-center rounded', device === value ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground')}><Icon className="h-4 w-4" /></button>)}
+                </div>
               </div>
             </div>
-            <RewardStage reward={reward} device={device} compact />
+            <RewardStage reward={reward} device={device} lang={visitorLang} compact />
             <Button variant="outline" className="mt-3 w-full" onClick={() => preview(reward)}><Play className="h-4 w-4" />Testar como o visitante</Button>
           </div>
         </div>
@@ -5333,12 +5376,15 @@ function RewardEditScreen({ initial, rewards, staff, back, save, remove, preview
   )
 }
 
+const REWARD_STEPS = ['Sobre', 'Conteúdo', 'Corpo', 'Exibição']
+
 type PreviewStep = 'loading' | 'offer' | 'ad' | 'done' | 'closed'
 const AD_SECONDS = 5
 /** Pré-visualização como o visitante: a janela abre na página, o anúncio premiado roda e o conteúdo é liberado. */
 function RewardPreviewScreen({ reward, back }: { reward: ProtoReward; back: () => void }) {
   const [device, setDevice] = useState<'desktop' | 'mobile'>('desktop')
   const [step, setStep] = useState<PreviewStep>('loading')
+  const [visitorLang, setVisitorLang] = useState<VisitorLang>('pt')
   const [seconds, setSeconds] = useState(AD_SECONDS)
   useEffect(() => {
     if (step === 'loading') { const timer = setTimeout(() => setStep('offer'), 900); return () => clearTimeout(timer) }
@@ -5351,7 +5397,7 @@ function RewardPreviewScreen({ reward, back }: { reward: ProtoReward; back: () =
   /** Começa a simulação de novo. */
   const restart = () => { setSeconds(AD_SECONDS); setStep('loading') }
   const stageContent = step === 'loading' ? <Loader2 className="h-6 w-6 animate-spin text-white" />
-    : step === 'offer' ? <RewardBody reward={reward} onUnlock={() => setStep('ad')} onClose={() => setStep('closed')} />
+    : step === 'offer' ? <RewardBody reward={reward} lang={visitorLang} onUnlock={() => setStep('ad')} onClose={() => setStep('closed')} />
     : step === 'ad' ? <div className="flex aspect-video w-full max-w-[420px] flex-col items-center justify-center rounded-lg bg-neutral-900 text-white"><div className="text-[12px] uppercase tracking-wider opacity-60">Anúncio premiado do GAM</div><div className="mt-1 font-mono text-[12px] opacity-60">{reward.block}</div><div className="mt-4 text-[32px] font-semibold tnum">{seconds}s</div><div className="mt-1 text-[13px] opacity-70">A recompensa sai quando o anúncio termina.</div></div>
     : step === 'done' ? <div className="w-full max-w-[360px] rounded-xl bg-white p-6 text-center text-neutral-900 shadow-xl"><Check className="mx-auto h-8 w-8 text-ok" /><div className="mt-2 text-[17px] font-semibold">Recompensa liberada</div><p className="mt-1 break-all text-[14px] text-neutral-600">{reward.redirect ? `O visitante vai para ${reward.redirect}` : 'A janela fecha e a página fica liberada.'}</p></div>
     : <div className="rounded-lg bg-white px-4 py-3 text-[14px] text-neutral-700 shadow-xl">O visitante fechou a janela. Ela volta em {reward.interval} minutos.</div>
@@ -5359,7 +5405,7 @@ function RewardPreviewScreen({ reward, back }: { reward: ProtoReward; back: () =
     <>
       <PageHeader title="Pré-visualização" sub={`${reward.name || 'Novo reward'} · ${reward.domain}/${reward.page}`}
         back={<button onClick={back} className="inline-flex items-center gap-1 text-[13px] text-muted-foreground hover:text-foreground"><ArrowLeft className="h-3.5 w-3.5" />Voltar para a edição</button>}
-        actions={<><div className="inline-flex rounded-md border bg-card p-0.5" role="radiogroup" aria-label="Tamanho da tela">{([['desktop', Monitor, 'Computador'], ['mobile', Smartphone, 'Celular']] as const).map(([value, Icon, label]) => <button key={value} role="radio" aria-checked={device === value} onClick={() => setDevice(value)} className={cn('flex h-8 items-center gap-2 rounded px-3 text-[13px] font-medium', device === value ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground')}><Icon className="h-4 w-4" />{label}</button>)}</div><Button variant="outline" onClick={restart}><RefreshCw className="h-4 w-4" />Ver de novo</Button></>} />
+        actions={<><VisitorLangPicker value={visitorLang} onChange={setVisitorLang} /><div className="inline-flex rounded-md border bg-card p-0.5" role="radiogroup" aria-label="Tamanho da tela">{([['desktop', Monitor, 'Computador'], ['mobile', Smartphone, 'Celular']] as const).map(([value, Icon, label]) => <button key={value} role="radio" aria-checked={device === value} onClick={() => setDevice(value)} className={cn('flex h-8 items-center gap-2 rounded px-3 text-[13px] font-medium', device === value ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground')}><Icon className="h-4 w-4" />{label}</button>)}</div><Button variant="outline" onClick={restart}><RefreshCw className="h-4 w-4" />Ver de novo</Button></>} />
       <Body>
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-[13px] text-muted-foreground">
           {([['offer', 'Janela aberta'], ['ad', 'Anúncio premiado'], ['done', 'Recompensa']] as const).map(([key, label], index) => {
