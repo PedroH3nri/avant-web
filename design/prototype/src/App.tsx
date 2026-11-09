@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Toaster, toast } from 'sonner'
-import { Check, ChevronsUpDown, Copy, Loader2, Plus, RefreshCw, Search, X, AlertTriangle, ArrowLeft, MoreHorizontal, Lock, Mail, ExternalLink, Home, Users, Network, Settings, ShieldCheck, Menu, BarChart3, Wallet, Download, Trash2, Pin, PinOff, Pencil, LayoutGrid, List, Wrench } from 'lucide-react'
+import { Check, ChevronsUpDown, Copy, Loader2, Plus, RefreshCw, Search, X, AlertTriangle, ArrowLeft, MoreHorizontal, Lock, Mail, ExternalLink, Home, Users, Network, Settings, ShieldCheck, Menu, BarChart3, Wallet, Download, Trash2, Pin, PinOff, Pencil, LayoutGrid, List, Wrench, Gift, Eye, Monitor, Smartphone, Play } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -11,6 +11,8 @@ import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Switch } from '@/components/ui/switch'
+import { Slider } from '@/components/ui/slider'
 import { cn } from '@/lib/utils'
 import { translate, type Key, type Lang } from './i18n'
 import { Mark, SeatBar, SeatDot, SeatStrip, type SeatState } from './tiles'
@@ -57,9 +59,15 @@ const SCREENS = [
   ['checklistitens', 'Painel interno · Itens do checklist'],
   ['ferramentasgam', 'Painel interno · Ferramentas do GAM'],
   ['execucaogam', 'Painel interno · Execução no GAM'],
+  ['rewards', 'Rewards'],
+  ['reward', 'Rewards · Editar reward'],
+  ['rewardpreview', 'Rewards · Pré-visualização'],
+  ['rewardsinterno', 'Painel interno · Rewards'],
+  ['rewardinterno', 'Painel interno · Editar reward'],
+  ['rewardpreviewinterno', 'Painel interno · Pré-visualização do reward'],
 ] as const
 type Screen = (typeof SCREENS)[number][0]
-const INTERNAL_SCREENS: Screen[] = ['interno', 'cliente', 'contratos', 'resultados', 'papelcomissao', 'minhacomissao', 'comissoes', 'minhasinvoices', 'invoice', 'invoices', 'servicosinvoice', 'modelosdash', 'tarefas', 'tarefa', 'checklists', 'checklist', 'checklistitens', 'ferramentasgam', 'execucaogam']
+const INTERNAL_SCREENS: Screen[] = ['interno', 'cliente', 'contratos', 'resultados', 'papelcomissao', 'minhacomissao', 'comissoes', 'minhasinvoices', 'invoice', 'invoices', 'servicosinvoice', 'modelosdash', 'tarefas', 'tarefa', 'checklists', 'checklist', 'checklistitens', 'ferramentasgam', 'execucaogam', 'rewardsinterno', 'rewardinterno', 'rewardpreviewinterno']
 const isScreen = (s: string): s is Screen => SCREENS.some(([k]) => k === s)
 type T = (k: Key) => string
 
@@ -350,12 +358,12 @@ const CLIENT_RAIL: RailGroup[] = [
   { key: 'inicio', label: 'Início', icon: Home, items: [{ id: 'inicio', label: 'Dashboard' }] },
   { key: 'relatorios', label: 'Relatórios', icon: BarChart3, items: [{ id: 'desempenho', label: 'Ad Manager' }, { id: 'visitas', label: 'Page Views' }, { id: 'relatorios', label: 'Relatórios customizados', also: ['construtor', 'relatorio'], separated: true }] },
   { key: 'financeiro', label: 'Financeiro', icon: Wallet, items: [{ id: 'resultado', label: 'Resultado' }, { id: 'custos', label: 'Custos' }] },
-  { key: 'inventario', label: 'Inventário', icon: Network, items: [{ id: 'networks', label: 'Networks do GAM', also: ['conectar'] }] },
+  { key: 'inventario', label: 'Inventário', icon: Network, items: [{ id: 'networks', label: 'Networks do GAM', also: ['conectar'] }, { id: 'rewards', label: 'Rewards', also: ['reward', 'rewardpreview'] }] },
   { key: 'equipe', label: 'Equipe', icon: Users, items: [{ id: 'equipe', label: 'Membros', also: ['membro'] }, { id: 'grupos', label: 'Grupos', also: ['grupo', 'grupoinativo'] }] },
   { key: 'empresa', label: 'Empresa', icon: Settings, items: [{ id: 'configuracoes', label: 'Configurações' }, { id: 'fiscais', label: 'Dados fiscais' }] },
 ]
 const INTERNAL_RAIL: RailGroup[] = [
-  { key: 'clientes', label: 'Inventário', icon: Users, items: [{ id: 'interno', label: 'Clientes', also: ['cliente'] }, { id: 'contratos', label: 'Contratos' }, { id: 'resultados', label: 'Resultado dos clientes' }, { id: 'checklists', label: 'Checklists', also: ['checklist', 'checklistitens'] }] },
+  { key: 'clientes', label: 'Inventário', icon: Users, items: [{ id: 'interno', label: 'Clientes', also: ['cliente'] }, { id: 'contratos', label: 'Contratos' }, { id: 'resultados', label: 'Resultado dos clientes' }, { id: 'checklists', label: 'Checklists', also: ['checklist', 'checklistitens'] }, { id: 'rewardsinterno', label: 'Rewards', also: ['rewardinterno', 'rewardpreviewinterno'] }] },
   { key: 'comissoes', label: 'Comissões', icon: Wallet, items: [{ id: 'minhacomissao', label: 'Minha comissão' }, { id: 'minhasinvoices', label: 'Minhas invoices' }, { id: 'comissoes', label: 'Comissões da equipe' }, { id: 'invoices', label: 'Invoices', also: ['servicosinvoice', 'invoice'] }] },
   { key: 'ferramentas', label: 'Ferramentas', icon: Wrench, items: [{ id: 'tarefas', label: 'Tarefas', also: ['tarefa'] }, { id: 'modelosdash', label: 'Modelos de dashboard' }, { id: 'ferramentasgam', label: 'Ferramentas do GAM', also: ['execucaogam'] }] },
   { key: 'equipegroone', label: 'Equipe', icon: ShieldCheck, items: [{ id: 'papelcomissao', label: 'Papéis da Equipe Groone' }] },
@@ -5001,6 +5009,372 @@ function GamRunScreen({ run, update, back }: { run: GamRun; update: (run: GamRun
   )
 }
 
+/* ---------- Rewards (item do Genius: janela no site que libera um conteúdo em troca de um anúncio premiado) ---------- */
+
+type RewardStyle = { body: string; border: string; borderWidth: number; title: string; text: string; button: string; buttonText: string; radius: number; font: string; shadow: boolean }
+type RewardIcon = { kind: 'emoji' | 'image' | 'none'; emoji: string; image: string | null }
+type ProtoReward = { id: number; name: string; client: string; domain: string; page: string; active: boolean; icon: RewardIcon; title: string; description: string; button: string; footer: string; style: RewardStyle; block: string; interval: number; redirect: string | null; updated: string }
+type ProtoRewardSite = { domain: string; client: string; blocks: string[] }
+
+const REWARD_SITES: ProtoRewardSite[] = [
+  { domain: 'acai.com.br', client: 'Açaí Mídia', blocks: ['acai_reward_topo', 'acai_reward_artigo'] },
+  { domain: 'receitasdaacai.com.br', client: 'Açaí Mídia', blocks: ['receitas_reward'] },
+  { domain: 'technoticias.com.br', client: 'Tech Notícias', blocks: ['tech_reward_1', 'tech_reward_2'] },
+  { domain: 'viagemfacil.com', client: 'Viagem Fácil', blocks: ['vf_reward'] },
+]
+const MY_CLIENT = 'Açaí Mídia'
+const REWARD_FONTS = [
+  { name: 'Geist', stack: "'Geist', system-ui, sans-serif" },
+  { name: 'Inter', stack: "'Inter', system-ui, sans-serif" },
+  { name: 'Roboto', stack: "'Roboto', system-ui, sans-serif" },
+  { name: 'Montserrat', stack: "'Montserrat', system-ui, sans-serif" },
+  { name: 'Poppins', stack: "'Poppins', system-ui, sans-serif" },
+  { name: 'Lora', stack: "'Lora', Georgia, serif" },
+  { name: 'Merriweather', stack: "'Merriweather', Georgia, serif" },
+  { name: 'Playfair Display', stack: "'Playfair Display', Georgia, serif" },
+] as const
+const REWARD_PRESETS: { name: string; style: Omit<RewardStyle, 'radius' | 'font' | 'borderWidth' | 'shadow'> }[] = [
+  { name: 'Claro', style: { body: '#ffffff', border: '#e5e5e5', title: '#0a0a0a', text: '#525252', button: '#0a0a0a', buttonText: '#ffffff' } },
+  { name: 'Escuro', style: { body: '#0a213d', border: '#1e3a5f', title: '#ffffff', text: '#c7d2e0', button: '#1976d2', buttonText: '#ffffff' } },
+  { name: 'Quente', style: { body: '#fff7ed', border: '#fdba74', title: '#7c2d12', text: '#9a3412', button: '#ea580c', buttonText: '#ffffff' } },
+  { name: 'Natureza', style: { body: '#f0fdf4', border: '#86efac', title: '#14532d', text: '#166534', button: '#16a34a', buttonText: '#ffffff' } },
+]
+const DEFAULT_REWARD_STYLE: RewardStyle = { ...REWARD_PRESETS[1].style, borderWidth: 1, radius: 24, font: 'Geist', shadow: true }
+const REWARD_EMOJIS = ['🎁', '🏆', '🎉', '🚀', '🥳', '🎊', '🔓', '⭐']
+const INITIAL_REWARDS: ProtoReward[] = [
+  { id: 7, name: 'Receita completa do bolo de açaí', client: 'Açaí Mídia', domain: 'acai.com.br', page: 'receitas/bolo-de-acai', active: true, icon: { kind: 'emoji', emoji: '🎁', image: null }, title: 'Receita completa liberada', description: 'Assista a um anúncio curto e veja o passo a passo com as medidas.', button: 'Ver a receita', footer: 'Oferta patrocinada', style: DEFAULT_REWARD_STYLE, block: 'acai_reward_artigo', interval: 30, redirect: null, updated: '08/11/2026 16:20' },
+  { id: 6, name: 'Ebook de sobremesas', client: 'Açaí Mídia', domain: 'receitasdaacai.com.br', page: 'ebook-sobremesas', active: false, icon: { kind: 'emoji', emoji: '📘', image: null }, title: 'Baixe o ebook grátis', description: '40 sobremesas com açaí, prontas em 15 minutos.', button: 'Baixar agora', footer: 'Oferta patrocinada', style: { ...REWARD_PRESETS[2].style, borderWidth: 2, radius: 16, font: 'Poppins', shadow: true }, block: 'receitas_reward', interval: 60, redirect: 'https://receitasdaacai.com.br/ebook-sobremesas/download', updated: '02/11/2026 10:05' },
+  { id: 5, name: 'Comparativo de celulares', client: 'Tech Notícias', domain: 'technoticias.com.br', page: 'reviews/melhores-celulares-2026', active: true, icon: { kind: 'emoji', emoji: '🏆', image: null }, title: 'Ranking completo', description: 'Desbloqueie a tabela com os 20 aparelhos testados.', button: 'Desbloquear', footer: 'Conteúdo patrocinado', style: { ...REWARD_PRESETS[0].style, borderWidth: 1, radius: 8, font: 'Inter', shadow: true }, block: 'tech_reward_1', interval: 15, redirect: null, updated: '30/10/2026 09:41' },
+  { id: 4, name: 'Roteiro de 7 dias em Lisboa', client: 'Viagem Fácil', domain: 'viagemfacil.com', page: 'roteiros/lisboa-7-dias', active: true, icon: { kind: 'emoji', emoji: '🧳', image: null }, title: 'Roteiro em PDF', description: 'O roteiro dia a dia com mapa e dicas de restaurantes.', button: 'Quero o roteiro', footer: 'Oferta patrocinada', style: { ...REWARD_PRESETS[3].style, borderWidth: 0, radius: 28, font: 'Lora', shadow: true }, block: 'vf_reward', interval: 120, redirect: null, updated: '21/10/2026 14:12' },
+]
+
+/** Fonte CSS do nome da fonte escolhida. */
+function rewardFont(name: string) { return REWARD_FONTS.find((font) => font.name === name)?.stack ?? REWARD_FONTS[0].stack }
+/** Luminância relativa de uma cor #rrggbb, para conferir o contraste. */
+function luminance(hex: string) {
+  const channels = [1, 3, 5].map((start) => parseInt(hex.slice(start, start + 2), 16) / 255).map((value) => (value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4))
+  return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2]
+}
+/** Contraste entre duas cores, de 1 a 21. */
+function contrast(first: string, second: string) { const [light, dark] = [luminance(first), luminance(second)].sort((left, right) => right - left); return (light + 0.05) / (dark + 0.05) }
+/** Reward novo, no primeiro site disponível. */
+function blankReward(site: ProtoRewardSite): ProtoReward {
+  return { id: 0, name: '', client: site.client, domain: site.domain, page: '', active: true, icon: { kind: 'emoji', emoji: '🎁', image: null }, title: 'Oferta especial', description: 'Desbloqueie sua recompensa agora mesmo!', button: 'Desbloquear', footer: 'Oferta patrocinada', style: DEFAULT_REWARD_STYLE, block: site.blocks[0], interval: 30, redirect: null, updated: 'Agora' }
+}
+
+/** O corpo do reward, como o visitante vê no site; `onUnlock` deixa o botão clicável na pré-visualização. */
+function RewardBody({ reward, onUnlock, onClose }: { reward: ProtoReward; onUnlock?: () => void; onClose?: () => void }) {
+  const style = reward.style
+  return (
+    <div role="dialog" aria-label={reward.title} className="relative w-full max-w-[400px] px-7 pb-5 pt-9 text-center"
+      style={{ background: style.body, border: `${style.borderWidth}px solid ${style.border}`, borderRadius: style.radius, fontFamily: rewardFont(style.font), boxShadow: style.shadow ? '0 24px 64px -16px rgba(0,0,0,0.45)' : 'none', color: style.text }}>
+      <button type="button" onClick={onClose} aria-label="Fechar" className="absolute right-3 top-3 rounded-full p-1.5 opacity-70 hover:opacity-100" style={{ color: style.text }}><X className="h-4 w-4" /></button>
+      {reward.icon.kind === 'emoji' && <div className="text-[52px] leading-none" aria-hidden="true">{reward.icon.emoji || '🎁'}</div>}
+      {reward.icon.kind === 'image' && (reward.icon.image ? <img src={reward.icon.image} alt="" className="mx-auto max-h-[120px] max-w-[140px] object-contain" /> : <div className="mx-auto flex h-[72px] w-[72px] items-center justify-center rounded-xl border border-dashed text-[12px] opacity-70" style={{ borderColor: style.text }}>Imagem</div>)}
+      <h2 className={cn('break-words text-[22px] font-bold leading-tight', reward.icon.kind !== 'none' && 'mt-4')} style={{ color: style.title }}>{reward.title || 'Título do reward'}</h2>
+      <p className="mt-2 break-words text-[15px] leading-relaxed">{reward.description || 'Descrição do reward'}</p>
+      <button type="button" onClick={onUnlock} className="mt-6 inline-flex h-11 w-full items-center justify-center px-5 text-[15px] font-semibold transition-opacity hover:opacity-90"
+        style={{ background: style.button, color: style.buttonText, borderRadius: Math.min(style.radius, 14) }}>{reward.button || 'Desbloquear'}</button>
+      {reward.footer && <p className="mt-4 text-[12px] opacity-70">{reward.footer}</p>}
+    </div>
+  )
+}
+
+/** Uma página de exemplo do site, com o reward aberto por cima, no tamanho do computador ou do celular. */
+function RewardStage({ reward, device, compact = false, children }: { reward: ProtoReward; device: 'desktop' | 'mobile'; compact?: boolean; children?: React.ReactNode }) {
+  return (
+    <div className={cn('mx-auto overflow-hidden rounded-xl border bg-card shadow-sm', device === 'mobile' ? 'w-[360px] max-w-full' : 'w-full')}>
+      <div className="flex items-center gap-2 border-b bg-muted px-3 py-2">
+        {device === 'desktop' && <div className="flex gap-1.5" aria-hidden="true"><span className="h-2.5 w-2.5 rounded-full bg-border" /><span className="h-2.5 w-2.5 rounded-full bg-border" /><span className="h-2.5 w-2.5 rounded-full bg-border" /></div>}
+        <div className="min-w-0 flex-1 truncate rounded-md bg-background px-3 py-1 font-mono text-[12px] text-muted-foreground">https://{reward.domain}/{reward.page}</div>
+      </div>
+      <div className={cn('relative bg-white', device === 'mobile' ? 'h-[620px]' : compact ? 'h-[480px]' : 'h-[560px]')}>
+        <div className="grid gap-3 p-6" aria-hidden="true">
+          <div className="h-4 w-24 rounded bg-neutral-200" />
+          <div className="h-7 w-4/5 rounded bg-neutral-200" />
+          <div className="h-40 rounded-lg bg-neutral-100" />
+          {[90, 96, 84, 92, 70, 88].map((width, index) => <div key={index} className="h-3 rounded bg-neutral-100" style={{ width: `${width}%` }} />)}
+        </div>
+        <div className="absolute inset-0 flex items-center justify-center bg-black/45 p-4">{children ?? <RewardBody reward={reward} />}</div>
+      </div>
+    </div>
+  )
+}
+
+/** Escolha de cor: amostra que abre o seletor e o código em hexadecimal. */
+function ColorField({ id, label, value, onChange }: { id: string; label: string; value: string; onChange: (value: string) => void }) {
+  const [text, setText] = useState(value.slice(1).toUpperCase())
+  useEffect(() => { setText(value.slice(1).toUpperCase()) }, [value])
+  return (
+    <Field id={id} label={label}>
+      <div className="flex items-center gap-2">
+        <label className="relative h-9 w-9 shrink-0 cursor-pointer overflow-hidden rounded-md border" style={{ background: value }}>
+          <span className="sr-only">Escolher {label.toLowerCase()}</span>
+          <input type="color" value={value} onChange={(event) => onChange(event.target.value)} className="absolute inset-0 h-full w-full cursor-pointer opacity-0" />
+        </label>
+        <div className="relative min-w-0 flex-1">
+          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 font-mono text-[13px] text-muted-foreground">#</span>
+          <Input id={id} value={text} maxLength={6} className="h-9 pl-6 font-mono text-[13px] uppercase"
+            onChange={(event) => { const next = event.target.value.replace(/[^0-9a-f]/gi, ''); setText(next); if (next.length === 6) onChange(`#${next.toLowerCase()}`) }} />
+        </div>
+      </div>
+    </Field>
+  )
+}
+
+/** Lista dos rewards: no painel do cliente, os sites da Empresa; no painel interno, os de todos os clientes. */
+function RewardsScreen({ rewards, staff, open }: { rewards: ProtoReward[]; staff: boolean; open: (id: number | null) => void }) {
+  const [query, setQuery] = useState('')
+  const [site, setSite] = useState('all')
+  const sites = REWARD_SITES.filter((item) => staff || item.client === MY_CLIENT)
+  const visible = rewards.filter((reward) => (staff || reward.client === MY_CLIENT) && (site === 'all' || reward.domain === site) && `${reward.name} ${reward.domain} ${reward.page} ${reward.client}`.toLowerCase().includes(query.toLowerCase()))
+  return (
+    <>
+      <PageHeader title="Rewards" sub={staff ? 'Os rewards dos sites de todos os clientes. A equipe Groone e o cliente veem e editam os mesmos rewards.' : 'Uma janela numa página do seu site que libera um conteúdo depois de um anúncio premiado. Cada reward fica numa página.'}
+        actions={<Button onClick={() => open(null)}><Plus className="h-4 w-4" />Novo reward</Button>} />
+      <Body>
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative w-full sm:w-[280px]"><Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input aria-label="Buscar rewards" className="h-9 pl-9" placeholder={staff ? 'Nome, página ou cliente' : 'Nome ou página'} value={query} onChange={(event) => setQuery(event.target.value)} /></div>
+          <Select value={site} onValueChange={setSite}><SelectTrigger aria-label="Site" className="h-9 w-[240px]"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Todos os sites</SelectItem>{sites.map((item) => <SelectItem key={item.domain} value={item.domain}>{item.domain}</SelectItem>)}</SelectContent></Select>
+        </div>
+        <Table min={staff ? 900 : 760}>
+          <thead><tr><th className={th}>Reward</th>{staff && <th className={th}>Cliente</th>}<th className={th}>Site</th><th className={th}>Situação</th><th className={cn(th, 'text-right')}>Intervalo</th><th className={th}>Atualizado</th></tr></thead>
+          <tbody>
+            {visible.map((reward) => (
+              <tr key={reward.id} className="hover:bg-muted">
+                <td className={td}>
+                  <button className="flex items-center gap-3 text-left" onClick={() => open(reward.id)}>
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center text-[18px]" style={{ background: reward.style.body, border: `1px solid ${reward.style.border}`, borderRadius: Math.min(reward.style.radius, 10) }} aria-hidden="true">{reward.icon.kind === 'emoji' ? reward.icon.emoji : <Gift className="h-4 w-4" style={{ color: reward.style.title }} />}</span>
+                    <span className="min-w-0"><span className="block font-medium hover:underline">{reward.name}</span><span className="block break-all font-mono text-[12px] text-muted-foreground">/{reward.page}</span></span>
+                  </button>
+                </td>
+                {staff && <td className={td}>{reward.client}</td>}
+                <td className={cn(td, 'font-mono text-[13px]')}>{reward.domain}</td>
+                <td className={td}>{reward.active ? <Status tone="ok">Ativo</Status> : <Status tone="neutral">Pausado</Status>}</td>
+                <td className={cn(td, 'text-right tnum')}>{reward.interval} min</td>
+                <td className={cn(td, 'whitespace-nowrap tnum text-[13px] text-muted-foreground')}>{reward.updated}</td>
+              </tr>
+            ))}
+            {!visible.length && <tr><td className={cn(td, 'py-12 text-center')} colSpan={staff ? 6 : 5}><Gift className="mx-auto h-5 w-5 text-muted-foreground" /><p className="mt-2 font-medium">Nenhum reward {query || site !== 'all' ? 'com esses filtros' : 'ainda'}</p><p className="text-[14px] text-muted-foreground">Crie um reward numa página do site e acompanhe aqui.</p></td></tr>}
+          </tbody>
+        </Table>
+      </Body>
+    </>
+  )
+}
+
+/** Criar ou editar um reward: formulário à esquerda e a pré-visualização ao vivo à direita. */
+function RewardEditScreen({ initial, rewards, staff, back, save, remove, preview }: { initial: ProtoReward; rewards: ProtoReward[]; staff: boolean; back: () => void; save: (reward: ProtoReward) => void; remove: (id: number) => void; preview: (reward: ProtoReward) => void }) {
+  const [reward, setReward] = useState(initial)
+  const [device, setDevice] = useState<'desktop' | 'mobile'>('desktop')
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const sites = REWARD_SITES.filter((item) => staff || item.client === MY_CLIENT)
+  const site = REWARD_SITES.find((item) => item.domain === reward.domain) ?? sites[0]
+  const style = reward.style
+  /** Muda um campo do reward. */
+  const change = (patch: Partial<ProtoReward>) => setReward((current) => ({ ...current, ...patch }))
+  /** Muda um campo do corpo do reward. */
+  const restyle = (patch: Partial<RewardStyle>) => setReward((current) => ({ ...current, style: { ...current.style, ...patch } }))
+  const pageTaken = rewards.some((other) => other.id !== reward.id && other.domain === reward.domain && other.page.replace(/^\/+|\/+$/g, '') === reward.page.replace(/^\/+|\/+$/g, '') && reward.page.trim() !== '')
+  const redirectOutside = reward.redirect !== null && reward.redirect.trim() !== '' && !/^https:\/\/(www\.)?/.test(reward.redirect.trim()) ? 'O link começa com https://' : reward.redirect !== null && reward.redirect.trim() !== '' && !reward.redirect.trim().replace(/^https:\/\/(www\.)?/, '').startsWith(reward.domain) ? `O link precisa ser de ${reward.domain}.` : false
+  const intervalBad = reward.interval < 5 || reward.interval > 1440
+  const lowButton = contrast(style.button, style.buttonText) < 4.5
+  const lowText = contrast(style.body, style.title) < 3 || contrast(style.body, style.text) < 4.5
+  const ready = reward.name.trim().length >= 3 && reward.page.trim() !== '' && !pageTaken && reward.title.trim() !== '' && reward.button.trim() !== '' && !intervalBad && !redirectOutside && !(reward.redirect !== null && reward.redirect.trim() === '')
+  /** Grava o reward e volta para a lista. */
+  const submit = () => { save({ ...reward, page: reward.page.replace(/^\/+/, ''), updated: 'Agora' }); toast.success(initial.id ? 'Reward salvo' : 'Reward criado', { description: reward.active ? `Já aparece em ${reward.domain}/${reward.page.replace(/^\/+/, '')}.` : 'Fica pausado até você ativar.' }); back() }
+  return (
+    <>
+      <PageHeader title={initial.id ? initial.name : 'Novo reward'} sub={`${staff ? `${site.client} · ` : ''}${reward.domain}`}
+        back={<button onClick={back} className="inline-flex items-center gap-1 text-[13px] text-muted-foreground hover:text-foreground"><ArrowLeft className="h-3.5 w-3.5" />Rewards</button>}
+        actions={<><Button variant="outline" onClick={() => preview(reward)}><Eye className="h-4 w-4" />Pré-visualizar</Button><Button disabled={!ready} onClick={submit}>{initial.id ? 'Salvar' : 'Criar reward'}</Button></>} />
+      <Body>
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,460px)]">
+          <div className="grid min-w-0 content-start gap-6">
+            <Card title="Sobre" desc="O nome fica só no painel. O reward aparece na página escolhida do site.">
+              <div className="grid gap-4">
+                <Field id="rw-name" label="Nome" error={reward.name.length > 0 && reward.name.trim().length < 3 && 'Use pelo menos 3 letras.'}><Input id="rw-name" value={reward.name} onChange={(event) => change({ name: event.target.value })} placeholder="Ex.: Receita completa do bolo" /></Field>
+                <div className="grid items-start gap-4 sm:grid-cols-2">
+                  <Field id="rw-site" label="Site">
+                    <Select value={reward.domain} onValueChange={(domain) => { const next = REWARD_SITES.find((item) => item.domain === domain)!; change({ domain, client: next.client, block: next.blocks[0], redirect: reward.redirect === null ? null : '' }) }} disabled={!!initial.id}>
+                      <SelectTrigger id="rw-site"><SelectValue /></SelectTrigger>
+                      <SelectContent>{sites.map((item) => <SelectItem key={item.domain} value={item.domain}>{staff ? `${item.domain} · ${item.client}` : item.domain}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </Field>
+                  <Field id="rw-active" label="Situação">
+                    <label className="flex h-9 items-center gap-3 text-[14px]"><Switch id="rw-active" checked={reward.active} onCheckedChange={(active) => change({ active })} />{reward.active ? 'Ativo no site' : 'Pausado'}</label>
+                  </Field>
+                </div>
+                <Field id="rw-page" label="Página do site" hint={initial.id ? 'O site não muda depois de criado.' : 'Uma página só pode ter um reward.'} error={pageTaken && 'Essa página já tem um reward.'}>
+                  <div className="flex min-w-0 items-center rounded-md border bg-background focus-within:ring-2 focus-within:ring-ring">
+                    <span className="shrink-0 border-r bg-muted px-3 py-2 font-mono text-[13px] text-muted-foreground">https://{reward.domain}/</span>
+                    <input id="rw-page" value={reward.page} onChange={(event) => change({ page: event.target.value.replace(/^https?:\/\/[^/]+\/?/, '') })} placeholder="receitas/bolo-de-acai" className="h-9 min-w-0 flex-1 bg-transparent px-3 font-mono text-[13px] outline-none" />
+                  </div>
+                </Field>
+              </div>
+            </Card>
+
+            <Card title="Conteúdo" desc="O que o visitante lê na janela.">
+              <div className="grid gap-4">
+                <Field id="rw-icon" label="Ícone">
+                  <div className="grid gap-3">
+                    <div className="inline-flex w-fit rounded-md border bg-muted p-0.5" role="radiogroup" aria-label="Tipo de ícone">
+                      {([['emoji', 'Emoji'], ['image', 'Imagem'], ['none', 'Sem ícone']] as const).map(([kind, label]) => <button key={kind} role="radio" aria-checked={reward.icon.kind === kind} onClick={() => change({ icon: { ...reward.icon, kind } })} className={cn('h-8 rounded px-3 text-[13px] font-medium', reward.icon.kind === kind ? 'bg-background shadow-sm' : 'text-muted-foreground hover:text-foreground')}>{label}</button>)}
+                    </div>
+                    {reward.icon.kind === 'emoji' && (
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {REWARD_EMOJIS.map((emoji) => <button key={emoji} onClick={() => change({ icon: { ...reward.icon, emoji } })} aria-label={`Usar ${emoji}`} className={cn('flex h-9 w-9 items-center justify-center rounded-md border text-[18px]', reward.icon.emoji === emoji ? 'border-foreground bg-secondary' : 'bg-background hover:bg-accent')}>{emoji}</button>)}
+                        <Input id="rw-icon" aria-label="Outro emoji" value={reward.icon.emoji} maxLength={8} onChange={(event) => change({ icon: { ...reward.icon, emoji: event.target.value } })} className="h-9 w-20 text-center text-[18px]" />
+                      </div>
+                    )}
+                    {reward.icon.kind === 'image' && (
+                      <div className="flex flex-wrap items-center gap-3">
+                        <label className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-md border bg-background px-3 text-[14px] font-medium hover:bg-accent"><Plus className="h-4 w-4" />{reward.icon.image ? 'Trocar imagem' : 'Escolher imagem'}<input type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/avif" className="sr-only" onChange={(event) => { const file = event.target.files?.[0]; if (file) change({ icon: { ...reward.icon, image: URL.createObjectURL(file) } }) }} /></label>
+                        <span className="text-[13px] text-muted-foreground">PNG, JPG, WEBP, GIF ou AVIF, até 2 MB.</span>
+                      </div>
+                    )}
+                  </div>
+                </Field>
+                <Field id="rw-title" label="Título"><Input id="rw-title" value={reward.title} maxLength={80} onChange={(event) => change({ title: event.target.value })} /></Field>
+                <Field id="rw-desc" label="Descrição" hint={`${reward.description.length} de 500`}><Textarea id="rw-desc" rows={3} maxLength={500} value={reward.description} onChange={(event) => change({ description: event.target.value })} /></Field>
+                <div className="grid items-start gap-4 sm:grid-cols-2">
+                  <Field id="rw-button" label="Texto do botão"><Input id="rw-button" value={reward.button} maxLength={40} onChange={(event) => change({ button: event.target.value })} /></Field>
+                  <Field id="rw-footer" label="Rodapé" hint="Deixe vazio para não mostrar."><Input id="rw-footer" value={reward.footer} maxLength={60} onChange={(event) => change({ footer: event.target.value })} /></Field>
+                </div>
+              </div>
+            </Card>
+
+            <Card title="Corpo" desc="Cores, borda, cantos e fonte da janela. Comece por um modelo e ajuste o que quiser.">
+              <div className="grid gap-5">
+                <div className="flex flex-wrap gap-2" aria-label="Modelos">
+                  {REWARD_PRESETS.map((preset) => (
+                    <button key={preset.name} onClick={() => restyle(preset.style)} className="inline-flex h-9 items-center gap-2 rounded-md border bg-background px-3 text-[13px] font-medium hover:bg-accent">
+                      <span className="flex h-4 w-4 overflow-hidden rounded-full border" aria-hidden="true"><span className="h-full w-1/2" style={{ background: preset.style.body }} /><span className="h-full w-1/2" style={{ background: preset.style.button }} /></span>{preset.name}
+                    </button>
+                  ))}
+                </div>
+                <div className="grid items-start gap-4 sm:grid-cols-2">
+                  <ColorField id="rw-body" label="Cor do corpo" value={style.body} onChange={(body) => restyle({ body })} />
+                  <ColorField id="rw-title-color" label="Cor do título" value={style.title} onChange={(title) => restyle({ title })} />
+                  <ColorField id="rw-text" label="Cor do texto" value={style.text} onChange={(text) => restyle({ text })} />
+                  <ColorField id="rw-border" label="Cor da borda" value={style.border} onChange={(border) => restyle({ border })} />
+                  <ColorField id="rw-btn" label="Cor do botão" value={style.button} onChange={(button) => restyle({ button })} />
+                  <ColorField id="rw-btn-text" label="Texto do botão" value={style.buttonText} onChange={(buttonText) => restyle({ buttonText })} />
+                </div>
+                {(lowButton || lowText) && <div className="flex items-start gap-2 rounded-md border border-ochre/40 bg-ochre-soft px-3 py-2 text-[13px] text-ochre"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />{lowButton ? 'O texto do botão está com pouco contraste: pode ficar difícil de ler.' : 'O texto está com pouco contraste com o corpo: pode ficar difícil de ler.'}</div>}
+                <div className="grid items-start gap-5 sm:grid-cols-2">
+                  <Field id="rw-radius" label={`Cantos arredondados · ${style.radius}px`}>
+                    <Slider id="rw-radius" min={0} max={32} step={1} value={[style.radius]} onValueChange={([radius]) => restyle({ radius })} className="py-2" />
+                  </Field>
+                  <Field id="rw-border-width" label={`Espessura da borda · ${style.borderWidth ? `${style.borderWidth}px` : 'sem borda'}`}>
+                    <Slider id="rw-border-width" min={0} max={6} step={1} value={[style.borderWidth]} onValueChange={([borderWidth]) => restyle({ borderWidth })} className="py-2" />
+                  </Field>
+                </div>
+                <div className="grid items-start gap-4 sm:grid-cols-2">
+                  <Field id="rw-font" label="Fonte">
+                    <Select value={style.font} onValueChange={(font) => restyle({ font })}>
+                      <SelectTrigger id="rw-font"><SelectValue /></SelectTrigger>
+                      <SelectContent>{REWARD_FONTS.map((font) => <SelectItem key={font.name} value={font.name}><span style={{ fontFamily: font.stack }}>{font.name}</span></SelectItem>)}</SelectContent>
+                    </Select>
+                  </Field>
+                  <Field id="rw-shadow" label="Sombra">
+                    <label className="flex h-9 items-center gap-3 text-[14px]"><Switch id="rw-shadow" checked={style.shadow} onCheckedChange={(shadow) => restyle({ shadow })} />{style.shadow ? 'Com sombra' : 'Sem sombra'}</label>
+                  </Field>
+                </div>
+              </div>
+            </Card>
+
+            <Card title="Exibição" desc="Qual anúncio premiado roda e de quanto em quanto tempo a janela volta para a mesma pessoa.">
+              <div className="grid gap-4">
+                <div className="grid items-start gap-4 sm:grid-cols-2">
+                  <Field id="rw-block" label="Ad unit do reward" hint="Os ad units de reward do site, importados do GAM.">
+                    <Select value={reward.block} onValueChange={(block) => change({ block })}>
+                      <SelectTrigger id="rw-block" className="font-mono text-[13px]"><SelectValue /></SelectTrigger>
+                      <SelectContent>{site.blocks.map((block) => <SelectItem key={block} value={block} className="font-mono text-[13px]">{block}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </Field>
+                  <Field id="rw-interval" label="Intervalo para mostrar de novo (minutos)" error={intervalBad && 'De 5 a 1.440 minutos (24 horas).'}>
+                    <Input id="rw-interval" type="number" min={5} max={1440} value={reward.interval} onChange={(event) => change({ interval: Number(event.target.value) })} className="tnum" />
+                  </Field>
+                </div>
+                <Field id="rw-redirect" label="Ao terminar o anúncio">
+                  <div className="grid gap-3">
+                    <label className="flex items-center gap-3 text-[14px]"><Switch id="rw-redirect" checked={reward.redirect !== null} onCheckedChange={(on) => change({ redirect: on ? '' : null })} />{reward.redirect !== null ? 'Levar a outra página do site' : 'Fechar a janela e liberar a página'}</label>
+                    {reward.redirect !== null && <><Input aria-label="Link de redirecionamento" value={reward.redirect} onChange={(event) => change({ redirect: event.target.value })} placeholder={`https://${reward.domain}/...`} className="font-mono text-[13px]" />{redirectOutside && <p className="text-[13px] text-bad">{redirectOutside}</p>}</>}
+                  </div>
+                </Field>
+              </div>
+            </Card>
+
+            {initial.id > 0 && (
+              <Card title="Apagar reward" desc="A janela sai do site na hora. Não dá para desfazer." footer={<Button variant="destructive" onClick={() => setConfirmDelete(true)}><Trash2 className="h-4 w-4" />Apagar</Button>} />
+            )}
+          </div>
+
+          <div className="order-first min-w-0 lg:sticky lg:top-[124px] lg:order-none lg:self-start">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <div><div className="text-[14px] font-semibold">Pré-visualização</div><div className="text-[13px] text-muted-foreground">Muda enquanto você edita.</div></div>
+              <div className="inline-flex rounded-md border bg-card p-0.5" role="radiogroup" aria-label="Tamanho da tela">
+                {([['desktop', Monitor, 'Computador'], ['mobile', Smartphone, 'Celular']] as const).map(([value, Icon, label]) => <button key={value} role="radio" aria-checked={device === value} aria-label={label} title={label} onClick={() => setDevice(value)} className={cn('flex h-8 w-9 items-center justify-center rounded', device === value ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground')}><Icon className="h-4 w-4" /></button>)}
+              </div>
+            </div>
+            <RewardStage reward={reward} device={device} compact />
+            <Button variant="outline" className="mt-3 w-full" onClick={() => preview(reward)}><Play className="h-4 w-4" />Testar como o visitante</Button>
+          </div>
+        </div>
+      </Body>
+      <Dialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Apagar "{initial.name}"?</DialogTitle><DialogDescription>A janela sai de {initial.domain}/{initial.page} na hora.</DialogDescription></DialogHeader>
+          <DialogFooter><Button variant="outline" onClick={() => setConfirmDelete(false)}>Cancelar</Button><Button variant="destructive" onClick={() => { remove(initial.id); toast.success('Reward apagado'); back() }}>Apagar</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  )
+}
+
+type PreviewStep = 'loading' | 'offer' | 'ad' | 'done' | 'closed'
+const AD_SECONDS = 5
+/** Pré-visualização como o visitante: a janela abre na página, o anúncio premiado roda e o conteúdo é liberado. */
+function RewardPreviewScreen({ reward, back }: { reward: ProtoReward; back: () => void }) {
+  const [device, setDevice] = useState<'desktop' | 'mobile'>('desktop')
+  const [step, setStep] = useState<PreviewStep>('loading')
+  const [seconds, setSeconds] = useState(AD_SECONDS)
+  useEffect(() => {
+    if (step === 'loading') { const timer = setTimeout(() => setStep('offer'), 900); return () => clearTimeout(timer) }
+    if (step === 'ad') {
+      if (seconds === 0) { setStep('done'); return }
+      const timer = setTimeout(() => setSeconds(seconds - 1), 1000)
+      return () => clearTimeout(timer)
+    }
+  }, [step, seconds])
+  /** Começa a simulação de novo. */
+  const restart = () => { setSeconds(AD_SECONDS); setStep('loading') }
+  const stageContent = step === 'loading' ? <Loader2 className="h-6 w-6 animate-spin text-white" />
+    : step === 'offer' ? <RewardBody reward={reward} onUnlock={() => setStep('ad')} onClose={() => setStep('closed')} />
+    : step === 'ad' ? <div className="flex aspect-video w-full max-w-[420px] flex-col items-center justify-center rounded-lg bg-neutral-900 text-white"><div className="text-[12px] uppercase tracking-wider opacity-60">Anúncio premiado do GAM</div><div className="mt-1 font-mono text-[12px] opacity-60">{reward.block}</div><div className="mt-4 text-[32px] font-semibold tnum">{seconds}s</div><div className="mt-1 text-[13px] opacity-70">A recompensa sai quando o anúncio termina.</div></div>
+    : step === 'done' ? <div className="w-full max-w-[360px] rounded-xl bg-white p-6 text-center text-neutral-900 shadow-xl"><Check className="mx-auto h-8 w-8 text-ok" /><div className="mt-2 text-[17px] font-semibold">Recompensa liberada</div><p className="mt-1 break-all text-[14px] text-neutral-600">{reward.redirect ? `O visitante vai para ${reward.redirect}` : 'A janela fecha e a página fica liberada.'}</p></div>
+    : <div className="rounded-lg bg-white px-4 py-3 text-[14px] text-neutral-700 shadow-xl">O visitante fechou a janela. Ela volta em {reward.interval} minutos.</div>
+  return (
+    <>
+      <PageHeader title="Pré-visualização" sub={`${reward.name || 'Novo reward'} · ${reward.domain}/${reward.page}`}
+        back={<button onClick={back} className="inline-flex items-center gap-1 text-[13px] text-muted-foreground hover:text-foreground"><ArrowLeft className="h-3.5 w-3.5" />Voltar para a edição</button>}
+        actions={<><div className="inline-flex rounded-md border bg-card p-0.5" role="radiogroup" aria-label="Tamanho da tela">{([['desktop', Monitor, 'Computador'], ['mobile', Smartphone, 'Celular']] as const).map(([value, Icon, label]) => <button key={value} role="radio" aria-checked={device === value} onClick={() => setDevice(value)} className={cn('flex h-8 items-center gap-2 rounded px-3 text-[13px] font-medium', device === value ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground')}><Icon className="h-4 w-4" />{label}</button>)}</div><Button variant="outline" onClick={restart}><RefreshCw className="h-4 w-4" />Ver de novo</Button></>} />
+      <Body>
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-[13px] text-muted-foreground">
+          {([['offer', 'Janela aberta'], ['ad', 'Anúncio premiado'], ['done', 'Recompensa']] as const).map(([key, label], index) => {
+            const order: PreviewStep[] = ['loading', 'offer', 'ad', 'done']
+            const reached = order.indexOf(step) >= order.indexOf(key)
+            return <span key={key} className={cn('inline-flex items-center gap-2', reached && 'text-foreground')}><span className={cn('flex h-5 w-5 items-center justify-center rounded-full border text-[11px] tnum', reached && 'border-foreground bg-foreground text-background')}>{index + 1}</span>{label}</span>
+          })}
+          <span className="ml-auto">Nada aqui chega ao site: é só uma simulação.</span>
+        </div>
+        <RewardStage reward={reward} device={device}>{stageContent}</RewardStage>
+      </Body>
+    </>
+  )
+}
+
 export default function App() {
   const initial = typeof location !== 'undefined' && isScreen(location.hash.slice(1)) ? (location.hash.slice(1) as Screen) : 'equipe'
   const [screen, setScreen] = useState<Screen>(initial)
@@ -5013,6 +5387,8 @@ export default function App() {
   const [checkItems, setCheckItems] = useState<ProtoCheckItem[]>(INITIAL_CHECK_ITEMS)
   const [gamRuns, setGamRuns] = useState<GamRun[]>(INITIAL_GAM_RUNS)
   const [gamRunId, setGamRunId] = useState(12)
+  const [rewards, setRewards] = useState<ProtoReward[]>(INITIAL_REWARDS)
+  const [rewardDraft, setRewardDraft] = useState<ProtoReward>(INITIAL_REWARDS[0])
   const [accent, setAccent] = useState('padrao')
   const [theme, setTheme] = useState(() => (typeof location !== 'undefined' && new URLSearchParams(location.search).get('tema')) || 'system')
   const [groups, setGroups] = useState(INITIAL_GROUPS)
@@ -5036,6 +5412,10 @@ export default function App() {
   }
   const openGroup = (id: string) => { setGroupId(id); go(id === 'parcerias' ? 'grupoinativo' : 'grupo') }
   const t: T = (k) => translate(lang, k)
+  /** Abre o reward (ou um novo) na edição do painel do cliente ou do interno. */
+  const openReward = (id: number | null, staff: boolean) => { setRewardDraft(id ? rewards.find((item) => item.id === id)! : blankReward(REWARD_SITES.find((site) => staff || site.client === MY_CLIENT)!)); go(staff ? 'rewardinterno' : 'reward') }
+  /** Grava o reward novo ou editado. */
+  const saveReward = (saved: ProtoReward) => setRewards((current) => (saved.id ? current.map((item) => (item.id === saved.id ? saved : item)) : [{ ...saved, id: Math.max(...current.map((item) => item.id)) + 1 }, ...current]))
 
   const go = (s: Screen) => {
     setScreen(s)
@@ -5101,6 +5481,10 @@ export default function App() {
       case 'checklistitens': return <ChecklistItemsScreen items={checkItems} setItems={setCheckItems} back={() => go('checklists')} />
       case 'ferramentasgam': return <GamToolsScreen runs={gamRuns} start={(run) => setGamRuns((current) => [run, ...current])} open={(runId) => { setGamRunId(runId); go('execucaogam') }} />
       case 'execucaogam': { const run = gamRuns.find((item) => item.id === gamRunId) ?? gamRuns[0]; return <GamRunScreen key={run.id} run={run} update={(next) => setGamRuns((current) => current.map((item) => (item.id === next.id ? next : item)))} back={() => go('ferramentasgam')} /> }
+      case 'rewards': return <RewardsScreen rewards={rewards} staff={false} open={(id) => openReward(id, false)} />
+      case 'rewardsinterno': return <RewardsScreen rewards={rewards} staff open={(id) => openReward(id, true)} />
+      case 'reward': case 'rewardinterno': { const staff = screen === 'rewardinterno'; return <RewardEditScreen key={`${rewardDraft.id}-${screen}`} initial={rewardDraft} rewards={rewards} staff={staff} back={() => go(staff ? 'rewardsinterno' : 'rewards')} save={saveReward} remove={(id) => setRewards((current) => current.filter((item) => item.id !== id))} preview={(draft) => { setRewardDraft(draft); go(staff ? 'rewardpreviewinterno' : 'rewardpreview') }} /> }
+      case 'rewardpreview': case 'rewardpreviewinterno': return <RewardPreviewScreen key={screen} reward={rewardDraft} back={() => go(screen === 'rewardpreviewinterno' ? 'rewardinterno' : 'reward')} />
       case 'tarefa': { const task = tasks.find((item) => item.id === taskId) ?? tasks[0]; return <TaskScreen key={task.id} task={task} update={(next) => setTasks(tasks.map((item) => (item.id === next.id ? next : item)))} back={() => go('tarefas')} /> }
     }
   })()
