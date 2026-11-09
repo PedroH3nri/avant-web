@@ -5067,9 +5067,9 @@ const REWARD_NAME_PLACEHOLDER: Record<VisitorLang, string> = { pt: 'Seu nome', e
 const MAX_REWARD_QUESTIONS = 5
 const REWARD_EMOJIS = ['🎁', '🏆', '🎉', '🚀', '🥳', '🎊', '🔓', '⭐']
 const INITIAL_REWARDS: ProtoReward[] = [
-  { id: 7, name: 'Receita completa do bolo de açaí', client: 'Açaí Mídia', domain: 'acai.com.br', page: 'receitas/bolo-de-acai', active: true, icon: { kind: 'emoji', emoji: '🎁', image: null }, title: 'Receita completa liberada', description: 'Assista a um anúncio curto e veja o passo a passo com as medidas.', button: 'Ver a receita', style: DEFAULT_REWARD_STYLE, block: '2026-10-28', cooldown: 30, scroll: 40, clickElement: null, redirect: null, questions: [], lead: null, updated: '08/11/2026 16:20' },
+  { id: 7, name: 'Receita completa do bolo de açaí', client: 'Açaí Mídia', domain: 'acai.com.br', page: 'receitas/bolo-de-acai', active: true, icon: { kind: 'emoji', emoji: '🎁', image: null }, title: 'Receita completa liberada', description: 'Assista a um anúncio curto e veja o passo a passo com as medidas.', button: 'Ver a receita', style: DEFAULT_REWARD_STYLE, block: 'latest', cooldown: 30, scroll: 40, clickElement: null, redirect: null, questions: [], lead: null, updated: '08/11/2026 16:20' },
   { id: 6, name: 'Ebook de sobremesas', client: 'Açaí Mídia', domain: 'receitasdaacai.com.br', page: 'ebook-sobremesas', active: false, icon: { kind: 'emoji', emoji: '📘', image: null }, title: 'Baixe o ebook grátis', description: '40 sobremesas com açaí, prontas em 15 minutos.', button: 'Baixar agora', style: { ...REWARD_PRESETS[2].style, layout: 'highlight', borderWidth: 2, radius: 16, font: 'Poppins', shadow: true }, block: '2026-09-02', questions: [{ title: 'Qual sobremesa você mais faz?', description: '', answers: ['Bolo', 'Mousse', 'Sorvete'] }, { title: 'Quanto tempo você tem para cozinhar?', description: 'Assim mostramos as receitas certas.', answers: ['15 minutos', '30 minutos', 'Mais de 1 hora'] }], lead: { kind: 'email', position: 'end', title: 'Para onde mandamos o ebook?', description: 'Também enviamos receitas novas uma vez por semana.', button: 'Continuar' }, cooldown: 60, scroll: 0, clickElement: '#baixar-ebook', redirect: 'ebook-sobremesas/download', updated: '02/11/2026 10:05' },
-  { id: 5, name: 'Comparativo de celulares', client: 'Tech Notícias', domain: 'technoticias.com.br', page: 'reviews/melhores-celulares-2026', active: true, icon: { kind: 'emoji', emoji: '🏆', image: null }, title: 'Ranking completo', description: 'Desbloqueie a tabela com os 20 aparelhos testados.', button: 'Desbloquear', style: { ...REWARD_PRESETS[1].style, body: '#ffffff', title: '#0a0a0a', text: '#525252', border: '#e5e5e5', layout: 'header', borderWidth: 1, radius: 16, font: 'Poppins', shadow: true }, block: '2026-10-05', cooldown: 15, scroll: 0, clickElement: null, redirect: null, questions: [], lead: null, updated: '30/10/2026 09:41' },
+  { id: 5, name: 'Comparativo de celulares', client: 'Tech Notícias', domain: 'technoticias.com.br', page: 'reviews/melhores-celulares-2026', active: true, icon: { kind: 'emoji', emoji: '🏆', image: null }, title: 'Ranking completo', description: 'Desbloqueie a tabela com os 20 aparelhos testados.', button: 'Desbloquear', style: { ...REWARD_PRESETS[1].style, body: '#ffffff', title: '#0a0a0a', text: '#525252', border: '#e5e5e5', layout: 'header', borderWidth: 1, radius: 16, font: 'Poppins', shadow: true }, block: 'latest', cooldown: 15, scroll: 0, clickElement: null, redirect: null, questions: [], lead: null, updated: '30/10/2026 09:41' },
   { id: 4, name: 'Roteiro de 7 dias em Lisboa', client: 'Viagem Fácil', domain: 'viagemfacil.com', page: 'roteiros/lisboa-7-dias', active: true, icon: { kind: 'emoji', emoji: '🧳', image: null }, title: 'Roteiro em PDF', description: 'O roteiro dia a dia com mapa e dicas de restaurantes.', button: 'Quero o roteiro', style: { ...REWARD_PRESETS[3].style, layout: 'simple', borderWidth: 0, radius: 28, font: 'Lora', shadow: true }, block: '2026-07-11', cooldown: 120, scroll: 60, clickElement: null, redirect: null, questions: [], lead: null, updated: '21/10/2026 14:12' },
 ]
 
@@ -5104,9 +5104,13 @@ function rewardSteps(reward: ProtoReward): RewardStep[] {
 }
 /** Nome curto de uma etapa, para os botões da pré-visualização. */
 function stepLabel(step: RewardStep) { return step.kind === 'question' ? `Pergunta ${step.index + 1}` : step.kind === 'lead' ? 'Contato' : 'Reward' }
+/** Data de criação dos ad units no formato dd/mm/aaaa. */
+function formatBlockDate(date: string) { return date.split('-').reverse().join('/') }
+/** O grupo de ad units que o reward usa: o mais recente ou o da data fixada. */
+function rewardBlockGroup(site: ProtoRewardSite, block: string) { return site.blocks.find((group) => group.date === block) ?? site.blocks[0] }
 /** Reward novo, no primeiro site disponível. */
 function blankReward(site: ProtoRewardSite): ProtoReward {
-  return { id: 0, name: '', client: site.client, domain: site.domain, page: '', active: true, icon: { kind: 'emoji', emoji: '🎁', image: null }, title: 'Oferta especial', description: 'Desbloqueie sua recompensa agora mesmo!', button: 'Desbloquear', style: DEFAULT_REWARD_STYLE, block: site.blocks[0].date, cooldown: 30, scroll: 0, clickElement: null, redirect: null, questions: [], lead: null, updated: 'Agora' }
+  return { id: 0, name: '', client: site.client, domain: site.domain, page: '', active: true, icon: { kind: 'emoji', emoji: '🎁', image: null }, title: 'Oferta especial', description: 'Desbloqueie sua recompensa agora mesmo!', button: 'Desbloquear', style: DEFAULT_REWARD_STYLE, block: 'latest', cooldown: 30, scroll: 0, clickElement: null, redirect: null, questions: [], lead: null, updated: 'Agora' }
 }
 
 /** O ícone do reward (emoji, imagem ou nada) no tamanho pedido. */
@@ -5355,7 +5359,7 @@ function RewardEditScreen({ initial, rewards, staff, back, save, remove, metrics
                 <Field id="rw-name" label="Nome" error={reward.name.length > 0 && reward.name.trim().length < 3 && 'Use pelo menos 3 letras.'}><Input id="rw-name" value={reward.name} onChange={(event) => change({ name: event.target.value })} placeholder="Ex.: Receita completa do bolo" /></Field>
                 <div className="grid items-start gap-4 sm:grid-cols-2">
                   <Field id="rw-site" label="Site">
-                    <Select value={reward.domain} onValueChange={(domain) => { const next = REWARD_SITES.find((item) => item.domain === domain)!; change({ domain, client: next.client, block: next.blocks[0].date, redirect: reward.redirect === null ? null : '' }) }} disabled={!!initial.id}>
+                    <Select value={reward.domain} onValueChange={(domain) => { const next = REWARD_SITES.find((item) => item.domain === domain)!; change({ domain, client: next.client, block: 'latest', redirect: reward.redirect === null ? null : '' }) }} disabled={!!initial.id}>
                       <SelectTrigger id="rw-site"><SelectValue /></SelectTrigger>
                       <SelectContent>{sites.map((item) => <SelectItem key={item.domain} value={item.domain}>{staff ? `${item.domain} · ${item.client}` : item.domain}</SelectItem>)}</SelectContent>
                     </Select>
@@ -5525,10 +5529,13 @@ function RewardEditScreen({ initial, rewards, staff, back, save, remove, metrics
                   </div>
                 </Field>
                 <div className="grid items-start gap-4 sm:grid-cols-2">
-                  <Field id="rw-block" label="Ad units do reward" hint={`Os ad units com "Reward" no nome criados nessa data no GAM: ${(site.blocks.find((group) => group.date === reward.block)?.codes ?? []).join(', ')}.`}>
+                  <Field id="rw-block" label="Ad units do reward" hint={`${reward.block === 'latest' ? 'Troca sozinho quando sair um bloco mais novo. Hoje: ' : 'Ad units com "Reward" no nome criados nessa data: '}${rewardBlockGroup(site, reward.block).codes.join(', ')}.`}>
                     <Select value={reward.block} onValueChange={(block) => change({ block })}>
                       <SelectTrigger id="rw-block"><SelectValue /></SelectTrigger>
-                      <SelectContent>{site.blocks.map((group) => <SelectItem key={group.date} value={group.date}>Criados em {group.date.split('-').reverse().join('/')} · {group.codes.length} {group.codes.length === 1 ? 'ad unit' : 'ad units'}</SelectItem>)}</SelectContent>
+                      <SelectContent>
+                        <SelectItem value="latest">Mais recentes · {formatBlockDate(site.blocks[0].date)}</SelectItem>
+                        {site.blocks.map((group) => <SelectItem key={group.date} value={group.date}>Fixar {formatBlockDate(group.date)} · {group.codes.length} {group.codes.length === 1 ? 'ad unit' : 'ad units'}</SelectItem>)}
+                      </SelectContent>
                     </Select>
                   </Field>
                   <Field id="rw-cooldown" label="Tempo para mostrar de novo (minutos)" hint="Depois que a pessoa vê a janela, ela só volta a aparecer passado esse tempo." error={cooldownBad && 'De 5 a 1.440 minutos (24 horas).'}>
@@ -5664,6 +5671,13 @@ function RewardMetricsScreen({ reward, staff, back, edit }: { reward: ProtoRewar
     ['Anúncios concluídos', int.format(completed), `${rate(completed, clicks)} de quem clicou viu até o fim.`],
     ['Desistências', int.format(opens - completed), `${rate(opens - completed, opens)} fecharam antes de liberar.`],
   ]
+  const quizCompleted = funnel[funnel.length - 3]?.[1] ?? 0
+  const quizTiles: [string, string, string][] = [
+    ['Sessões', int.format(opens), `${int.format(quizCompleted)} concluídos · ${int.format(opens - quizCompleted)} desistências`],
+    ['Taxa de conclusão', rate(quizCompleted, opens), `${int.format(quizCompleted)} de ${int.format(opens)} sessões responderam tudo.`],
+    ['Taxa de desistência', rate(opens - quizCompleted, opens), `${int.format(opens - quizCompleted)} saíram antes de terminar.`],
+    ['CTR do reward', rate(clicks, quizCompleted), `${int.format(clicks)} cliques no botão do reward depois do quiz.`],
+  ]
   if (reward.lead) tiles.push(['Contatos', int.format(leadsTotal), `${rate(leadsTotal, opens)} das janelas abertas.`])
   return (
     <>
@@ -5681,6 +5695,20 @@ function RewardMetricsScreen({ reward, staff, back, edit }: { reward: ProtoRewar
             </div>
           ))}
         </div>
+        {reward.questions.length > 0 && (
+          <div className="grid gap-3">
+            <h2 className="text-[13px] font-medium uppercase tracking-wide text-muted-foreground">Quiz</h2>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {quizTiles.map(([label, value, note]) => (
+                <div key={label} className="rounded-lg border bg-card p-4">
+                  <div className="text-[13px] text-muted-foreground">{label}</div>
+                  <div className="mt-1 text-[26px] font-semibold tracking-[-0.03em] tnum">{value}</div>
+                  <div className="mt-1 text-[12px] leading-snug text-muted-foreground">{note}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         <Card title="Por dia">
           <div className="mb-4 inline-flex flex-wrap rounded-md border bg-muted p-0.5" role="radiogroup" aria-label="Métrica do gráfico">
             {([['opens', 'Janelas abertas'], ['clicks', 'Cliques no botão'], ['completed', 'Anúncios concluídos']] as const).map(([value, label]) => <button key={value} role="radio" aria-checked={series === value} onClick={() => setSeries(value)} className={cn('h-8 rounded px-3 text-[13px] font-medium', series === value ? 'bg-background shadow-sm' : 'text-muted-foreground hover:text-foreground')}>{label}</button>)}
@@ -5703,7 +5731,18 @@ function RewardMetricsScreen({ reward, staff, back, edit }: { reward: ProtoRewar
               {reward.questions.map((question, index) => (
                 <div key={index} className="grid gap-3">
                   <div><div className="text-[13px] text-muted-foreground">Pergunta {index + 1} · {int.format(answered(index))} respostas</div><div className="font-medium">{question.title || 'Pergunta sem título'}</div></div>
-                  <Bars items={answerCounts[index]} />
+                  <table className="w-full text-[13px]">
+                    <thead><tr className="text-left text-[12px] text-muted-foreground"><th className="pb-2 font-medium">Resposta</th><th className="pb-2 text-right font-medium">Cliques</th><th className="w-[45%] pb-2 pl-4 font-medium">CTR</th></tr></thead>
+                    <tbody>
+                      {answerCounts[index].map(([answer, count]) => (
+                        <tr key={answer} className="border-t">
+                          <td className="py-2 pr-3">{answer}</td>
+                          <td className="py-2 text-right tnum">{int.format(count)}</td>
+                          <td className="py-2 pl-4"><div className="flex items-center gap-2"><span className="h-2 flex-1 rounded-full bg-muted"><span className="block h-2 rounded-full bg-foreground" style={{ width: `${(count / (answered(index) || 1)) * 100}%` }} /></span><span className="w-[52px] text-right tnum">{rate(count, answered(index))}</span></div></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               ))}
             </div>
