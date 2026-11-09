@@ -67,11 +67,13 @@ const SCREENS = [
   ['rewardmetricasinterno', 'Painel interno · Métricas do reward'],
   ['adtags', 'Ad tags'],
   ['adtag', 'Ad tags · Ad tag do site'],
+  ['adtagmetricas', 'Ad tags · Métricas'],
   ['adtagsinterno', 'Painel interno · Ad tags'],
   ['adtaginterno', 'Painel interno · Ad tag do site'],
+  ['adtagmetricasinterno', 'Painel interno · Métricas da ad tag'],
 ] as const
 type Screen = (typeof SCREENS)[number][0]
-const INTERNAL_SCREENS: Screen[] = ['interno', 'cliente', 'contratos', 'resultados', 'papelcomissao', 'minhacomissao', 'comissoes', 'minhasinvoices', 'invoice', 'invoices', 'servicosinvoice', 'modelosdash', 'tarefas', 'tarefa', 'checklists', 'checklist', 'checklistitens', 'ferramentasgam', 'execucaogam', 'rewardsinterno', 'rewardinterno', 'rewardmetricasinterno', 'adtagsinterno', 'adtaginterno']
+const INTERNAL_SCREENS: Screen[] = ['interno', 'cliente', 'contratos', 'resultados', 'papelcomissao', 'minhacomissao', 'comissoes', 'minhasinvoices', 'invoice', 'invoices', 'servicosinvoice', 'modelosdash', 'tarefas', 'tarefa', 'checklists', 'checklist', 'checklistitens', 'ferramentasgam', 'execucaogam', 'rewardsinterno', 'rewardinterno', 'rewardmetricasinterno', 'adtagsinterno', 'adtaginterno', 'adtagmetricasinterno']
 const isScreen = (s: string): s is Screen => SCREENS.some(([k]) => k === s)
 type T = (k: Key) => string
 
@@ -362,12 +364,12 @@ const CLIENT_RAIL: RailGroup[] = [
   { key: 'inicio', label: 'Início', icon: Home, items: [{ id: 'inicio', label: 'Dashboard' }] },
   { key: 'relatorios', label: 'Relatórios', icon: BarChart3, items: [{ id: 'desempenho', label: 'Ad Manager' }, { id: 'visitas', label: 'Page Views' }, { id: 'relatorios', label: 'Relatórios customizados', also: ['construtor', 'relatorio'], separated: true }] },
   { key: 'financeiro', label: 'Financeiro', icon: Wallet, items: [{ id: 'resultado', label: 'Resultado' }, { id: 'custos', label: 'Custos' }] },
-  { key: 'inventario', label: 'Inventário', icon: Network, items: [{ id: 'networks', label: 'Networks do GAM', also: ['conectar'] }, { id: 'rewards', label: 'Rewards', also: ['reward', 'rewardmetricas'] }, { id: 'adtags', label: 'Ad tags', also: ['adtag'] }] },
+  { key: 'inventario', label: 'Inventário', icon: Network, items: [{ id: 'networks', label: 'Networks do GAM', also: ['conectar'] }, { id: 'rewards', label: 'Rewards', also: ['reward', 'rewardmetricas'] }, { id: 'adtags', label: 'Ad tags', also: ['adtag', 'adtagmetricas'] }] },
   { key: 'equipe', label: 'Equipe', icon: Users, items: [{ id: 'equipe', label: 'Membros', also: ['membro'] }, { id: 'grupos', label: 'Grupos', also: ['grupo', 'grupoinativo'] }] },
   { key: 'empresa', label: 'Empresa', icon: Settings, items: [{ id: 'configuracoes', label: 'Configurações' }, { id: 'fiscais', label: 'Dados fiscais' }] },
 ]
 const INTERNAL_RAIL: RailGroup[] = [
-  { key: 'clientes', label: 'Inventário', icon: Users, items: [{ id: 'interno', label: 'Clientes', also: ['cliente'] }, { id: 'contratos', label: 'Contratos' }, { id: 'resultados', label: 'Resultado dos clientes' }, { id: 'checklists', label: 'Checklists', also: ['checklist', 'checklistitens'] }, { id: 'rewardsinterno', label: 'Rewards', also: ['rewardinterno', 'rewardmetricasinterno'] }, { id: 'adtagsinterno', label: 'Ad tags', also: ['adtaginterno'] }] },
+  { key: 'clientes', label: 'Inventário', icon: Users, items: [{ id: 'interno', label: 'Clientes', also: ['cliente'] }, { id: 'contratos', label: 'Contratos' }, { id: 'resultados', label: 'Resultado dos clientes' }, { id: 'checklists', label: 'Checklists', also: ['checklist', 'checklistitens'] }, { id: 'rewardsinterno', label: 'Rewards', also: ['rewardinterno', 'rewardmetricasinterno'] }, { id: 'adtagsinterno', label: 'Ad tags', also: ['adtaginterno', 'adtagmetricasinterno'] }] },
   { key: 'comissoes', label: 'Comissões', icon: Wallet, items: [{ id: 'minhacomissao', label: 'Minha comissão' }, { id: 'minhasinvoices', label: 'Minhas invoices' }, { id: 'comissoes', label: 'Comissões da equipe' }, { id: 'invoices', label: 'Invoices', also: ['servicosinvoice', 'invoice'] }] },
   { key: 'ferramentas', label: 'Ferramentas', icon: Wrench, items: [{ id: 'tarefas', label: 'Tarefas', also: ['tarefa'] }, { id: 'modelosdash', label: 'Modelos de dashboard' }, { id: 'ferramentasgam', label: 'Ferramentas do GAM', also: ['execucaogam'] }] },
   { key: 'equipegroone', label: 'Equipe', icon: ShieldCheck, items: [{ id: 'papelcomissao', label: 'Papéis da Equipe Groone' }] },
@@ -5910,7 +5912,7 @@ function tagStatus(tag: ProtoAdTag | undefined): { tone: 'ok' | 'warn' | 'bad' |
 }
 
 /** Lista das ad tags: uma por site; no interno, de todos os clientes. */
-function AdTagsScreen({ tags, staff, open }: { tags: ProtoAdTag[]; staff: boolean; open: (domain: string) => void }) {
+function AdTagsScreen({ tags, staff, open, metrics }: { tags: ProtoAdTag[]; staff: boolean; open: (domain: string) => void; metrics: (domain: string) => void }) {
   const [query, setQuery] = useState('')
   const [installOpen, setInstallOpen] = useState(false)
   const sites = TAG_SITES.filter((site) => (staff || site.client === MY_CLIENT) && `${site.domain} ${site.client}`.toLowerCase().includes(query.toLowerCase()))
@@ -5936,7 +5938,7 @@ function AdTagsScreen({ tags, staff, open }: { tags: ProtoAdTag[]; staff: boolea
                   <td className={cn(td, 'text-right tnum')}>{live ? live.blocks.length : '—'}</td>
                   <td className={cn(td, 'whitespace-nowrap text-[13px] text-muted-foreground')}>{tag?.lastSeen ?? 'Nunca'}</td>
                   <td className={td}>{pending > 0 ? <Badge tone="ochre">{pending} {pending === 1 ? 'alteração' : 'alterações'}</Badge> : <span className="text-[13px] text-muted-foreground">—</span>}</td>
-                  <td className={cn(td, 'text-right')}><Button size="sm" variant={tag ? 'outline' : 'default'} onClick={() => open(site.domain)}>{tag ? 'Abrir' : <><Plus className="h-4 w-4" />Configurar</>}</Button></td>
+                  <td className={cn(td, 'text-right')}><div className="flex justify-end gap-2">{tag && tag.versions.length > 0 && <Button size="sm" variant="outline" onClick={() => metrics(site.domain)}><BarChart3 className="h-4 w-4" />Métricas</Button>}<Button size="sm" variant={tag ? 'outline' : 'default'} onClick={() => open(site.domain)}>{tag ? 'Abrir' : <><Plus className="h-4 w-4" />Configurar</>}</Button></div></td>
                 </tr>
               )
             })}
@@ -5979,7 +5981,7 @@ const PREVIEW_ELEMENTS: { selector: string; kind: 'title' | 'image' | 'text' | '
   { selector: 'article p:nth-of-type(4)', kind: 'text' },
 ]
 /** O site do cliente com os blocos no lugar; em modo de escolha, clicar num elemento devolve o seletor. */
-function TagSitePreview({ domain, blocks, device, picking, onPick, path }: { domain: string; blocks: TagBlock[]; device: 'desktop' | 'mobile'; picking: string | null; onPick: (selector: string) => void; path: string }) {
+function TagSitePreview({ domain, blocks, device, picking, onPick, path, compact = false }: { domain: string; blocks: TagBlock[]; device: 'desktop' | 'mobile'; picking: string | null; onPick: (selector: string) => void; path: string; compact?: boolean }) {
   const [hover, setHover] = useState<string | null>(null)
   const visible = blocks.filter((block) => (device === 'desktop' ? block.desktop : block.mobile) && (block.ruleMode === 'all' || (block.ruleMode === 'include' ? block.paths.some((item) => path.startsWith(item.replace(/\*$/, ''))) : !block.paths.some((item) => path.startsWith(item.replace(/\*$/, ''))))))
   const anchor = visible.find((block) => block.kind === 'anchor')
@@ -5999,7 +6001,7 @@ function TagSitePreview({ domain, blocks, device, picking, onPick, path }: { dom
         {device === 'desktop' && <div className="flex gap-1.5" aria-hidden="true"><span className="h-2.5 w-2.5 rounded-full bg-border" /><span className="h-2.5 w-2.5 rounded-full bg-border" /><span className="h-2.5 w-2.5 rounded-full bg-border" /></div>}
         <div className="min-w-0 flex-1 truncate rounded-md bg-background px-3 py-1 font-mono text-[12px] text-muted-foreground">https://{domain}{path}</div>
       </div>
-      <div className={cn('relative overflow-y-auto bg-white text-neutral-800', device === 'mobile' ? 'h-[640px]' : 'h-[640px]')}>
+      <div className={cn('relative overflow-y-auto bg-white text-neutral-800', compact ? 'h-[420px] lg:h-[calc(100dvh-300px)] lg:min-h-[420px]' : 'h-[640px]')}>
         {fixed && fixed.edge === 'top' && <div className="sticky top-0 z-10 grid h-12 place-items-center border-b-2 border-dashed border-sky-400 bg-sky-50 text-[12px] font-medium text-sky-800">Fixo · {device === 'desktop' ? '728 × 90' : '320 × 50'}</div>}
         <div className="flex items-center justify-between border-b px-5 py-3" aria-hidden="true"><span className="font-serif text-[18px] font-bold">{domain.split('.')[0]}</span><span className="flex gap-3 text-[12px] text-neutral-500"><span>Receitas</span><span>Doces</span><span>Contato</span></span></div>
         <div className={cn('grid gap-6 p-5', device === 'desktop' && 'grid-cols-[minmax(0,1fr)_180px]')}>
@@ -6125,12 +6127,12 @@ function TagBlockCard({ block, index, total, open, toggle, change, move, remove,
 }
 
 /** A ad tag de um site: blocos com o site ao lado, integrações, saúde e versões. */
-function AdTagEditScreen({ initial, staff, back, save }: { initial: ProtoAdTag; staff: boolean; back: () => void; save: (tag: ProtoAdTag) => void }) {
+function AdTagEditScreen({ initial, staff, back, save, metrics }: { initial: ProtoAdTag; staff: boolean; back: () => void; save: (tag: ProtoAdTag) => void; metrics: () => void }) {
   const live = initial.versions[0]
   const [tag, setTag] = useState(initial)
   const [blocks, setBlocks] = useState<TagBlock[]>(initial.draft?.blocks ?? live?.blocks ?? [])
   const [settings, setSettings] = useState<TagSettings>(initial.draft?.settings ?? live?.settings ?? DEFAULT_TAG_SETTINGS)
-  const [tab, setTab] = useState<'blocks' | 'integrations' | 'health' | 'versions'>('blocks')
+  const [tab, setTab] = useState<'blocks' | 'integrations' | 'versions'>('blocks')
   const [openId, setOpenId] = useState<string | null>(blocks.find((block) => block.kind === 'content')?.id ?? null)
   const [pickingId, setPickingId] = useState<string | null>(null)
   const [device, setDevice] = useState<'desktop' | 'mobile'>('desktop')
@@ -6168,6 +6170,7 @@ function AdTagEditScreen({ initial, staff, back, save }: { initial: ProtoAdTag; 
       <PageHeader title={tag.domain} sub={staff ? `${tag.client} · Ad tag` : 'Ad tag do site'}
         back={<button onClick={() => { save({ ...tag, draft: changes.length ? { blocks, settings } : null }); back() }} className="inline-flex items-center gap-1 text-[13px] text-muted-foreground hover:text-foreground"><ArrowLeft className="h-3.5 w-3.5" />Ad tags</button>}
         actions={<>
+          {tag.versions.length > 0 && <Button variant="outline" onClick={() => { save({ ...tag, draft: changes.length ? { blocks, settings } : null }); metrics() }}><BarChart3 className="h-4 w-4" />Métricas</Button>}
           <Button variant="outline" onClick={() => setInstallOpen(true)}><Code2 className="h-4 w-4" />Instalar</Button>
           <Button disabled={!changes.length || problems > 0} onClick={() => setPublishOpen(true)}>{changes.length ? `Publicar ${changes.length} ${changes.length === 1 ? 'alteração' : 'alterações'}` : 'Nada para publicar'}</Button>
           <DropdownMenu><DropdownMenuTrigger asChild><Button variant="outline" size="icon" aria-label="Mais ações"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
@@ -6180,7 +6183,7 @@ function AdTagEditScreen({ initial, staff, back, save }: { initial: ProtoAdTag; 
       <div className="border-b bg-background">
         <div className="mx-auto flex max-w-[1200px] flex-wrap items-center gap-x-6 gap-y-2 px-4 sm:px-6">
           <nav className="-mb-px flex max-w-full gap-1 overflow-x-auto" aria-label="Partes da ad tag">
-            {([['blocks', 'Blocos'], ['integrations', 'Integrações'], ['health', 'Saúde'], ['versions', 'Versões']] as const).map(([id, label]) => (
+            {([['blocks', 'Blocos'], ['integrations', 'Integrações'], ['versions', 'Versões']] as const).map(([id, label]) => (
               <button key={id} onClick={() => setTab(id)} className={cn('border-b-2 px-3 py-3 text-[14px]', tab === id ? 'border-foreground font-medium text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground')} aria-current={tab === id ? 'page' : undefined}>{label}</button>
             ))}
           </nav>
@@ -6206,7 +6209,7 @@ function AdTagEditScreen({ initial, staff, back, save }: { initial: ProtoAdTag; 
               {!blocks.length && <div className="rounded-lg border border-dashed bg-card p-8 text-center text-[14px] text-muted-foreground">Nenhum bloco ainda. Comece pelo Conteúdo 1 e pela âncora.</div>}
               <p className="text-[12px] text-muted-foreground">Os primeiros da lista carregam antes. Ad units do dia {formatBlockDate(day)}{settings.adUnitDay === 'latest' ? ' (os mais recentes)' : ''}, por exemplo <span className="font-mono">{blocks[0] ? tagAdUnit(tag.domain, blocks[0], device === 'desktop' ? 'Desktop' : 'Mobile', day) : '—'}</span>.</p>
             </div>
-            <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] content-start gap-3">
+            <div className="order-first grid min-w-0 grid-cols-[minmax(0,1fr)] content-start gap-3 lg:sticky lg:top-[124px] lg:order-none lg:self-start">
               <div className="flex flex-wrap items-center gap-2">
                 <div className="inline-flex rounded-md border bg-background p-0.5">
                   {(['desktop', 'mobile'] as const).map((item) => <button key={item} onClick={() => setDevice(item)} className={cn('inline-flex h-8 items-center gap-1.5 rounded px-3 text-[13px]', device === item ? 'bg-foreground text-background' : 'text-muted-foreground')}>{item === 'desktop' ? <Monitor className="h-4 w-4" /> : <Smartphone className="h-4 w-4" />}{item === 'desktop' ? 'Computador' : 'Celular'}</button>)}
@@ -6214,7 +6217,7 @@ function AdTagEditScreen({ initial, staff, back, save }: { initial: ProtoAdTag; 
                 <div className="flex min-w-[220px] flex-1 items-center rounded-md border bg-background focus-within:ring-2 focus-within:ring-ring"><span className="shrink-0 border-r bg-muted px-3 py-1.5 font-mono text-[12px] text-muted-foreground">{tag.domain}</span><input aria-label="Página para ver" value={path} onChange={(event) => setPath(event.target.value.startsWith('/') ? event.target.value : `/${event.target.value}`)} className="h-8 min-w-0 flex-1 bg-transparent px-3 font-mono text-[12px] outline-none" /></div>
               </div>
               {pickingId && <div className="flex items-center gap-2 rounded-md border border-sky-300 bg-sky-50 px-3 py-2 text-[13px] text-sky-900"><MousePointerClick className="h-4 w-4" />Clique no elemento onde entra o {tagBlockName(blocks.find((block) => block.id === pickingId)!)}.<button className="ml-auto underline" onClick={() => setPickingId(null)}>Cancelar</button></div>}
-              <TagSitePreview domain={tag.domain} blocks={blocks} device={device} path={path} picking={pickingId} onPick={(selector) => { changeBlock(pickingId!, { selector }); setPickingId(null); toast.success('Elemento escolhido', { description: selector }) }} />
+              <TagSitePreview compact domain={tag.domain} blocks={blocks} device={device} path={path} picking={pickingId} onPick={(selector) => { changeBlock(pickingId!, { selector }); setPickingId(null); toast.success('Elemento escolhido', { description: selector }) }} />
               <p className="text-[12px] text-muted-foreground">A página vem do site (sem os scripts dele) e os blocos são desenhados pelo mesmo código da tag: o que você vê aqui é o que vai ao ar.</p>
             </div>
           </div>
@@ -6253,24 +6256,6 @@ function AdTagEditScreen({ initial, staff, back, save }: { initial: ProtoAdTag; 
             </Card>
           </div>
         )}
-        {tab === 'health' && (tag.lastSeen === null ? (
-          <Card title="A tag ainda não rodou no site" desc="Assim que a primeira visita carregar a tag, os números aparecem aqui.">
-            <div className="flex flex-wrap gap-2"><Button onClick={() => setInstallOpen(true)}><Code2 className="h-4 w-4" />Ver como instalar</Button>{!tag.versions.length && <span className="self-center text-[13px] text-muted-foreground">Publique a primeira versão antes.</span>}</div>
-          </Card>
-        ) : <>
-          <div className="grid gap-4 sm:grid-cols-3">
-            {[['Visto por último', tag.lastSeen, tag.paused ? 'Pausada: os anúncios não carregam' : 'A tag avisa a cada página vista'], ['Versão no site', `Versão ${tag.seenVersion}`, tag.seenVersion === tag.versions[0]?.number ? 'É a versão publicada' : `A publicada é a ${tag.versions[0]?.number}`], ['Páginas vistas em 24 h', tag.pages24h.toLocaleString('pt-BR'), 'Contadas pela própria tag']].map(([label, value, hint]) => (
-              <div key={label} className="rounded-lg border bg-card p-5"><p className="text-[13px] text-muted-foreground">{label}</p><p className="mt-1 text-[24px] font-semibold tracking-tight tnum">{value}</p><p className="mt-1 text-[12px] text-muted-foreground">{hint}</p></div>
-            ))}
-          </div>
-          <Table min={640}>
-            <thead><tr><th className={th}>Bloco</th><th className={cn(th, 'text-right')}>Páginas com o bloco</th><th className={cn(th, 'text-right')}>Com anúncio</th><th className={cn(th, 'text-right')}>Visíveis</th></tr></thead>
-            <tbody>{tag.health.map((row) => (
-              <tr key={row.block}><td className={td}>{row.block}</td><td className={cn(td, 'text-right tnum')}>{row.served.toLocaleString('pt-BR')}</td><td className={cn(td, 'text-right tnum', row.filled < 50 && 'text-bad')}>{row.filled}%</td><td className={cn(td, 'text-right tnum')}>{row.viewable}%</td></tr>
-            ))}</tbody>
-          </Table>
-          {tag.health.some((row) => row.filled < 50) && <p className="flex items-center gap-2 text-[13px] text-muted-foreground"><AlertTriangle className="h-4 w-4 text-warn" />Bloco com menos da metade das páginas preenchidas: confira o lugar na página ou tire o bloco.</p>}
-        </>)}
         {tab === 'versions' && (
           <Table min={720}>
             <thead><tr><th className={th}>Versão</th><th className={th}>O que mudou</th><th className={th}>Publicada por</th><th className={th}>Quando</th><th className={th}><span className="sr-only">Ação</span></th></tr></thead>
@@ -6297,6 +6282,64 @@ function AdTagEditScreen({ initial, staff, back, save }: { initial: ProtoAdTag; 
             <DialogFooter><Button variant="outline" onClick={() => setPublishOpen(false)}>Cancelar</Button><Button onClick={publish}>Publicar</Button></DialogFooter>
           </DialogContent>
         </Dialog>
+      </Body>
+    </>
+  )
+}
+
+/** Métricas da ad tag de um site, numa página própria como as do reward. */
+function AdTagMetricsScreen({ tag, staff, back, edit }: { tag: ProtoAdTag; staff: boolean; back: () => void; edit: () => void }) {
+  const [period, setPeriod] = useState<string>('30')
+  const [series, setSeries] = useState<keyof Omit<RewardDay, 'day'>>('opens')
+  const seed = tag.domain.length
+  const days: RewardDay[] = Array.from({ length: 30 }, (_item, index) => {
+    const opens = tag.lastSeen === null ? 0 : Math.round(tag.pages24h * (0.82 + seeded(seed * 100 + index) * 0.3))
+    const clicks = Math.round(opens * (0.84 + seeded(seed * 200 + index) * 0.08))
+    const completed = Math.round(clicks * (0.66 + seeded(seed * 300 + index) * 0.1))
+    return { day: `${String(((index + 10) % 30) + 1).padStart(2, '0')}/${index < 20 ? '10' : '11'}`, opens, clicks, completed }
+  }).slice(-Number(period))
+  const views = days.reduce((total, day) => total + day.opens, 0)
+  const filled = tag.health.length ? Math.round(tag.health.reduce((total, row) => total + row.filled, 0) / tag.health.length) : 0
+  const viewable = tag.health.length ? Math.round(tag.health.reduce((total, row) => total + row.viewable, 0) / tag.health.length) : 0
+  const tiles: [string, string, string][] = [
+    ['Visto por último', tag.lastSeen ?? 'Nunca', tag.paused ? 'Pausada: os anúncios não carregam.' : 'A tag avisa a cada página vista.'],
+    ['Versão no site', tag.seenVersion ? `Versão ${tag.seenVersion}` : '—', tag.seenVersion === tag.versions[0]?.number ? 'É a versão publicada.' : `A publicada é a ${tag.versions[0]?.number ?? '—'}.`],
+    ['Páginas vistas', int.format(views), 'Contadas pela própria tag no período.'],
+    ['Blocos com anúncio', `${filled}%`, `Média dos blocos · ${viewable}% visíveis.`],
+  ]
+  return (
+    <>
+      <PageHeader title={tag.domain} sub={staff ? `${tag.client} · Métricas da ad tag` : 'Métricas da ad tag'}
+        back={<button onClick={back} className="inline-flex items-center gap-1 text-[13px] text-muted-foreground hover:text-foreground"><ArrowLeft className="h-3.5 w-3.5" />Ad tags</button>}
+        actions={<><Select value={period} onValueChange={setPeriod}><SelectTrigger aria-label="Período" className="h-9 w-[180px]"><SelectValue /></SelectTrigger><SelectContent>{REWARD_PERIODS.map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent></Select><Button variant="outline" onClick={edit}><Pencil className="h-4 w-4" />Editar</Button></>} />
+      <Body>
+        {tag.paused && <div className="flex items-start gap-2 rounded-md border border-ochre/40 bg-ochre-soft px-3 py-2 text-[13px] text-ochre"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />Esta tag está pausada: os números são de quando ela estava ativa.</div>}
+        {tag.lastSeen === null ? (
+          <Card title="A tag ainda não rodou no site" desc="Assim que a primeira visita carregar a tag, os números aparecem aqui. Confira se a linha da tag está no <head> do site." />
+        ) : <>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {tiles.map(([label, value, note]) => (
+              <div key={label} className="rounded-lg border bg-card p-4">
+                <div className="text-[13px] text-muted-foreground">{label}</div>
+                <div className="mt-1 text-[26px] font-semibold tracking-[-0.03em] tnum">{value}</div>
+                <div className="mt-1 text-[12px] leading-snug text-muted-foreground">{note}</div>
+              </div>
+            ))}
+          </div>
+          <Card title="Por dia">
+            <div className="mb-4 inline-flex flex-wrap rounded-md border bg-muted p-0.5" role="radiogroup" aria-label="Métrica do gráfico">
+              {([['opens', 'Páginas vistas'], ['clicks', 'Blocos com anúncio'], ['completed', 'Blocos visíveis']] as const).map(([value, label]) => <button key={value} role="radio" aria-checked={series === value} onClick={() => setSeries(value)} className={cn('h-8 rounded px-3 text-[13px] font-medium', series === value ? 'bg-background shadow-sm' : 'text-muted-foreground hover:text-foreground')}>{label}</button>)}
+            </div>
+            <RewardDailyChart days={days} series={series} />
+          </Card>
+          <Table min={640}>
+            <thead><tr><th className={th}>Bloco</th><th className={cn(th, 'text-right')}>Páginas com o bloco</th><th className={cn(th, 'text-right')}>Com anúncio</th><th className={cn(th, 'text-right')}>Visíveis</th></tr></thead>
+            <tbody>{tag.health.map((row) => (
+              <tr key={row.block}><td className={td}>{row.block}</td><td className={cn(td, 'text-right tnum')}>{int.format(Math.round((row.served * views) / Math.max(tag.pages24h, 1) / 30))}</td><td className={cn(td, 'text-right tnum', row.filled < 50 && 'text-bad')}>{row.filled}%</td><td className={cn(td, 'text-right tnum')}>{row.viewable}%</td></tr>
+            ))}</tbody>
+          </Table>
+          {tag.health.some((row) => row.filled < 50) && <p className="flex items-center gap-2 text-[13px] text-muted-foreground"><AlertTriangle className="h-4 w-4 text-warn" />Bloco com menos da metade das páginas preenchidas: confira o lugar na página ou tire o bloco.</p>}
+        </>}
       </Body>
     </>
   )
@@ -6346,6 +6389,7 @@ export default function App() {
   const [adTags, setAdTags] = useState(INITIAL_AD_TAGS)
   const [adTagDomain, setAdTagDomain] = useState('acai.com.br')
   /** Abre a ad tag do site (ou começa uma) no painel do cliente ou no interno. */
+  const openAdTagMetrics = (domain: string, staff: boolean) => { setAdTagDomain(domain); go(staff ? 'adtagmetricasinterno' : 'adtagmetricas') }
   const openAdTag = (domain: string, staff: boolean) => { if (!adTags.some((item) => item.domain === domain)) { const site = TAG_SITES.find((item) => item.domain === domain)!; setAdTags((current) => [...current, { domain, client: site.client, paused: false, draft: null, versions: [], lastSeen: null, seenVersion: null, pages24h: 0, health: [] }]) } setAdTagDomain(domain); go(staff ? 'adtaginterno' : 'adtag') }
   /** Grava o reward novo ou editado. */
   const saveReward = (saved: ProtoReward) => setRewards((current) => (saved.id ? current.map((item) => (item.id === saved.id ? saved : item)) : [{ ...saved, id: Math.max(...current.map((item) => item.id)) + 1 }, ...current]))
@@ -6418,9 +6462,10 @@ export default function App() {
       case 'rewardsinterno': return <RewardsScreen rewards={rewards} staff open={(id) => openReward(id, true)} metrics={(id) => openRewardMetrics(id, true)} />
       case 'reward': case 'rewardinterno': { const staff = screen === 'rewardinterno'; return <RewardEditScreen key={`${rewardDraft.id}-${screen}`} initial={rewardDraft} rewards={rewards} staff={staff} back={() => go(staff ? 'rewardsinterno' : 'rewards')} save={saveReward} remove={(id) => setRewards((current) => current.filter((item) => item.id !== id))} metrics={() => openRewardMetrics(rewardDraft.id, staff)} /> }
       case 'rewardmetricas': case 'rewardmetricasinterno': { const staff = screen === 'rewardmetricasinterno'; return <RewardMetricsScreen key={rewardDraft.id} reward={rewardDraft} staff={staff} back={() => go(staff ? 'rewardsinterno' : 'rewards')} edit={() => openReward(rewardDraft.id, staff)} /> }
-      case 'adtags': return <AdTagsScreen tags={adTags} staff={false} open={(domain) => openAdTag(domain, false)} />
-      case 'adtagsinterno': return <AdTagsScreen tags={adTags} staff open={(domain) => openAdTag(domain, true)} />
-      case 'adtag': case 'adtaginterno': { const staff = screen === 'adtaginterno'; const tag = adTags.find((item) => item.domain === adTagDomain) ?? adTags[0]; return <AdTagEditScreen key={`${tag.domain}-${screen}`} initial={tag} staff={staff} back={() => go(staff ? 'adtagsinterno' : 'adtags')} save={(next) => setAdTags((current) => current.map((item) => (item.domain === next.domain ? next : item)))} /> }
+      case 'adtags': return <AdTagsScreen tags={adTags} staff={false} open={(domain) => openAdTag(domain, false)} metrics={(domain) => openAdTagMetrics(domain, false)} />
+      case 'adtagsinterno': return <AdTagsScreen tags={adTags} staff open={(domain) => openAdTag(domain, true)} metrics={(domain) => openAdTagMetrics(domain, true)} />
+      case 'adtag': case 'adtaginterno': { const staff = screen === 'adtaginterno'; const tag = adTags.find((item) => item.domain === adTagDomain) ?? adTags[0]; return <AdTagEditScreen key={`${tag.domain}-${screen}`} initial={tag} staff={staff} back={() => go(staff ? 'adtagsinterno' : 'adtags')} save={(next) => setAdTags((current) => current.map((item) => (item.domain === next.domain ? next : item)))} metrics={() => openAdTagMetrics(tag.domain, staff)} /> }
+      case 'adtagmetricas': case 'adtagmetricasinterno': { const staff = screen === 'adtagmetricasinterno'; const tag = adTags.find((item) => item.domain === adTagDomain) ?? adTags[0]; return <AdTagMetricsScreen key={tag.domain} tag={tag} staff={staff} back={() => go(staff ? 'adtagsinterno' : 'adtags')} edit={() => openAdTag(tag.domain, staff)} /> }
       case 'tarefa': { const task = tasks.find((item) => item.id === taskId) ?? tasks[0]; return <TaskScreen key={task.id} task={task} update={(next) => setTasks(tasks.map((item) => (item.id === next.id ? next : item)))} back={() => go('tarefas')} /> }
     }
   })()
