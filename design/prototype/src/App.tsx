@@ -5106,13 +5106,20 @@ function rewardSteps(reward: ProtoReward): RewardStep[] {
 function stepLabel(step: RewardStep) { return step.kind === 'question' ? `Pergunta ${step.index + 1}` : step.kind === 'lead' ? 'Contato' : 'Reward' }
 /** Data de criação dos ad units no formato dd/mm/aaaa. */
 function formatBlockDate(date: string) { return date.split('-').reverse().join('/') }
-/** Em que aparelhos os ad units de um grupo rodam, pelo nome (Desktop, Mobile ou um bloco para os dois). */
-function blockFormat(group: RewardBlockGroup) {
-  const desktop = group.codes.some((code) => /_desktop_/i.test(code))
-  const mobile = group.codes.some((code) => /_mobile_/i.test(code))
+/** Em que aparelhos os ad units de um grupo rodam, pelo nome; um bloco sem Desktop nem Mobile vale para os dois. */
+function blockDevices(group: RewardBlockGroup) {
   const shared = group.codes.some((code) => !/_(desktop|mobile)_/i.test(code))
-  if (shared || (desktop && mobile)) return 'Desktop e Mobile'
-  return desktop ? 'Só Desktop' : 'Só Mobile'
+  return { desktop: shared || group.codes.some((code) => /_desktop_/i.test(code)), mobile: shared || group.codes.some((code) => /_mobile_/i.test(code)) }
+}
+/** Badges Desktop e Mobile de um grupo de ad units. */
+function DeviceBadges({ group }: { group: RewardBlockGroup }) {
+  const devices = blockDevices(group)
+  return (
+    <span className="ml-1 inline-flex gap-1">
+      {devices.desktop && <span className="inline-flex items-center gap-1 rounded border bg-muted px-1.5 text-[11px] font-medium text-muted-foreground"><Monitor className="h-3 w-3" />Desktop</span>}
+      {devices.mobile && <span className="inline-flex items-center gap-1 rounded border bg-muted px-1.5 text-[11px] font-medium text-muted-foreground"><Smartphone className="h-3 w-3" />Mobile</span>}
+    </span>
+  )
 }
 /** Ad units do grupo por aparelho, para o texto de ajuda do campo. */
 function blockCodesByDevice(group: RewardBlockGroup) {
@@ -5546,8 +5553,8 @@ function RewardEditScreen({ initial, rewards, staff, back, save, remove, metrics
                   <Select value={reward.block} onValueChange={(block) => change({ block })}>
                     <SelectTrigger id="rw-block" className="sm:w-[420px]"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="latest">Mais recentes · {formatBlockDate(site.blocks[0].date)} · {blockFormat(site.blocks[0])}</SelectItem>
-                      {site.blocks.map((group) => <SelectItem key={group.date} value={group.date}>Fixar {formatBlockDate(group.date)} · {blockFormat(group)}</SelectItem>)}
+                      <SelectItem value="latest">Mais recentes · {formatBlockDate(site.blocks[0].date)} <DeviceBadges group={site.blocks[0]} /></SelectItem>
+                      {site.blocks.map((group) => <SelectItem key={group.date} value={group.date}>Fixar {formatBlockDate(group.date)} <DeviceBadges group={group} /></SelectItem>)}
                     </SelectContent>
                   </Select>
                 </Field>
