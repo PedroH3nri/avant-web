@@ -5050,7 +5050,7 @@ const VISITOR_LANGS: [VisitorLang, string][] = [['pt', 'Português'], ['en', 'En
 const REWARD_EMOJIS = ['🎁', '🏆', '🎉', '🚀', '🥳', '🎊', '🔓', '⭐']
 const INITIAL_REWARDS: ProtoReward[] = [
   { id: 7, name: 'Receita completa do bolo de açaí', client: 'Açaí Mídia', domain: 'acai.com.br', page: 'receitas/bolo-de-acai', active: true, icon: { kind: 'emoji', emoji: '🎁', image: null }, title: 'Receita completa liberada', description: 'Assista a um anúncio curto e veja o passo a passo com as medidas.', button: 'Ver a receita', style: DEFAULT_REWARD_STYLE, block: 'acai_reward_artigo', cooldown: 30, scroll: 40, clickElement: null, redirect: null, updated: '08/11/2026 16:20' },
-  { id: 6, name: 'Ebook de sobremesas', client: 'Açaí Mídia', domain: 'receitasdaacai.com.br', page: 'ebook-sobremesas', active: false, icon: { kind: 'emoji', emoji: '📘', image: null }, title: 'Baixe o ebook grátis', description: '40 sobremesas com açaí, prontas em 15 minutos.', button: 'Baixar agora', style: { ...REWARD_PRESETS[2].style, layout: 'highlight', borderWidth: 2, radius: 16, font: 'Poppins', shadow: true }, block: 'receitas_reward', cooldown: 60, scroll: 0, clickElement: '#baixar-ebook', redirect: 'https://receitasdaacai.com.br/ebook-sobremesas/download', updated: '02/11/2026 10:05' },
+  { id: 6, name: 'Ebook de sobremesas', client: 'Açaí Mídia', domain: 'receitasdaacai.com.br', page: 'ebook-sobremesas', active: false, icon: { kind: 'emoji', emoji: '📘', image: null }, title: 'Baixe o ebook grátis', description: '40 sobremesas com açaí, prontas em 15 minutos.', button: 'Baixar agora', style: { ...REWARD_PRESETS[2].style, layout: 'highlight', borderWidth: 2, radius: 16, font: 'Poppins', shadow: true }, block: 'receitas_reward', cooldown: 60, scroll: 0, clickElement: '#baixar-ebook', redirect: 'ebook-sobremesas/download', updated: '02/11/2026 10:05' },
   { id: 5, name: 'Comparativo de celulares', client: 'Tech Notícias', domain: 'technoticias.com.br', page: 'reviews/melhores-celulares-2026', active: true, icon: { kind: 'emoji', emoji: '🏆', image: null }, title: 'Ranking completo', description: 'Desbloqueie a tabela com os 20 aparelhos testados.', button: 'Desbloquear', style: { ...REWARD_PRESETS[1].style, body: '#ffffff', title: '#0a0a0a', text: '#525252', border: '#e5e5e5', layout: 'header', borderWidth: 1, radius: 16, font: 'Poppins', shadow: true }, block: 'tech_reward_1', cooldown: 15, scroll: 0, clickElement: null, redirect: null, updated: '30/10/2026 09:41' },
   { id: 4, name: 'Roteiro de 7 dias em Lisboa', client: 'Viagem Fácil', domain: 'viagemfacil.com', page: 'roteiros/lisboa-7-dias', active: true, icon: { kind: 'emoji', emoji: '🧳', image: null }, title: 'Roteiro em PDF', description: 'O roteiro dia a dia com mapa e dicas de restaurantes.', button: 'Quero o roteiro', style: { ...REWARD_PRESETS[3].style, layout: 'simple', borderWidth: 0, radius: 28, font: 'Lora', shadow: true }, block: 'vf_reward', cooldown: 120, scroll: 60, clickElement: null, redirect: null, updated: '21/10/2026 14:12' },
 ]
@@ -5237,6 +5237,16 @@ function triggerSummary(reward: ProtoReward) {
   return 'Abre assim que a página carrega.'
 }
 
+/** Campo do caminho de uma página do site, com o domínio fixo na frente; um link colado perde o domínio. */
+function SitePathInput({ id, domain, value, onChange, placeholder }: { id: string; domain: string; value: string; onChange: (path: string) => void; placeholder: string }) {
+  return (
+    <div className="flex min-w-0 items-center rounded-md border bg-background focus-within:ring-2 focus-within:ring-ring">
+      <span className="shrink-0 border-r bg-muted px-3 py-2 font-mono text-[13px] text-muted-foreground">https://{domain}/</span>
+      <input id={id} value={value} onChange={(event) => onChange(event.target.value.replace(/^https?:\/\/[^/]+\/?/, ''))} placeholder={placeholder} className="h-9 min-w-0 flex-1 bg-transparent px-3 font-mono text-[13px] outline-none" />
+    </div>
+  )
+}
+
 /** Miniatura de um layout do reward, para escolher no formulário. */
 function LayoutThumb({ layout }: { layout: RewardLayout }) {
   return (
@@ -5265,12 +5275,12 @@ function RewardEditScreen({ initial, rewards, staff, back, save, remove }: { ini
   /** Muda um campo do corpo do reward. */
   const restyle = (patch: Partial<RewardStyle>) => setReward((current) => ({ ...current, style: { ...current.style, ...patch } }))
   const pageTaken = rewards.some((other) => other.id !== reward.id && other.domain === reward.domain && other.page.replace(/^\/+|\/+$/g, '') === reward.page.replace(/^\/+|\/+$/g, '') && reward.page.trim() !== '')
-  const redirectOutside = reward.redirect !== null && reward.redirect.trim() !== '' && !/^https:\/\/(www\.)?/.test(reward.redirect.trim()) ? 'O link começa com https://' : reward.redirect !== null && reward.redirect.trim() !== '' && !reward.redirect.trim().replace(/^https:\/\/(www\.)?/, '').startsWith(reward.domain) ? `O link precisa ser de ${reward.domain}.` : false
+  const redirectSamePage = reward.redirect !== null && reward.redirect.trim() !== '' && reward.redirect.trim().replace(/\/$/, '') === reward.page.trim().replace(/\/$/, '')
   const cooldownBad = reward.cooldown < 5 || reward.cooldown > 1440
   const clickMissing = reward.clickElement !== null && reward.clickElement.trim() === ''
   const lowButton = contrast(style.button, style.buttonText) < 4.5
   const lowText = contrast(style.body, style.title) < 3 || contrast(style.body, style.text) < 4.5
-  const ready = reward.name.trim().length >= 3 && reward.page.trim() !== '' && !pageTaken && reward.title.trim() !== '' && reward.button.trim() !== '' && !cooldownBad && !clickMissing && !redirectOutside && !(reward.redirect !== null && reward.redirect.trim() === '')
+  const ready = reward.name.trim().length >= 3 && reward.page.trim() !== '' && !pageTaken && reward.title.trim() !== '' && reward.button.trim() !== '' && !cooldownBad && !clickMissing && !redirectSamePage && !(reward.redirect !== null && reward.redirect.trim() === '')
   /** Grava o reward e volta para a lista. */
   const submit = () => { save({ ...reward, page: reward.page.replace(/^\/+/, ''), updated: 'Agora' }); toast.success(initial.id ? 'Reward salvo' : 'Reward criado', { description: reward.active ? `Já aparece em ${reward.domain}/${reward.page.replace(/^\/+/, '')}.` : 'Fica pausado até você ativar.' }); back() }
   return (
@@ -5299,10 +5309,7 @@ function RewardEditScreen({ initial, rewards, staff, back, save, remove }: { ini
                   </Field>
                 </div>
                 <Field id="rw-page" label="Página do site" hint={initial.id ? 'O site não muda depois de criado.' : 'Uma página só pode ter um reward.'} error={pageTaken && 'Essa página já tem um reward.'}>
-                  <div className="flex min-w-0 items-center rounded-md border bg-background focus-within:ring-2 focus-within:ring-ring">
-                    <span className="shrink-0 border-r bg-muted px-3 py-2 font-mono text-[13px] text-muted-foreground">https://{reward.domain}/</span>
-                    <input id="rw-page" value={reward.page} onChange={(event) => change({ page: event.target.value.replace(/^https?:\/\/[^/]+\/?/, '') })} placeholder="receitas/bolo-de-acai" className="h-9 min-w-0 flex-1 bg-transparent px-3 font-mono text-[13px] outline-none" />
-                  </div>
+                  <SitePathInput id="rw-page" domain={reward.domain} value={reward.page} onChange={(page) => change({ page })} placeholder="receitas/bolo-de-acai" />
                 </Field>
               </div>
             </Card>
@@ -5425,7 +5432,11 @@ function RewardEditScreen({ initial, rewards, staff, back, save, remove }: { ini
                 <Field id="rw-redirect" label="Ao terminar o anúncio">
                   <div className="grid gap-3">
                     <label className="flex items-center gap-3 text-[14px]"><Switch id="rw-redirect" checked={reward.redirect !== null} onCheckedChange={(on) => change({ redirect: on ? '' : null })} />{reward.redirect !== null ? 'Levar a outra página do site' : 'Fechar a janela e liberar a página'}</label>
-                    {reward.redirect !== null && <><Input aria-label="Link de redirecionamento" value={reward.redirect} onChange={(event) => change({ redirect: event.target.value })} placeholder={`https://${reward.domain}/...`} className="font-mono text-[13px]" />{redirectOutside && <p className="text-[13px] text-bad">{redirectOutside}</p>}</>}
+                    {reward.redirect !== null && (
+                      <Field id="rw-redirect-page" label="Página de destino" hint={`Só páginas de ${reward.domain}, o mesmo site do reward.`} error={redirectSamePage && 'Escolha outra página: essa é a página do próprio reward.'}>
+                        <SitePathInput id="rw-redirect-page" domain={reward.domain} value={reward.redirect} onChange={(redirect) => change({ redirect })} placeholder="receitas/bolo-de-acai/completa" />
+                      </Field>
+                    )}
                   </div>
                 </Field>
               </div>
