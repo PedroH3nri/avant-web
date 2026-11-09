@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Toaster, toast } from 'sonner'
-import { Check, ChevronsUpDown, Copy, Loader2, Plus, RefreshCw, Search, X, AlertTriangle, ArrowLeft, MoreHorizontal, Lock, Mail, ExternalLink, Home, Users, Network, Settings, ShieldCheck, Menu, BarChart3, Wallet, Download, Trash2, Pin, PinOff, Pencil, LayoutGrid, List, Wrench } from 'lucide-react'
+import { Check, ChevronsUpDown, Copy, Loader2, Plus, RefreshCw, Search, X, AlertTriangle, ArrowLeft, MoreHorizontal, Lock, Mail, ExternalLink, Home, Users, Network, Settings, ShieldCheck, Menu, BarChart3, Wallet, Download, Trash2, Pin, PinOff, Pencil, LayoutGrid, List, Wrench, Gift, Monitor, Smartphone } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -11,6 +11,8 @@ import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Switch } from '@/components/ui/switch'
+import { Slider } from '@/components/ui/slider'
 import { cn } from '@/lib/utils'
 import { translate, type Key, type Lang } from './i18n'
 import { Mark, SeatBar, SeatDot, SeatStrip, type SeatState } from './tiles'
@@ -57,9 +59,15 @@ const SCREENS = [
   ['checklistitens', 'Painel interno · Itens do checklist'],
   ['ferramentasgam', 'Painel interno · Ferramentas do GAM'],
   ['execucaogam', 'Painel interno · Execução no GAM'],
+  ['rewards', 'Rewards'],
+  ['reward', 'Rewards · Editar reward'],
+  ['rewardsinterno', 'Painel interno · Rewards'],
+  ['rewardinterno', 'Painel interno · Editar reward'],
+  ['rewardmetricas', 'Rewards · Métricas'],
+  ['rewardmetricasinterno', 'Painel interno · Métricas do reward'],
 ] as const
 type Screen = (typeof SCREENS)[number][0]
-const INTERNAL_SCREENS: Screen[] = ['interno', 'cliente', 'contratos', 'resultados', 'papelcomissao', 'minhacomissao', 'comissoes', 'minhasinvoices', 'invoice', 'invoices', 'servicosinvoice', 'modelosdash', 'tarefas', 'tarefa', 'checklists', 'checklist', 'checklistitens', 'ferramentasgam', 'execucaogam']
+const INTERNAL_SCREENS: Screen[] = ['interno', 'cliente', 'contratos', 'resultados', 'papelcomissao', 'minhacomissao', 'comissoes', 'minhasinvoices', 'invoice', 'invoices', 'servicosinvoice', 'modelosdash', 'tarefas', 'tarefa', 'checklists', 'checklist', 'checklistitens', 'ferramentasgam', 'execucaogam', 'rewardsinterno', 'rewardinterno', 'rewardmetricasinterno']
 const isScreen = (s: string): s is Screen => SCREENS.some(([k]) => k === s)
 type T = (k: Key) => string
 
@@ -350,12 +358,12 @@ const CLIENT_RAIL: RailGroup[] = [
   { key: 'inicio', label: 'Início', icon: Home, items: [{ id: 'inicio', label: 'Dashboard' }] },
   { key: 'relatorios', label: 'Relatórios', icon: BarChart3, items: [{ id: 'desempenho', label: 'Ad Manager' }, { id: 'visitas', label: 'Page Views' }, { id: 'relatorios', label: 'Relatórios customizados', also: ['construtor', 'relatorio'], separated: true }] },
   { key: 'financeiro', label: 'Financeiro', icon: Wallet, items: [{ id: 'resultado', label: 'Resultado' }, { id: 'custos', label: 'Custos' }] },
-  { key: 'inventario', label: 'Inventário', icon: Network, items: [{ id: 'networks', label: 'Networks do GAM', also: ['conectar'] }] },
+  { key: 'inventario', label: 'Inventário', icon: Network, items: [{ id: 'networks', label: 'Networks do GAM', also: ['conectar'] }, { id: 'rewards', label: 'Rewards', also: ['reward', 'rewardmetricas'] }] },
   { key: 'equipe', label: 'Equipe', icon: Users, items: [{ id: 'equipe', label: 'Membros', also: ['membro'] }, { id: 'grupos', label: 'Grupos', also: ['grupo', 'grupoinativo'] }] },
   { key: 'empresa', label: 'Empresa', icon: Settings, items: [{ id: 'configuracoes', label: 'Configurações' }, { id: 'fiscais', label: 'Dados fiscais' }] },
 ]
 const INTERNAL_RAIL: RailGroup[] = [
-  { key: 'clientes', label: 'Inventário', icon: Users, items: [{ id: 'interno', label: 'Clientes', also: ['cliente'] }, { id: 'contratos', label: 'Contratos' }, { id: 'resultados', label: 'Resultado dos clientes' }, { id: 'checklists', label: 'Checklists', also: ['checklist', 'checklistitens'] }] },
+  { key: 'clientes', label: 'Inventário', icon: Users, items: [{ id: 'interno', label: 'Clientes', also: ['cliente'] }, { id: 'contratos', label: 'Contratos' }, { id: 'resultados', label: 'Resultado dos clientes' }, { id: 'checklists', label: 'Checklists', also: ['checklist', 'checklistitens'] }, { id: 'rewardsinterno', label: 'Rewards', also: ['rewardinterno', 'rewardmetricasinterno'] }] },
   { key: 'comissoes', label: 'Comissões', icon: Wallet, items: [{ id: 'minhacomissao', label: 'Minha comissão' }, { id: 'minhasinvoices', label: 'Minhas invoices' }, { id: 'comissoes', label: 'Comissões da equipe' }, { id: 'invoices', label: 'Invoices', also: ['servicosinvoice', 'invoice'] }] },
   { key: 'ferramentas', label: 'Ferramentas', icon: Wrench, items: [{ id: 'tarefas', label: 'Tarefas', also: ['tarefa'] }, { id: 'modelosdash', label: 'Modelos de dashboard' }, { id: 'ferramentasgam', label: 'Ferramentas do GAM', also: ['execucaogam'] }] },
   { key: 'equipegroone', label: 'Equipe', icon: ShieldCheck, items: [{ id: 'papelcomissao', label: 'Papéis da Equipe Groone' }] },
@@ -5001,6 +5009,802 @@ function GamRunScreen({ run, update, back }: { run: GamRun; update: (run: GamRun
   )
 }
 
+/* ---------- Rewards (item do Genius: janela no site que libera um conteúdo em troca de um anúncio premiado) ---------- */
+
+type RewardLayout = 'simple' | 'highlight' | 'header'
+type RewardStyle = { layout: RewardLayout; body: string; border: string; borderWidth: number; title: string; text: string; button: string; buttonText: string; radius: number; font: string; shadow: boolean }
+type RewardIcon = { kind: 'emoji' | 'image' | 'none'; emoji: string; image: string | null }
+type RewardQuestion = { title: string; description: string; answers: [string, string, string] }
+type RewardLead = { kind: 'email' | 'phone'; position: 'start' | 'end'; title: string; description: string; button: string }
+type RewardStep = { kind: 'question'; index: number } | { kind: 'lead' } | { kind: 'reward' }
+type ProtoReward = { id: number; questions: RewardQuestion[]; lead: RewardLead | null; name: string; client: string; domain: string; page: string; active: boolean; icon: RewardIcon; title: string; description: string; button: string; style: RewardStyle; block: string; cooldown: number; scroll: number; clickElement: string | null; redirect: string | null; updated: string }
+type RewardBlockGroup = { date: string; codes: string[] }
+type ProtoRewardSite = { domain: string; client: string; blocks: RewardBlockGroup[] }
+
+const REWARD_SITES: ProtoRewardSite[] = [
+  { domain: 'acai.com.br', client: 'Açaí Mídia', blocks: [{ date: '2026-10-28', codes: ['acai.com.br_Desktop_Rewards', 'acai.com.br_Mobile_Rewards'] }, { date: '2026-08-14', codes: ['acai.com.br_Mobile_Rewards'] }, { date: '2026-03-02', codes: ['acai.com.br_Rewards'] }] },
+  { domain: 'receitasdaacai.com.br', client: 'Açaí Mídia', blocks: [{ date: '2026-09-02', codes: ['receitasdaacai.com.br_Rewards'] }] },
+  { domain: 'technoticias.com.br', client: 'Tech Notícias', blocks: [{ date: '2026-10-05', codes: ['technoticias.com.br_Desktop_Rewards', 'technoticias.com.br_Mobile_Rewards'] }, { date: '2026-06-20', codes: ['technoticias.com.br_Rewards'] }] },
+  { domain: 'viagemfacil.com', client: 'Viagem Fácil', blocks: [{ date: '2026-07-11', codes: ['viagemfacil.com_Rewards'] }] },
+]
+const MY_CLIENT = 'Açaí Mídia'
+const REWARD_FONTS = [
+  { name: 'Geist', stack: "'Geist', system-ui, sans-serif" },
+  { name: 'Inter', stack: "'Inter', system-ui, sans-serif" },
+  { name: 'Roboto', stack: "'Roboto', system-ui, sans-serif" },
+  { name: 'Montserrat', stack: "'Montserrat', system-ui, sans-serif" },
+  { name: 'Poppins', stack: "'Poppins', system-ui, sans-serif" },
+  { name: 'Lora', stack: "'Lora', Georgia, serif" },
+  { name: 'Merriweather', stack: "'Merriweather', Georgia, serif" },
+  { name: 'Playfair Display', stack: "'Playfair Display', Georgia, serif" },
+] as const
+const REWARD_PRESETS: { name: string; style: Omit<RewardStyle, 'layout' | 'radius' | 'font' | 'borderWidth' | 'shadow'> }[] = [
+  { name: 'Claro', style: { body: '#ffffff', border: '#e5e5e5', title: '#0a0a0a', text: '#525252', button: '#0a0a0a', buttonText: '#ffffff' } },
+  { name: 'Escuro', style: { body: '#0a213d', border: '#1e3a5f', title: '#ffffff', text: '#c7d2e0', button: '#1976d2', buttonText: '#ffffff' } },
+  { name: 'Quente', style: { body: '#fff7ed', border: '#fdba74', title: '#7c2d12', text: '#9a3412', button: '#ea580c', buttonText: '#ffffff' } },
+  { name: 'Natureza', style: { body: '#f0fdf4', border: '#86efac', title: '#14532d', text: '#166534', button: '#16a34a', buttonText: '#ffffff' } },
+]
+const DEFAULT_REWARD_STYLE: RewardStyle = { ...REWARD_PRESETS[1].style, layout: 'simple', borderWidth: 1, radius: 24, font: 'Geist', shadow: true }
+const REWARD_LAYOUTS: { id: RewardLayout; name: string; desc: string }[] = [
+  { id: 'simple', name: 'Simples', desc: 'Ícone solto, tudo no corpo' },
+  { id: 'highlight', name: 'Destaque', desc: 'Ícone num círculo colorido' },
+  { id: 'header', name: 'Cabeçalho', desc: 'Faixa colorida no topo' },
+]
+type VisitorLang = 'pt' | 'en' | 'es'
+const REWARD_FOOTER: Record<VisitorLang, string> = { pt: 'Oferta patrocinada', en: 'Sponsored offer', es: 'Oferta patrocinada' }
+const VISITOR_LANGS: [VisitorLang, string][] = [['pt', 'Português'], ['en', 'English'], ['es', 'Español']]
+const REWARD_CONSENT: Record<VisitorLang, (domain: string) => string> = {
+  pt: (domain) => `Ao continuar, você aceita receber contato de ${domain}.`,
+  en: (domain) => `By continuing, you agree to be contacted by ${domain}.`,
+  es: (domain) => `Al continuar, aceptas recibir contacto de ${domain}.`,
+}
+const REWARD_PROGRESS: Record<VisitorLang, (current: number, total: number) => string> = {
+  pt: (current, total) => `Pergunta ${current} de ${total}`,
+  en: (current, total) => `Question ${current} of ${total}`,
+  es: (current, total) => `Pregunta ${current} de ${total}`,
+}
+const REWARD_NAME_PLACEHOLDER: Record<VisitorLang, string> = { pt: 'Seu nome', en: 'Your name', es: 'Tu nombre' }
+const MAX_REWARD_QUESTIONS = 5
+const REWARD_EMOJIS = ['🎁', '🏆', '🎉', '🚀', '🥳', '🎊', '🔓', '⭐']
+const INITIAL_REWARDS: ProtoReward[] = [
+  { id: 7, name: 'Receita completa do bolo de açaí', client: 'Açaí Mídia', domain: 'acai.com.br', page: 'receitas/bolo-de-acai', active: true, icon: { kind: 'emoji', emoji: '🎁', image: null }, title: 'Receita completa liberada', description: 'Assista a um anúncio curto e veja o passo a passo com as medidas.', button: 'Ver a receita', style: DEFAULT_REWARD_STYLE, block: 'latest', cooldown: 30, scroll: 40, clickElement: null, redirect: null, questions: [], lead: null, updated: '08/11/2026 16:20' },
+  { id: 6, name: 'Ebook de sobremesas', client: 'Açaí Mídia', domain: 'receitasdaacai.com.br', page: 'ebook-sobremesas', active: false, icon: { kind: 'emoji', emoji: '📘', image: null }, title: 'Baixe o ebook grátis', description: '40 sobremesas com açaí, prontas em 15 minutos.', button: 'Baixar agora', style: { ...REWARD_PRESETS[2].style, layout: 'highlight', borderWidth: 2, radius: 16, font: 'Poppins', shadow: true }, block: '2026-09-02', questions: [{ title: 'Qual sobremesa você mais faz?', description: '', answers: ['Bolo', 'Mousse', 'Sorvete'] }, { title: 'Quanto tempo você tem para cozinhar?', description: 'Assim mostramos as receitas certas.', answers: ['15 minutos', '30 minutos', 'Mais de 1 hora'] }], lead: { kind: 'email', position: 'end', title: 'Para onde mandamos o ebook?', description: 'Também enviamos receitas novas uma vez por semana.', button: 'Continuar' }, cooldown: 60, scroll: 0, clickElement: '#baixar-ebook', redirect: 'ebook-sobremesas/download', updated: '02/11/2026 10:05' },
+  { id: 5, name: 'Comparativo de celulares', client: 'Tech Notícias', domain: 'technoticias.com.br', page: 'reviews/melhores-celulares-2026', active: true, icon: { kind: 'emoji', emoji: '🏆', image: null }, title: 'Ranking completo', description: 'Desbloqueie a tabela com os 20 aparelhos testados.', button: 'Desbloquear', style: { ...REWARD_PRESETS[1].style, body: '#ffffff', title: '#0a0a0a', text: '#525252', border: '#e5e5e5', layout: 'header', borderWidth: 1, radius: 16, font: 'Poppins', shadow: true }, block: 'latest', cooldown: 15, scroll: 0, clickElement: null, redirect: null, questions: [], lead: null, updated: '30/10/2026 09:41' },
+  { id: 4, name: 'Roteiro de 7 dias em Lisboa', client: 'Viagem Fácil', domain: 'viagemfacil.com', page: 'roteiros/lisboa-7-dias', active: true, icon: { kind: 'emoji', emoji: '🧳', image: null }, title: 'Roteiro em PDF', description: 'O roteiro dia a dia com mapa e dicas de restaurantes.', button: 'Quero o roteiro', style: { ...REWARD_PRESETS[3].style, layout: 'simple', borderWidth: 0, radius: 28, font: 'Lora', shadow: true }, block: '2026-07-11', cooldown: 120, scroll: 60, clickElement: null, redirect: null, questions: [], lead: null, updated: '21/10/2026 14:12' },
+]
+
+/** Fonte CSS do nome da fonte escolhida. */
+function rewardFont(name: string) { return REWARD_FONTS.find((font) => font.name === name)?.stack ?? REWARD_FONTS[0].stack }
+/** Luminância relativa de uma cor #rrggbb, para conferir o contraste. */
+function luminance(hex: string) {
+  const channels = [1, 3, 5].map((start) => parseInt(hex.slice(start, start + 2), 16) / 255).map((value) => (value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4))
+  return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2]
+}
+/** Contraste entre duas cores, de 1 a 21. */
+function contrast(first: string, second: string) { const [light, dark] = [luminance(first), luminance(second)].sort((left, right) => right - left); return (light + 0.05) / (dark + 0.05) }
+/** Clareia (positivo) ou escurece (negativo) uma cor #rrggbb pela fração dada. */
+function shade(hex: string, amount: number) {
+  const channels = [1, 3, 5].map((start) => parseInt(hex.slice(start, start + 2), 16))
+  const mixed = channels.map((value) => Math.round(amount >= 0 ? value + (255 - value) * amount : value * (1 + amount)))
+  return `#${mixed.map((value) => value.toString(16).padStart(2, '0')).join('')}`
+}
+/** Mistura duas cores #rrggbb, com `weight` da primeira (0 a 1). */
+function mix(first: string, second: string, weight: number) {
+  const channels = (hex: string) => [1, 3, 5].map((start) => parseInt(hex.slice(start, start + 2), 16))
+  const [left, right] = [channels(first), channels(second)]
+  return `#${left.map((value, index) => Math.round(value * weight + right[index] * (1 - weight)).toString(16).padStart(2, '0')).join('')}`
+}
+/** Degradê da cor de destaque, do tom escuro ao claro. */
+function accentGradient(hex: string) { return `linear-gradient(135deg, ${shade(hex, -0.55)} 0%, ${hex} 100%)` }
+/** As etapas que o visitante passa, na ordem: contato no começo, perguntas, contato no fim e o reward. */
+function rewardSteps(reward: ProtoReward): RewardStep[] {
+  const questions: RewardStep[] = reward.questions.map((_question, index) => ({ kind: 'question', index }))
+  const lead: RewardStep[] = reward.lead ? [{ kind: 'lead' }] : []
+  return [...(reward.lead?.position === 'start' ? lead : []), ...questions, ...(reward.lead?.position === 'end' ? lead : []), { kind: 'reward' }]
+}
+/** Nome curto de uma etapa, para os botões da pré-visualização. */
+function stepLabel(step: RewardStep) { return step.kind === 'question' ? `Pergunta ${step.index + 1}` : step.kind === 'lead' ? 'Contato' : 'Reward' }
+/** Data de criação dos ad units no formato dd/mm/aaaa. */
+function formatBlockDate(date: string) { return date.split('-').reverse().join('/') }
+/** Em que aparelhos os ad units de um grupo rodam, pelo nome; um bloco sem Desktop nem Mobile vale para os dois. */
+function blockDevices(group: RewardBlockGroup) {
+  const shared = group.codes.some((code) => !/_(desktop|mobile)_/i.test(code))
+  return { desktop: shared || group.codes.some((code) => /_desktop_/i.test(code)), mobile: shared || group.codes.some((code) => /_mobile_/i.test(code)) }
+}
+/** Badges Desktop e Mobile de um grupo de ad units. */
+function DeviceBadges({ group }: { group: RewardBlockGroup }) {
+  const devices = blockDevices(group)
+  return (
+    <span className="ml-1 inline-flex gap-1">
+      {devices.desktop && <span className="inline-flex items-center gap-1 rounded border bg-muted px-1.5 text-[11px] font-medium text-muted-foreground"><Monitor className="h-3 w-3" />Desktop</span>}
+      {devices.mobile && <span className="inline-flex items-center gap-1 rounded border bg-muted px-1.5 text-[11px] font-medium text-muted-foreground"><Smartphone className="h-3 w-3" />Mobile</span>}
+    </span>
+  )
+}
+/** Ad units do grupo por aparelho, para o texto de ajuda do campo. */
+function blockCodesByDevice(group: RewardBlockGroup) {
+  const desktop = group.codes.filter((code) => !/_mobile_/i.test(code))
+  const mobile = group.codes.filter((code) => !/_desktop_/i.test(code))
+  return [desktop.length ? `Desktop: ${desktop.join(', ')}` : 'Desktop: nenhum', mobile.length ? `Mobile: ${mobile.join(', ')}` : 'Mobile: nenhum'].join(' · ')
+}
+/** O grupo de ad units que o reward usa: o mais recente ou o da data fixada. */
+function rewardBlockGroup(site: ProtoRewardSite, block: string) { return site.blocks.find((group) => group.date === block) ?? site.blocks[0] }
+/** Reward novo, no primeiro site disponível. */
+function blankReward(site: ProtoRewardSite): ProtoReward {
+  return { id: 0, name: '', client: site.client, domain: site.domain, page: '', active: true, icon: { kind: 'emoji', emoji: '🎁', image: null }, title: 'Oferta especial', description: 'Desbloqueie sua recompensa agora mesmo!', button: 'Desbloquear', style: DEFAULT_REWARD_STYLE, block: 'latest', cooldown: 30, scroll: 0, clickElement: null, redirect: null, questions: [], lead: null, updated: 'Agora' }
+}
+
+/** O ícone do reward (emoji, imagem ou nada) no tamanho pedido. */
+function RewardIconView({ reward, size }: { reward: ProtoReward; size: number }) {
+  if (reward.icon.kind === 'emoji') return <div className="leading-none" style={{ fontSize: size }} aria-hidden="true">{reward.icon.emoji || '🎁'}</div>
+  if (reward.icon.kind === 'image') return reward.icon.image ? <img src={reward.icon.image} alt="" className="mx-auto object-contain" style={{ maxHeight: size * 2.2, maxWidth: size * 2.6 }} /> : <div className="mx-auto flex items-center justify-center rounded-xl border border-dashed text-[12px] opacity-70" style={{ width: size * 1.4, height: size * 1.4 }}>Imagem</div>
+  return null
+}
+
+/** O corpo do reward, como o visitante vê no site, em um dos três layouts; `onUnlock` deixa o botão clicável. */
+function RewardBody({ reward, lang = 'pt', step = { kind: 'reward' }, onNext, onUnlock, onClose }: { reward: ProtoReward; lang?: VisitorLang; step?: RewardStep; onNext?: () => void; onUnlock?: () => void; onClose?: () => void }) {
+  const style = reward.style
+  const question = step.kind === 'question' ? reward.questions[step.index] : null
+  const buttonRadius = Math.min(style.radius, 14)
+  const dark = luminance(style.body) < 0.4
+  const tint = dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)'
+  const line = dark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.09)'
+  const framed = style.layout !== 'simple'
+  const hasIcon = reward.icon.kind !== 'none'
+  const closeClass = style.layout === 'highlight' ? 'right-4 top-4 p-2' : style.layout === 'header' ? 'right-3 top-3 border p-1.5 text-white' : 'right-3 top-3 p-1.5 opacity-70 hover:opacity-100'
+  const closeStyle: React.CSSProperties = style.layout === 'highlight' ? { background: tint === 'rgba(0,0,0,0.03)' ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.1)', color: style.title } : style.layout === 'header' ? { background: 'rgba(255,255,255,0.15)', borderColor: 'rgba(255,255,255,0.35)' } : { color: style.text }
+  return (
+    <div role="dialog" aria-label={reward.title} className={cn('relative w-full max-w-[400px] overflow-hidden text-center', !framed && 'px-7 pb-5 pt-9')}
+      style={{ background: style.body, border: `${style.borderWidth}px solid ${style.border}`, borderRadius: style.radius, fontFamily: rewardFont(style.font), boxShadow: style.shadow ? '0 24px 64px -16px rgba(0,0,0,0.45)' : 'none', color: style.text }}>
+      <button type="button" onClick={onClose} aria-label="Fechar" className={cn('absolute z-10 rounded-full', closeClass)} style={closeStyle}><X className="h-4 w-4" /></button>
+      {style.layout === 'header' && (
+        <div className="relative flex h-[120px] items-center justify-center" style={{ background: accentGradient(style.button) }}>
+          {hasIcon && <RewardIconView reward={reward} size={48} />}
+        </div>
+      )}
+      <div className={cn(framed && 'px-7 pb-6', style.layout === 'highlight' && 'pt-10', style.layout === 'header' && 'pt-6')}>
+        {style.layout === 'simple' && hasIcon && <div className="mb-4"><RewardIconView reward={reward} size={52} /></div>}
+        {style.layout === 'highlight' && hasIcon && (
+          <div className="relative mx-auto mb-5 h-[112px] w-[112px]">
+            <style>{'@keyframes reward-pulse { 0% { transform: scale(1); opacity: 0.8 } 100% { transform: scale(1.4); opacity: 0 } } @media (prefers-reduced-motion: reduce) { .reward-pulse { animation: none !important } }'}</style>
+            <span className="reward-pulse absolute inset-0 rounded-full" style={{ background: mix(style.button, style.body, 0.35), animation: 'reward-pulse 3s ease-out infinite' }} aria-hidden="true" />
+            <span className="reward-pulse absolute inset-0 rounded-full" style={{ background: mix(style.button, style.body, 0.35), animation: 'reward-pulse 3s ease-out 1.5s infinite' }} aria-hidden="true" />
+            <div className="relative flex h-full w-full items-center justify-center rounded-full p-2" style={{ background: mix(style.button, style.body, 0.22) }}>
+              <div className="flex h-full w-full items-center justify-center rounded-full" style={{ background: accentGradient(style.button) }}><RewardIconView reward={reward} size={46} /></div>
+            </div>
+          </div>
+        )}
+        {question && <p className="mb-2 text-[12px] font-semibold uppercase tracking-wide opacity-70">{REWARD_PROGRESS[lang](reward.questions.indexOf(question) + 1, reward.questions.length)}</p>}
+        <h2 className="break-words text-[22px] font-bold leading-tight" style={{ color: style.title }}>{question ? question.title || 'Pergunta' : step.kind === 'lead' ? reward.lead?.title || 'Título do contato' : reward.title || 'Título do reward'}</h2>
+        {(question ? question.description : step.kind === 'lead' ? reward.lead?.description : reward.description || 'Descrição do reward') && <p className="mt-2 break-words text-[15px] leading-relaxed">{question ? question.description : step.kind === 'lead' ? reward.lead?.description : reward.description || 'Descrição do reward'}</p>}
+        {question && (
+          <div className="mt-6 grid gap-2">
+            {question.answers.map((answer, index) => (
+              <button key={index} type="button" onClick={onNext} className="h-11 w-full px-4 text-[15px] font-medium transition-colors hover:opacity-90" style={{ border: `1.5px solid ${style.button}`, color: style.title, background: mix(style.button, style.body, 0.06), borderRadius: buttonRadius }}>{answer || `Resposta ${index + 1}`}</button>
+            ))}
+          </div>
+        )}
+        {step.kind === 'lead' && reward.lead && (
+          <form className="mt-6 grid gap-3" onSubmit={(event) => { event.preventDefault(); onNext?.() }}>
+            <input type="text" aria-label="Nome" placeholder={REWARD_NAME_PLACEHOLDER[lang]} className="h-11 w-full px-4 text-[15px] outline-none" style={{ border: `1px solid ${mix(style.text, style.body, 0.35)}`, background: 'transparent', color: style.title, borderRadius: buttonRadius }} />
+            <input type={reward.lead.kind === 'email' ? 'email' : 'tel'} aria-label={reward.lead.kind === 'email' ? 'E-mail' : 'Telefone'} placeholder={reward.lead.kind === 'email' ? 'voce@email.com' : '(11) 91234-5678'} className="h-11 w-full px-4 text-[15px] outline-none" style={{ border: `1px solid ${mix(style.text, style.body, 0.35)}`, background: 'transparent', color: style.title, borderRadius: buttonRadius }} />
+            <button type="submit" className="inline-flex h-11 w-full items-center justify-center px-5 text-[15px] font-semibold hover:opacity-90" style={{ background: style.layout === 'header' ? accentGradient(style.button) : style.button, color: style.buttonText, borderRadius: buttonRadius }}>{reward.lead.button || 'Continuar'}</button>
+            <p className="text-[12px] leading-snug opacity-70" lang={lang}>{REWARD_CONSENT[lang](reward.domain)}</p>
+          </form>
+        )}
+        {step.kind === 'reward' && (
+          <button type="button" onClick={onUnlock} className={cn('mt-6 inline-flex h-11 w-full items-center justify-center px-5 text-[15px] font-semibold transition-opacity hover:opacity-90', style.layout === 'highlight' && 'h-12')}
+            style={{ background: style.layout === 'header' ? accentGradient(style.button) : style.button, color: style.buttonText, borderRadius: Math.min(style.radius, 14), boxShadow: style.layout === 'highlight' ? `0 10px 28px -8px ${mix(style.button, style.body, 0.55)}` : style.layout === 'header' ? `0 8px 20px -8px ${style.button}` : 'none' }}>{reward.button || 'Desbloquear'}</button>
+        )}
+        {!framed && <p className="mt-4 text-[12px] opacity-70" lang={lang}>{REWARD_FOOTER[lang]}</p>}
+      </div>
+      {framed && <p className="border-t py-3 text-[12px] opacity-80" style={{ background: tint, borderColor: line }} lang={lang}>{REWARD_FOOTER[lang]}</p>}
+    </div>
+  )
+}
+
+/** Uma página de exemplo do site, com o reward aberto por cima, no tamanho do computador ou do celular. */
+function RewardStage({ reward, device, lang = 'pt', compact = false, step, onNext, children }: { reward: ProtoReward; device: 'desktop' | 'mobile'; lang?: VisitorLang; compact?: boolean; step?: RewardStep; onNext?: () => void; children?: React.ReactNode }) {
+  return (
+    <div className={cn('mx-auto overflow-hidden rounded-xl border bg-card shadow-sm', device === 'mobile' ? 'w-[360px] max-w-full' : 'w-full')}>
+      <div className="flex items-center gap-2 border-b bg-muted px-3 py-2">
+        {device === 'desktop' && <div className="flex gap-1.5" aria-hidden="true"><span className="h-2.5 w-2.5 rounded-full bg-border" /><span className="h-2.5 w-2.5 rounded-full bg-border" /><span className="h-2.5 w-2.5 rounded-full bg-border" /></div>}
+        <div className="min-w-0 flex-1 truncate rounded-md bg-background px-3 py-1 font-mono text-[12px] text-muted-foreground">https://{reward.domain}/{reward.page}</div>
+      </div>
+      <div className={cn('relative bg-white', device === 'mobile' ? 'h-[640px]' : compact ? 'h-[600px]' : 'h-[600px]')}>
+        <div className="grid gap-3 p-6" aria-hidden="true">
+          <div className="h-4 w-24 rounded bg-neutral-200" />
+          <div className="h-7 w-4/5 rounded bg-neutral-200" />
+          <div className="h-40 rounded-lg bg-neutral-100" />
+          {[90, 96, 84, 92, 70, 88].map((width, index) => <div key={index} className="h-3 rounded bg-neutral-100" style={{ width: `${width}%` }} />)}
+        </div>
+        <div className="absolute inset-0 flex overflow-y-auto bg-black/45 p-4"><div className="m-auto flex w-full justify-center">{children ?? <RewardBody reward={reward} lang={lang} step={step} onNext={onNext} />}</div></div>
+      </div>
+    </div>
+  )
+}
+
+/** Idioma do navegador de quem visita o site: muda só o rodapé fixo do reward. */
+function VisitorLangPicker({ value, onChange }: { value: VisitorLang; onChange: (lang: VisitorLang) => void }) {
+  return (
+    <Select value={value} onValueChange={(lang) => onChange(lang as VisitorLang)}>
+      <SelectTrigger aria-label="Idioma do navegador do visitante" className="h-9 w-[150px]"><SelectValue /></SelectTrigger>
+      <SelectContent>{VISITOR_LANGS.map(([lang, label]) => <SelectItem key={lang} value={lang}>{label}</SelectItem>)}</SelectContent>
+    </Select>
+  )
+}
+
+/** Escolha de cor: amostra que abre o seletor e o código em hexadecimal. */
+function ColorField({ id, label, value, onChange }: { id: string; label: string; value: string; onChange: (value: string) => void }) {
+  const [text, setText] = useState(value.slice(1).toUpperCase())
+  useEffect(() => { setText(value.slice(1).toUpperCase()) }, [value])
+  return (
+    <Field id={id} label={label}>
+      <div className="flex items-center gap-2">
+        <label className="relative h-9 w-9 shrink-0 cursor-pointer overflow-hidden rounded-md border" style={{ background: value }}>
+          <span className="sr-only">Escolher {label.toLowerCase()}</span>
+          <input type="color" value={value} onChange={(event) => onChange(event.target.value)} className="absolute inset-0 h-full w-full cursor-pointer opacity-0" />
+        </label>
+        <div className="relative min-w-0 flex-1">
+          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 font-mono text-[13px] text-muted-foreground">#</span>
+          <Input id={id} value={text} maxLength={6} className="h-9 pl-6 font-mono text-[13px] uppercase"
+            onChange={(event) => { const next = event.target.value.replace(/[^0-9a-f]/gi, ''); setText(next); if (next.length === 6) onChange(`#${next.toLowerCase()}`) }} />
+        </div>
+      </div>
+    </Field>
+  )
+}
+
+/** Lista dos rewards: no painel do cliente, os sites da Empresa; no painel interno, os de todos os clientes. */
+function RewardsScreen({ rewards, staff, open, metrics }: { rewards: ProtoReward[]; staff: boolean; open: (id: number | null) => void; metrics: (id: number) => void }) {
+  const [query, setQuery] = useState('')
+  const [site, setSite] = useState('all')
+  const sites = REWARD_SITES.filter((item) => staff || item.client === MY_CLIENT)
+  const visible = rewards.filter((reward) => (staff || reward.client === MY_CLIENT) && (site === 'all' || reward.domain === site) && `${reward.name} ${reward.domain} ${reward.page} ${reward.client}`.toLowerCase().includes(query.toLowerCase()))
+  return (
+    <>
+      <PageHeader title="Rewards" sub={staff ? 'Os rewards dos sites de todos os clientes. A equipe Groone e o cliente veem e editam os mesmos rewards.' : 'Uma janela numa página do seu site que libera um conteúdo depois de um anúncio premiado. Cada reward fica numa página.'}
+        actions={<Button onClick={() => open(null)}><Plus className="h-4 w-4" />Novo reward</Button>} />
+      <Body>
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative w-full sm:w-[280px]"><Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input aria-label="Buscar rewards" className="h-9 pl-9" placeholder={staff ? 'Nome, página ou cliente' : 'Nome ou página'} value={query} onChange={(event) => setQuery(event.target.value)} /></div>
+          <Select value={site} onValueChange={setSite}><SelectTrigger aria-label="Site" className="h-9 w-[240px]"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Todos os sites</SelectItem>{sites.map((item) => <SelectItem key={item.domain} value={item.domain}>{item.domain}</SelectItem>)}</SelectContent></Select>
+        </div>
+        <Table min={staff ? 900 : 760}>
+          <thead><tr><th className={th}>Reward</th>{staff && <th className={th}>Cliente</th>}<th className={th}>Site</th><th className={th}>Situação</th><th className={cn(th, 'text-right')}>Intervalo</th><th className={th}>Atualizado</th><th className={th}><span className="sr-only">Métricas</span></th></tr></thead>
+          <tbody>
+            {visible.map((reward) => (
+              <tr key={reward.id} className="hover:bg-muted">
+                <td className={td}>
+                  <button className="flex items-center gap-3 text-left" onClick={() => open(reward.id)}>
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center text-[18px]" style={{ background: reward.style.body, border: `1px solid ${reward.style.border}`, borderRadius: Math.min(reward.style.radius, 10) }} aria-hidden="true">{reward.icon.kind === 'emoji' ? reward.icon.emoji : <Gift className="h-4 w-4" style={{ color: reward.style.title }} />}</span>
+                    <span className="min-w-0"><span className="flex items-center gap-2 font-medium"><span className="hover:underline">{reward.name}</span>{reward.questions.length > 0 && <span className="rounded border px-1.5 text-[11px] font-medium text-muted-foreground">{reward.questions.length} {reward.questions.length === 1 ? 'pergunta' : 'perguntas'}</span>}</span><span className="block break-all font-mono text-[12px] text-muted-foreground">/{reward.page}</span></span>
+                  </button>
+                </td>
+                {staff && <td className={td}>{reward.client}</td>}
+                <td className={cn(td, 'font-mono text-[13px]')}>{reward.domain}</td>
+                <td className={td}>{reward.active ? <Status tone="ok">Ativo</Status> : <Status tone="neutral">Pausado</Status>}</td>
+                <td className={cn(td, 'text-right tnum')}>{reward.cooldown} min</td>
+                <td className={cn(td, 'whitespace-nowrap tnum text-[13px] text-muted-foreground')}>{reward.updated}</td>
+                <td className={cn(td, 'text-right')}><Button size="sm" variant="outline" onClick={() => metrics(reward.id)}><BarChart3 className="h-4 w-4" />Métricas</Button></td>
+              </tr>
+            ))}
+            {!visible.length && <tr><td className={cn(td, 'py-12 text-center')} colSpan={staff ? 7 : 6}><Gift className="mx-auto h-5 w-5 text-muted-foreground" /><p className="mt-2 font-medium">Nenhum reward {query || site !== 'all' ? 'com esses filtros' : 'ainda'}</p><p className="text-[14px] text-muted-foreground">Crie um reward numa página do site e acompanhe aqui.</p></td></tr>}
+          </tbody>
+        </Table>
+      </Body>
+    </>
+  )
+}
+
+/** Criar ou editar um reward: formulário à esquerda e a pré-visualização ao vivo à direita. */
+type RewardTrigger = 'load' | 'scroll' | 'click'
+/** Em que momento a janela abre, a partir da rolagem e do elemento de clique. */
+function rewardTrigger(reward: ProtoReward): RewardTrigger { return reward.clickElement !== null ? 'click' : reward.scroll > 0 ? 'scroll' : 'load' }
+/** Frase curta que explica quando a janela abre, para a pré-visualização. */
+function triggerSummary(reward: ProtoReward) {
+  const trigger = rewardTrigger(reward)
+  if (trigger === 'click') return reward.clickElement?.trim() ? `Abre quando a pessoa clica em ${reward.clickElement.trim()}.` : 'Abre quando a pessoa clica no elemento escolhido.'
+  if (trigger === 'scroll') return `Abre quando a pessoa rola ${reward.scroll}% da página.`
+  return 'Abre assim que a página carrega.'
+}
+
+/** Campo do caminho de uma página do site, com o domínio fixo na frente; um link colado perde o domínio. */
+function SitePathInput({ id, domain, value, onChange, placeholder }: { id: string; domain: string; value: string; onChange: (path: string) => void; placeholder: string }) {
+  return (
+    <div className="flex min-w-0 items-center rounded-md border bg-background focus-within:ring-2 focus-within:ring-ring">
+      <span className="shrink-0 border-r bg-muted px-3 py-2 font-mono text-[13px] text-muted-foreground">https://{domain}/</span>
+      <input id={id} value={value} onChange={(event) => onChange(event.target.value.replace(/^https?:\/\/[^/]+\/?/, ''))} placeholder={placeholder} className="h-9 min-w-0 flex-1 bg-transparent px-3 font-mono text-[13px] outline-none" />
+    </div>
+  )
+}
+
+/** Miniatura de um layout do reward, para escolher no formulário. */
+function LayoutThumb({ layout }: { layout: RewardLayout }) {
+  return (
+    <div className="flex h-[64px] items-center justify-center rounded-md bg-muted" aria-hidden="true">
+      <div className="flex w-[52px] flex-col items-center overflow-hidden rounded-md border bg-background pb-1">
+        {layout === 'header' ? <div className="h-3.5 w-full bg-neutral-700" /> : <div className={cn('mt-1.5 rounded-full', layout === 'highlight' ? 'h-4 w-4 bg-neutral-700 ring-2 ring-neutral-200' : 'h-2.5 w-2.5 bg-neutral-400')} />}
+        <div className="mt-1 h-1 w-7 rounded bg-neutral-700" />
+        <div className="mt-0.5 h-0.5 w-9 rounded bg-neutral-300" />
+        <div className="mt-1 h-1.5 w-9 rounded-sm bg-neutral-800" />
+        {layout !== 'simple' && <div className="mt-1 h-px w-full bg-neutral-200" />}
+      </div>
+    </div>
+  )
+}
+
+function RewardEditScreen({ initial, rewards, staff, back, save, remove, metrics }: { initial: ProtoReward; rewards: ProtoReward[]; staff: boolean; back: () => void; save: (reward: ProtoReward) => void; remove: (id: number) => void; metrics: () => void }) {
+  const [reward, setReward] = useState(initial)
+  const [device, setDevice] = useState<'desktop' | 'mobile'>('desktop')
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [visitorLang, setVisitorLang] = useState<VisitorLang>('pt')
+  const [previewIndex, setPreviewIndex] = useState(0)
+  const sites = REWARD_SITES.filter((item) => staff || item.client === MY_CLIENT)
+  const site = REWARD_SITES.find((item) => item.domain === reward.domain) ?? sites[0]
+  const style = reward.style
+  /** Muda um campo do reward. */
+  const change = (patch: Partial<ProtoReward>) => setReward((current) => ({ ...current, ...patch }))
+  /** Muda um campo do corpo do reward. */
+  const restyle = (patch: Partial<RewardStyle>) => setReward((current) => ({ ...current, style: { ...current.style, ...patch } }))
+  const pageTaken = rewards.some((other) => other.id !== reward.id && other.domain === reward.domain && other.page.replace(/^\/+|\/+$/g, '') === reward.page.replace(/^\/+|\/+$/g, '') && reward.page.trim() !== '')
+  const redirectSamePage = reward.redirect !== null && reward.redirect.trim() !== '' && reward.redirect.trim().replace(/\/$/, '') === reward.page.trim().replace(/\/$/, '')
+  const steps = rewardSteps(reward)
+  const shownStep = steps[Math.min(previewIndex, steps.length - 1)]
+  /** Troca uma pergunta pelo índice. */
+  const changeQuestion = (index: number, patch: Partial<RewardQuestion>) => change({ questions: reward.questions.map((item, position) => (position === index ? { ...item, ...patch } : item)) })
+  /** Muda um campo do pedido de contato. */
+  const changeLead = (patch: Partial<RewardLead>) => reward.lead && change({ lead: { ...reward.lead, ...patch } })
+  const questionsIncomplete = reward.questions.some((item) => item.title.trim() === '' || item.answers.some((answer) => answer.trim() === ''))
+  const leadIncomplete = reward.lead !== null && (reward.lead.title.trim() === '' || reward.lead.button.trim() === '')
+  const cooldownBad = reward.cooldown < 5 || reward.cooldown > 1440
+  const clickMissing = reward.clickElement !== null && reward.clickElement.trim() === ''
+  const lowButton = contrast(style.button, style.buttonText) < 4.5
+  const lowText = contrast(style.body, style.title) < 3 || contrast(style.body, style.text) < 4.5
+  const ready = reward.name.trim().length >= 3 && reward.page.trim() !== '' && !pageTaken && reward.title.trim() !== '' && reward.button.trim() !== '' && !cooldownBad && !clickMissing && !questionsIncomplete && !leadIncomplete && !redirectSamePage && !(reward.redirect !== null && reward.redirect.trim() === '')
+  /** Grava o reward e volta para a lista. */
+  const submit = () => { save({ ...reward, page: reward.page.replace(/^\/+/, ''), updated: 'Agora' }); toast.success(initial.id ? 'Reward salvo' : 'Reward criado', { description: reward.active ? `Já aparece em ${reward.domain}/${reward.page.replace(/^\/+/, '')}.` : 'Fica pausado até você ativar.' }); back() }
+  return (
+    <>
+      <PageHeader title={initial.id ? initial.name : 'Novo reward'} sub={`${staff ? `${site.client} · ` : ''}${reward.domain}`}
+        back={<button onClick={back} className="inline-flex items-center gap-1 text-[13px] text-muted-foreground hover:text-foreground"><ArrowLeft className="h-3.5 w-3.5" />Rewards</button>}
+        actions={<>{initial.id > 0 && <Button variant="outline" onClick={metrics}><BarChart3 className="h-4 w-4" />Métricas</Button>}<Button disabled={!ready} onClick={submit}>{initial.id ? 'Salvar' : 'Criar reward'}</Button>{initial.id > 0 && <>
+          <DropdownMenu><DropdownMenuTrigger asChild><Button variant="outline" size="icon" aria-label="Mais ações"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
+            <DropdownMenuContent align="end"><DropdownMenuItem onSelect={() => change({ active: !reward.active })}>{reward.active ? 'Pausar' : 'Ativar'}</DropdownMenuItem><DropdownMenuSeparator /><DropdownMenuItem className="text-bad focus:text-bad" onSelect={() => setConfirmDelete(true)}><Trash2 className="h-4 w-4" />Apagar reward</DropdownMenuItem></DropdownMenuContent>
+          </DropdownMenu></>}</>} />
+      <Body>
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,460px)]">
+          <div className="grid min-w-0 content-start gap-6">
+            <Card title="Sobre" desc="O nome fica só no painel. O reward aparece na página escolhida do site.">
+              <div className="grid gap-4">
+                <Field id="rw-name" label="Nome" error={reward.name.length > 0 && reward.name.trim().length < 3 && 'Use pelo menos 3 letras.'}><Input id="rw-name" value={reward.name} onChange={(event) => change({ name: event.target.value })} placeholder="Ex.: Receita completa do bolo" /></Field>
+                <div className="grid items-start gap-4 sm:grid-cols-2">
+                  <Field id="rw-site" label="Site">
+                    <Select value={reward.domain} onValueChange={(domain) => { const next = REWARD_SITES.find((item) => item.domain === domain)!; change({ domain, client: next.client, block: 'latest', redirect: reward.redirect === null ? null : '' }) }} disabled={!!initial.id}>
+                      <SelectTrigger id="rw-site"><SelectValue /></SelectTrigger>
+                      <SelectContent>{sites.map((item) => <SelectItem key={item.domain} value={item.domain}>{staff ? `${item.domain} · ${item.client}` : item.domain}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </Field>
+                  <Field id="rw-active" label="Situação">
+                    <label className="flex h-9 items-center gap-3 text-[14px]"><Switch id="rw-active" checked={reward.active} onCheckedChange={(active) => change({ active })} />{reward.active ? 'Ativo no site' : 'Pausado'}</label>
+                  </Field>
+                </div>
+                <Field id="rw-page" label="Página do site" hint={initial.id ? 'O site não muda depois de criado.' : 'Uma página só pode ter um reward.'} error={pageTaken && 'Essa página já tem um reward.'}>
+                  <SitePathInput id="rw-page" domain={reward.domain} value={reward.page} onChange={(page) => change({ page })} placeholder="receitas/bolo-de-acai" />
+                </Field>
+              </div>
+            </Card>
+
+            <Card title="Conteúdo" desc="O que o visitante lê na janela.">
+              <div className="grid gap-4">
+                <Field id="rw-icon" label="Ícone">
+                  <div className="grid gap-3">
+                    <div className="inline-flex w-fit rounded-md border bg-muted p-0.5" role="radiogroup" aria-label="Tipo de ícone">
+                      {([['emoji', 'Emoji'], ['image', 'Imagem'], ['none', 'Sem ícone']] as const).map(([kind, label]) => <button key={kind} role="radio" aria-checked={reward.icon.kind === kind} onClick={() => change({ icon: { ...reward.icon, kind } })} className={cn('h-8 rounded px-3 text-[13px] font-medium', reward.icon.kind === kind ? 'bg-background shadow-sm' : 'text-muted-foreground hover:text-foreground')}>{label}</button>)}
+                    </div>
+                    {reward.icon.kind === 'emoji' && (
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {REWARD_EMOJIS.map((emoji) => <button key={emoji} onClick={() => change({ icon: { ...reward.icon, emoji } })} aria-label={`Usar ${emoji}`} className={cn('flex h-9 w-9 items-center justify-center rounded-md border text-[18px]', reward.icon.emoji === emoji ? 'border-foreground bg-secondary' : 'bg-background hover:bg-accent')}>{emoji}</button>)}
+                        <Input id="rw-icon" aria-label="Outro emoji" value={reward.icon.emoji} maxLength={8} onChange={(event) => change({ icon: { ...reward.icon, emoji: event.target.value } })} className="h-9 w-20 text-center text-[18px]" />
+                      </div>
+                    )}
+                    {reward.icon.kind === 'image' && (
+                      <div className="flex flex-wrap items-center gap-3">
+                        <label className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-md border bg-background px-3 text-[14px] font-medium hover:bg-accent"><Plus className="h-4 w-4" />{reward.icon.image ? 'Trocar imagem' : 'Escolher imagem'}<input type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/avif" className="sr-only" onChange={(event) => { const file = event.target.files?.[0]; if (file) change({ icon: { ...reward.icon, image: URL.createObjectURL(file) } }) }} /></label>
+                        <span className="text-[13px] text-muted-foreground">PNG, JPG, WEBP, GIF ou AVIF, até 2 MB.</span>
+                      </div>
+                    )}
+                  </div>
+                </Field>
+                <Field id="rw-title" label="Título"><Input id="rw-title" value={reward.title} maxLength={80} onChange={(event) => change({ title: event.target.value })} /></Field>
+                <Field id="rw-desc" label="Descrição" hint={`${reward.description.length} de 500`}><Textarea id="rw-desc" rows={3} maxLength={500} value={reward.description} onChange={(event) => change({ description: event.target.value })} /></Field>
+                <Field id="rw-button" label="Texto do botão"><Input id="rw-button" value={reward.button} maxLength={40} onChange={(event) => change({ button: event.target.value })} /></Field>
+                <p className="rounded-md border bg-muted px-3 py-2 text-[13px] text-muted-foreground">O rodapé "Oferta patrocinada" é fixo e aparece no idioma do navegador de quem visita (português, inglês ou espanhol).</p>
+              </div>
+            </Card>
+
+            <Card title="Antes do anúncio" desc="Perguntas e pedido de contato que o visitante responde antes de ver o anúncio. Sem nada aqui, a janela vai direto para o reward.">
+              <div className="grid gap-5">
+                {reward.questions.map((question, index) => (
+                  <div key={index} className="grid gap-3 rounded-lg border p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-[13px] font-semibold">Pergunta {index + 1}</span>
+                      <button type="button" onClick={() => { change({ questions: reward.questions.filter((_item, position) => position !== index) }); setPreviewIndex(0) }} aria-label={`Remover pergunta ${index + 1}`} className="rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground"><Trash2 className="h-4 w-4" /></button>
+                    </div>
+                    <Input aria-label={`Pergunta ${index + 1}`} value={question.title} maxLength={120} onChange={(event) => changeQuestion(index, { title: event.target.value })} placeholder="Ex.: Qual sobremesa você mais faz?" />
+                    <Input aria-label={`Explicação da pergunta ${index + 1}`} value={question.description} maxLength={200} onChange={(event) => changeQuestion(index, { description: event.target.value })} placeholder="Explicação (opcional)" />
+                    <div className="grid gap-2 sm:grid-cols-3">
+                      {question.answers.map((answer, answerIndex) => (
+                        <Input key={answerIndex} aria-label={`Resposta ${answerIndex + 1} da pergunta ${index + 1}`} value={answer} maxLength={40} onChange={(event) => changeQuestion(index, { answers: question.answers.map((item, position) => (position === answerIndex ? event.target.value : item)) as [string, string, string] })} placeholder={`Resposta ${answerIndex + 1}`} />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+                {questionsIncomplete && <p className="text-[13px] text-bad">Preencha a pergunta e as três respostas.</p>}
+                <div className="flex flex-wrap items-center gap-3">
+                  <Button variant="outline" disabled={reward.questions.length >= MAX_REWARD_QUESTIONS} onClick={() => { change({ questions: [...reward.questions, { title: '', description: '', answers: ['', '', ''] }] }); setPreviewIndex(rewardSteps(reward).length - 1) }}><Plus className="h-4 w-4" />Adicionar pergunta</Button>
+                  <span className="text-[13px] text-muted-foreground">{reward.questions.length} de {MAX_REWARD_QUESTIONS} perguntas · as respostas não mudam o reward.</span>
+                </div>
+                <div className="grid gap-3 border-t pt-5">
+                  <label className="flex items-center gap-3 text-[14px] font-medium"><Switch checked={reward.lead !== null} onCheckedChange={(on) => { change({ lead: on ? { kind: 'email', position: 'end', title: 'Para onde mandamos?', description: '', button: 'Continuar' } : null }); setPreviewIndex(0) }} />Pedir contato do visitante</label>
+                  {reward.lead && (
+                    <div className="grid gap-4">
+                      <div className="grid items-start gap-4 sm:grid-cols-2">
+                        <Field id="rw-lead-kind" label="O que pedir">
+                          <Select value={reward.lead.kind} onValueChange={(kind) => changeLead({ kind: kind as RewardLead['kind'] })}>
+                            <SelectTrigger id="rw-lead-kind"><SelectValue /></SelectTrigger>
+                            <SelectContent><SelectItem value="email">E-mail</SelectItem><SelectItem value="phone">Telefone</SelectItem></SelectContent>
+                          </Select>
+                        </Field>
+                        <Field id="rw-lead-position" label="Quando pedir">
+                          <Select value={reward.lead.position} onValueChange={(position) => changeLead({ position: position as RewardLead['position'] })} disabled={reward.questions.length === 0}>
+                            <SelectTrigger id="rw-lead-position"><SelectValue /></SelectTrigger>
+                            <SelectContent><SelectItem value="start">Antes das perguntas</SelectItem><SelectItem value="end">Depois das perguntas</SelectItem></SelectContent>
+                          </Select>
+                        </Field>
+                      </div>
+                      <Field id="rw-lead-title" label="Título" error={reward.lead.title.trim() === '' && 'Escreva um título.'}><Input id="rw-lead-title" value={reward.lead.title} maxLength={80} onChange={(event) => changeLead({ title: event.target.value })} /></Field>
+                      <Field id="rw-lead-desc" label="Descrição (opcional)"><Input id="rw-lead-desc" value={reward.lead.description} maxLength={200} onChange={(event) => changeLead({ description: event.target.value })} /></Field>
+                      <Field id="rw-lead-button" label="Texto do botão"><Input id="rw-lead-button" value={reward.lead.button} maxLength={30} onChange={(event) => changeLead({ button: event.target.value })} /></Field>
+                      <p className="rounded-md border bg-muted px-3 py-2 text-[13px] text-muted-foreground">Abaixo do campo aparece um aviso fixo de que, ao continuar, a pessoa aceita receber contato de {reward.domain}, no idioma do navegador dela.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </Card>
+
+            <Card title="Corpo" desc="Layout, cores, borda, cantos e fonte da janela. Comece por um modelo e ajuste o que quiser.">
+              <div className="grid gap-5">
+                <div className="grid gap-2">
+                  <span className="text-[13px] font-medium">Layout</span>
+                  <div role="radiogroup" aria-label="Layout" className="grid grid-cols-3 gap-2">
+                    {REWARD_LAYOUTS.map((layout) => (
+                      <button key={layout.id} type="button" role="radio" aria-checked={style.layout === layout.id} onClick={() => restyle({ layout: layout.id })}
+                        className={cn('rounded-lg border p-2 text-left transition-colors hover:bg-accent', style.layout === layout.id && 'border-foreground ring-1 ring-foreground')}>
+                        <LayoutThumb layout={layout.id} />
+                        <span className="mt-2 block text-[13px] font-medium">{layout.name}</span>
+                        <span className="block text-[12px] leading-snug text-muted-foreground">{layout.desc}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2" aria-label="Modelos">
+                  {REWARD_PRESETS.map((preset) => (
+                    <button key={preset.name} onClick={() => restyle(preset.style)} className="inline-flex h-9 items-center gap-2 rounded-md border bg-background px-3 text-[13px] font-medium hover:bg-accent">
+                      <span className="flex h-4 w-4 overflow-hidden rounded-full border" aria-hidden="true"><span className="h-full w-1/2" style={{ background: preset.style.body }} /><span className="h-full w-1/2" style={{ background: preset.style.button }} /></span>{preset.name}
+                    </button>
+                  ))}
+                </div>
+                <div className="grid items-start gap-4 sm:grid-cols-2">
+                  <ColorField id="rw-body" label="Cor do corpo" value={style.body} onChange={(body) => restyle({ body })} />
+                  <ColorField id="rw-title-color" label="Cor do título" value={style.title} onChange={(title) => restyle({ title })} />
+                  <ColorField id="rw-text" label="Cor do texto" value={style.text} onChange={(text) => restyle({ text })} />
+                  <ColorField id="rw-border" label="Cor da borda" value={style.border} onChange={(border) => restyle({ border })} />
+                  <ColorField id="rw-btn" label={style.layout === 'simple' ? 'Cor do botão' : style.layout === 'header' ? 'Cor do botão e do cabeçalho' : 'Cor do botão e do círculo'} value={style.button} onChange={(button) => restyle({ button })} />
+                  <ColorField id="rw-btn-text" label="Texto do botão" value={style.buttonText} onChange={(buttonText) => restyle({ buttonText })} />
+                </div>
+                {(lowButton || lowText) && <div className="flex items-start gap-2 rounded-md border border-ochre/40 bg-ochre-soft px-3 py-2 text-[13px] text-ochre"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />{lowButton ? 'O texto do botão está com pouco contraste: pode ficar difícil de ler.' : 'O texto está com pouco contraste com o corpo: pode ficar difícil de ler.'}</div>}
+                <div className="grid items-start gap-5 sm:grid-cols-2">
+                  <Field id="rw-radius" label={`Cantos arredondados · ${style.radius}px`}>
+                    <Slider id="rw-radius" min={0} max={32} step={1} value={[style.radius]} onValueChange={([radius]) => restyle({ radius })} className="py-2" />
+                  </Field>
+                  <Field id="rw-border-width" label={`Espessura da borda · ${style.borderWidth ? `${style.borderWidth}px` : 'sem borda'}`}>
+                    <Slider id="rw-border-width" min={0} max={6} step={1} value={[style.borderWidth]} onValueChange={([borderWidth]) => restyle({ borderWidth })} className="py-2" />
+                  </Field>
+                </div>
+                <div className="grid items-start gap-4 sm:grid-cols-2">
+                  <Field id="rw-font" label="Fonte">
+                    <Select value={style.font} onValueChange={(font) => restyle({ font })}>
+                      <SelectTrigger id="rw-font"><SelectValue /></SelectTrigger>
+                      <SelectContent>{REWARD_FONTS.map((font) => <SelectItem key={font.name} value={font.name}><span style={{ fontFamily: font.stack }}>{font.name}</span></SelectItem>)}</SelectContent>
+                    </Select>
+                  </Field>
+                  <Field id="rw-shadow" label="Sombra">
+                    <label className="flex h-9 items-center gap-3 text-[14px]"><Switch id="rw-shadow" checked={style.shadow} onCheckedChange={(shadow) => restyle({ shadow })} />{style.shadow ? 'Com sombra' : 'Sem sombra'}</label>
+                  </Field>
+                </div>
+              </div>
+            </Card>
+
+            <Card title="Exibição" desc="Quando a janela abre, qual anúncio premiado roda e o que acontece depois.">
+              <div className="grid gap-5">
+                <Field id="rw-trigger" label="Quando a janela abre">
+                  <div className="grid gap-3">
+                    <div role="radiogroup" aria-label="Quando a janela abre" className="inline-flex w-fit flex-wrap rounded-md border bg-muted p-0.5">
+                      {([['load', 'Ao carregar a página'], ['scroll', 'Ao rolar a página'], ['click', 'Ao clicar num elemento']] as const).map(([value, label]) => (
+                        <button key={value} type="button" role="radio" aria-checked={rewardTrigger(reward) === value}
+                          onClick={() => change(value === 'load' ? { scroll: 0, clickElement: null } : value === 'scroll' ? { scroll: reward.scroll || 50, clickElement: null } : { scroll: 0, clickElement: reward.clickElement ?? '' })}
+                          className={cn('h-8 rounded px-3 text-[13px] font-medium', rewardTrigger(reward) === value ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground')}>{label}</button>
+                      ))}
+                    </div>
+                    {rewardTrigger(reward) === 'scroll' && (
+                      <Field id="rw-scroll" label={`Rolagem da página · ${reward.scroll}%`} hint="A janela abre quando a pessoa passa desse ponto da página.">
+                        <Slider id="rw-scroll" min={5} max={100} step={5} value={[reward.scroll]} onValueChange={([scroll]) => change({ scroll })} className="py-2" />
+                      </Field>
+                    )}
+                    {rewardTrigger(reward) === 'click' && (
+                      <Field id="rw-click" label="Elemento da página" hint="Seletor CSS do botão ou link do site. A janela abre quando a pessoa clica nele." error={clickMissing && 'Informe o seletor do elemento.'}>
+                        <Input id="rw-click" value={reward.clickElement ?? ''} onChange={(event) => change({ clickElement: event.target.value })} placeholder="#ver-receita ou .botao-download" className="font-mono text-[13px]" />
+                      </Field>
+                    )}
+                  </div>
+                </Field>
+                <Field id="rw-block" label="Ad units do reward" hint={`${reward.block === 'latest' ? 'Troca sozinho quando sair um bloco mais novo. Hoje usa ' : 'Ad units com "Reward" no nome criados nessa data. '}${blockCodesByDevice(rewardBlockGroup(site, reward.block))}.`}>
+                  <Select value={reward.block} onValueChange={(block) => change({ block })}>
+                    <SelectTrigger id="rw-block" className="sm:w-[420px]"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="latest">Mais recentes · {formatBlockDate(site.blocks[0].date)} <DeviceBadges group={site.blocks[0]} /></SelectItem>
+                      {site.blocks.map((group) => <SelectItem key={group.date} value={group.date}>Fixar {formatBlockDate(group.date)} <DeviceBadges group={group} /></SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </Field>
+                <div className="grid items-start gap-4 sm:grid-cols-2">
+                  <Field id="rw-cooldown" label="Tempo para mostrar de novo (minutos)" hint="Depois que a pessoa vê a janela, ela só volta a aparecer passado esse tempo." error={cooldownBad && 'De 5 a 1.440 minutos (24 horas).'}>
+                    <Input id="rw-cooldown" type="number" min={5} max={1440} value={reward.cooldown} onChange={(event) => change({ cooldown: Number(event.target.value) })} className="tnum" />
+                  </Field>
+                </div>
+                <Field id="rw-redirect" label="Ao terminar o anúncio">
+                  <div className="grid gap-3">
+                    <label className="flex items-center gap-3 text-[14px]"><Switch id="rw-redirect" checked={reward.redirect !== null} onCheckedChange={(on) => change({ redirect: on ? '' : null })} />{reward.redirect !== null ? 'Levar a outra página do site' : 'Fechar a janela e liberar a página'}</label>
+                    {reward.redirect !== null && (
+                      <Field id="rw-redirect-page" label="Página de destino" hint={`Só páginas de ${reward.domain}, o mesmo site do reward.`} error={redirectSamePage && 'Escolha outra página: essa é a página do próprio reward.'}>
+                        <SitePathInput id="rw-redirect-page" domain={reward.domain} value={reward.redirect} onChange={(redirect) => change({ redirect })} placeholder="receitas/bolo-de-acai/completa" />
+                      </Field>
+                    )}
+                  </div>
+                </Field>
+              </div>
+            </Card>
+
+          </div>
+
+          <div className="order-first min-w-0 lg:sticky lg:top-[124px] lg:order-none lg:self-start">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <div><div className="text-[14px] font-semibold">Pré-visualização</div><div className="text-[13px] text-muted-foreground">Muda enquanto você edita.</div></div>
+              <div className="flex items-center gap-2">
+                <VisitorLangPicker value={visitorLang} onChange={setVisitorLang} />
+                <div className="inline-flex rounded-md border bg-card p-0.5" role="radiogroup" aria-label="Tamanho da tela">
+                  {([['desktop', Monitor, 'Computador'], ['mobile', Smartphone, 'Celular']] as const).map(([value, Icon, label]) => <button key={value} role="radio" aria-checked={device === value} aria-label={label} title={label} onClick={() => setDevice(value)} className={cn('flex h-8 w-9 items-center justify-center rounded', device === value ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground')}><Icon className="h-4 w-4" /></button>)}
+                </div>
+              </div>
+            </div>
+            {steps.length > 1 && (
+              <div role="tablist" aria-label="Etapa da pré-visualização" className="mb-3 flex flex-wrap gap-1.5">
+                {steps.map((step, index) => <button key={index} role="tab" aria-selected={shownStep === step} onClick={() => setPreviewIndex(index)} className={cn('h-7 rounded-full border px-3 text-[12px] font-medium', shownStep === step ? 'border-foreground bg-foreground text-background' : 'bg-card text-muted-foreground hover:text-foreground')}>{stepLabel(step)}</button>)}
+              </div>
+            )}
+            <RewardStage reward={reward} device={device} lang={visitorLang} compact step={shownStep} onNext={() => setPreviewIndex(Math.min(steps.indexOf(shownStep) + 1, steps.length - 1))} />
+            <p className="mt-2 text-[13px] text-muted-foreground">{triggerSummary(reward)}</p>
+          </div>
+        </div>
+      </Body>
+      <Dialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Apagar "{initial.name}"?</DialogTitle><DialogDescription>A janela sai de {initial.domain}/{initial.page} na hora.</DialogDescription></DialogHeader>
+          <DialogFooter><Button variant="outline" onClick={() => setConfirmDelete(false)}>Cancelar</Button><Button variant="destructive" onClick={() => { remove(initial.id); toast.success('Reward apagado'); back() }}>Apagar</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  )
+}
+
+
+type RewardDay = { day: string; opens: number; clicks: number; completed: number }
+type RewardLeadRow = { name: string; contact: string; lang: string; answers: string[]; date: string }
+const REWARD_PERIODS = [['7', 'Últimos 7 dias'], ['30', 'Últimos 30 dias']] as const
+const LEAD_NAMES = ['Ana Souza', 'Bruno Lima', 'Carla Mendes', 'Diego Rocha', 'Elisa Prado', 'Felipe Nunes', 'Gabriela Reis', 'Hugo Martins', 'Isabela Costa', 'João Pires', 'Karen Alves', 'Lucas Freitas', 'Marina Duarte', 'Nicolas Ramos', 'Olívia Teles', 'Paulo Viana']
+
+/** Número pseudoaleatório estável a partir de uma semente, para os dados de exemplo. */
+function seeded(seed: number) { const value = Math.sin(seed * 9301 + 49297) * 233280; return value - Math.floor(value) }
+
+/** Dados diários de exemplo de um reward: janelas abertas, cliques no botão e anúncios concluídos. */
+function rewardDays(reward: ProtoReward): RewardDay[] {
+  return Array.from({ length: 30 }, (_item, index) => {
+    const opens = Math.round(900 + seeded(reward.id * 100 + index) * 700 + index * 12)
+    const clicks = Math.round(opens * (0.42 + seeded(reward.id * 200 + index) * 0.12) * (reward.questions.length ? 0.78 : 1))
+    const completed = Math.round(clicks * (0.8 + seeded(reward.id * 300 + index) * 0.1))
+    return { day: `${String(((index + 10) % 30) + 1).padStart(2, '0')}/${index < 20 ? '10' : '11'}`, opens, clicks, completed }
+  })
+}
+
+/** Gráfico de linhas simples das métricas diárias, com a série escolhida em destaque. */
+function RewardDailyChart({ days, series }: { days: RewardDay[]; series: keyof Omit<RewardDay, 'day'> }) {
+  const [hover, setHover] = useState<number | null>(null)
+  const width = 960, height = 220, left = 56, right = 12, top = 12, bottom = 26
+  const values = days.map((day) => day[series])
+  const max = Math.max(...values) * 1.15 || 1
+  const xAt = (index: number) => left + (days.length === 1 ? 0 : (index * (width - left - right)) / (days.length - 1))
+  const yAt = (value: number) => top + (height - top - bottom) * (1 - value / max)
+  const line = values.map((value, index) => `${index ? 'L' : 'M'}${xAt(index).toFixed(1)},${yAt(value).toFixed(1)}`).join('')
+  const every = Math.max(1, Math.ceil(days.length / 8))
+  return (
+    <div className="relative">
+      <svg viewBox={`0 0 ${width} ${height}`} className="h-[220px] w-full" role="img" aria-label="Métrica por dia" onMouseLeave={() => setHover(null)}
+        onMouseMove={(event) => { const box = event.currentTarget.getBoundingClientRect(); const position = ((event.clientX - box.left) / box.width) * width; setHover(Math.min(days.length - 1, Math.max(0, Math.round(((position - left) / (width - left - right)) * (days.length - 1))))) }}>
+        {[0, 0.5, 1].map((fraction) => <g key={fraction}><line x1={left} x2={width - right} y1={yAt(max * fraction)} y2={yAt(max * fraction)} className="stroke-border" /><text x={left - 8} y={yAt(max * fraction) + 4} textAnchor="end" className="fill-muted-foreground text-[11px] tnum">{int.format(Math.round(max * fraction))}</text></g>)}
+        {days.map((day, index) => index % every === 0 && <text key={day.day} x={xAt(index)} y={height - 6} textAnchor="middle" className="fill-muted-foreground text-[11px] tnum">{day.day}</text>)}
+        <path d={`${line}L${xAt(values.length - 1)},${yAt(0)}L${xAt(0)},${yAt(0)}Z`} className="fill-foreground/[0.04]" />
+        <path d={line} fill="none" className="stroke-foreground" strokeWidth={2} strokeLinejoin="round" />
+        {hover !== null && <><line x1={xAt(hover)} x2={xAt(hover)} y1={top} y2={height - bottom} className="stroke-muted-foreground/50" /><circle cx={xAt(hover)} cy={yAt(values[hover])} r={4} className="fill-foreground stroke-card" strokeWidth={2} /></>}
+      </svg>
+      {hover !== null && <div className="pointer-events-none absolute top-1 rounded-md border bg-popover px-3 py-2 text-[13px] shadow-md" style={{ left: `clamp(0px, calc(${(xAt(hover) / width) * 100}% - 70px), calc(100% - 140px))`, width: 140 }}><div className="font-medium">{days[hover].day}</div><div className="tnum">{int.format(values[hover])}</div></div>}
+    </div>
+  )
+}
+
+/** Métricas de um reward: aberturas, cliques, anúncios concluídos, funil das etapas, respostas e contatos. */
+function RewardMetricsScreen({ reward, staff, back, edit }: { reward: ProtoReward; staff: boolean; back: () => void; edit: () => void }) {
+  const [period, setPeriod] = useState<string>('30')
+  const [series, setSeries] = useState<keyof Omit<RewardDay, 'day'>>('opens')
+  const [leadQuery, setLeadQuery] = useState('')
+  const [answerFilter, setAnswerFilter] = useState('all')
+  const days = rewardDays(reward).slice(-Number(period))
+  const opens = days.reduce((total, day) => total + day.opens, 0)
+  const clicks = days.reduce((total, day) => total + day.clicks, 0)
+  const completed = days.reduce((total, day) => total + day.completed, 0)
+  const rate = (part: number, whole: number) => `${pct.format(whole ? (part / whole) * 100 : 0)}%`
+  const funnel: [string, number][] = [['Janela aberta', opens]]
+  let reached = opens
+  rewardSteps(reward).forEach((step, index) => {
+    if (step.kind === 'reward') return
+    reached = Math.round(reached * (0.86 + seeded(reward.id * 7 + index) * 0.08))
+    funnel.push([step.kind === 'question' ? `Respondeu a pergunta ${step.index + 1}` : 'Deixou o contato', reached])
+  })
+  funnel.push([`Clicou em "${reward.button || 'Desbloquear'}"`, clicks], ['Assistiu o anúncio até o fim', completed])
+  const leadsTotal = reward.lead ? funnel.find(([label]) => label === 'Deixou o contato')?.[1] ?? 0 : 0
+  const answered = (index: number) => funnel.find(([label]) => label === `Respondeu a pergunta ${index + 1}`)?.[1] ?? 0
+  const answerCounts = reward.questions.map((question, index) => {
+    const weights = question.answers.map((_answer, answerIndex) => 0.4 + seeded(reward.id * 50 + index * 5 + answerIndex))
+    const sum = weights.reduce((total, weight) => total + weight, 0)
+    return question.answers.map((answer, answerIndex) => [answer || `Resposta ${answerIndex + 1}`, Math.round((answered(index) * weights[answerIndex]) / sum)] as const)
+  })
+  const leads: RewardLeadRow[] = reward.lead ? LEAD_NAMES.map((name, index) => ({
+    name,
+    contact: reward.lead!.kind === 'email' ? `${name.split(' ')[0].toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')}@email.com` : `(11) 9${String(8000 + index * 137).padStart(4, '0')}-${String(1000 + index * 211).slice(0, 4)}`,
+    lang: ['Português', 'Português', 'Espanhol', 'Português', 'Inglês'][index % 5],
+    answers: reward.questions.map((question, questionIndex) => question.answers[Math.floor(seeded(index * 13 + questionIndex) * 3)] || '—'),
+    date: `${String(9 - Math.floor(index / 3)).padStart(2, '0')}/11/2026 ${String(8 + (index % 12)).padStart(2, '0')}:${String((index * 17) % 60).padStart(2, '0')}`,
+  })) : []
+  const visibleLeads = leads.filter((lead) => `${lead.name} ${lead.contact}`.toLowerCase().includes(leadQuery.toLowerCase()) && (answerFilter === 'all' || lead.answers[Number(answerFilter.split(':')[0])] === answerFilter.split(':').slice(1).join(':')))
+  const tiles: [string, string, string][] = [
+    ['Janelas abertas', int.format(opens), 'Vezes que a janela apareceu para alguém.'],
+    ['Cliques no botão', int.format(clicks), `${rate(clicks, opens)} das janelas abertas (CTR).`],
+    ['Anúncios concluídos', int.format(completed), `${rate(completed, clicks)} de quem clicou viu até o fim.`],
+    ['Desistências', int.format(opens - completed), `${rate(opens - completed, opens)} fecharam antes de liberar.`],
+  ]
+  const quizCompleted = funnel[funnel.length - 3]?.[1] ?? 0
+  const quizTiles: [string, string, string][] = [
+    ['Sessões', int.format(opens), `${int.format(quizCompleted)} concluídos · ${int.format(opens - quizCompleted)} desistências`],
+    ['Taxa de conclusão', rate(quizCompleted, opens), `${int.format(quizCompleted)} de ${int.format(opens)} sessões responderam tudo.`],
+    ['Taxa de desistência', rate(opens - quizCompleted, opens), `${int.format(opens - quizCompleted)} saíram antes de terminar.`],
+    ['CTR do reward', rate(clicks, quizCompleted), `${int.format(clicks)} cliques no botão do reward depois do quiz.`],
+  ]
+  if (reward.lead) tiles.push(['Contatos', int.format(leadsTotal), `${rate(leadsTotal, opens)} das janelas abertas.`])
+  return (
+    <>
+      <PageHeader title={reward.name} sub={`${staff ? `${reward.client} · ` : ''}${reward.domain}/${reward.page}`}
+        back={<button onClick={back} className="inline-flex items-center gap-1 text-[13px] text-muted-foreground hover:text-foreground"><ArrowLeft className="h-3.5 w-3.5" />Rewards</button>}
+        actions={<><Select value={period} onValueChange={setPeriod}><SelectTrigger aria-label="Período" className="h-9 w-[180px]"><SelectValue /></SelectTrigger><SelectContent>{REWARD_PERIODS.map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent></Select><Button variant="outline" onClick={edit}><Pencil className="h-4 w-4" />Editar</Button></>} />
+      <Body>
+        {!reward.active && <div className="flex items-start gap-2 rounded-md border border-ochre/40 bg-ochre-soft px-3 py-2 text-[13px] text-ochre"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />Este reward está pausado: os números são de quando ele estava ativo.</div>}
+        <div className={cn('grid gap-3 sm:grid-cols-2', tiles.length === 5 ? 'lg:grid-cols-5' : 'lg:grid-cols-4')}>
+          {tiles.map(([label, value, note]) => (
+            <div key={label} className="rounded-lg border bg-card p-4">
+              <div className="text-[13px] text-muted-foreground">{label}</div>
+              <div className="mt-1 text-[26px] font-semibold tracking-[-0.03em] tnum">{value}</div>
+              <div className="mt-1 text-[12px] leading-snug text-muted-foreground">{note}</div>
+            </div>
+          ))}
+        </div>
+        {reward.questions.length > 0 && (
+          <div className="grid gap-3">
+            <h2 className="text-[13px] font-medium uppercase tracking-wide text-muted-foreground">Quiz</h2>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {quizTiles.map(([label, value, note]) => (
+                <div key={label} className="rounded-lg border bg-card p-4">
+                  <div className="text-[13px] text-muted-foreground">{label}</div>
+                  <div className="mt-1 text-[26px] font-semibold tracking-[-0.03em] tnum">{value}</div>
+                  <div className="mt-1 text-[12px] leading-snug text-muted-foreground">{note}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        <Card title="Por dia">
+          <div className="mb-4 inline-flex flex-wrap rounded-md border bg-muted p-0.5" role="radiogroup" aria-label="Métrica do gráfico">
+            {([['opens', 'Janelas abertas'], ['clicks', 'Cliques no botão'], ['completed', 'Anúncios concluídos']] as const).map(([value, label]) => <button key={value} role="radio" aria-checked={series === value} onClick={() => setSeries(value)} className={cn('h-8 rounded px-3 text-[13px] font-medium', series === value ? 'bg-background shadow-sm' : 'text-muted-foreground hover:text-foreground')}>{label}</button>)}
+          </div>
+          <RewardDailyChart days={days} series={series} />
+        </Card>
+        <Card title="Etapas" desc="Quantas pessoas chegaram a cada etapa, do momento em que a janela abre até o fim do anúncio.">
+          <ul className="grid gap-3">
+            {funnel.map(([label, value], index) => (
+              <li key={label} className="grid gap-1.5">
+                <div className="flex items-baseline justify-between gap-3 text-[14px]"><span className="min-w-0 truncate">{label}</span><span className="shrink-0 tnum"><span className="font-medium">{int.format(value)}</span><span className="ml-2 text-[13px] text-muted-foreground">{rate(value, opens)}{index > 0 && ` · perdeu ${int.format(funnel[index - 1][1] - value)}`}</span></span></div>
+                <span className="h-2 rounded-full bg-muted"><span className="block h-2 rounded-full bg-foreground" style={{ width: `${(value / (opens || 1)) * 100}%` }} /></span>
+              </li>
+            ))}
+          </ul>
+        </Card>
+        {reward.questions.length > 0 && (
+          <Card title="Respostas" desc="O que as pessoas escolheram em cada pergunta.">
+            <div className="grid gap-6 md:grid-cols-2">
+              {reward.questions.map((question, index) => (
+                <div key={index} className="grid gap-3">
+                  <div><div className="text-[13px] text-muted-foreground">Pergunta {index + 1} · {int.format(answered(index))} respostas</div><div className="font-medium">{question.title || 'Pergunta sem título'}</div></div>
+                  <table className="w-full text-[13px]">
+                    <thead><tr className="text-left text-[12px] text-muted-foreground"><th className="pb-2 font-medium">Resposta</th><th className="pb-2 text-right font-medium">Cliques</th><th className="w-[45%] pb-2 pl-4 font-medium">CTR</th></tr></thead>
+                    <tbody>
+                      {answerCounts[index].map(([answer, count]) => (
+                        <tr key={answer} className="border-t">
+                          <td className="py-2 pr-3">{answer}</td>
+                          <td className="py-2 text-right tnum">{int.format(count)}</td>
+                          <td className="py-2 pl-4"><div className="flex items-center gap-2"><span className="h-2 flex-1 rounded-full bg-muted"><span className="block h-2 rounded-full bg-foreground" style={{ width: `${(count / (answered(index) || 1)) * 100}%` }} /></span><span className="w-[52px] text-right tnum">{rate(count, answered(index))}</span></div></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
+        {reward.lead && (
+          <Card pad={false}>
+            <div className="px-6 pt-6"><h2 className="text-[20px] font-semibold tracking-tight">Contatos</h2><p className="mt-2 text-[14px] text-muted-foreground">Quem deixou {reward.lead.kind === 'email' ? 'o e-mail' : 'o telefone'} na janela, com as respostas.</p></div>
+            <div className="flex flex-wrap items-center gap-3 border-b px-6 py-4">
+              <div className="relative w-full sm:w-[260px]"><Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input aria-label="Buscar contatos" className="h-9 pl-9" placeholder="Nome ou contato" value={leadQuery} onChange={(event) => setLeadQuery(event.target.value)} /></div>
+              {reward.questions.length > 0 && (
+                <Select value={answerFilter} onValueChange={setAnswerFilter}>
+                  <SelectTrigger aria-label="Filtrar por resposta" className="h-9 w-[240px]"><SelectValue /></SelectTrigger>
+                  <SelectContent><SelectItem value="all">Todas as respostas</SelectItem>{reward.questions.flatMap((question, index) => question.answers.map((answer) => <SelectItem key={`${index}:${answer}`} value={`${index}:${answer}`}>P{index + 1}: {answer}</SelectItem>))}</SelectContent>
+                </Select>
+              )}
+              <Button variant="outline" className="sm:ml-auto" onClick={() => toast.success('Exportação iniciada', { description: `${visibleLeads.length} contatos em CSV.` })}><Download className="h-4 w-4" />Exportar CSV</Button>
+            </div>
+            <Table min={760}>
+              <thead><tr>{['Nome', 'Contato', 'Idioma', ...reward.questions.map((_question, index) => `Pergunta ${index + 1}`), 'Data'].map((label) => <th key={label} className="border-b bg-muted px-4 py-2.5 text-left text-[12px] font-medium text-muted-foreground">{label}</th>)}</tr></thead>
+              <tbody>
+                {visibleLeads.slice(0, 10).map((lead) => (
+                  <tr key={lead.contact} className="hover:bg-muted">
+                    <td className="border-b px-4 py-3 text-[14px] font-medium">{lead.name}</td>
+                    <td className="border-b px-4 py-3 font-mono text-[13px]">{lead.contact}</td>
+                    <td className="border-b px-4 py-3 text-[14px]">{lead.lang}</td>
+                    {lead.answers.map((answer, index) => <td key={index} className="border-b px-4 py-3 text-[14px]">{answer}</td>)}
+                    <td className="whitespace-nowrap border-b px-4 py-3 text-[13px] text-muted-foreground tnum">{lead.date}</td>
+                  </tr>
+                ))}
+                {!visibleLeads.length && <tr><td colSpan={4 + reward.questions.length} className="px-4 py-10 text-center text-[14px] text-muted-foreground">Nenhum contato com esse filtro.</td></tr>}
+              </tbody>
+            </Table>
+            <div className="px-6 py-3 text-[13px] text-muted-foreground tnum">{visibleLeads.length ? `1–${Math.min(10, visibleLeads.length)} de ${int.format(leadsTotal)} contatos` : '0 contatos'}</div>
+          </Card>
+        )}
+      </Body>
+    </>
+  )
+}
+
 export default function App() {
   const initial = typeof location !== 'undefined' && isScreen(location.hash.slice(1)) ? (location.hash.slice(1) as Screen) : 'equipe'
   const [screen, setScreen] = useState<Screen>(initial)
@@ -5013,6 +5817,8 @@ export default function App() {
   const [checkItems, setCheckItems] = useState<ProtoCheckItem[]>(INITIAL_CHECK_ITEMS)
   const [gamRuns, setGamRuns] = useState<GamRun[]>(INITIAL_GAM_RUNS)
   const [gamRunId, setGamRunId] = useState(12)
+  const [rewards, setRewards] = useState<ProtoReward[]>(INITIAL_REWARDS)
+  const [rewardDraft, setRewardDraft] = useState<ProtoReward>(INITIAL_REWARDS[0])
   const [accent, setAccent] = useState('padrao')
   const [theme, setTheme] = useState(() => (typeof location !== 'undefined' && new URLSearchParams(location.search).get('tema')) || 'system')
   const [groups, setGroups] = useState(INITIAL_GROUPS)
@@ -5036,6 +5842,12 @@ export default function App() {
   }
   const openGroup = (id: string) => { setGroupId(id); go(id === 'parcerias' ? 'grupoinativo' : 'grupo') }
   const t: T = (k) => translate(lang, k)
+  /** Abre o reward (ou um novo) na edição do painel do cliente ou do interno. */
+  /** Abre as métricas de um reward no painel do cliente ou do interno. */
+  const openRewardMetrics = (id: number, staff: boolean) => { setRewardDraft(rewards.find((item) => item.id === id)!); go(staff ? 'rewardmetricasinterno' : 'rewardmetricas') }
+  const openReward = (id: number | null, staff: boolean) => { setRewardDraft(id ? rewards.find((item) => item.id === id)! : blankReward(REWARD_SITES.find((site) => staff || site.client === MY_CLIENT)!)); go(staff ? 'rewardinterno' : 'reward') }
+  /** Grava o reward novo ou editado. */
+  const saveReward = (saved: ProtoReward) => setRewards((current) => (saved.id ? current.map((item) => (item.id === saved.id ? saved : item)) : [{ ...saved, id: Math.max(...current.map((item) => item.id)) + 1 }, ...current]))
 
   const go = (s: Screen) => {
     setScreen(s)
@@ -5101,6 +5913,10 @@ export default function App() {
       case 'checklistitens': return <ChecklistItemsScreen items={checkItems} setItems={setCheckItems} back={() => go('checklists')} />
       case 'ferramentasgam': return <GamToolsScreen runs={gamRuns} start={(run) => setGamRuns((current) => [run, ...current])} open={(runId) => { setGamRunId(runId); go('execucaogam') }} />
       case 'execucaogam': { const run = gamRuns.find((item) => item.id === gamRunId) ?? gamRuns[0]; return <GamRunScreen key={run.id} run={run} update={(next) => setGamRuns((current) => current.map((item) => (item.id === next.id ? next : item)))} back={() => go('ferramentasgam')} /> }
+      case 'rewards': return <RewardsScreen rewards={rewards} staff={false} open={(id) => openReward(id, false)} metrics={(id) => openRewardMetrics(id, false)} />
+      case 'rewardsinterno': return <RewardsScreen rewards={rewards} staff open={(id) => openReward(id, true)} metrics={(id) => openRewardMetrics(id, true)} />
+      case 'reward': case 'rewardinterno': { const staff = screen === 'rewardinterno'; return <RewardEditScreen key={`${rewardDraft.id}-${screen}`} initial={rewardDraft} rewards={rewards} staff={staff} back={() => go(staff ? 'rewardsinterno' : 'rewards')} save={saveReward} remove={(id) => setRewards((current) => current.filter((item) => item.id !== id))} metrics={() => openRewardMetrics(rewardDraft.id, staff)} /> }
+      case 'rewardmetricas': case 'rewardmetricasinterno': { const staff = screen === 'rewardmetricasinterno'; return <RewardMetricsScreen key={rewardDraft.id} reward={rewardDraft} staff={staff} back={() => go(staff ? 'rewardsinterno' : 'rewards')} edit={() => openReward(rewardDraft.id, staff)} /> }
       case 'tarefa': { const task = tasks.find((item) => item.id === taskId) ?? tasks[0]; return <TaskScreen key={task.id} task={task} update={(next) => setTasks(tasks.map((item) => (item.id === next.id ? next : item)))} back={() => go('tarefas')} /> }
     }
   })()
