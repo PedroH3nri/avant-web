@@ -5012,7 +5012,10 @@ function GamRunScreen({ run, update, back }: { run: GamRun; update: (run: GamRun
 type RewardLayout = 'simple' | 'highlight' | 'header'
 type RewardStyle = { layout: RewardLayout; body: string; border: string; borderWidth: number; title: string; text: string; button: string; buttonText: string; radius: number; font: string; shadow: boolean }
 type RewardIcon = { kind: 'emoji' | 'image' | 'none'; emoji: string; image: string | null }
-type ProtoReward = { id: number; name: string; client: string; domain: string; page: string; active: boolean; icon: RewardIcon; title: string; description: string; button: string; style: RewardStyle; block: string; cooldown: number; scroll: number; clickElement: string | null; redirect: string | null; updated: string }
+type RewardQuestion = { title: string; description: string; answers: [string, string, string] }
+type RewardLead = { kind: 'email' | 'phone'; position: 'start' | 'end'; title: string; description: string; button: string }
+type RewardStep = { kind: 'question'; index: number } | { kind: 'lead' } | { kind: 'reward' }
+type ProtoReward = { id: number; questions: RewardQuestion[]; lead: RewardLead | null; name: string; client: string; domain: string; page: string; active: boolean; icon: RewardIcon; title: string; description: string; button: string; style: RewardStyle; block: string; cooldown: number; scroll: number; clickElement: string | null; redirect: string | null; updated: string }
 type ProtoRewardSite = { domain: string; client: string; blocks: string[] }
 
 const REWARD_SITES: ProtoRewardSite[] = [
@@ -5047,12 +5050,23 @@ const REWARD_LAYOUTS: { id: RewardLayout; name: string; desc: string }[] = [
 type VisitorLang = 'pt' | 'en' | 'es'
 const REWARD_FOOTER: Record<VisitorLang, string> = { pt: 'Oferta patrocinada', en: 'Sponsored offer', es: 'Oferta patrocinada' }
 const VISITOR_LANGS: [VisitorLang, string][] = [['pt', 'Português'], ['en', 'English'], ['es', 'Español']]
+const REWARD_CONSENT: Record<VisitorLang, (domain: string) => string> = {
+  pt: (domain) => `Ao continuar, você aceita receber contato de ${domain}.`,
+  en: (domain) => `By continuing, you agree to be contacted by ${domain}.`,
+  es: (domain) => `Al continuar, aceptas recibir contacto de ${domain}.`,
+}
+const REWARD_PROGRESS: Record<VisitorLang, (current: number, total: number) => string> = {
+  pt: (current, total) => `Pergunta ${current} de ${total}`,
+  en: (current, total) => `Question ${current} of ${total}`,
+  es: (current, total) => `Pregunta ${current} de ${total}`,
+}
+const MAX_REWARD_QUESTIONS = 5
 const REWARD_EMOJIS = ['🎁', '🏆', '🎉', '🚀', '🥳', '🎊', '🔓', '⭐']
 const INITIAL_REWARDS: ProtoReward[] = [
-  { id: 7, name: 'Receita completa do bolo de açaí', client: 'Açaí Mídia', domain: 'acai.com.br', page: 'receitas/bolo-de-acai', active: true, icon: { kind: 'emoji', emoji: '🎁', image: null }, title: 'Receita completa liberada', description: 'Assista a um anúncio curto e veja o passo a passo com as medidas.', button: 'Ver a receita', style: DEFAULT_REWARD_STYLE, block: 'acai_reward_artigo', cooldown: 30, scroll: 40, clickElement: null, redirect: null, updated: '08/11/2026 16:20' },
-  { id: 6, name: 'Ebook de sobremesas', client: 'Açaí Mídia', domain: 'receitasdaacai.com.br', page: 'ebook-sobremesas', active: false, icon: { kind: 'emoji', emoji: '📘', image: null }, title: 'Baixe o ebook grátis', description: '40 sobremesas com açaí, prontas em 15 minutos.', button: 'Baixar agora', style: { ...REWARD_PRESETS[2].style, layout: 'highlight', borderWidth: 2, radius: 16, font: 'Poppins', shadow: true }, block: 'receitas_reward', cooldown: 60, scroll: 0, clickElement: '#baixar-ebook', redirect: 'ebook-sobremesas/download', updated: '02/11/2026 10:05' },
-  { id: 5, name: 'Comparativo de celulares', client: 'Tech Notícias', domain: 'technoticias.com.br', page: 'reviews/melhores-celulares-2026', active: true, icon: { kind: 'emoji', emoji: '🏆', image: null }, title: 'Ranking completo', description: 'Desbloqueie a tabela com os 20 aparelhos testados.', button: 'Desbloquear', style: { ...REWARD_PRESETS[1].style, body: '#ffffff', title: '#0a0a0a', text: '#525252', border: '#e5e5e5', layout: 'header', borderWidth: 1, radius: 16, font: 'Poppins', shadow: true }, block: 'tech_reward_1', cooldown: 15, scroll: 0, clickElement: null, redirect: null, updated: '30/10/2026 09:41' },
-  { id: 4, name: 'Roteiro de 7 dias em Lisboa', client: 'Viagem Fácil', domain: 'viagemfacil.com', page: 'roteiros/lisboa-7-dias', active: true, icon: { kind: 'emoji', emoji: '🧳', image: null }, title: 'Roteiro em PDF', description: 'O roteiro dia a dia com mapa e dicas de restaurantes.', button: 'Quero o roteiro', style: { ...REWARD_PRESETS[3].style, layout: 'simple', borderWidth: 0, radius: 28, font: 'Lora', shadow: true }, block: 'vf_reward', cooldown: 120, scroll: 60, clickElement: null, redirect: null, updated: '21/10/2026 14:12' },
+  { id: 7, name: 'Receita completa do bolo de açaí', client: 'Açaí Mídia', domain: 'acai.com.br', page: 'receitas/bolo-de-acai', active: true, icon: { kind: 'emoji', emoji: '🎁', image: null }, title: 'Receita completa liberada', description: 'Assista a um anúncio curto e veja o passo a passo com as medidas.', button: 'Ver a receita', style: DEFAULT_REWARD_STYLE, block: 'acai_reward_artigo', cooldown: 30, scroll: 40, clickElement: null, redirect: null, questions: [], lead: null, updated: '08/11/2026 16:20' },
+  { id: 6, name: 'Ebook de sobremesas', client: 'Açaí Mídia', domain: 'receitasdaacai.com.br', page: 'ebook-sobremesas', active: false, icon: { kind: 'emoji', emoji: '📘', image: null }, title: 'Baixe o ebook grátis', description: '40 sobremesas com açaí, prontas em 15 minutos.', button: 'Baixar agora', style: { ...REWARD_PRESETS[2].style, layout: 'highlight', borderWidth: 2, radius: 16, font: 'Poppins', shadow: true }, block: 'receitas_reward', questions: [{ title: 'Qual sobremesa você mais faz?', description: '', answers: ['Bolo', 'Mousse', 'Sorvete'] }, { title: 'Quanto tempo você tem para cozinhar?', description: 'Assim mostramos as receitas certas.', answers: ['15 minutos', '30 minutos', 'Mais de 1 hora'] }], lead: { kind: 'email', position: 'end', title: 'Para onde mandamos o ebook?', description: 'Também enviamos receitas novas uma vez por semana.', button: 'Continuar' }, cooldown: 60, scroll: 0, clickElement: '#baixar-ebook', redirect: 'ebook-sobremesas/download', updated: '02/11/2026 10:05' },
+  { id: 5, name: 'Comparativo de celulares', client: 'Tech Notícias', domain: 'technoticias.com.br', page: 'reviews/melhores-celulares-2026', active: true, icon: { kind: 'emoji', emoji: '🏆', image: null }, title: 'Ranking completo', description: 'Desbloqueie a tabela com os 20 aparelhos testados.', button: 'Desbloquear', style: { ...REWARD_PRESETS[1].style, body: '#ffffff', title: '#0a0a0a', text: '#525252', border: '#e5e5e5', layout: 'header', borderWidth: 1, radius: 16, font: 'Poppins', shadow: true }, block: 'tech_reward_1', cooldown: 15, scroll: 0, clickElement: null, redirect: null, questions: [], lead: null, updated: '30/10/2026 09:41' },
+  { id: 4, name: 'Roteiro de 7 dias em Lisboa', client: 'Viagem Fácil', domain: 'viagemfacil.com', page: 'roteiros/lisboa-7-dias', active: true, icon: { kind: 'emoji', emoji: '🧳', image: null }, title: 'Roteiro em PDF', description: 'O roteiro dia a dia com mapa e dicas de restaurantes.', button: 'Quero o roteiro', style: { ...REWARD_PRESETS[3].style, layout: 'simple', borderWidth: 0, radius: 28, font: 'Lora', shadow: true }, block: 'vf_reward', cooldown: 120, scroll: 60, clickElement: null, redirect: null, questions: [], lead: null, updated: '21/10/2026 14:12' },
 ]
 
 /** Fonte CSS do nome da fonte escolhida. */
@@ -5078,9 +5092,17 @@ function mix(first: string, second: string, weight: number) {
 }
 /** Degradê da cor de destaque, do tom escuro ao claro. */
 function accentGradient(hex: string) { return `linear-gradient(135deg, ${shade(hex, -0.55)} 0%, ${hex} 100%)` }
+/** As etapas que o visitante passa, na ordem: contato no começo, perguntas, contato no fim e o reward. */
+function rewardSteps(reward: ProtoReward): RewardStep[] {
+  const questions: RewardStep[] = reward.questions.map((_question, index) => ({ kind: 'question', index }))
+  const lead: RewardStep[] = reward.lead ? [{ kind: 'lead' }] : []
+  return [...(reward.lead?.position === 'start' ? lead : []), ...questions, ...(reward.lead?.position === 'end' ? lead : []), { kind: 'reward' }]
+}
+/** Nome curto de uma etapa, para os botões da pré-visualização. */
+function stepLabel(step: RewardStep) { return step.kind === 'question' ? `Pergunta ${step.index + 1}` : step.kind === 'lead' ? 'Contato' : 'Reward' }
 /** Reward novo, no primeiro site disponível. */
 function blankReward(site: ProtoRewardSite): ProtoReward {
-  return { id: 0, name: '', client: site.client, domain: site.domain, page: '', active: true, icon: { kind: 'emoji', emoji: '🎁', image: null }, title: 'Oferta especial', description: 'Desbloqueie sua recompensa agora mesmo!', button: 'Desbloquear', style: DEFAULT_REWARD_STYLE, block: site.blocks[0], cooldown: 30, scroll: 0, clickElement: null, redirect: null, updated: 'Agora' }
+  return { id: 0, name: '', client: site.client, domain: site.domain, page: '', active: true, icon: { kind: 'emoji', emoji: '🎁', image: null }, title: 'Oferta especial', description: 'Desbloqueie sua recompensa agora mesmo!', button: 'Desbloquear', style: DEFAULT_REWARD_STYLE, block: site.blocks[0], cooldown: 30, scroll: 0, clickElement: null, redirect: null, questions: [], lead: null, updated: 'Agora' }
 }
 
 /** O ícone do reward (emoji, imagem ou nada) no tamanho pedido. */
@@ -5091,8 +5113,10 @@ function RewardIconView({ reward, size }: { reward: ProtoReward; size: number })
 }
 
 /** O corpo do reward, como o visitante vê no site, em um dos três layouts; `onUnlock` deixa o botão clicável. */
-function RewardBody({ reward, lang = 'pt', onUnlock, onClose }: { reward: ProtoReward; lang?: VisitorLang; onUnlock?: () => void; onClose?: () => void }) {
+function RewardBody({ reward, lang = 'pt', step = { kind: 'reward' }, onNext, onUnlock, onClose }: { reward: ProtoReward; lang?: VisitorLang; step?: RewardStep; onNext?: () => void; onUnlock?: () => void; onClose?: () => void }) {
   const style = reward.style
+  const question = step.kind === 'question' ? reward.questions[step.index] : null
+  const buttonRadius = Math.min(style.radius, 14)
   const dark = luminance(style.body) < 0.4
   const tint = dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)'
   const line = dark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.09)'
@@ -5121,10 +5145,27 @@ function RewardBody({ reward, lang = 'pt', onUnlock, onClose }: { reward: ProtoR
             </div>
           </div>
         )}
-        <h2 className="break-words text-[22px] font-bold leading-tight" style={{ color: style.title }}>{reward.title || 'Título do reward'}</h2>
-        <p className="mt-2 break-words text-[15px] leading-relaxed">{reward.description || 'Descrição do reward'}</p>
-        <button type="button" onClick={onUnlock} className={cn('mt-6 inline-flex h-11 w-full items-center justify-center px-5 text-[15px] font-semibold transition-opacity hover:opacity-90', style.layout === 'highlight' && 'h-12')}
-          style={{ background: style.layout === 'header' ? accentGradient(style.button) : style.button, color: style.buttonText, borderRadius: Math.min(style.radius, 14), boxShadow: style.layout === 'highlight' ? `0 10px 28px -8px ${mix(style.button, style.body, 0.55)}` : style.layout === 'header' ? `0 8px 20px -8px ${style.button}` : 'none' }}>{reward.button || 'Desbloquear'}</button>
+        {question && <p className="mb-2 text-[12px] font-semibold uppercase tracking-wide opacity-70">{REWARD_PROGRESS[lang](reward.questions.indexOf(question) + 1, reward.questions.length)}</p>}
+        <h2 className="break-words text-[22px] font-bold leading-tight" style={{ color: style.title }}>{question ? question.title || 'Pergunta' : step.kind === 'lead' ? reward.lead?.title || 'Título do contato' : reward.title || 'Título do reward'}</h2>
+        {(question ? question.description : step.kind === 'lead' ? reward.lead?.description : reward.description || 'Descrição do reward') && <p className="mt-2 break-words text-[15px] leading-relaxed">{question ? question.description : step.kind === 'lead' ? reward.lead?.description : reward.description || 'Descrição do reward'}</p>}
+        {question && (
+          <div className="mt-6 grid gap-2">
+            {question.answers.map((answer, index) => (
+              <button key={index} type="button" onClick={onNext} className="h-11 w-full px-4 text-[15px] font-medium transition-colors hover:opacity-90" style={{ border: `1.5px solid ${style.button}`, color: style.title, background: mix(style.button, style.body, 0.06), borderRadius: buttonRadius }}>{answer || `Resposta ${index + 1}`}</button>
+            ))}
+          </div>
+        )}
+        {step.kind === 'lead' && reward.lead && (
+          <form className="mt-6 grid gap-3" onSubmit={(event) => { event.preventDefault(); onNext?.() }}>
+            <input type={reward.lead.kind === 'email' ? 'email' : 'tel'} aria-label={reward.lead.kind === 'email' ? 'E-mail' : 'Telefone'} placeholder={reward.lead.kind === 'email' ? 'voce@email.com' : '(11) 91234-5678'} className="h-11 w-full px-4 text-[15px] outline-none" style={{ border: `1px solid ${mix(style.text, style.body, 0.35)}`, background: 'transparent', color: style.title, borderRadius: buttonRadius }} />
+            <button type="submit" className="inline-flex h-11 w-full items-center justify-center px-5 text-[15px] font-semibold hover:opacity-90" style={{ background: style.layout === 'header' ? accentGradient(style.button) : style.button, color: style.buttonText, borderRadius: buttonRadius }}>{reward.lead.button || 'Continuar'}</button>
+            <p className="text-[12px] leading-snug opacity-70" lang={lang}>{REWARD_CONSENT[lang](reward.domain)}</p>
+          </form>
+        )}
+        {step.kind === 'reward' && (
+          <button type="button" onClick={onUnlock} className={cn('mt-6 inline-flex h-11 w-full items-center justify-center px-5 text-[15px] font-semibold transition-opacity hover:opacity-90', style.layout === 'highlight' && 'h-12')}
+            style={{ background: style.layout === 'header' ? accentGradient(style.button) : style.button, color: style.buttonText, borderRadius: Math.min(style.radius, 14), boxShadow: style.layout === 'highlight' ? `0 10px 28px -8px ${mix(style.button, style.body, 0.55)}` : style.layout === 'header' ? `0 8px 20px -8px ${style.button}` : 'none' }}>{reward.button || 'Desbloquear'}</button>
+        )}
         {!framed && <p className="mt-4 text-[12px] opacity-70" lang={lang}>{REWARD_FOOTER[lang]}</p>}
       </div>
       {framed && <p className="border-t py-3 text-[12px] opacity-80" style={{ background: tint, borderColor: line }} lang={lang}>{REWARD_FOOTER[lang]}</p>}
@@ -5133,21 +5174,21 @@ function RewardBody({ reward, lang = 'pt', onUnlock, onClose }: { reward: ProtoR
 }
 
 /** Uma página de exemplo do site, com o reward aberto por cima, no tamanho do computador ou do celular. */
-function RewardStage({ reward, device, lang = 'pt', compact = false, children }: { reward: ProtoReward; device: 'desktop' | 'mobile'; lang?: VisitorLang; compact?: boolean; children?: React.ReactNode }) {
+function RewardStage({ reward, device, lang = 'pt', compact = false, step, onNext, children }: { reward: ProtoReward; device: 'desktop' | 'mobile'; lang?: VisitorLang; compact?: boolean; step?: RewardStep; onNext?: () => void; children?: React.ReactNode }) {
   return (
     <div className={cn('mx-auto overflow-hidden rounded-xl border bg-card shadow-sm', device === 'mobile' ? 'w-[360px] max-w-full' : 'w-full')}>
       <div className="flex items-center gap-2 border-b bg-muted px-3 py-2">
         {device === 'desktop' && <div className="flex gap-1.5" aria-hidden="true"><span className="h-2.5 w-2.5 rounded-full bg-border" /><span className="h-2.5 w-2.5 rounded-full bg-border" /><span className="h-2.5 w-2.5 rounded-full bg-border" /></div>}
         <div className="min-w-0 flex-1 truncate rounded-md bg-background px-3 py-1 font-mono text-[12px] text-muted-foreground">https://{reward.domain}/{reward.page}</div>
       </div>
-      <div className={cn('relative bg-white', device === 'mobile' ? 'h-[620px]' : compact ? 'h-[480px]' : 'h-[560px]')}>
+      <div className={cn('relative bg-white', device === 'mobile' ? 'h-[640px]' : compact ? 'h-[600px]' : 'h-[600px]')}>
         <div className="grid gap-3 p-6" aria-hidden="true">
           <div className="h-4 w-24 rounded bg-neutral-200" />
           <div className="h-7 w-4/5 rounded bg-neutral-200" />
           <div className="h-40 rounded-lg bg-neutral-100" />
           {[90, 96, 84, 92, 70, 88].map((width, index) => <div key={index} className="h-3 rounded bg-neutral-100" style={{ width: `${width}%` }} />)}
         </div>
-        <div className="absolute inset-0 flex items-center justify-center bg-black/45 p-4">{children ?? <RewardBody reward={reward} lang={lang} />}</div>
+        <div className="absolute inset-0 flex overflow-y-auto bg-black/45 p-4"><div className="m-auto flex w-full justify-center">{children ?? <RewardBody reward={reward} lang={lang} step={step} onNext={onNext} />}</div></div>
       </div>
     </div>
   )
@@ -5207,7 +5248,7 @@ function RewardsScreen({ rewards, staff, open }: { rewards: ProtoReward[]; staff
                 <td className={td}>
                   <button className="flex items-center gap-3 text-left" onClick={() => open(reward.id)}>
                     <span className="flex h-9 w-9 shrink-0 items-center justify-center text-[18px]" style={{ background: reward.style.body, border: `1px solid ${reward.style.border}`, borderRadius: Math.min(reward.style.radius, 10) }} aria-hidden="true">{reward.icon.kind === 'emoji' ? reward.icon.emoji : <Gift className="h-4 w-4" style={{ color: reward.style.title }} />}</span>
-                    <span className="min-w-0"><span className="block font-medium hover:underline">{reward.name}</span><span className="block break-all font-mono text-[12px] text-muted-foreground">/{reward.page}</span></span>
+                    <span className="min-w-0"><span className="flex items-center gap-2 font-medium"><span className="hover:underline">{reward.name}</span>{reward.questions.length > 0 && <span className="rounded border px-1.5 text-[11px] font-medium text-muted-foreground">{reward.questions.length} {reward.questions.length === 1 ? 'pergunta' : 'perguntas'}</span>}</span><span className="block break-all font-mono text-[12px] text-muted-foreground">/{reward.page}</span></span>
                   </button>
                 </td>
                 {staff && <td className={td}>{reward.client}</td>}
@@ -5267,6 +5308,7 @@ function RewardEditScreen({ initial, rewards, staff, back, save, remove }: { ini
   const [device, setDevice] = useState<'desktop' | 'mobile'>('desktop')
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [visitorLang, setVisitorLang] = useState<VisitorLang>('pt')
+  const [previewIndex, setPreviewIndex] = useState(0)
   const sites = REWARD_SITES.filter((item) => staff || item.client === MY_CLIENT)
   const site = REWARD_SITES.find((item) => item.domain === reward.domain) ?? sites[0]
   const style = reward.style
@@ -5276,11 +5318,19 @@ function RewardEditScreen({ initial, rewards, staff, back, save, remove }: { ini
   const restyle = (patch: Partial<RewardStyle>) => setReward((current) => ({ ...current, style: { ...current.style, ...patch } }))
   const pageTaken = rewards.some((other) => other.id !== reward.id && other.domain === reward.domain && other.page.replace(/^\/+|\/+$/g, '') === reward.page.replace(/^\/+|\/+$/g, '') && reward.page.trim() !== '')
   const redirectSamePage = reward.redirect !== null && reward.redirect.trim() !== '' && reward.redirect.trim().replace(/\/$/, '') === reward.page.trim().replace(/\/$/, '')
+  const steps = rewardSteps(reward)
+  const shownStep = steps[Math.min(previewIndex, steps.length - 1)]
+  /** Troca uma pergunta pelo índice. */
+  const changeQuestion = (index: number, patch: Partial<RewardQuestion>) => change({ questions: reward.questions.map((item, position) => (position === index ? { ...item, ...patch } : item)) })
+  /** Muda um campo do pedido de contato. */
+  const changeLead = (patch: Partial<RewardLead>) => reward.lead && change({ lead: { ...reward.lead, ...patch } })
+  const questionsIncomplete = reward.questions.some((item) => item.title.trim() === '' || item.answers.some((answer) => answer.trim() === ''))
+  const leadIncomplete = reward.lead !== null && (reward.lead.title.trim() === '' || reward.lead.button.trim() === '')
   const cooldownBad = reward.cooldown < 5 || reward.cooldown > 1440
   const clickMissing = reward.clickElement !== null && reward.clickElement.trim() === ''
   const lowButton = contrast(style.button, style.buttonText) < 4.5
   const lowText = contrast(style.body, style.title) < 3 || contrast(style.body, style.text) < 4.5
-  const ready = reward.name.trim().length >= 3 && reward.page.trim() !== '' && !pageTaken && reward.title.trim() !== '' && reward.button.trim() !== '' && !cooldownBad && !clickMissing && !redirectSamePage && !(reward.redirect !== null && reward.redirect.trim() === '')
+  const ready = reward.name.trim().length >= 3 && reward.page.trim() !== '' && !pageTaken && reward.title.trim() !== '' && reward.button.trim() !== '' && !cooldownBad && !clickMissing && !questionsIncomplete && !leadIncomplete && !redirectSamePage && !(reward.redirect !== null && reward.redirect.trim() === '')
   /** Grava o reward e volta para a lista. */
   const submit = () => { save({ ...reward, page: reward.page.replace(/^\/+/, ''), updated: 'Agora' }); toast.success(initial.id ? 'Reward salvo' : 'Reward criado', { description: reward.active ? `Já aparece em ${reward.domain}/${reward.page.replace(/^\/+/, '')}.` : 'Fica pausado até você ativar.' }); back() }
   return (
@@ -5339,6 +5389,56 @@ function RewardEditScreen({ initial, rewards, staff, back, save, remove }: { ini
                 <Field id="rw-desc" label="Descrição" hint={`${reward.description.length} de 500`}><Textarea id="rw-desc" rows={3} maxLength={500} value={reward.description} onChange={(event) => change({ description: event.target.value })} /></Field>
                 <Field id="rw-button" label="Texto do botão"><Input id="rw-button" value={reward.button} maxLength={40} onChange={(event) => change({ button: event.target.value })} /></Field>
                 <p className="rounded-md border bg-muted px-3 py-2 text-[13px] text-muted-foreground">O rodapé "Oferta patrocinada" é fixo e aparece no idioma do navegador de quem visita (português, inglês ou espanhol).</p>
+              </div>
+            </Card>
+
+            <Card title="Antes do anúncio" desc="Perguntas e pedido de contato que o visitante responde antes de ver o anúncio. Sem nada aqui, a janela vai direto para o reward.">
+              <div className="grid gap-5">
+                {reward.questions.map((question, index) => (
+                  <div key={index} className="grid gap-3 rounded-lg border p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-[13px] font-semibold">Pergunta {index + 1}</span>
+                      <button type="button" onClick={() => { change({ questions: reward.questions.filter((_item, position) => position !== index) }); setPreviewIndex(0) }} aria-label={`Remover pergunta ${index + 1}`} className="rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground"><Trash2 className="h-4 w-4" /></button>
+                    </div>
+                    <Input aria-label={`Pergunta ${index + 1}`} value={question.title} maxLength={120} onChange={(event) => changeQuestion(index, { title: event.target.value })} placeholder="Ex.: Qual sobremesa você mais faz?" />
+                    <Input aria-label={`Explicação da pergunta ${index + 1}`} value={question.description} maxLength={200} onChange={(event) => changeQuestion(index, { description: event.target.value })} placeholder="Explicação (opcional)" />
+                    <div className="grid gap-2 sm:grid-cols-3">
+                      {question.answers.map((answer, answerIndex) => (
+                        <Input key={answerIndex} aria-label={`Resposta ${answerIndex + 1} da pergunta ${index + 1}`} value={answer} maxLength={40} onChange={(event) => changeQuestion(index, { answers: question.answers.map((item, position) => (position === answerIndex ? event.target.value : item)) as [string, string, string] })} placeholder={`Resposta ${answerIndex + 1}`} />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+                {questionsIncomplete && <p className="text-[13px] text-bad">Preencha a pergunta e as três respostas.</p>}
+                <div className="flex flex-wrap items-center gap-3">
+                  <Button variant="outline" disabled={reward.questions.length >= MAX_REWARD_QUESTIONS} onClick={() => { change({ questions: [...reward.questions, { title: '', description: '', answers: ['', '', ''] }] }); setPreviewIndex(rewardSteps(reward).length - 1) }}><Plus className="h-4 w-4" />Adicionar pergunta</Button>
+                  <span className="text-[13px] text-muted-foreground">{reward.questions.length} de {MAX_REWARD_QUESTIONS} perguntas · as respostas não mudam o reward.</span>
+                </div>
+                <div className="grid gap-3 border-t pt-5">
+                  <label className="flex items-center gap-3 text-[14px] font-medium"><Switch checked={reward.lead !== null} onCheckedChange={(on) => { change({ lead: on ? { kind: 'email', position: 'end', title: 'Para onde mandamos?', description: '', button: 'Continuar' } : null }); setPreviewIndex(0) }} />Pedir contato do visitante</label>
+                  {reward.lead && (
+                    <div className="grid gap-4">
+                      <div className="grid items-start gap-4 sm:grid-cols-2">
+                        <Field id="rw-lead-kind" label="O que pedir">
+                          <Select value={reward.lead.kind} onValueChange={(kind) => changeLead({ kind: kind as RewardLead['kind'] })}>
+                            <SelectTrigger id="rw-lead-kind"><SelectValue /></SelectTrigger>
+                            <SelectContent><SelectItem value="email">E-mail</SelectItem><SelectItem value="phone">Telefone</SelectItem></SelectContent>
+                          </Select>
+                        </Field>
+                        <Field id="rw-lead-position" label="Quando pedir">
+                          <Select value={reward.lead.position} onValueChange={(position) => changeLead({ position: position as RewardLead['position'] })} disabled={reward.questions.length === 0}>
+                            <SelectTrigger id="rw-lead-position"><SelectValue /></SelectTrigger>
+                            <SelectContent><SelectItem value="start">Antes das perguntas</SelectItem><SelectItem value="end">Depois das perguntas</SelectItem></SelectContent>
+                          </Select>
+                        </Field>
+                      </div>
+                      <Field id="rw-lead-title" label="Título" error={reward.lead.title.trim() === '' && 'Escreva um título.'}><Input id="rw-lead-title" value={reward.lead.title} maxLength={80} onChange={(event) => changeLead({ title: event.target.value })} /></Field>
+                      <Field id="rw-lead-desc" label="Descrição (opcional)"><Input id="rw-lead-desc" value={reward.lead.description} maxLength={200} onChange={(event) => changeLead({ description: event.target.value })} /></Field>
+                      <Field id="rw-lead-button" label="Texto do botão"><Input id="rw-lead-button" value={reward.lead.button} maxLength={30} onChange={(event) => changeLead({ button: event.target.value })} /></Field>
+                      <p className="rounded-md border bg-muted px-3 py-2 text-[13px] text-muted-foreground">Abaixo do campo aparece um aviso fixo de que, ao continuar, a pessoa aceita receber contato de {reward.domain}, no idioma do navegador dela.</p>
+                    </div>
+                  )}
+                </div>
               </div>
             </Card>
 
@@ -5454,7 +5554,12 @@ function RewardEditScreen({ initial, rewards, staff, back, save, remove }: { ini
                 </div>
               </div>
             </div>
-            <RewardStage reward={reward} device={device} lang={visitorLang} compact />
+            {steps.length > 1 && (
+              <div role="tablist" aria-label="Etapa da pré-visualização" className="mb-3 flex flex-wrap gap-1.5">
+                {steps.map((step, index) => <button key={index} role="tab" aria-selected={shownStep === step} onClick={() => setPreviewIndex(index)} className={cn('h-7 rounded-full border px-3 text-[12px] font-medium', shownStep === step ? 'border-foreground bg-foreground text-background' : 'bg-card text-muted-foreground hover:text-foreground')}>{stepLabel(step)}</button>)}
+              </div>
+            )}
+            <RewardStage reward={reward} device={device} lang={visitorLang} compact step={shownStep} onNext={() => setPreviewIndex(Math.min(steps.indexOf(shownStep) + 1, steps.length - 1))} />
             <p className="mt-2 text-[13px] text-muted-foreground">{triggerSummary(reward)}</p>
           </div>
         </div>
