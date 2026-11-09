@@ -40,10 +40,11 @@ src/
   components/       componentes comuns e ui/ (shadcn-vue)
   layouts/          AppShell, AuthFrame e a página 404
   stores/session.ts sessão da pessoa
+  embed/reward/     o reward.js (janela, etapas, anúncio premiado), sem Vue; a prévia do painel usa o mesmo render
 ```
 
 Domínios: auth, account, home, team, company, currencies, networks, sites, reports,
-results e costs.
+results, costs e rewards.
 
 ## Regras de tela
 
@@ -65,6 +66,16 @@ AVANT_API_URL=http://localhost:8000 pnpm dev   # o Vite repassa /api para o avan
 pnpm lint && pnpm typecheck && pnpm test && pnpm build
 ```
 
+## reward.js
+
+O script que o cliente põe no site (`<script async src="https://avant.groone.com/reward.js">`).
+Sai de `src/embed/reward/` num build próprio (`vite.embed.config.ts`, IIFE de um arquivo, em
+`dist/reward.js`). Busca `GET /api/reward/v2?url=...` na origem de onde veio, escolhe os ad units
+pelo aparelho (celular abaixo de 768 px), respeita o gatilho e o intervalo (`localStorage`), abre
+a janela num shadow DOM e mostra o anúncio premiado do GPT (`OutOfPageFormat.REWARDED`). Eventos
+vão por `sendBeacon` para `/api/reward/events` e o contato por `fetch` para `/api/reward/leads`,
+os dois em `text/plain` para não ter preflight.
+
 ## Imagem
 
 ```bash
@@ -72,7 +83,7 @@ docker build -t ghcr.io/pedroh3nri/avant-web .
 ```
 
 nginx sem root na porta 8080, com `/healthz`, fallback para o `index.html`, cache longo em
-`/assets` e cabeçalhos de segurança (CSP só com a própria origem). O nginx do avant-infra
+`/assets`, `/reward.js` aberto para qualquer origem (cache de 10 minutos) e cabeçalhos de segurança (CSP só com a própria origem). O nginx do avant-infra
 manda `/api` para o avant-api e o resto para cá.
 
 `develop` publica em staging e `main` em produção.

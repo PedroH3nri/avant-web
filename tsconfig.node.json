@@ -10,5 +10,5 @@
     "skipLibCheck": true,
     "noEmit": true
   },
-  "include": ["vite.config.ts", "tailwind.config.ts", "vite/**/*.ts"]
+  "include": ["vite.config.ts", "vite.embed.config.ts", "tailwind.config.ts", "vite/**/*.ts"]
 }
