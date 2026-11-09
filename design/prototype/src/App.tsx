@@ -5022,7 +5022,7 @@ type RewardBlockGroup = { date: string; codes: string[] }
 type ProtoRewardSite = { domain: string; client: string; blocks: RewardBlockGroup[] }
 
 const REWARD_SITES: ProtoRewardSite[] = [
-  { domain: 'acai.com.br', client: 'Açaí Mídia', blocks: [{ date: '2026-10-28', codes: ['acai.com.br_Rewards', 'acai.com.br_Mobile_Rewards'] }, { date: '2026-08-14', codes: ['acai.com.br_Rewards'] }] },
+  { domain: 'acai.com.br', client: 'Açaí Mídia', blocks: [{ date: '2026-10-28', codes: ['acai.com.br_Desktop_Rewards', 'acai.com.br_Mobile_Rewards'] }, { date: '2026-08-14', codes: ['acai.com.br_Mobile_Rewards'] }, { date: '2026-03-02', codes: ['acai.com.br_Rewards'] }] },
   { domain: 'receitasdaacai.com.br', client: 'Açaí Mídia', blocks: [{ date: '2026-09-02', codes: ['receitasdaacai.com.br_Rewards'] }] },
   { domain: 'technoticias.com.br', client: 'Tech Notícias', blocks: [{ date: '2026-10-05', codes: ['technoticias.com.br_Desktop_Rewards', 'technoticias.com.br_Mobile_Rewards'] }, { date: '2026-06-20', codes: ['technoticias.com.br_Rewards'] }] },
   { domain: 'viagemfacil.com', client: 'Viagem Fácil', blocks: [{ date: '2026-07-11', codes: ['viagemfacil.com_Rewards'] }] },
@@ -5106,6 +5106,20 @@ function rewardSteps(reward: ProtoReward): RewardStep[] {
 function stepLabel(step: RewardStep) { return step.kind === 'question' ? `Pergunta ${step.index + 1}` : step.kind === 'lead' ? 'Contato' : 'Reward' }
 /** Data de criação dos ad units no formato dd/mm/aaaa. */
 function formatBlockDate(date: string) { return date.split('-').reverse().join('/') }
+/** Em que aparelhos os ad units de um grupo rodam, pelo nome (Desktop, Mobile ou um bloco para os dois). */
+function blockFormat(group: RewardBlockGroup) {
+  const desktop = group.codes.some((code) => /_desktop_/i.test(code))
+  const mobile = group.codes.some((code) => /_mobile_/i.test(code))
+  const shared = group.codes.some((code) => !/_(desktop|mobile)_/i.test(code))
+  if (shared || (desktop && mobile)) return 'Desktop e Mobile'
+  return desktop ? 'Só Desktop' : 'Só Mobile'
+}
+/** Ad units do grupo por aparelho, para o texto de ajuda do campo. */
+function blockCodesByDevice(group: RewardBlockGroup) {
+  const desktop = group.codes.filter((code) => !/_mobile_/i.test(code))
+  const mobile = group.codes.filter((code) => !/_desktop_/i.test(code))
+  return [desktop.length ? `Desktop: ${desktop.join(', ')}` : 'Desktop: nenhum', mobile.length ? `Mobile: ${mobile.join(', ')}` : 'Mobile: nenhum'].join(' · ')
+}
 /** O grupo de ad units que o reward usa: o mais recente ou o da data fixada. */
 function rewardBlockGroup(site: ProtoRewardSite, block: string) { return site.blocks.find((group) => group.date === block) ?? site.blocks[0] }
 /** Reward novo, no primeiro site disponível. */
@@ -5528,16 +5542,16 @@ function RewardEditScreen({ initial, rewards, staff, back, save, remove, metrics
                     )}
                   </div>
                 </Field>
+                <Field id="rw-block" label="Ad units do reward" hint={`${reward.block === 'latest' ? 'Troca sozinho quando sair um bloco mais novo. Hoje usa ' : 'Ad units com "Reward" no nome criados nessa data. '}${blockCodesByDevice(rewardBlockGroup(site, reward.block))}.`}>
+                  <Select value={reward.block} onValueChange={(block) => change({ block })}>
+                    <SelectTrigger id="rw-block" className="sm:w-[420px]"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="latest">Mais recentes · {formatBlockDate(site.blocks[0].date)} · {blockFormat(site.blocks[0])}</SelectItem>
+                      {site.blocks.map((group) => <SelectItem key={group.date} value={group.date}>Fixar {formatBlockDate(group.date)} · {blockFormat(group)}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </Field>
                 <div className="grid items-start gap-4 sm:grid-cols-2">
-                  <Field id="rw-block" label="Ad units do reward" hint={`${reward.block === 'latest' ? 'Troca sozinho quando sair um bloco mais novo. Hoje: ' : 'Ad units com "Reward" no nome criados nessa data: '}${rewardBlockGroup(site, reward.block).codes.join(', ')}.`}>
-                    <Select value={reward.block} onValueChange={(block) => change({ block })}>
-                      <SelectTrigger id="rw-block"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="latest">Mais recentes · {formatBlockDate(site.blocks[0].date)}</SelectItem>
-                        {site.blocks.map((group) => <SelectItem key={group.date} value={group.date}>Fixar {formatBlockDate(group.date)} · {group.codes.length} {group.codes.length === 1 ? 'ad unit' : 'ad units'}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </Field>
                   <Field id="rw-cooldown" label="Tempo para mostrar de novo (minutos)" hint="Depois que a pessoa vê a janela, ela só volta a aparecer passado esse tempo." error={cooldownBad && 'De 5 a 1.440 minutos (24 horas).'}>
                     <Input id="rw-cooldown" type="number" min={5} max={1440} value={reward.cooldown} onChange={(event) => change({ cooldown: Number(event.target.value) })} className="tnum" />
                   </Field>
