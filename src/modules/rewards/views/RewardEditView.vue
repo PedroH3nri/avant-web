@@ -228,8 +228,11 @@ async function save() {
       toast.success(t('rw.saved'))
     } else {
       const created = await service.create(iconFile.value && payload.icon_kind === 'image' ? { ...payload, icon_kind: 'none' } : payload)
-      if (iconFile.value && payload.icon_kind === 'image') await service.setIcon(created.id, iconFile.value)
-      toast.success(t('rw.created'))
+      if (iconFile.value && payload.icon_kind === 'image') {
+        const uploaded = await service.setIcon(created.id, iconFile.value).catch((error: unknown) => error)
+        if (uploaded instanceof Error) toast.error(t('rw.createdNoIcon'), { description: errorText(uploaded instanceof ApiError ? uploaded.code : 'unknown') })
+        else toast.success(t('rw.created'))
+      } else toast.success(t('rw.created'))
     }
     await router.push(base)
   } catch (error) {
