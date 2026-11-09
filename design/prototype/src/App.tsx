@@ -5980,18 +5980,22 @@ const PREVIEW_ELEMENTS: { selector: string; kind: 'title' | 'image' | 'text' | '
   { selector: 'article p:nth-of-type(3)', kind: 'text' },
   { selector: 'article p:nth-of-type(4)', kind: 'text' },
 ]
-/** O site do cliente com os blocos no lugar; em modo de escolha, clicar num elemento devolve o seletor. */
-function TagSitePreview({ domain, blocks, device, picking, onPick, path, compact = false }: { domain: string; blocks: TagBlock[]; device: 'desktop' | 'mobile'; picking: string | null; onPick: (selector: string) => void; path: string; compact?: boolean }) {
-  const [hover, setHover] = useState<string | null>(null)
+/** O site do cliente com os blocos no lugar; na escolha, o bloco aparece onde vai entrar conforme o mouse e o clique fixa. */
+function TagSitePreview({ domain, blocks, device, picking, onPick, path, compact = false }: { domain: string; blocks: TagBlock[]; device: 'desktop' | 'mobile'; picking: string | null; onPick: (selector: string, side: 'before' | 'after') => void; path: string; compact?: boolean }) {
+  const [hover, setHover] = useState<{ selector: string; side: 'before' | 'after' } | null>(null)
+  const pickingBlock = blocks.find((block) => block.id === picking) ?? null
   const visible = blocks.filter((block) => (device === 'desktop' ? block.desktop : block.mobile) && (block.ruleMode === 'all' || (block.ruleMode === 'include' ? block.paths.some((item) => path.startsWith(item.replace(/\*$/, ''))) : !block.paths.some((item) => path.startsWith(item.replace(/\*$/, ''))))))
   const anchor = visible.find((block) => block.kind === 'anchor')
   const fixed = visible.find((block) => block.kind === 'fixed')
   const interstitial = visible.find((block) => block.kind === 'interstitial')
   /** Os blocos de conteúdo antes ou depois do elemento. */
-  const slotsAt = (selector: string, side: 'before' | 'after') => visible.filter((block) => block.kind === 'content' && block.selector === selector && block.side === side)
+  const slotsAt = (selector: string, side: 'before' | 'after') => visible.filter((block) => block.kind === 'content' && block.selector === selector && block.side === side && !(pickingBlock && hover && block.id === pickingBlock.id))
+  /** Lado do elemento em que o mouse está: metade de cima entra antes, metade de baixo entra depois. */
+  const sideAt = (event: React.MouseEvent<HTMLDivElement>): 'before' | 'after' => { const element = event.currentTarget.querySelector('[data-preview-element]'); if (!element) return 'after'; const rect = element.getBoundingClientRect(); return event.clientY < rect.top + rect.height / 2 ? 'before' : 'after' }
   /** A caixa tracejada de um bloco de conteúdo. */
-  const AdSlot = ({ block }: { block: TagBlock }) => (
-    <div className="my-3 grid place-items-center rounded-md border-2 border-dashed border-sky-400 bg-sky-50 py-5 text-center text-[12px] font-medium text-sky-800">
+  const AdSlot = ({ block, ghost = false }: { block: TagBlock; ghost?: boolean }) => (
+    <div className={cn('my-3 grid place-items-center rounded-md border-2 border-dashed py-5 text-center text-[12px] font-medium', ghost ? 'border-sky-600 bg-sky-100 text-sky-900 shadow-[0_0_0_4px_rgba(14,165,233,0.15)]' : 'border-sky-400 bg-sky-50 text-sky-800', pickingBlock?.id === block.id && !ghost && 'opacity-40')}>
+      {ghost && hover && <span className="mb-0.5 text-[11px] font-normal">Clique para pôr {hover.side === 'before' ? 'antes de' : 'depois de'} <span className="font-mono">{hover.selector}</span></span>}
       {tagBlockName(block)}<span className="font-normal opacity-80">{device === 'desktop' ? '728 × 90 · 336 × 280' : '336 × 280 · 300 × 250'}{block.refresh ? ` · atualiza a cada ${block.refresh} s` : ''}</span>
     </div>
   )
@@ -6007,19 +6011,22 @@ function TagSitePreview({ domain, blocks, device, picking, onPick, path, compact
         <div className={cn('grid gap-6 p-5', device === 'desktop' && 'grid-cols-[minmax(0,1fr)_180px]')}>
           <article className="min-w-0">
             {PREVIEW_ELEMENTS.map((element) => (
-              <div key={element.selector}>
+              <div key={element.selector}
+                onMouseMove={(event) => { if (!pickingBlock) return; const side = sideAt(event); if (hover?.selector !== element.selector || hover.side !== side) setHover({ selector: element.selector, side }) }}
+                onMouseLeave={() => setHover(null)}
+                onClick={() => { if (pickingBlock && hover) { onPick(hover.selector, hover.side); setHover(null) } }}
+                className={cn(pickingBlock && 'cursor-crosshair')}>
                 {slotsAt(element.selector, 'before').map((block) => <AdSlot key={block.id} block={block} />)}
-                <div
-                  onMouseEnter={() => picking && setHover(element.selector)} onMouseLeave={() => setHover(null)}
-                  onClick={() => picking && onPick(element.selector)}
-                  className={cn('relative rounded-sm', picking && 'cursor-crosshair', picking && hover === element.selector && 'outline outline-2 outline-offset-2 outline-sky-500')}>
-                  {picking && hover === element.selector && <span className="absolute -top-6 left-0 z-10 rounded bg-sky-600 px-1.5 py-0.5 font-mono text-[11px] text-white">{element.selector}</span>}
+                {pickingBlock && hover?.selector === element.selector && hover.side === 'before' && <AdSlot block={pickingBlock} ghost />}
+                <div data-preview-element
+                  className={cn('relative rounded-sm', pickingBlock && hover?.selector === element.selector && 'outline outline-2 outline-offset-2 outline-sky-500')}>
                   {element.kind === 'meta' && <p className="text-[12px] text-neutral-500">Por Ana Souza · 6 de novembro</p>}
                   {element.kind === 'title' && <h3 className="mt-1 font-serif text-[24px] font-bold leading-tight">Bolo de açaí cremoso em 30 minutos</h3>}
                   {element.kind === 'image' && <div className="mt-3 h-36 rounded-md bg-gradient-to-br from-purple-200 to-purple-400" />}
                   {element.kind === 'subtitle' && <h4 className="mt-4 font-serif text-[18px] font-semibold">Modo de preparo</h4>}
                   {element.kind === 'text' && <p className="mt-3 text-[14px] leading-relaxed text-neutral-600">Misture a polpa de açaí com o leite condensado até ficar homogêneo. Acrescente os ovos um a um, batendo sempre, e por último a farinha peneirada com o fermento.</p>}
                 </div>
+                {pickingBlock && hover?.selector === element.selector && hover.side === 'after' && <AdSlot block={pickingBlock} ghost />}
                 {slotsAt(element.selector, 'after').map((block) => <AdSlot key={block.id} block={block} />)}
               </div>
             ))}
@@ -6121,7 +6128,7 @@ function TagBlockCard({ block, index, total, open, toggle, change, move, remove,
                 <Input id={`${block.id}-selector`} aria-label="Elemento da página" className="h-9 flex-1 border-0 font-mono text-[13px] shadow-none focus-visible:ring-0" value={block.selector} onChange={(event) => change({ selector: event.target.value })} placeholder="article p:nth-of-type(2)" />
                 <button onClick={startPick} className={cn('mr-1 inline-flex h-7 shrink-0 items-center gap-1.5 rounded px-2 text-[12px] font-medium', picking ? 'bg-sky-600 text-white' : 'text-muted-foreground hover:bg-muted hover:text-foreground')}><MousePointerClick className="h-3.5 w-3.5" />{picking ? 'Cancelar' : 'Escolher no site'}</button>
               </div>
-              {picking ? <p className="flex items-center gap-2 rounded-md bg-sky-50 px-2.5 py-2 text-[12px] text-sky-800"><MousePointerClick className="h-3.5 w-3.5 shrink-0" />Clique no elemento da prévia ao lado. O bloco entra {block.side === 'before' ? 'antes' : 'depois'} dele.</p>
+              {picking ? <p className="flex items-center gap-2 rounded-md bg-sky-50 px-2.5 py-2 text-[12px] text-sky-800"><MousePointerClick className="h-3.5 w-3.5 shrink-0" />Passe o mouse no site ao lado: o bloco aparece onde vai entrar. Em cima do elemento entra antes, embaixo entra depois. Clique para fixar.</p>
                 : <p className="text-[12px] text-muted-foreground">{block.selector ? 'Seletor CSS do elemento. Dá para editar à mão.' : 'Escolha no site ou escreva o seletor CSS.'}</p>}
             </>}
             {(block.kind === 'anchor' || block.kind === 'fixed') && <>
@@ -6254,7 +6261,7 @@ function AdTagEditScreen({ initial, staff, back, save, metrics }: { initial: Pro
                 <div className="flex min-w-[220px] flex-1 items-center rounded-md border bg-background focus-within:ring-2 focus-within:ring-ring"><span className="shrink-0 border-r bg-muted px-3 py-1.5 font-mono text-[12px] text-muted-foreground">{tag.domain}</span><input aria-label="Página para ver" value={path} onChange={(event) => setPath(event.target.value.startsWith('/') ? event.target.value : `/${event.target.value}`)} className="h-8 min-w-0 flex-1 bg-transparent px-3 font-mono text-[12px] outline-none" /></div>
               </div>
               {pickingId && <div className="flex items-center gap-2 rounded-md border border-sky-300 bg-sky-50 px-3 py-2 text-[13px] text-sky-900"><MousePointerClick className="h-4 w-4" />Clique no elemento onde entra o {tagBlockName(blocks.find((block) => block.id === pickingId)!)}.<button className="ml-auto underline" onClick={() => setPickingId(null)}>Cancelar</button></div>}
-              <TagSitePreview compact domain={tag.domain} blocks={blocks} device={device} path={path} picking={pickingId} onPick={(selector) => { changeBlock(pickingId!, { selector }); setPickingId(null); toast.success('Elemento escolhido', { description: selector }) }} />
+              <TagSitePreview compact domain={tag.domain} blocks={blocks} device={device} path={path} picking={pickingId} onPick={(selector, side) => { changeBlock(pickingId!, { selector, side }); setPickingId(null); toast.success('Lugar escolhido', { description: `${side === 'before' ? 'Antes de' : 'Depois de'} ${selector}` }) }} />
               <p className="text-[12px] text-muted-foreground">A página vem do site (sem os scripts dele) e os blocos são desenhados pelo mesmo código da tag: o que você vê aqui é o que vai ao ar.</p>
             </div>
           </div>
