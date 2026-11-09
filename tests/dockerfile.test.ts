@@ -14,3 +14,12 @@ describe('imagem do painel', () => {
     expect(installed).toBe(packageManager.split('+')[0])
   })
 })
+
+describe('nginx do painel', () => {
+  it('serve o reward.js para qualquer origem, com cache curto', () => {
+    const config = rootFile('docker/nginx.conf')
+    const block = config.slice(config.indexOf('location = /reward.js'))
+    expect(block).toContain('Access-Control-Allow-Origin "*"')
+    expect(block).toContain('max-age=600')
+  })
+})
