@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Toaster, toast } from 'sonner'
-import { Check, ChevronsUpDown, Copy, Loader2, Plus, RefreshCw, Search, X, AlertTriangle, ArrowLeft, MoreHorizontal, Lock, Mail, ExternalLink, Home, Users, Network, Settings, ShieldCheck, Menu, BarChart3, Wallet, Download, Trash2, Pin, PinOff, Pencil, LayoutGrid, List, Wrench, Gift, Monitor, Smartphone, Code2, MousePointerClick, ChevronUp, ChevronDown, History } from 'lucide-react'
+import { Check, ChevronsUpDown, Copy, Loader2, Plus, RefreshCw, Search, X, AlertTriangle, ArrowLeft, MoreHorizontal, Lock, Mail, ExternalLink, Home, Users, Network, Settings, ShieldCheck, Menu, BarChart3, Wallet, Download, Trash2, Pin, PinOff, Pencil, LayoutGrid, List, Wrench, Gift, Monitor, Smartphone, Code2, MousePointerClick, ChevronUp, ChevronDown, History, PanelBottom, PanelTop, Maximize, TextQuote } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -6044,10 +6044,7 @@ function TagPathsField({ block, change }: { block: TagBlock; change: (patch: Par
   const add = () => { const path = `/${text.trim().replace(/^https?:\/\/[^/]+/, '').replace(/^\/+/, '')}`; if (path !== '/' && !block.paths.includes(path)) change({ paths: [...block.paths, path] }); setText('') }
   return (
     <div className="grid gap-2">
-      <Select value={block.ruleMode} onValueChange={(ruleMode) => change({ ruleMode: ruleMode as TagRuleMode })}>
-        <SelectTrigger aria-label="Em que páginas" className="h-9"><SelectValue /></SelectTrigger>
-        <SelectContent><SelectItem value="all">Em todas as páginas</SelectItem><SelectItem value="include">Só nestas páginas</SelectItem><SelectItem value="exclude">Em todas, menos nestas</SelectItem></SelectContent>
-      </Select>
+      <TagSegmented label="Em que páginas" value={block.ruleMode} onChange={(ruleMode) => change({ ruleMode })} options={[['all', 'Todas'], ['include', 'Só estas'], ['exclude', 'Menos estas']]} />
       {block.ruleMode !== 'all' && <>
         <div className="flex gap-2"><Input aria-label="Caminho" className="h-9 font-mono text-[13px]" placeholder="/receitas/*" value={text} onChange={(event) => setText(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); add() } }} /><Button variant="outline" onClick={add} disabled={!text.trim()}>Adicionar</Button></div>
         <div className="flex flex-wrap gap-1.5">{block.paths.map((path) => <span key={path} className="inline-flex items-center gap-1 rounded border bg-muted px-2 py-0.5 font-mono text-[12px]">{path}<button aria-label={`Tirar ${path}`} onClick={() => change({ paths: block.paths.filter((item) => item !== path) })}><X className="h-3 w-3" /></button></span>)}</div>
@@ -6057,69 +6054,109 @@ function TagPathsField({ block, change }: { block: TagBlock; change: (patch: Par
   )
 }
 
-/** O cartão de um bloco: aparelhos, lugar na página, atualização, páginas e MGID. */
-function TagBlockCard({ block, index, total, open, toggle, change, move, remove, picking, startPick, anchorEdge }: { block: TagBlock; index: number; total: number; open: boolean; toggle: () => void; change: (patch: Partial<TagBlock>) => void; move: (offset: number) => void; remove: () => void; picking: boolean; startPick: () => void; anchorEdge: 'top' | 'bottom' | null }) {
-  const devices = [block.desktop && 'Computador', block.mobile && 'Celular'].filter(Boolean).join(' e ') || 'Nenhum aparelho'
-  const summary = block.kind === 'content' ? `${block.side === 'before' ? 'Antes de' : 'Depois de'} ${block.selector || '(escolha o elemento)'}` : block.kind === 'interstitial' ? 'Na troca de página' : block.edge === 'top' ? 'No topo' : 'No rodapé'
-  const fixedClash = block.kind === 'fixed' && anchorEdge === block.edge
+const TAG_KIND_ICON: Record<TagBlockKind, typeof Monitor> = { anchor: PanelBottom, interstitial: Maximize, fixed: PanelTop, content: TextQuote }
+const TAG_REFRESH_OPTIONS: [number | null, string][] = [[null, 'Não'], [30, '30 s'], [45, '45 s'], [60, '60 s'], [90, '90 s'], [120, '120 s']]
+
+/** Botões lado a lado para escolher uma opção, no lugar de rádios soltos. */
+function TagSegmented<Value extends string | number | null>({ label, value, options, onChange }: { label: string; value: Value; options: [Value, string, (typeof Monitor)?][]; onChange: (value: Value) => void }) {
   return (
-    <div className={cn('rounded-lg border bg-card', picking && 'ring-2 ring-sky-500')}>
-      <div className="flex items-center gap-2 px-3 py-2.5">
-        <div className="flex flex-col" aria-label="Ordem de carregamento">
-          <button className="rounded p-0.5 text-muted-foreground hover:bg-muted disabled:opacity-30" disabled={index === 0} onClick={() => move(-1)} aria-label="Carregar antes"><ChevronUp className="h-3.5 w-3.5" /></button>
-          <button className="rounded p-0.5 text-muted-foreground hover:bg-muted disabled:opacity-30" disabled={index === total - 1} onClick={() => move(1)} aria-label="Carregar depois"><ChevronDown className="h-3.5 w-3.5" /></button>
-        </div>
-        <span className="w-5 text-center text-[12px] tnum text-muted-foreground">{index + 1}</span>
-        <button className="min-w-0 flex-1 text-left" onClick={toggle} aria-expanded={open}>
-          <span className="block font-medium">{tagBlockName(block)}</span>
-          <span className="block truncate text-[12px] text-muted-foreground">{summary} · {devices}{block.refresh ? ` · ${block.refresh} s` : ''}</span>
+    <div role="radiogroup" aria-label={label} className="inline-flex w-fit max-w-full flex-wrap rounded-md border bg-muted p-0.5">
+      {options.map(([option, text, Icon]) => (
+        <button key={String(option)} role="radio" aria-checked={value === option} onClick={() => onChange(option)} className={cn('inline-flex h-8 items-center gap-1.5 rounded px-3 text-[13px] font-medium', value === option ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground')}>
+          {Icon && <Icon className="h-3.5 w-3.5" />}{text}
         </button>
-        {(!block.desktop && !block.mobile) || (block.kind === 'content' && !block.selector) || fixedClash ? <AlertTriangle className="h-4 w-4 text-warn" aria-label="Precisa de atenção" /> : null}
-        <button className="rounded p-1 text-muted-foreground hover:bg-muted" onClick={toggle} aria-label={open ? 'Fechar' : 'Abrir'}>{open ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}</button>
+      ))}
+    </div>
+  )
+}
+
+/** Uma parte do cartão do bloco, com título curto e o controle embaixo. */
+function TagBlockSection({ title, aside, children }: { title: string; aside?: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <section className="grid gap-2">
+      <div className="flex items-baseline justify-between gap-2"><h4 className="text-[13px] font-medium">{title}</h4>{aside && <span className="text-[12px] text-muted-foreground">{aside}</span>}</div>
+      {children}
+    </section>
+  )
+}
+
+/** O cartão de um bloco: fechado mostra o resumo; aberto, onde entra, aparelhos, páginas e anúncio. */
+function TagBlockCard({ block, index, total, open, toggle, change, move, remove, picking, startPick, anchorEdge }: { block: TagBlock; index: number; total: number; open: boolean; toggle: () => void; change: (patch: Partial<TagBlock>) => void; move: (offset: number) => void; remove: () => void; picking: boolean; startPick: () => void; anchorEdge: 'top' | 'bottom' | null }) {
+  const KindIcon = TAG_KIND_ICON[block.kind]
+  const where = block.kind === 'content' ? (block.selector ? `${block.side === 'before' ? 'Antes de' : 'Depois de'} ${block.selector}` : 'Falta escolher onde entra') : block.kind === 'interstitial' ? 'Na troca de página' : block.edge === 'top' ? 'No topo da tela' : 'No rodapé da tela'
+  const pages = block.ruleMode === 'all' ? 'Em todas' : `${block.ruleMode === 'include' ? 'Só em' : 'Fora de'} ${block.paths.length} ${block.paths.length === 1 ? 'caminho' : 'caminhos'}`
+  const fixedClash = block.kind === 'fixed' && anchorEdge === block.edge
+  const noDevice = !block.desktop && !block.mobile
+  const problem = noDevice ? 'Ligue pelo menos um aparelho' : block.kind === 'content' && !block.selector ? 'Falta escolher onde entra' : fixedClash ? 'Do mesmo lado da âncora' : null
+  return (
+    <div className={cn('rounded-lg border bg-card transition-shadow', open && 'shadow-sm', picking && 'ring-2 ring-sky-500', problem && !open && 'border-warn/50')}>
+      <div className="flex items-center gap-2 py-2.5 pl-3 pr-2">
+        <button className="flex min-w-0 flex-1 items-center gap-3 text-left" onClick={toggle} aria-expanded={open}>
+          <span className={cn('grid h-9 w-9 shrink-0 place-items-center rounded-md border', open ? 'bg-foreground text-background' : 'bg-muted text-muted-foreground')}><KindIcon className="h-4 w-4" /></span>
+          <span className="min-w-0 flex-1">
+            <span className="flex items-center gap-2"><span className="font-medium">{tagBlockName(block)}</span>{block.refresh && <span className="inline-flex items-center gap-0.5 text-[12px] text-muted-foreground"><RefreshCw className="h-3 w-3" />{block.refresh} s</span>}</span>
+            <span className={cn('flex items-center gap-1 truncate text-[12px]', problem ? 'text-warn' : 'text-muted-foreground')}>{problem && <AlertTriangle className="h-3 w-3 shrink-0" />}<span className="truncate">{problem ?? where}</span></span>
+          </span>
+          <span className="flex shrink-0 items-center gap-1 text-muted-foreground" aria-label={[block.desktop && 'Computador', block.mobile && 'Celular'].filter(Boolean).join(' e ') || 'Nenhum aparelho'}>
+            <Monitor className={cn('h-3.5 w-3.5', !block.desktop && 'opacity-25')} /><Smartphone className={cn('h-3.5 w-3.5', !block.mobile && 'opacity-25')} />
+          </span>
+        </button>
+        <DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" aria-label={`Ações do ${tagBlockName(block)}`}><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel className="text-[12px] font-normal text-muted-foreground">{index + 1}º a carregar</DropdownMenuLabel>
+            <DropdownMenuItem disabled={index === 0} onSelect={() => move(-1)}><ChevronUp className="h-4 w-4" />Carregar antes</DropdownMenuItem>
+            <DropdownMenuItem disabled={index === total - 1} onSelect={() => move(1)}><ChevronDown className="h-4 w-4" />Carregar depois</DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem className="text-bad focus:text-bad" onSelect={remove}><Trash2 className="h-4 w-4" />Tirar bloco</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
       {open && (
-        <div className="grid gap-4 border-t px-4 py-4">
-          <p className="text-[13px] text-muted-foreground">{TAG_KIND_HINT[block.kind]}</p>
-          <Field id={`${block.id}-devices`} label="Aparelhos">
-            <div className="flex flex-wrap gap-4 text-[14px]">
-              <label className="flex items-center gap-2"><Switch checked={block.desktop} onCheckedChange={(desktop) => change({ desktop })} /><Monitor className="h-4 w-4 text-muted-foreground" />Computador</label>
-              <label className="flex items-center gap-2"><Switch checked={block.mobile} onCheckedChange={(mobile) => change({ mobile })} /><Smartphone className="h-4 w-4 text-muted-foreground" />Celular e tablet</label>
+        <div className="grid gap-5 border-t px-4 pb-4 pt-3">
+          <p className="text-[12px] leading-snug text-muted-foreground">{TAG_KIND_HINT[block.kind]}</p>
+          {block.kind !== 'interstitial' && <TagBlockSection title="Onde entra">
+            {block.kind === 'content' && <>
+              <TagSegmented label="Lado do elemento" value={block.side} onChange={(side) => change({ side })} options={[['before', 'Antes de'], ['after', 'Depois de']]} />
+              <div className={cn('flex items-center rounded-md border bg-background focus-within:ring-2 focus-within:ring-ring', !block.selector && 'border-warn/60')}>
+                <Input id={`${block.id}-selector`} aria-label="Elemento da página" className="h-9 flex-1 border-0 font-mono text-[13px] shadow-none focus-visible:ring-0" value={block.selector} onChange={(event) => change({ selector: event.target.value })} placeholder="article p:nth-of-type(2)" />
+                <button onClick={startPick} className={cn('mr-1 inline-flex h-7 shrink-0 items-center gap-1.5 rounded px-2 text-[12px] font-medium', picking ? 'bg-sky-600 text-white' : 'text-muted-foreground hover:bg-muted hover:text-foreground')}><MousePointerClick className="h-3.5 w-3.5" />{picking ? 'Cancelar' : 'Escolher no site'}</button>
+              </div>
+              {picking ? <p className="flex items-center gap-2 rounded-md bg-sky-50 px-2.5 py-2 text-[12px] text-sky-800"><MousePointerClick className="h-3.5 w-3.5 shrink-0" />Clique no elemento da prévia ao lado. O bloco entra {block.side === 'before' ? 'antes' : 'depois'} dele.</p>
+                : <p className="text-[12px] text-muted-foreground">{block.selector ? 'Seletor CSS do elemento. Dá para editar à mão.' : 'Escolha no site ou escreva o seletor CSS.'}</p>}
+            </>}
+            {(block.kind === 'anchor' || block.kind === 'fixed') && <>
+              <TagSegmented label="Posição" value={block.edge} onChange={(edge) => change({ edge })} options={[['top', 'Topo', PanelTop], ['bottom', 'Rodapé', PanelBottom]]} />
+              {fixedClash && <p className="flex items-center gap-1.5 text-[12px] text-warn"><AlertTriangle className="h-3.5 w-3.5" />A âncora já está {block.edge === 'top' ? 'no topo' : 'no rodapé'}. Troque o lado do fixo.</p>}
+            </>}
+          </TagBlockSection>}
+          <TagBlockSection title="Aparelhos">
+            <div className="grid grid-cols-2 gap-2">
+              {([['desktop', 'Computador', Monitor], ['mobile', 'Celular e tablet', Smartphone]] as const).map(([key, text, Icon]) => (
+                <button key={key} aria-pressed={block[key]} onClick={() => change({ [key]: !block[key] })} className={cn('flex h-10 min-w-0 items-center gap-2 rounded-md border px-3 text-[13px] font-medium', block[key] ? 'border-foreground' : 'text-muted-foreground hover:text-foreground')}>
+                  <Icon className="h-4 w-4 shrink-0" /><span className="flex-1 truncate text-left">{text}</span>
+                  <span className={cn('grid h-4 w-4 shrink-0 place-items-center rounded-sm border', block[key] ? 'border-foreground bg-foreground text-background' : 'bg-background')}>{block[key] && <Check className="h-3 w-3" />}</span>
+                </button>
+              ))}
             </div>
-          </Field>
-          {(block.kind === 'anchor' || block.kind === 'fixed') && (
-            <Field id={`${block.id}-edge`} label="Posição" error={fixedClash && 'O fixo não pode ficar do mesmo lado da âncora.'}>
-              <RadioGroup value={block.edge} onValueChange={(edge) => change({ edge: edge as 'top' | 'bottom' })} className="flex gap-4">
-                <label className="flex items-center gap-2 text-[14px]"><RadioGroupItem value="top" />Topo</label>
-                <label className="flex items-center gap-2 text-[14px]"><RadioGroupItem value="bottom" />Rodapé</label>
-              </RadioGroup>
-            </Field>
+            {noDevice && <p className="flex items-center gap-1.5 text-[12px] text-warn"><AlertTriangle className="h-3.5 w-3.5" />Sem aparelho o bloco não aparece em lugar nenhum.</p>}
+          </TagBlockSection>
+          <TagBlockSection title="Páginas" aside={pages}><TagPathsField block={block} change={change} /></TagBlockSection>
+          {block.kind === 'content' && (
+            <TagBlockSection title="Atualizar o anúncio" aside={block.refresh ? 'Até 5 vezes por página' : undefined}>
+              <TagSegmented label="Atualizar o anúncio" value={block.refresh} onChange={(refresh) => change({ refresh })} options={TAG_REFRESH_OPTIONS} />
+              <p className="text-[12px] text-muted-foreground">{block.refresh ? `Troca o anúncio a cada ${block.refresh} s com o bloco à vista.` : 'O anúncio fica o mesmo até a pessoa sair da página.'}</p>
+            </TagBlockSection>
           )}
-          {block.kind === 'content' && <>
-            <Field id={`${block.id}-selector`} label="Elemento da página" hint="Clique em Escolher no site e depois no elemento, ou escreva o seletor CSS." error={!block.selector && 'Escolha onde o bloco entra.'}>
-              <div className="flex gap-2">
-                <Input id={`${block.id}-selector`} className="h-9 font-mono text-[13px]" value={block.selector} onChange={(event) => change({ selector: event.target.value })} placeholder="article p:nth-of-type(2)" />
-                <Button variant={picking ? 'default' : 'outline'} onClick={startPick}><MousePointerClick className="h-4 w-4" />{picking ? 'Clique no site' : 'Escolher no site'}</Button>
+          {block.kind === 'content' && (
+            <details className="group rounded-md border px-3 py-2.5" open={!!block.mgidArticle}>
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-2 text-[13px] font-medium"><span>Quando ficar sem anúncio {block.mgidArticle && <span className="font-normal text-muted-foreground">· artigo MGID</span>}</span><ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-180" /></summary>
+              <div className="grid gap-1.5 pt-3">
+                <Label htmlFor={`${block.id}-mgid`} className="text-[12px] font-normal text-muted-foreground">Mostrar um artigo MGID no lugar (ID do widget)</Label>
+                <Input id={`${block.id}-mgid`} className="h-9 font-mono text-[13px]" value={block.mgidArticle} onChange={(event) => change({ mgidArticle: event.target.value.replace(/\D/g, '') })} placeholder="Opcional" />
+                <p className="text-[12px] text-muted-foreground">Precisa da tag MGID ligada em Integrações.</p>
               </div>
-            </Field>
-            <Field id={`${block.id}-side`} label="Lado">
-              <RadioGroup value={block.side} onValueChange={(side) => change({ side: side as 'before' | 'after' })} className="flex gap-4">
-                <label className="flex items-center gap-2 text-[14px]"><RadioGroupItem value="before" />Antes do elemento</label>
-                <label className="flex items-center gap-2 text-[14px]"><RadioGroupItem value="after" />Depois do elemento</label>
-              </RadioGroup>
-            </Field>
-            <Field id={`${block.id}-refresh`} label="Atualização automática" hint={block.refresh ? `Troca o anúncio a cada ${block.refresh} s de bloco visível, até 5 vezes por página.` : 'O anúncio fica o mesmo até a pessoa sair da página.'}>
-              <div className="flex items-center gap-4">
-                <Switch checked={block.refresh !== null} onCheckedChange={(on) => change({ refresh: on ? 30 : null })} aria-label="Atualizar o anúncio" />
-                {block.refresh !== null && <Slider className="max-w-[240px]" min={30} max={120} step={5} value={[block.refresh]} onValueChange={([seconds]) => change({ refresh: seconds })} aria-label="Segundos" />}
-                {block.refresh !== null && <span className="w-12 text-[13px] tnum">{block.refresh} s</span>}
-              </div>
-            </Field>
-            <Field id={`${block.id}-mgid`} label="Artigo MGID quando o bloco fica vazio" hint="Opcional. Precisa da tag MGID nas integrações.">
-              <Input id={`${block.id}-mgid`} className="h-9 font-mono text-[13px]" value={block.mgidArticle} onChange={(event) => change({ mgidArticle: event.target.value.replace(/\D/g, '') })} placeholder="ID do widget" />
-            </Field>
-          </>}
-          <Field id={`${block.id}-paths`} label="Páginas"><TagPathsField block={block} change={change} /></Field>
-          <div className="flex justify-end"><Button variant="ghost" className="text-bad hover:text-bad" onClick={remove}><Trash2 className="h-4 w-4" />Tirar bloco</Button></div>
+            </details>
+          )}
         </div>
       )}
     </div>
