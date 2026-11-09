@@ -63,9 +63,11 @@ const SCREENS = [
   ['reward', 'Rewards · Editar reward'],
   ['rewardsinterno', 'Painel interno · Rewards'],
   ['rewardinterno', 'Painel interno · Editar reward'],
+  ['rewardmetricas', 'Rewards · Métricas'],
+  ['rewardmetricasinterno', 'Painel interno · Métricas do reward'],
 ] as const
 type Screen = (typeof SCREENS)[number][0]
-const INTERNAL_SCREENS: Screen[] = ['interno', 'cliente', 'contratos', 'resultados', 'papelcomissao', 'minhacomissao', 'comissoes', 'minhasinvoices', 'invoice', 'invoices', 'servicosinvoice', 'modelosdash', 'tarefas', 'tarefa', 'checklists', 'checklist', 'checklistitens', 'ferramentasgam', 'execucaogam', 'rewardsinterno', 'rewardinterno']
+const INTERNAL_SCREENS: Screen[] = ['interno', 'cliente', 'contratos', 'resultados', 'papelcomissao', 'minhacomissao', 'comissoes', 'minhasinvoices', 'invoice', 'invoices', 'servicosinvoice', 'modelosdash', 'tarefas', 'tarefa', 'checklists', 'checklist', 'checklistitens', 'ferramentasgam', 'execucaogam', 'rewardsinterno', 'rewardinterno', 'rewardmetricasinterno']
 const isScreen = (s: string): s is Screen => SCREENS.some(([k]) => k === s)
 type T = (k: Key) => string
 
@@ -356,12 +358,12 @@ const CLIENT_RAIL: RailGroup[] = [
   { key: 'inicio', label: 'Início', icon: Home, items: [{ id: 'inicio', label: 'Dashboard' }] },
   { key: 'relatorios', label: 'Relatórios', icon: BarChart3, items: [{ id: 'desempenho', label: 'Ad Manager' }, { id: 'visitas', label: 'Page Views' }, { id: 'relatorios', label: 'Relatórios customizados', also: ['construtor', 'relatorio'], separated: true }] },
   { key: 'financeiro', label: 'Financeiro', icon: Wallet, items: [{ id: 'resultado', label: 'Resultado' }, { id: 'custos', label: 'Custos' }] },
-  { key: 'inventario', label: 'Inventário', icon: Network, items: [{ id: 'networks', label: 'Networks do GAM', also: ['conectar'] }, { id: 'rewards', label: 'Rewards', also: ['reward'] }] },
+  { key: 'inventario', label: 'Inventário', icon: Network, items: [{ id: 'networks', label: 'Networks do GAM', also: ['conectar'] }, { id: 'rewards', label: 'Rewards', also: ['reward', 'rewardmetricas'] }] },
   { key: 'equipe', label: 'Equipe', icon: Users, items: [{ id: 'equipe', label: 'Membros', also: ['membro'] }, { id: 'grupos', label: 'Grupos', also: ['grupo', 'grupoinativo'] }] },
   { key: 'empresa', label: 'Empresa', icon: Settings, items: [{ id: 'configuracoes', label: 'Configurações' }, { id: 'fiscais', label: 'Dados fiscais' }] },
 ]
 const INTERNAL_RAIL: RailGroup[] = [
-  { key: 'clientes', label: 'Inventário', icon: Users, items: [{ id: 'interno', label: 'Clientes', also: ['cliente'] }, { id: 'contratos', label: 'Contratos' }, { id: 'resultados', label: 'Resultado dos clientes' }, { id: 'checklists', label: 'Checklists', also: ['checklist', 'checklistitens'] }, { id: 'rewardsinterno', label: 'Rewards', also: ['rewardinterno'] }] },
+  { key: 'clientes', label: 'Inventário', icon: Users, items: [{ id: 'interno', label: 'Clientes', also: ['cliente'] }, { id: 'contratos', label: 'Contratos' }, { id: 'resultados', label: 'Resultado dos clientes' }, { id: 'checklists', label: 'Checklists', also: ['checklist', 'checklistitens'] }, { id: 'rewardsinterno', label: 'Rewards', also: ['rewardinterno', 'rewardmetricasinterno'] }] },
   { key: 'comissoes', label: 'Comissões', icon: Wallet, items: [{ id: 'minhacomissao', label: 'Minha comissão' }, { id: 'minhasinvoices', label: 'Minhas invoices' }, { id: 'comissoes', label: 'Comissões da equipe' }, { id: 'invoices', label: 'Invoices', also: ['servicosinvoice', 'invoice'] }] },
   { key: 'ferramentas', label: 'Ferramentas', icon: Wrench, items: [{ id: 'tarefas', label: 'Tarefas', also: ['tarefa'] }, { id: 'modelosdash', label: 'Modelos de dashboard' }, { id: 'ferramentasgam', label: 'Ferramentas do GAM', also: ['execucaogam'] }] },
   { key: 'equipegroone', label: 'Equipe', icon: ShieldCheck, items: [{ id: 'papelcomissao', label: 'Papéis da Equipe Groone' }] },
@@ -5016,13 +5018,14 @@ type RewardQuestion = { title: string; description: string; answers: [string, st
 type RewardLead = { kind: 'email' | 'phone'; position: 'start' | 'end'; title: string; description: string; button: string }
 type RewardStep = { kind: 'question'; index: number } | { kind: 'lead' } | { kind: 'reward' }
 type ProtoReward = { id: number; questions: RewardQuestion[]; lead: RewardLead | null; name: string; client: string; domain: string; page: string; active: boolean; icon: RewardIcon; title: string; description: string; button: string; style: RewardStyle; block: string; cooldown: number; scroll: number; clickElement: string | null; redirect: string | null; updated: string }
-type ProtoRewardSite = { domain: string; client: string; blocks: string[] }
+type RewardBlockGroup = { date: string; codes: string[] }
+type ProtoRewardSite = { domain: string; client: string; blocks: RewardBlockGroup[] }
 
 const REWARD_SITES: ProtoRewardSite[] = [
-  { domain: 'acai.com.br', client: 'Açaí Mídia', blocks: ['acai_reward_topo', 'acai_reward_artigo'] },
-  { domain: 'receitasdaacai.com.br', client: 'Açaí Mídia', blocks: ['receitas_reward'] },
-  { domain: 'technoticias.com.br', client: 'Tech Notícias', blocks: ['tech_reward_1', 'tech_reward_2'] },
-  { domain: 'viagemfacil.com', client: 'Viagem Fácil', blocks: ['vf_reward'] },
+  { domain: 'acai.com.br', client: 'Açaí Mídia', blocks: [{ date: '2026-10-28', codes: ['acai.com.br_Rewards', 'acai.com.br_Mobile_Rewards'] }, { date: '2026-08-14', codes: ['acai.com.br_Rewards'] }] },
+  { domain: 'receitasdaacai.com.br', client: 'Açaí Mídia', blocks: [{ date: '2026-09-02', codes: ['receitasdaacai.com.br_Rewards'] }] },
+  { domain: 'technoticias.com.br', client: 'Tech Notícias', blocks: [{ date: '2026-10-05', codes: ['technoticias.com.br_Desktop_Rewards', 'technoticias.com.br_Mobile_Rewards'] }, { date: '2026-06-20', codes: ['technoticias.com.br_Rewards'] }] },
+  { domain: 'viagemfacil.com', client: 'Viagem Fácil', blocks: [{ date: '2026-07-11', codes: ['viagemfacil.com_Rewards'] }] },
 ]
 const MY_CLIENT = 'Açaí Mídia'
 const REWARD_FONTS = [
@@ -5060,13 +5063,14 @@ const REWARD_PROGRESS: Record<VisitorLang, (current: number, total: number) => s
   en: (current, total) => `Question ${current} of ${total}`,
   es: (current, total) => `Pregunta ${current} de ${total}`,
 }
+const REWARD_NAME_PLACEHOLDER: Record<VisitorLang, string> = { pt: 'Seu nome', en: 'Your name', es: 'Tu nombre' }
 const MAX_REWARD_QUESTIONS = 5
 const REWARD_EMOJIS = ['🎁', '🏆', '🎉', '🚀', '🥳', '🎊', '🔓', '⭐']
 const INITIAL_REWARDS: ProtoReward[] = [
-  { id: 7, name: 'Receita completa do bolo de açaí', client: 'Açaí Mídia', domain: 'acai.com.br', page: 'receitas/bolo-de-acai', active: true, icon: { kind: 'emoji', emoji: '🎁', image: null }, title: 'Receita completa liberada', description: 'Assista a um anúncio curto e veja o passo a passo com as medidas.', button: 'Ver a receita', style: DEFAULT_REWARD_STYLE, block: 'acai_reward_artigo', cooldown: 30, scroll: 40, clickElement: null, redirect: null, questions: [], lead: null, updated: '08/11/2026 16:20' },
-  { id: 6, name: 'Ebook de sobremesas', client: 'Açaí Mídia', domain: 'receitasdaacai.com.br', page: 'ebook-sobremesas', active: false, icon: { kind: 'emoji', emoji: '📘', image: null }, title: 'Baixe o ebook grátis', description: '40 sobremesas com açaí, prontas em 15 minutos.', button: 'Baixar agora', style: { ...REWARD_PRESETS[2].style, layout: 'highlight', borderWidth: 2, radius: 16, font: 'Poppins', shadow: true }, block: 'receitas_reward', questions: [{ title: 'Qual sobremesa você mais faz?', description: '', answers: ['Bolo', 'Mousse', 'Sorvete'] }, { title: 'Quanto tempo você tem para cozinhar?', description: 'Assim mostramos as receitas certas.', answers: ['15 minutos', '30 minutos', 'Mais de 1 hora'] }], lead: { kind: 'email', position: 'end', title: 'Para onde mandamos o ebook?', description: 'Também enviamos receitas novas uma vez por semana.', button: 'Continuar' }, cooldown: 60, scroll: 0, clickElement: '#baixar-ebook', redirect: 'ebook-sobremesas/download', updated: '02/11/2026 10:05' },
-  { id: 5, name: 'Comparativo de celulares', client: 'Tech Notícias', domain: 'technoticias.com.br', page: 'reviews/melhores-celulares-2026', active: true, icon: { kind: 'emoji', emoji: '🏆', image: null }, title: 'Ranking completo', description: 'Desbloqueie a tabela com os 20 aparelhos testados.', button: 'Desbloquear', style: { ...REWARD_PRESETS[1].style, body: '#ffffff', title: '#0a0a0a', text: '#525252', border: '#e5e5e5', layout: 'header', borderWidth: 1, radius: 16, font: 'Poppins', shadow: true }, block: 'tech_reward_1', cooldown: 15, scroll: 0, clickElement: null, redirect: null, questions: [], lead: null, updated: '30/10/2026 09:41' },
-  { id: 4, name: 'Roteiro de 7 dias em Lisboa', client: 'Viagem Fácil', domain: 'viagemfacil.com', page: 'roteiros/lisboa-7-dias', active: true, icon: { kind: 'emoji', emoji: '🧳', image: null }, title: 'Roteiro em PDF', description: 'O roteiro dia a dia com mapa e dicas de restaurantes.', button: 'Quero o roteiro', style: { ...REWARD_PRESETS[3].style, layout: 'simple', borderWidth: 0, radius: 28, font: 'Lora', shadow: true }, block: 'vf_reward', cooldown: 120, scroll: 60, clickElement: null, redirect: null, questions: [], lead: null, updated: '21/10/2026 14:12' },
+  { id: 7, name: 'Receita completa do bolo de açaí', client: 'Açaí Mídia', domain: 'acai.com.br', page: 'receitas/bolo-de-acai', active: true, icon: { kind: 'emoji', emoji: '🎁', image: null }, title: 'Receita completa liberada', description: 'Assista a um anúncio curto e veja o passo a passo com as medidas.', button: 'Ver a receita', style: DEFAULT_REWARD_STYLE, block: '2026-10-28', cooldown: 30, scroll: 40, clickElement: null, redirect: null, questions: [], lead: null, updated: '08/11/2026 16:20' },
+  { id: 6, name: 'Ebook de sobremesas', client: 'Açaí Mídia', domain: 'receitasdaacai.com.br', page: 'ebook-sobremesas', active: false, icon: { kind: 'emoji', emoji: '📘', image: null }, title: 'Baixe o ebook grátis', description: '40 sobremesas com açaí, prontas em 15 minutos.', button: 'Baixar agora', style: { ...REWARD_PRESETS[2].style, layout: 'highlight', borderWidth: 2, radius: 16, font: 'Poppins', shadow: true }, block: '2026-09-02', questions: [{ title: 'Qual sobremesa você mais faz?', description: '', answers: ['Bolo', 'Mousse', 'Sorvete'] }, { title: 'Quanto tempo você tem para cozinhar?', description: 'Assim mostramos as receitas certas.', answers: ['15 minutos', '30 minutos', 'Mais de 1 hora'] }], lead: { kind: 'email', position: 'end', title: 'Para onde mandamos o ebook?', description: 'Também enviamos receitas novas uma vez por semana.', button: 'Continuar' }, cooldown: 60, scroll: 0, clickElement: '#baixar-ebook', redirect: 'ebook-sobremesas/download', updated: '02/11/2026 10:05' },
+  { id: 5, name: 'Comparativo de celulares', client: 'Tech Notícias', domain: 'technoticias.com.br', page: 'reviews/melhores-celulares-2026', active: true, icon: { kind: 'emoji', emoji: '🏆', image: null }, title: 'Ranking completo', description: 'Desbloqueie a tabela com os 20 aparelhos testados.', button: 'Desbloquear', style: { ...REWARD_PRESETS[1].style, body: '#ffffff', title: '#0a0a0a', text: '#525252', border: '#e5e5e5', layout: 'header', borderWidth: 1, radius: 16, font: 'Poppins', shadow: true }, block: '2026-10-05', cooldown: 15, scroll: 0, clickElement: null, redirect: null, questions: [], lead: null, updated: '30/10/2026 09:41' },
+  { id: 4, name: 'Roteiro de 7 dias em Lisboa', client: 'Viagem Fácil', domain: 'viagemfacil.com', page: 'roteiros/lisboa-7-dias', active: true, icon: { kind: 'emoji', emoji: '🧳', image: null }, title: 'Roteiro em PDF', description: 'O roteiro dia a dia com mapa e dicas de restaurantes.', button: 'Quero o roteiro', style: { ...REWARD_PRESETS[3].style, layout: 'simple', borderWidth: 0, radius: 28, font: 'Lora', shadow: true }, block: '2026-07-11', cooldown: 120, scroll: 60, clickElement: null, redirect: null, questions: [], lead: null, updated: '21/10/2026 14:12' },
 ]
 
 /** Fonte CSS do nome da fonte escolhida. */
@@ -5102,7 +5106,7 @@ function rewardSteps(reward: ProtoReward): RewardStep[] {
 function stepLabel(step: RewardStep) { return step.kind === 'question' ? `Pergunta ${step.index + 1}` : step.kind === 'lead' ? 'Contato' : 'Reward' }
 /** Reward novo, no primeiro site disponível. */
 function blankReward(site: ProtoRewardSite): ProtoReward {
-  return { id: 0, name: '', client: site.client, domain: site.domain, page: '', active: true, icon: { kind: 'emoji', emoji: '🎁', image: null }, title: 'Oferta especial', description: 'Desbloqueie sua recompensa agora mesmo!', button: 'Desbloquear', style: DEFAULT_REWARD_STYLE, block: site.blocks[0], cooldown: 30, scroll: 0, clickElement: null, redirect: null, questions: [], lead: null, updated: 'Agora' }
+  return { id: 0, name: '', client: site.client, domain: site.domain, page: '', active: true, icon: { kind: 'emoji', emoji: '🎁', image: null }, title: 'Oferta especial', description: 'Desbloqueie sua recompensa agora mesmo!', button: 'Desbloquear', style: DEFAULT_REWARD_STYLE, block: site.blocks[0].date, cooldown: 30, scroll: 0, clickElement: null, redirect: null, questions: [], lead: null, updated: 'Agora' }
 }
 
 /** O ícone do reward (emoji, imagem ou nada) no tamanho pedido. */
@@ -5157,6 +5161,7 @@ function RewardBody({ reward, lang = 'pt', step = { kind: 'reward' }, onNext, on
         )}
         {step.kind === 'lead' && reward.lead && (
           <form className="mt-6 grid gap-3" onSubmit={(event) => { event.preventDefault(); onNext?.() }}>
+            <input type="text" aria-label="Nome" placeholder={REWARD_NAME_PLACEHOLDER[lang]} className="h-11 w-full px-4 text-[15px] outline-none" style={{ border: `1px solid ${mix(style.text, style.body, 0.35)}`, background: 'transparent', color: style.title, borderRadius: buttonRadius }} />
             <input type={reward.lead.kind === 'email' ? 'email' : 'tel'} aria-label={reward.lead.kind === 'email' ? 'E-mail' : 'Telefone'} placeholder={reward.lead.kind === 'email' ? 'voce@email.com' : '(11) 91234-5678'} className="h-11 w-full px-4 text-[15px] outline-none" style={{ border: `1px solid ${mix(style.text, style.body, 0.35)}`, background: 'transparent', color: style.title, borderRadius: buttonRadius }} />
             <button type="submit" className="inline-flex h-11 w-full items-center justify-center px-5 text-[15px] font-semibold hover:opacity-90" style={{ background: style.layout === 'header' ? accentGradient(style.button) : style.button, color: style.buttonText, borderRadius: buttonRadius }}>{reward.lead.button || 'Continuar'}</button>
             <p className="text-[12px] leading-snug opacity-70" lang={lang}>{REWARD_CONSENT[lang](reward.domain)}</p>
@@ -5226,7 +5231,7 @@ function ColorField({ id, label, value, onChange }: { id: string; label: string;
 }
 
 /** Lista dos rewards: no painel do cliente, os sites da Empresa; no painel interno, os de todos os clientes. */
-function RewardsScreen({ rewards, staff, open }: { rewards: ProtoReward[]; staff: boolean; open: (id: number | null) => void }) {
+function RewardsScreen({ rewards, staff, open, metrics }: { rewards: ProtoReward[]; staff: boolean; open: (id: number | null) => void; metrics: (id: number) => void }) {
   const [query, setQuery] = useState('')
   const [site, setSite] = useState('all')
   const sites = REWARD_SITES.filter((item) => staff || item.client === MY_CLIENT)
@@ -5241,7 +5246,7 @@ function RewardsScreen({ rewards, staff, open }: { rewards: ProtoReward[]; staff
           <Select value={site} onValueChange={setSite}><SelectTrigger aria-label="Site" className="h-9 w-[240px]"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Todos os sites</SelectItem>{sites.map((item) => <SelectItem key={item.domain} value={item.domain}>{item.domain}</SelectItem>)}</SelectContent></Select>
         </div>
         <Table min={staff ? 900 : 760}>
-          <thead><tr><th className={th}>Reward</th>{staff && <th className={th}>Cliente</th>}<th className={th}>Site</th><th className={th}>Situação</th><th className={cn(th, 'text-right')}>Intervalo</th><th className={th}>Atualizado</th></tr></thead>
+          <thead><tr><th className={th}>Reward</th>{staff && <th className={th}>Cliente</th>}<th className={th}>Site</th><th className={th}>Situação</th><th className={cn(th, 'text-right')}>Intervalo</th><th className={th}>Atualizado</th><th className={th}><span className="sr-only">Métricas</span></th></tr></thead>
           <tbody>
             {visible.map((reward) => (
               <tr key={reward.id} className="hover:bg-muted">
@@ -5256,9 +5261,10 @@ function RewardsScreen({ rewards, staff, open }: { rewards: ProtoReward[]; staff
                 <td className={td}>{reward.active ? <Status tone="ok">Ativo</Status> : <Status tone="neutral">Pausado</Status>}</td>
                 <td className={cn(td, 'text-right tnum')}>{reward.cooldown} min</td>
                 <td className={cn(td, 'whitespace-nowrap tnum text-[13px] text-muted-foreground')}>{reward.updated}</td>
+                <td className={cn(td, 'text-right')}><Button size="sm" variant="outline" onClick={() => metrics(reward.id)}><BarChart3 className="h-4 w-4" />Métricas</Button></td>
               </tr>
             ))}
-            {!visible.length && <tr><td className={cn(td, 'py-12 text-center')} colSpan={staff ? 6 : 5}><Gift className="mx-auto h-5 w-5 text-muted-foreground" /><p className="mt-2 font-medium">Nenhum reward {query || site !== 'all' ? 'com esses filtros' : 'ainda'}</p><p className="text-[14px] text-muted-foreground">Crie um reward numa página do site e acompanhe aqui.</p></td></tr>}
+            {!visible.length && <tr><td className={cn(td, 'py-12 text-center')} colSpan={staff ? 7 : 6}><Gift className="mx-auto h-5 w-5 text-muted-foreground" /><p className="mt-2 font-medium">Nenhum reward {query || site !== 'all' ? 'com esses filtros' : 'ainda'}</p><p className="text-[14px] text-muted-foreground">Crie um reward numa página do site e acompanhe aqui.</p></td></tr>}
           </tbody>
         </Table>
       </Body>
@@ -5303,7 +5309,7 @@ function LayoutThumb({ layout }: { layout: RewardLayout }) {
   )
 }
 
-function RewardEditScreen({ initial, rewards, staff, back, save, remove }: { initial: ProtoReward; rewards: ProtoReward[]; staff: boolean; back: () => void; save: (reward: ProtoReward) => void; remove: (id: number) => void }) {
+function RewardEditScreen({ initial, rewards, staff, back, save, remove, metrics }: { initial: ProtoReward; rewards: ProtoReward[]; staff: boolean; back: () => void; save: (reward: ProtoReward) => void; remove: (id: number) => void; metrics: () => void }) {
   const [reward, setReward] = useState(initial)
   const [device, setDevice] = useState<'desktop' | 'mobile'>('desktop')
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -5337,7 +5343,7 @@ function RewardEditScreen({ initial, rewards, staff, back, save, remove }: { ini
     <>
       <PageHeader title={initial.id ? initial.name : 'Novo reward'} sub={`${staff ? `${site.client} · ` : ''}${reward.domain}`}
         back={<button onClick={back} className="inline-flex items-center gap-1 text-[13px] text-muted-foreground hover:text-foreground"><ArrowLeft className="h-3.5 w-3.5" />Rewards</button>}
-        actions={<><Button disabled={!ready} onClick={submit}>{initial.id ? 'Salvar' : 'Criar reward'}</Button>{initial.id > 0 && <>
+        actions={<>{initial.id > 0 && <Button variant="outline" onClick={metrics}><BarChart3 className="h-4 w-4" />Métricas</Button>}<Button disabled={!ready} onClick={submit}>{initial.id ? 'Salvar' : 'Criar reward'}</Button>{initial.id > 0 && <>
           <DropdownMenu><DropdownMenuTrigger asChild><Button variant="outline" size="icon" aria-label="Mais ações"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
             <DropdownMenuContent align="end"><DropdownMenuItem onSelect={() => change({ active: !reward.active })}>{reward.active ? 'Pausar' : 'Ativar'}</DropdownMenuItem><DropdownMenuSeparator /><DropdownMenuItem className="text-bad focus:text-bad" onSelect={() => setConfirmDelete(true)}><Trash2 className="h-4 w-4" />Apagar reward</DropdownMenuItem></DropdownMenuContent>
           </DropdownMenu></>}</>} />
@@ -5349,7 +5355,7 @@ function RewardEditScreen({ initial, rewards, staff, back, save, remove }: { ini
                 <Field id="rw-name" label="Nome" error={reward.name.length > 0 && reward.name.trim().length < 3 && 'Use pelo menos 3 letras.'}><Input id="rw-name" value={reward.name} onChange={(event) => change({ name: event.target.value })} placeholder="Ex.: Receita completa do bolo" /></Field>
                 <div className="grid items-start gap-4 sm:grid-cols-2">
                   <Field id="rw-site" label="Site">
-                    <Select value={reward.domain} onValueChange={(domain) => { const next = REWARD_SITES.find((item) => item.domain === domain)!; change({ domain, client: next.client, block: next.blocks[0], redirect: reward.redirect === null ? null : '' }) }} disabled={!!initial.id}>
+                    <Select value={reward.domain} onValueChange={(domain) => { const next = REWARD_SITES.find((item) => item.domain === domain)!; change({ domain, client: next.client, block: next.blocks[0].date, redirect: reward.redirect === null ? null : '' }) }} disabled={!!initial.id}>
                       <SelectTrigger id="rw-site"><SelectValue /></SelectTrigger>
                       <SelectContent>{sites.map((item) => <SelectItem key={item.domain} value={item.domain}>{staff ? `${item.domain} · ${item.client}` : item.domain}</SelectItem>)}</SelectContent>
                     </Select>
@@ -5519,10 +5525,10 @@ function RewardEditScreen({ initial, rewards, staff, back, save, remove }: { ini
                   </div>
                 </Field>
                 <div className="grid items-start gap-4 sm:grid-cols-2">
-                  <Field id="rw-block" label="Ad unit do reward" hint="Os ad units de reward do site, importados do GAM.">
+                  <Field id="rw-block" label="Ad units do reward" hint={`Os ad units com "Reward" no nome criados nessa data no GAM: ${(site.blocks.find((group) => group.date === reward.block)?.codes ?? []).join(', ')}.`}>
                     <Select value={reward.block} onValueChange={(block) => change({ block })}>
-                      <SelectTrigger id="rw-block" className="font-mono text-[13px]"><SelectValue /></SelectTrigger>
-                      <SelectContent>{site.blocks.map((block) => <SelectItem key={block} value={block} className="font-mono text-[13px]">{block}</SelectItem>)}</SelectContent>
+                      <SelectTrigger id="rw-block"><SelectValue /></SelectTrigger>
+                      <SelectContent>{site.blocks.map((group) => <SelectItem key={group.date} value={group.date}>Criados em {group.date.split('-').reverse().join('/')} · {group.codes.length} {group.codes.length === 1 ? 'ad unit' : 'ad units'}</SelectItem>)}</SelectContent>
                     </Select>
                   </Field>
                   <Field id="rw-cooldown" label="Tempo para mostrar de novo (minutos)" hint="Depois que a pessoa vê a janela, ela só volta a aparecer passado esse tempo." error={cooldownBad && 'De 5 a 1.440 minutos (24 horas).'}>
@@ -5574,6 +5580,171 @@ function RewardEditScreen({ initial, rewards, staff, back, save, remove }: { ini
   )
 }
 
+
+type RewardDay = { day: string; opens: number; clicks: number; completed: number }
+type RewardLeadRow = { name: string; contact: string; lang: string; answers: string[]; date: string }
+const REWARD_PERIODS = [['7', 'Últimos 7 dias'], ['30', 'Últimos 30 dias']] as const
+const LEAD_NAMES = ['Ana Souza', 'Bruno Lima', 'Carla Mendes', 'Diego Rocha', 'Elisa Prado', 'Felipe Nunes', 'Gabriela Reis', 'Hugo Martins', 'Isabela Costa', 'João Pires', 'Karen Alves', 'Lucas Freitas', 'Marina Duarte', 'Nicolas Ramos', 'Olívia Teles', 'Paulo Viana']
+
+/** Número pseudoaleatório estável a partir de uma semente, para os dados de exemplo. */
+function seeded(seed: number) { const value = Math.sin(seed * 9301 + 49297) * 233280; return value - Math.floor(value) }
+
+/** Dados diários de exemplo de um reward: janelas abertas, cliques no botão e anúncios concluídos. */
+function rewardDays(reward: ProtoReward): RewardDay[] {
+  return Array.from({ length: 30 }, (_item, index) => {
+    const opens = Math.round(900 + seeded(reward.id * 100 + index) * 700 + index * 12)
+    const clicks = Math.round(opens * (0.42 + seeded(reward.id * 200 + index) * 0.12) * (reward.questions.length ? 0.78 : 1))
+    const completed = Math.round(clicks * (0.8 + seeded(reward.id * 300 + index) * 0.1))
+    return { day: `${String(((index + 10) % 30) + 1).padStart(2, '0')}/${index < 20 ? '10' : '11'}`, opens, clicks, completed }
+  })
+}
+
+/** Gráfico de linhas simples das métricas diárias, com a série escolhida em destaque. */
+function RewardDailyChart({ days, series }: { days: RewardDay[]; series: keyof Omit<RewardDay, 'day'> }) {
+  const [hover, setHover] = useState<number | null>(null)
+  const width = 960, height = 220, left = 56, right = 12, top = 12, bottom = 26
+  const values = days.map((day) => day[series])
+  const max = Math.max(...values) * 1.15 || 1
+  const xAt = (index: number) => left + (days.length === 1 ? 0 : (index * (width - left - right)) / (days.length - 1))
+  const yAt = (value: number) => top + (height - top - bottom) * (1 - value / max)
+  const line = values.map((value, index) => `${index ? 'L' : 'M'}${xAt(index).toFixed(1)},${yAt(value).toFixed(1)}`).join('')
+  const every = Math.max(1, Math.ceil(days.length / 8))
+  return (
+    <div className="relative">
+      <svg viewBox={`0 0 ${width} ${height}`} className="h-[220px] w-full" role="img" aria-label="Métrica por dia" onMouseLeave={() => setHover(null)}
+        onMouseMove={(event) => { const box = event.currentTarget.getBoundingClientRect(); const position = ((event.clientX - box.left) / box.width) * width; setHover(Math.min(days.length - 1, Math.max(0, Math.round(((position - left) / (width - left - right)) * (days.length - 1))))) }}>
+        {[0, 0.5, 1].map((fraction) => <g key={fraction}><line x1={left} x2={width - right} y1={yAt(max * fraction)} y2={yAt(max * fraction)} className="stroke-border" /><text x={left - 8} y={yAt(max * fraction) + 4} textAnchor="end" className="fill-muted-foreground text-[11px] tnum">{int.format(Math.round(max * fraction))}</text></g>)}
+        {days.map((day, index) => index % every === 0 && <text key={day.day} x={xAt(index)} y={height - 6} textAnchor="middle" className="fill-muted-foreground text-[11px] tnum">{day.day}</text>)}
+        <path d={`${line}L${xAt(values.length - 1)},${yAt(0)}L${xAt(0)},${yAt(0)}Z`} className="fill-foreground/[0.04]" />
+        <path d={line} fill="none" className="stroke-foreground" strokeWidth={2} strokeLinejoin="round" />
+        {hover !== null && <><line x1={xAt(hover)} x2={xAt(hover)} y1={top} y2={height - bottom} className="stroke-muted-foreground/50" /><circle cx={xAt(hover)} cy={yAt(values[hover])} r={4} className="fill-foreground stroke-card" strokeWidth={2} /></>}
+      </svg>
+      {hover !== null && <div className="pointer-events-none absolute top-1 rounded-md border bg-popover px-3 py-2 text-[13px] shadow-md" style={{ left: `clamp(0px, calc(${(xAt(hover) / width) * 100}% - 70px), calc(100% - 140px))`, width: 140 }}><div className="font-medium">{days[hover].day}</div><div className="tnum">{int.format(values[hover])}</div></div>}
+    </div>
+  )
+}
+
+/** Métricas de um reward: aberturas, cliques, anúncios concluídos, funil das etapas, respostas e contatos. */
+function RewardMetricsScreen({ reward, staff, back, edit }: { reward: ProtoReward; staff: boolean; back: () => void; edit: () => void }) {
+  const [period, setPeriod] = useState<string>('30')
+  const [series, setSeries] = useState<keyof Omit<RewardDay, 'day'>>('opens')
+  const [leadQuery, setLeadQuery] = useState('')
+  const [answerFilter, setAnswerFilter] = useState('all')
+  const days = rewardDays(reward).slice(-Number(period))
+  const opens = days.reduce((total, day) => total + day.opens, 0)
+  const clicks = days.reduce((total, day) => total + day.clicks, 0)
+  const completed = days.reduce((total, day) => total + day.completed, 0)
+  const rate = (part: number, whole: number) => `${pct.format(whole ? (part / whole) * 100 : 0)}%`
+  const funnel: [string, number][] = [['Janela aberta', opens]]
+  let reached = opens
+  rewardSteps(reward).forEach((step, index) => {
+    if (step.kind === 'reward') return
+    reached = Math.round(reached * (0.86 + seeded(reward.id * 7 + index) * 0.08))
+    funnel.push([step.kind === 'question' ? `Respondeu a pergunta ${step.index + 1}` : 'Deixou o contato', reached])
+  })
+  funnel.push([`Clicou em "${reward.button || 'Desbloquear'}"`, clicks], ['Assistiu o anúncio até o fim', completed])
+  const leadsTotal = reward.lead ? funnel.find(([label]) => label === 'Deixou o contato')?.[1] ?? 0 : 0
+  const answered = (index: number) => funnel.find(([label]) => label === `Respondeu a pergunta ${index + 1}`)?.[1] ?? 0
+  const answerCounts = reward.questions.map((question, index) => {
+    const weights = question.answers.map((_answer, answerIndex) => 0.4 + seeded(reward.id * 50 + index * 5 + answerIndex))
+    const sum = weights.reduce((total, weight) => total + weight, 0)
+    return question.answers.map((answer, answerIndex) => [answer || `Resposta ${answerIndex + 1}`, Math.round((answered(index) * weights[answerIndex]) / sum)] as const)
+  })
+  const leads: RewardLeadRow[] = reward.lead ? LEAD_NAMES.map((name, index) => ({
+    name,
+    contact: reward.lead!.kind === 'email' ? `${name.split(' ')[0].toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')}@email.com` : `(11) 9${String(8000 + index * 137).padStart(4, '0')}-${String(1000 + index * 211).slice(0, 4)}`,
+    lang: ['Português', 'Português', 'Espanhol', 'Português', 'Inglês'][index % 5],
+    answers: reward.questions.map((question, questionIndex) => question.answers[Math.floor(seeded(index * 13 + questionIndex) * 3)] || '—'),
+    date: `${String(9 - Math.floor(index / 3)).padStart(2, '0')}/11/2026 ${String(8 + (index % 12)).padStart(2, '0')}:${String((index * 17) % 60).padStart(2, '0')}`,
+  })) : []
+  const visibleLeads = leads.filter((lead) => `${lead.name} ${lead.contact}`.toLowerCase().includes(leadQuery.toLowerCase()) && (answerFilter === 'all' || lead.answers[Number(answerFilter.split(':')[0])] === answerFilter.split(':').slice(1).join(':')))
+  const tiles: [string, string, string][] = [
+    ['Janelas abertas', int.format(opens), 'Vezes que a janela apareceu para alguém.'],
+    ['Cliques no botão', int.format(clicks), `${rate(clicks, opens)} das janelas abertas (CTR).`],
+    ['Anúncios concluídos', int.format(completed), `${rate(completed, clicks)} de quem clicou viu até o fim.`],
+    ['Desistências', int.format(opens - completed), `${rate(opens - completed, opens)} fecharam antes de liberar.`],
+  ]
+  if (reward.lead) tiles.push(['Contatos', int.format(leadsTotal), `${rate(leadsTotal, opens)} das janelas abertas.`])
+  return (
+    <>
+      <PageHeader title={reward.name} sub={`${staff ? `${reward.client} · ` : ''}${reward.domain}/${reward.page}`}
+        back={<button onClick={back} className="inline-flex items-center gap-1 text-[13px] text-muted-foreground hover:text-foreground"><ArrowLeft className="h-3.5 w-3.5" />Rewards</button>}
+        actions={<><Select value={period} onValueChange={setPeriod}><SelectTrigger aria-label="Período" className="h-9 w-[180px]"><SelectValue /></SelectTrigger><SelectContent>{REWARD_PERIODS.map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent></Select><Button variant="outline" onClick={edit}><Pencil className="h-4 w-4" />Editar</Button></>} />
+      <Body>
+        {!reward.active && <div className="flex items-start gap-2 rounded-md border border-ochre/40 bg-ochre-soft px-3 py-2 text-[13px] text-ochre"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />Este reward está pausado: os números são de quando ele estava ativo.</div>}
+        <div className={cn('grid gap-3 sm:grid-cols-2', tiles.length === 5 ? 'lg:grid-cols-5' : 'lg:grid-cols-4')}>
+          {tiles.map(([label, value, note]) => (
+            <div key={label} className="rounded-lg border bg-card p-4">
+              <div className="text-[13px] text-muted-foreground">{label}</div>
+              <div className="mt-1 text-[26px] font-semibold tracking-[-0.03em] tnum">{value}</div>
+              <div className="mt-1 text-[12px] leading-snug text-muted-foreground">{note}</div>
+            </div>
+          ))}
+        </div>
+        <Card title="Por dia">
+          <div className="mb-4 inline-flex flex-wrap rounded-md border bg-muted p-0.5" role="radiogroup" aria-label="Métrica do gráfico">
+            {([['opens', 'Janelas abertas'], ['clicks', 'Cliques no botão'], ['completed', 'Anúncios concluídos']] as const).map(([value, label]) => <button key={value} role="radio" aria-checked={series === value} onClick={() => setSeries(value)} className={cn('h-8 rounded px-3 text-[13px] font-medium', series === value ? 'bg-background shadow-sm' : 'text-muted-foreground hover:text-foreground')}>{label}</button>)}
+          </div>
+          <RewardDailyChart days={days} series={series} />
+        </Card>
+        <Card title="Etapas" desc="Quantas pessoas chegaram a cada etapa, do momento em que a janela abre até o fim do anúncio.">
+          <ul className="grid gap-3">
+            {funnel.map(([label, value], index) => (
+              <li key={label} className="grid gap-1.5">
+                <div className="flex items-baseline justify-between gap-3 text-[14px]"><span className="min-w-0 truncate">{label}</span><span className="shrink-0 tnum"><span className="font-medium">{int.format(value)}</span><span className="ml-2 text-[13px] text-muted-foreground">{rate(value, opens)}{index > 0 && ` · perdeu ${int.format(funnel[index - 1][1] - value)}`}</span></span></div>
+                <span className="h-2 rounded-full bg-muted"><span className="block h-2 rounded-full bg-foreground" style={{ width: `${(value / (opens || 1)) * 100}%` }} /></span>
+              </li>
+            ))}
+          </ul>
+        </Card>
+        {reward.questions.length > 0 && (
+          <Card title="Respostas" desc="O que as pessoas escolheram em cada pergunta.">
+            <div className="grid gap-6 md:grid-cols-2">
+              {reward.questions.map((question, index) => (
+                <div key={index} className="grid gap-3">
+                  <div><div className="text-[13px] text-muted-foreground">Pergunta {index + 1} · {int.format(answered(index))} respostas</div><div className="font-medium">{question.title || 'Pergunta sem título'}</div></div>
+                  <Bars items={answerCounts[index]} />
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
+        {reward.lead && (
+          <Card pad={false}>
+            <div className="px-6 pt-6"><h2 className="text-[20px] font-semibold tracking-tight">Contatos</h2><p className="mt-2 text-[14px] text-muted-foreground">Quem deixou {reward.lead.kind === 'email' ? 'o e-mail' : 'o telefone'} na janela, com as respostas.</p></div>
+            <div className="flex flex-wrap items-center gap-3 border-b px-6 py-4">
+              <div className="relative w-full sm:w-[260px]"><Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input aria-label="Buscar contatos" className="h-9 pl-9" placeholder="Nome ou contato" value={leadQuery} onChange={(event) => setLeadQuery(event.target.value)} /></div>
+              {reward.questions.length > 0 && (
+                <Select value={answerFilter} onValueChange={setAnswerFilter}>
+                  <SelectTrigger aria-label="Filtrar por resposta" className="h-9 w-[240px]"><SelectValue /></SelectTrigger>
+                  <SelectContent><SelectItem value="all">Todas as respostas</SelectItem>{reward.questions.flatMap((question, index) => question.answers.map((answer) => <SelectItem key={`${index}:${answer}`} value={`${index}:${answer}`}>P{index + 1}: {answer}</SelectItem>))}</SelectContent>
+                </Select>
+              )}
+              <Button variant="outline" className="sm:ml-auto" onClick={() => toast.success('Exportação iniciada', { description: `${visibleLeads.length} contatos em CSV.` })}><Download className="h-4 w-4" />Exportar CSV</Button>
+            </div>
+            <Table min={760}>
+              <thead><tr>{['Nome', 'Contato', 'Idioma', ...reward.questions.map((_question, index) => `Pergunta ${index + 1}`), 'Data'].map((label) => <th key={label} className="border-b bg-muted px-4 py-2.5 text-left text-[12px] font-medium text-muted-foreground">{label}</th>)}</tr></thead>
+              <tbody>
+                {visibleLeads.slice(0, 10).map((lead) => (
+                  <tr key={lead.contact} className="hover:bg-muted">
+                    <td className="border-b px-4 py-3 text-[14px] font-medium">{lead.name}</td>
+                    <td className="border-b px-4 py-3 font-mono text-[13px]">{lead.contact}</td>
+                    <td className="border-b px-4 py-3 text-[14px]">{lead.lang}</td>
+                    {lead.answers.map((answer, index) => <td key={index} className="border-b px-4 py-3 text-[14px]">{answer}</td>)}
+                    <td className="whitespace-nowrap border-b px-4 py-3 text-[13px] text-muted-foreground tnum">{lead.date}</td>
+                  </tr>
+                ))}
+                {!visibleLeads.length && <tr><td colSpan={4 + reward.questions.length} className="px-4 py-10 text-center text-[14px] text-muted-foreground">Nenhum contato com esse filtro.</td></tr>}
+              </tbody>
+            </Table>
+            <div className="px-6 py-3 text-[13px] text-muted-foreground tnum">{visibleLeads.length ? `1–${Math.min(10, visibleLeads.length)} de ${int.format(leadsTotal)} contatos` : '0 contatos'}</div>
+          </Card>
+        )}
+      </Body>
+    </>
+  )
+}
+
 export default function App() {
   const initial = typeof location !== 'undefined' && isScreen(location.hash.slice(1)) ? (location.hash.slice(1) as Screen) : 'equipe'
   const [screen, setScreen] = useState<Screen>(initial)
@@ -5612,6 +5783,8 @@ export default function App() {
   const openGroup = (id: string) => { setGroupId(id); go(id === 'parcerias' ? 'grupoinativo' : 'grupo') }
   const t: T = (k) => translate(lang, k)
   /** Abre o reward (ou um novo) na edição do painel do cliente ou do interno. */
+  /** Abre as métricas de um reward no painel do cliente ou do interno. */
+  const openRewardMetrics = (id: number, staff: boolean) => { setRewardDraft(rewards.find((item) => item.id === id)!); go(staff ? 'rewardmetricasinterno' : 'rewardmetricas') }
   const openReward = (id: number | null, staff: boolean) => { setRewardDraft(id ? rewards.find((item) => item.id === id)! : blankReward(REWARD_SITES.find((site) => staff || site.client === MY_CLIENT)!)); go(staff ? 'rewardinterno' : 'reward') }
   /** Grava o reward novo ou editado. */
   const saveReward = (saved: ProtoReward) => setRewards((current) => (saved.id ? current.map((item) => (item.id === saved.id ? saved : item)) : [{ ...saved, id: Math.max(...current.map((item) => item.id)) + 1 }, ...current]))
@@ -5680,9 +5853,10 @@ export default function App() {
       case 'checklistitens': return <ChecklistItemsScreen items={checkItems} setItems={setCheckItems} back={() => go('checklists')} />
       case 'ferramentasgam': return <GamToolsScreen runs={gamRuns} start={(run) => setGamRuns((current) => [run, ...current])} open={(runId) => { setGamRunId(runId); go('execucaogam') }} />
       case 'execucaogam': { const run = gamRuns.find((item) => item.id === gamRunId) ?? gamRuns[0]; return <GamRunScreen key={run.id} run={run} update={(next) => setGamRuns((current) => current.map((item) => (item.id === next.id ? next : item)))} back={() => go('ferramentasgam')} /> }
-      case 'rewards': return <RewardsScreen rewards={rewards} staff={false} open={(id) => openReward(id, false)} />
-      case 'rewardsinterno': return <RewardsScreen rewards={rewards} staff open={(id) => openReward(id, true)} />
-      case 'reward': case 'rewardinterno': { const staff = screen === 'rewardinterno'; return <RewardEditScreen key={`${rewardDraft.id}-${screen}`} initial={rewardDraft} rewards={rewards} staff={staff} back={() => go(staff ? 'rewardsinterno' : 'rewards')} save={saveReward} remove={(id) => setRewards((current) => current.filter((item) => item.id !== id))} /> }
+      case 'rewards': return <RewardsScreen rewards={rewards} staff={false} open={(id) => openReward(id, false)} metrics={(id) => openRewardMetrics(id, false)} />
+      case 'rewardsinterno': return <RewardsScreen rewards={rewards} staff open={(id) => openReward(id, true)} metrics={(id) => openRewardMetrics(id, true)} />
+      case 'reward': case 'rewardinterno': { const staff = screen === 'rewardinterno'; return <RewardEditScreen key={`${rewardDraft.id}-${screen}`} initial={rewardDraft} rewards={rewards} staff={staff} back={() => go(staff ? 'rewardsinterno' : 'rewards')} save={saveReward} remove={(id) => setRewards((current) => current.filter((item) => item.id !== id))} metrics={() => openRewardMetrics(rewardDraft.id, staff)} /> }
+      case 'rewardmetricas': case 'rewardmetricasinterno': { const staff = screen === 'rewardmetricasinterno'; return <RewardMetricsScreen key={rewardDraft.id} reward={rewardDraft} staff={staff} back={() => go(staff ? 'rewardsinterno' : 'rewards')} edit={() => openReward(rewardDraft.id, staff)} /> }
       case 'tarefa': { const task = tasks.find((item) => item.id === taskId) ?? tasks[0]; return <TaskScreen key={task.id} task={task} update={(next) => setTasks(tasks.map((item) => (item.id === next.id ? next : item)))} back={() => go('tarefas')} /> }
     }
   })()
