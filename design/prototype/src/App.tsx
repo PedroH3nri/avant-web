@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Toaster, toast } from 'sonner'
-import { Check, ChevronsUpDown, Copy, Loader2, Plus, RefreshCw, Search, X, AlertTriangle, ArrowLeft, MoreHorizontal, Lock, Mail, ExternalLink, Home, Users, Network, Settings, ShieldCheck, Menu, BarChart3, Wallet, Download, Trash2, Pin, PinOff, Pencil, LayoutGrid, List, Wrench, Gift, Monitor, Smartphone, Code2, MousePointerClick, ChevronUp, ChevronDown, History, PanelBottom, PanelTop, Maximize, TextQuote } from 'lucide-react'
+import { Check, ChevronsUpDown, Copy, Loader2, Plus, RefreshCw, Search, X, AlertTriangle, ArrowLeft, MoreHorizontal, Lock, Mail, ExternalLink, Home, Users, Network, Settings, ShieldCheck, Menu, BarChart3, Wallet, Download, Trash2, Pin, PinOff, Pencil, LayoutGrid, List, Wrench, Gift, Monitor, Smartphone, Code2, MousePointerClick, ChevronUp, ChevronDown, History, PanelBottom, PanelTop, Maximize, TextQuote, CircleDollarSign } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -5816,12 +5816,16 @@ function RewardMetricsScreen({ reward, staff, back, edit }: { reward: ProtoRewar
 type TagBlockKind = 'anchor' | 'interstitial' | 'fixed' | 'content'
 type TagRuleMode = 'all' | 'include' | 'exclude'
 type TagBlock = { id: string; kind: TagBlockKind; number: number; desktop: boolean; mobile: boolean; edge: 'top' | 'bottom'; selector: string; side: 'before' | 'after'; refresh: number | null; mgidArticle: string; ruleMode: TagRuleMode; paths: string[] }
-type TagSettings = { lazyLoad: boolean; loader: boolean; adUnitDay: string; analyticsId: string; mgidTagId: string; mgidSmartWidget: string; mgidBackButton: string; mgidSidebar: string }
+type TagSettings = { lazyLoad: boolean; loader: boolean; adUnitDay: string; analyticsId: string; mgidTagId: string; mgidSmartWidget: string; mgidBackButton: string; mgidSidebar: string; reward: 'on' | 'off'; priceRules: 'on' | 'off' }
 type TagVersion = { number: number; by: string; at: string; note: string; blocks: TagBlock[]; settings: TagSettings }
 type TagHealthRow = { block: string; served: number; filled: number; viewable: number }
-type ProtoAdTag = { domain: string; client: string; paused: boolean; draft: { blocks: TagBlock[]; settings: TagSettings } | null; versions: TagVersion[]; lastSeen: string | null; seenVersion: number | null; pages24h: number; health: TagHealthRow[] }
+type ProtoAdTag = { id: string; name: string; key: string; domain: string; client: string; paused: boolean; draft: { blocks: TagBlock[]; settings: TagSettings } | null; versions: TagVersion[]; lastSeen: string | null; seenVersion: number | null; pages24h: number; health: TagHealthRow[] }
 
-const TAG_SCRIPT = '<script async src="https://avant.groone.com/tag.js"></script>'
+/** A linha que vai no <head> do site, com a chave da tag. */
+function tagScript(key: string) { return `<script async src="https://avant.groone.com/tag.js" data-tag="${key}"></script>` }
+const TAG_ALL_UNITS = [...Array.from({ length: 9 }, (_item, index) => `Content${index + 1}`), 'Anchor', 'Interstitial', 'Fixed']
+/** Os ad units que existem no GAM até o número de conteúdos dado, mais os de tela. */
+function tagUnits(contents: number, extras: string[]) { return [...TAG_ALL_UNITS.slice(0, contents), ...extras] }
 const TAG_KIND_LABEL: Record<TagBlockKind, string> = { anchor: 'Âncora', interstitial: 'Intersticial', fixed: 'Fixo', content: 'Conteúdo' }
 const TAG_KIND_HINT: Record<TagBlockKind, string> = {
   anchor: 'Faixa presa no topo ou no rodapé da tela, que o visitante pode fechar.',
@@ -5829,13 +5833,13 @@ const TAG_KIND_HINT: Record<TagBlockKind, string> = {
   fixed: 'Bloco fixo no topo ou no rodapé, do lado oposto da âncora.',
   content: 'Bloco dentro do texto, antes ou depois de um elemento da página.',
 }
-const TAG_SITES: { domain: string; client: string; days: string[] }[] = [
-  { domain: 'acai.com.br', client: 'Açaí Mídia', days: ['2026-10-28', '2026-08-14'] },
-  { domain: 'receitasdaacai.com.br', client: 'Açaí Mídia', days: ['2026-09-02'] },
-  { domain: 'technoticias.com.br', client: 'Tech Notícias', days: ['2026-10-05', '2026-06-20'] },
-  { domain: 'viagemfacil.com', client: 'Viagem Fácil', days: ['2026-07-11'] },
+const TAG_SITES: { domain: string; client: string; days: { date: string; units: string[] }[] }[] = [
+  { domain: 'acai.com.br', client: 'Açaí Mídia', days: [{ date: '2026-10-28', units: tagUnits(6, ['Anchor', 'Interstitial', 'Fixed']) }, { date: '2026-08-14', units: tagUnits(3, ['Anchor', 'Interstitial']) }] },
+  { domain: 'receitasdaacai.com.br', client: 'Açaí Mídia', days: [{ date: '2026-09-02', units: tagUnits(4, ['Anchor', 'Interstitial']) }] },
+  { domain: 'technoticias.com.br', client: 'Tech Notícias', days: [{ date: '2026-10-05', units: tagUnits(5, ['Anchor', 'Interstitial', 'Fixed']) }, { date: '2026-06-20', units: tagUnits(3, ['Anchor']) }] },
+  { domain: 'viagemfacil.com', client: 'Viagem Fácil', days: [{ date: '2026-07-11', units: tagUnits(3, ['Anchor', 'Interstitial']) }] },
 ]
-const DEFAULT_TAG_SETTINGS: TagSettings = { lazyLoad: true, loader: false, adUnitDay: 'latest', analyticsId: '', mgidTagId: '', mgidSmartWidget: '', mgidBackButton: '', mgidSidebar: '' }
+const DEFAULT_TAG_SETTINGS: TagSettings = { lazyLoad: true, loader: false, adUnitDay: 'latest', analyticsId: '', mgidTagId: '', mgidSmartWidget: '', mgidBackButton: '', mgidSidebar: '', reward: 'on', priceRules: 'off' }
 /** Um bloco novo do tipo pedido, com os valores mais comuns. */
 function newTagBlock(kind: TagBlockKind, number = 0): TagBlock {
   return { id: `${kind}-${number}-${Math.random().toString(36).slice(2, 7)}`, kind, number, desktop: true, mobile: true, edge: kind === 'fixed' ? 'top' : 'bottom', selector: '', side: 'after', refresh: null, mgidArticle: '', ruleMode: 'all', paths: [] }
@@ -5850,7 +5854,7 @@ const ACAI_BLOCKS: TagBlock[] = [
 ]
 const INITIAL_AD_TAGS: ProtoAdTag[] = [
   {
-    domain: 'acai.com.br', client: 'Açaí Mídia', paused: false, lastSeen: 'há 2 min', seenVersion: 7, pages24h: 48210,
+    id: 'acai-principal', name: 'Principal', key: 'tg_4m8r2wza', domain: 'acai.com.br', client: 'Açaí Mídia', paused: false, lastSeen: 'há 2 min', seenVersion: 7, pages24h: 48210,
     draft: { blocks: ACAI_BLOCKS.map((block) => (block.id === 'c1' ? { ...block, refresh: 60 } : block)), settings: { ...DEFAULT_TAG_SETTINGS, analyticsId: 'G-8KQ2LM1Z0P', mgidTagId: '972311' } },
     versions: [
       { number: 7, by: 'Marina Costa', at: '07/11/2026 15:42', note: 'Conteúdo 3 só no celular', blocks: ACAI_BLOCKS, settings: { ...DEFAULT_TAG_SETTINGS, analyticsId: 'G-8KQ2LM1Z0P', mgidTagId: '972311' } },
@@ -5867,19 +5871,27 @@ const INITIAL_AD_TAGS: ProtoAdTag[] = [
     ],
   },
   {
-    domain: 'technoticias.com.br', client: 'Tech Notícias', paused: true, lastSeen: 'há 3 dias', seenVersion: 2, pages24h: 0, draft: null, health: [],
+    id: 'tech-principal', name: 'Principal', key: 'tg_q3n5c1vd', domain: 'technoticias.com.br', client: 'Tech Notícias', paused: true, lastSeen: 'há 3 dias', seenVersion: 2, pages24h: 0, draft: null, health: [],
     versions: [{ number: 2, by: 'Rafael Lima (Groone)', at: '20/10/2026 09:12', note: 'Primeira configuração', blocks: [{ ...newTagBlock('content', 1), id: 't1', selector: '.entry-content p:nth-of-type(1)' }, { ...newTagBlock('anchor'), id: 't2' }], settings: DEFAULT_TAG_SETTINGS }, { number: 1, by: 'Rafael Lima (Groone)', at: '19/10/2026 17:40', note: 'Rascunho inicial', blocks: [{ ...newTagBlock('anchor'), id: 't2' }], settings: DEFAULT_TAG_SETTINGS }],
   },
-  { domain: 'receitasdaacai.com.br', client: 'Açaí Mídia', paused: false, lastSeen: null, seenVersion: null, pages24h: 0, draft: { blocks: [{ ...newTagBlock('content', 1), id: 'r1', selector: 'article h1' }, { ...newTagBlock('anchor'), id: 'r2' }], settings: DEFAULT_TAG_SETTINGS }, versions: [], health: [] },
+  {
+    id: 'acai-landing', name: 'Landing de campanhas', key: 'tg_7h2kq9xp', domain: 'acai.com.br', client: 'Açaí Mídia', paused: false, lastSeen: 'há 14 min', seenVersion: 1, pages24h: 3120, draft: null,
+    versions: [{ number: 1, by: 'Marina Costa', at: '05/11/2026 11:20', note: 'Tag das páginas de campanha', blocks: [{ ...newTagBlock('content', 4), id: 'l1', selector: 'article h1' }, { ...newTagBlock('anchor'), id: 'l2' }], settings: { ...DEFAULT_TAG_SETTINGS, reward: 'off' } }],
+    health: [{ block: 'Conteúdo 4', served: 3120, filled: 88, viewable: 69 }, { block: 'Âncora', served: 3090, filled: 95, viewable: 90 }],
+  },
+  { id: 'receitas-principal', name: 'Principal', key: 'tg_b6t0e8ly', domain: 'receitasdaacai.com.br', client: 'Açaí Mídia', paused: false, lastSeen: null, seenVersion: null, pages24h: 0, draft: { blocks: [{ ...newTagBlock('content', 1), id: 'r1', selector: 'article h1' }, { ...newTagBlock('anchor'), id: 'r2' }], settings: DEFAULT_TAG_SETTINGS }, versions: [], health: [] },
 ]
 
 /** Nome do bloco como aparece no painel e no GAM: Conteúdo 1, Âncora... */
 function tagBlockName(block: TagBlock) { return block.kind === 'content' ? `Conteúdo ${block.number}` : TAG_KIND_LABEL[block.kind] }
+/** Código do bloco no nome do ad unit: Content1, Anchor... */
+function tagUnitCode(block: Pick<TagBlock, 'kind' | 'number'>) { return block.kind === 'content' ? `Content${block.number}` : { anchor: 'Anchor', interstitial: 'Interstitial', fixed: 'Fixed' }[block.kind] }
+/** O nome do bloco a partir do código do ad unit. */
+function tagUnitName(code: string) { return code.startsWith('Content') ? `Conteúdo ${code.slice(7)}` : { Anchor: 'Âncora', Interstitial: 'Intersticial', Fixed: 'Fixo' }[code] ?? code }
 /** Nome do ad unit no GAM que o bloco usa no aparelho, pela data dos blocos. */
 function tagAdUnit(domain: string, block: TagBlock, device: 'Desktop' | 'Mobile', day: string) {
   const alias = domain.split('.')[0].replace(/^./, (letter) => letter.toUpperCase())
-  const type = block.kind === 'content' ? `Content${block.number}` : { anchor: 'Anchor', interstitial: 'Interstitial', fixed: 'Fixed' }[block.kind]
-  return `${alias}_${type}_${device}_${day.replaceAll('-', '')}`
+  return `${alias}_${tagUnitCode(block)}_${device}_${day.replaceAll('-', '')}`
 }
 /** As frases que dizem o que mudou entre a versão no ar e o rascunho. */
 function tagChanges(before: TagVersion | undefined, blocks: TagBlock[], settings: TagSettings): string[] {
@@ -5898,7 +5910,7 @@ function tagChanges(before: TagVersion | undefined, blocks: TagBlock[], settings
     if (previous.mgidArticle !== block.mgidArticle) changes.push(`${tagBlockName(block)}: artigo MGID mudou`)
   })
   before.blocks.filter((block) => !blocks.some((item) => item.id === block.id)).forEach((block) => changes.push(`${tagBlockName(block)} removido`))
-  const labels: Record<keyof TagSettings, string> = { lazyLoad: 'Carregamento lento', loader: 'Tela de carregamento', adUnitDay: 'Data dos blocos', analyticsId: 'Google Analytics', mgidTagId: 'Tag MGID', mgidSmartWidget: 'MGID smart widget', mgidBackButton: 'MGID back button', mgidSidebar: 'MGID sidebar' }
+  const labels: Record<keyof TagSettings, string> = { lazyLoad: 'Carregamento lento', loader: 'Tela de carregamento', adUnitDay: 'Data dos blocos', analyticsId: 'Google Analytics', mgidTagId: 'Tag MGID', mgidSmartWidget: 'MGID smart widget', mgidBackButton: 'MGID back button', mgidSidebar: 'MGID sidebar', reward: 'Reward', priceRules: 'Regras de preço' }
   ;(Object.keys(labels) as (keyof TagSettings)[]).forEach((key) => { if (before.settings[key] !== settings[key]) changes.push(`${labels[key]} mudou`) })
   return changes
 }
@@ -5911,57 +5923,88 @@ function tagStatus(tag: ProtoAdTag | undefined): { tone: 'ok' | 'warn' | 'bad' |
   return { tone: 'ok', label: `No ar · versão ${tag.versions[0].number}` }
 }
 
-/** Lista das ad tags: uma por site; no interno, de todos os clientes. */
-function AdTagsScreen({ tags, staff, open, metrics }: { tags: ProtoAdTag[]; staff: boolean; open: (domain: string) => void; metrics: (domain: string) => void }) {
+/** Lista das ad tags por site: um site pode ter várias; no interno, de todos os clientes. */
+function AdTagsScreen({ tags, staff, open, metrics, create }: { tags: ProtoAdTag[]; staff: boolean; open: (id: string) => void; metrics: (id: string) => void; create: (domain: string, name: string) => void }) {
   const [query, setQuery] = useState('')
-  const [installOpen, setInstallOpen] = useState(false)
-  const sites = TAG_SITES.filter((site) => (staff || site.client === MY_CLIENT) && `${site.domain} ${site.client}`.toLowerCase().includes(query.toLowerCase()))
+  const [newOpen, setNewOpen] = useState(false)
+  const [newDomain, setNewDomain] = useState('')
+  const [newName, setNewName] = useState('')
+  const sites = TAG_SITES.filter((site) => staff || site.client === MY_CLIENT)
+  const shown = sites.filter((site) => `${site.domain} ${site.client} ${tags.filter((tag) => tag.domain === site.domain).map((tag) => tag.name).join(' ')}`.toLowerCase().includes(query.toLowerCase()))
+  /** Abre o modal de tag nova, já com o site quando vem da linha. */
+  const startNew = (domain = '') => { setNewDomain(domain); setNewName(tags.some((tag) => tag.domain === domain) ? '' : 'Principal'); setNewOpen(true) }
+  const nameTaken = tags.some((tag) => tag.domain === newDomain && tag.name.trim().toLowerCase() === newName.trim().toLowerCase())
   return (
     <>
-      <PageHeader title="Ad tags" sub={staff ? 'A tag de anúncios de cada site de todos os clientes. A equipe Groone e quem tem acesso ao site editam a mesma tag.' : 'A tag de anúncios de cada site: onde entram os blocos, integrações e se a tag está rodando. Um script só para todos os sites.'}
-        actions={<Button variant="outline" onClick={() => setInstallOpen(true)}><Code2 className="h-4 w-4" />Como instalar</Button>} />
+      <PageHeader title="Ad tags" sub={staff ? 'As tags de anúncios dos sites de todos os clientes. Um site pode ter várias tags, cada uma com a sua linha de instalação.' : 'As tags de anúncios dos seus sites: onde entram os blocos, integrações e se a tag está rodando. Um site pode ter várias tags.'}
+        actions={<Button onClick={() => startNew()}><Plus className="h-4 w-4" />Nova tag</Button>} />
       <Body>
-        <div className="relative w-full sm:w-[280px]"><Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input aria-label="Buscar sites" className="h-9 pl-9" placeholder={staff ? 'Site ou cliente' : 'Site'} value={query} onChange={(event) => setQuery(event.target.value)} /></div>
-        <Table min={staff ? 920 : 780}>
-          <thead><tr><th className={th}>Site</th>{staff && <th className={th}>Cliente</th>}<th className={th}>Situação</th><th className={cn(th, 'text-right')}>Blocos</th><th className={th}>Visto por último</th><th className={th}>Rascunho</th><th className={th}><span className="sr-only">Ação</span></th></tr></thead>
-          <tbody>
-            {sites.map((site) => {
-              const tag = tags.find((item) => item.domain === site.domain)
-              const status = tagStatus(tag)
-              const live = tag?.versions[0]
-              const pending = tag?.draft ? tagChanges(live, tag.draft.blocks, tag.draft.settings).length : 0
-              return (
-                <tr key={site.domain} className="hover:bg-muted">
-                  <td className={cn(td, 'font-mono text-[13px]')}>{tag ? <button className="hover:underline" onClick={() => open(site.domain)}>{site.domain}</button> : site.domain}</td>
-                  {staff && <td className={td}>{site.client}</td>}
-                  <td className={td}><Status tone={status.tone}>{status.label}</Status></td>
-                  <td className={cn(td, 'text-right tnum')}>{live ? live.blocks.length : '—'}</td>
-                  <td className={cn(td, 'whitespace-nowrap text-[13px] text-muted-foreground')}>{tag?.lastSeen ?? 'Nunca'}</td>
-                  <td className={td}>{pending > 0 ? <Badge tone="ochre">{pending} {pending === 1 ? 'alteração' : 'alterações'}</Badge> : <span className="text-[13px] text-muted-foreground">—</span>}</td>
-                  <td className={cn(td, 'text-right')}><div className="flex justify-end gap-2">{tag && tag.versions.length > 0 && <Button size="sm" variant="outline" onClick={() => metrics(site.domain)}><BarChart3 className="h-4 w-4" />Métricas</Button>}<Button size="sm" variant={tag ? 'outline' : 'default'} onClick={() => open(site.domain)}>{tag ? 'Abrir' : <><Plus className="h-4 w-4" />Configurar</>}</Button></div></td>
+        <div className="relative w-full sm:w-[280px]"><Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input aria-label="Buscar tags" className="h-9 pl-9" placeholder={staff ? 'Site, tag ou cliente' : 'Site ou tag'} value={query} onChange={(event) => setQuery(event.target.value)} /></div>
+        <Table min={staff ? 960 : 820}>
+          <thead><tr><th className={th}>Tag</th>{staff && <th className={th}>Cliente</th>}<th className={th}>Situação</th><th className={cn(th, 'text-right')}>Blocos</th><th className={th}>Visto por último</th><th className={th}>Rascunho</th><th className={th}><span className="sr-only">Ação</span></th></tr></thead>
+          {shown.map((site) => {
+            const siteTags = tags.filter((tag) => tag.domain === site.domain)
+            return (
+              <tbody key={site.domain} className="border-t first:border-t-0">
+                <tr className="bg-muted/60">
+                  <td className={cn(td, 'py-2')} colSpan={staff ? 2 : 1}><span className="font-mono text-[13px] font-medium">{site.domain}</span>{staff && <span className="ml-2 text-[12px] text-muted-foreground">{site.client}</span>}<span className="ml-2 text-[12px] text-muted-foreground">· {siteTags.length ? `${siteTags.length} ${siteTags.length === 1 ? 'tag' : 'tags'}` : 'sem tag'}</span></td>
+                  <td className={cn(td, 'py-2 text-right')} colSpan={5}><Button size="sm" variant="ghost" onClick={() => startNew(site.domain)}><Plus className="h-4 w-4" />Tag neste site</Button></td>
                 </tr>
-              )
-            })}
-            {!sites.length && <tr><td className={cn(td, 'py-12 text-center')} colSpan={staff ? 7 : 6}><Code2 className="mx-auto h-5 w-5 text-muted-foreground" /><p className="mt-2 font-medium">Nenhum site com esse nome</p></td></tr>}
-          </tbody>
+                {siteTags.map((tag) => {
+                  const status = tagStatus(tag)
+                  const live = tag.versions[0]
+                  const pending = tag.draft ? tagChanges(live, tag.draft.blocks, tag.draft.settings).length : 0
+                  return (
+                    <tr key={tag.id} className="hover:bg-muted">
+                      <td className={cn(td, 'pl-8')} colSpan={staff ? 2 : 1}><button className="font-medium hover:underline" onClick={() => open(tag.id)}>{tag.name}</button><span className="ml-2 font-mono text-[12px] text-muted-foreground">{tag.key}</span></td>
+                      <td className={td}><Status tone={status.tone}>{status.label}</Status></td>
+                      <td className={cn(td, 'text-right tnum')}>{live ? live.blocks.length : '—'}</td>
+                      <td className={cn(td, 'whitespace-nowrap text-[13px] text-muted-foreground')}>{tag.lastSeen ?? 'Nunca'}</td>
+                      <td className={td}>{pending > 0 ? <Badge tone="ochre">{pending} {pending === 1 ? 'alteração' : 'alterações'}</Badge> : <span className="text-[13px] text-muted-foreground">—</span>}</td>
+                      <td className={cn(td, 'text-right')}><div className="flex justify-end gap-2">{tag.versions.length > 0 && <Button size="sm" variant="outline" onClick={() => metrics(tag.id)}><BarChart3 className="h-4 w-4" />Métricas</Button>}<Button size="sm" variant="outline" onClick={() => open(tag.id)}>Abrir</Button></div></td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            )
+          })}
+          {!shown.length && <tbody><tr><td className={cn(td, 'py-12 text-center')} colSpan={staff ? 7 : 6}><Code2 className="mx-auto h-5 w-5 text-muted-foreground" /><p className="mt-2 font-medium">Nenhuma tag ou site com esse nome</p></td></tr></tbody>}
         </Table>
-        <InstallDialog open={installOpen} onOpenChange={setInstallOpen} />
+        <Dialog open={newOpen} onOpenChange={setNewOpen}>
+          <DialogContent className="max-w-[460px]">
+            <DialogHeader><DialogTitle>Nova ad tag</DialogTitle><DialogDescription>Cada tag tem a sua linha de instalação. Use mais de uma no mesmo site quando partes dele precisam de blocos diferentes.</DialogDescription></DialogHeader>
+            <div className="grid gap-4">
+              <Field id="new-tag-site" label="Site">
+                <Select value={newDomain} onValueChange={(domain) => { setNewDomain(domain); if (!newName) setNewName(tags.some((tag) => tag.domain === domain) ? '' : 'Principal') }}>
+                  <SelectTrigger id="new-tag-site"><SelectValue placeholder="Escolha o site" /></SelectTrigger>
+                  <SelectContent>{sites.map((site) => <SelectItem key={site.domain} value={site.domain}>{site.domain}{staff ? ` · ${site.client}` : ''}</SelectItem>)}</SelectContent>
+                </Select>
+              </Field>
+              <Field id="new-tag-name" label="Nome da tag" hint="Só para o painel. Ex.: Principal, Landing de campanhas, AMP." error={nameTaken && 'Este site já tem uma tag com esse nome.'}>
+                <Input id="new-tag-name" value={newName} onChange={(event) => setNewName(event.target.value)} placeholder="Principal" />
+              </Field>
+            </div>
+            <DialogFooter><Button variant="outline" onClick={() => setNewOpen(false)}>Cancelar</Button><Button disabled={!newDomain || !newName.trim() || nameTaken} onClick={() => { setNewOpen(false); create(newDomain, newName.trim()) }}>Criar tag</Button></DialogFooter>
+          </DialogContent>
+        </Dialog>
       </Body>
     </>
   )
 }
 
-/** Como instalar: a mesma linha em todos os sites, sem chave. */
-function InstallDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+/** Como instalar: a linha da tag, com a chave dela, no head do site. */
+function InstallDialog({ open, onOpenChange, tag }: { open: boolean; onOpenChange: (open: boolean) => void; tag: ProtoAdTag }) {
+  const script = tagScript(tag.key)
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[560px]">
-        <DialogHeader><DialogTitle>Instalar a ad tag</DialogTitle><DialogDescription>Cole esta linha no &lt;head&gt; do site. É igual para todos os sites: a tag acha a configuração pelo domínio da página.</DialogDescription></DialogHeader>
-        <div className="flex items-start gap-2 rounded-md border bg-muted p-3"><code className="min-w-0 flex-1 break-all font-mono text-[13px]">{TAG_SCRIPT}</code><Button size="sm" variant="outline" onClick={() => { void navigator.clipboard?.writeText(TAG_SCRIPT); toast.success('Linha copiada') }}><Copy className="h-4 w-4" />Copiar</Button></div>
+        <DialogHeader><DialogTitle>Instalar a tag {tag.name}</DialogTitle><DialogDescription>Cole esta linha no &lt;head&gt; das páginas de {tag.domain} que devem usar esta tag. Cada tag tem a sua chave.</DialogDescription></DialogHeader>
+        <div className="flex items-start gap-2 rounded-md border bg-muted p-3"><code className="min-w-0 flex-1 break-all font-mono text-[13px]">{script}</code><Button size="sm" variant="outline" onClick={() => { void navigator.clipboard?.writeText(script); toast.success('Linha copiada') }}><Copy className="h-4 w-4" />Copiar</Button></div>
         <ul className="grid gap-2 text-[14px] text-muted-foreground">
           <li>• O reward já vem dentro da tag. Se o site usa só o reward, a linha é a do <span className="font-mono text-[13px]">reward.js</span>; com a tag, tire a do reward.</li>
           <li>• Tire a tag antiga do Genius (<span className="font-mono text-[13px]">g-tag.min.js</span>) para os anúncios não aparecerem duas vezes.</li>
-          <li>• Depois de instalar, a aba Saúde mostra a tag rodando em poucos minutos.</li>
+          <li>• Uma página deve ter só uma tag. Com duas, a primeira que carregar vale e a outra fica parada.</li>
+          <li>• Depois de instalar, as Métricas mostram a tag rodando em poucos minutos.</li>
         </ul>
         <DialogFooter><Button onClick={() => onOpenChange(false)}>Fechar</Button></DialogFooter>
       </DialogContent>
@@ -6088,13 +6131,13 @@ function TagBlockSection({ title, aside, children }: { title: string; aside?: Re
 }
 
 /** O cartão de um bloco: fechado mostra o resumo; aberto, onde entra, aparelhos, páginas e anúncio. */
-function TagBlockCard({ block, index, total, open, toggle, change, move, remove, picking, startPick, anchorEdge }: { block: TagBlock; index: number; total: number; open: boolean; toggle: () => void; change: (patch: Partial<TagBlock>) => void; move: (offset: number) => void; remove: () => void; picking: boolean; startPick: () => void; anchorEdge: 'top' | 'bottom' | null }) {
+function TagBlockCard({ block, index, total, open, toggle, change, move, remove, picking, startPick, anchorEdge, missingDay }: { block: TagBlock; index: number; total: number; open: boolean; toggle: () => void; change: (patch: Partial<TagBlock>) => void; move: (offset: number) => void; remove: () => void; picking: boolean; startPick: () => void; anchorEdge: 'top' | 'bottom' | null; missingDay: string | null }) {
   const KindIcon = TAG_KIND_ICON[block.kind]
   const where = block.kind === 'content' ? (block.selector ? `${block.side === 'before' ? 'Antes de' : 'Depois de'} ${block.selector}` : 'Falta escolher onde entra') : block.kind === 'interstitial' ? 'Na troca de página' : block.edge === 'top' ? 'No topo da tela' : 'No rodapé da tela'
   const pages = block.ruleMode === 'all' ? 'Em todas' : `${block.ruleMode === 'include' ? 'Só em' : 'Fora de'} ${block.paths.length} ${block.paths.length === 1 ? 'caminho' : 'caminhos'}`
   const fixedClash = block.kind === 'fixed' && anchorEdge === block.edge
   const noDevice = !block.desktop && !block.mobile
-  const problem = noDevice ? 'Ligue pelo menos um aparelho' : block.kind === 'content' && !block.selector ? 'Falta escolher onde entra' : fixedClash ? 'Do mesmo lado da âncora' : null
+  const problem = missingDay ? `Não existe no GAM em ${missingDay}` : noDevice ? 'Ligue pelo menos um aparelho' : block.kind === 'content' && !block.selector ? 'Falta escolher onde entra' : fixedClash ? 'Do mesmo lado da âncora' : null
   return (
     <div className={cn('rounded-lg border bg-card transition-shadow', open && 'shadow-sm', picking && 'ring-2 ring-sky-500', problem && !open && 'border-warn/50')}>
       <div className="flex items-center gap-2 py-2.5 pl-3 pr-2">
@@ -6121,6 +6164,7 @@ function TagBlockCard({ block, index, total, open, toggle, change, move, remove,
       {open && (
         <div className="grid gap-5 border-t px-4 pb-4 pt-3">
           <p className="text-[12px] leading-snug text-muted-foreground">{TAG_KIND_HINT[block.kind]}</p>
+          {missingDay && <p className="flex items-start gap-2 rounded-md border border-warn/40 bg-warn/5 px-2.5 py-2 text-[12px] text-warn"><AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />O GAM não tem o ad unit {tagUnitCode(block)} no dia {missingDay}. Tire o bloco ou troque a data em Integrações.</p>}
           {block.kind !== 'interstitial' && <TagBlockSection title="Onde entra">
             {block.kind === 'content' && <>
               <TagSegmented label="Lado do elemento" value={block.side} onChange={(side) => change({ side })} options={[['before', 'Antes de'], ['after', 'Depois de']]} />
@@ -6170,6 +6214,42 @@ function TagBlockCard({ block, index, total, open, toggle, change, move, remove,
   )
 }
 
+/** Logo do Google Analytics: três barras, como no Genius. */
+function GoogleAnalyticsIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-full w-full" aria-hidden="true">
+      <rect width="24" height="24" rx="6" fill="#fff" />
+      <rect x="15" y="4" width="4.5" height="16" rx="2.25" fill="#F9AB00" />
+      <rect x="9.75" y="9.5" width="4.5" height="10.5" rx="2.25" fill="#E37400" />
+      <circle cx="6.75" cy="17.75" r="2.25" fill="#E37400" />
+    </svg>
+  )
+}
+
+/** Logo da MGID: o nome em branco no quadrado azul, como no Genius. */
+function MgidIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-full w-full" aria-hidden="true">
+      <rect width="24" height="24" rx="6" fill="#1F4BFF" />
+      <text x="12" y="15.2" textAnchor="middle" fontFamily="Arial, sans-serif" fontSize="8.2" fontWeight="700" fill="#fff">mgid</text>
+    </svg>
+  )
+}
+
+/** Cartão de uma integração da tag: logo, nome, se está ligada e os campos. */
+function IntegrationCard({ icon, title, desc, on, children }: { icon: React.ReactNode; title: string; desc: string; on: boolean; children: React.ReactNode }) {
+  return (
+    <section className="rounded-lg border bg-card p-6">
+      <div className="flex items-start gap-3">
+        <span className="h-10 w-10 shrink-0 overflow-hidden rounded-md border">{icon}</span>
+        <div className="min-w-0 flex-1"><h2 className="text-[17px] font-semibold tracking-tight">{title}</h2><p className="mt-0.5 text-[13px] text-muted-foreground">{desc}</p></div>
+        <Status tone={on ? 'ok' : 'neutral'}>{on ? 'Ligado' : 'Desligado'}</Status>
+      </div>
+      <div className="mt-5">{children}</div>
+    </section>
+  )
+}
+
 /** A ad tag de um site: blocos com o site ao lado, integrações, saúde e versões. */
 function AdTagEditScreen({ initial, staff, back, save, metrics }: { initial: ProtoAdTag; staff: boolean; back: () => void; save: (tag: ProtoAdTag) => void; metrics: () => void }) {
   const live = initial.versions[0]
@@ -6187,17 +6267,18 @@ function AdTagEditScreen({ initial, staff, back, save, metrics }: { initial: Pro
   const site = TAG_SITES.find((item) => item.domain === tag.domain)!
   const changes = tagChanges(tag.versions[0], blocks, settings)
   const anchorEdge = blocks.find((block) => block.kind === 'anchor')?.edge ?? null
-  const problems = blocks.filter((block) => (!block.desktop && !block.mobile) || (block.kind === 'content' && !block.selector) || (block.kind === 'fixed' && block.edge === anchorEdge)).length
-  const usedContent = blocks.filter((block) => block.kind === 'content').map((block) => block.number)
-  const freeContent = Array.from({ length: 9 }, (_item, index) => index + 1).filter((number) => !usedContent.includes(number))
-  const day = settings.adUnitDay === 'latest' ? site.days[0] : settings.adUnitDay
+  const problems = blocks.filter((block) => (!block.desktop && !block.mobile) || (block.kind === 'content' && !block.selector) || (block.kind === 'fixed' && block.edge === anchorEdge) || !(site.days.find((item) => item.date === (settings.adUnitDay === 'latest' ? site.days[0].date : settings.adUnitDay))?.units ?? []).includes(tagUnitCode(block))).length
+  const day = settings.adUnitDay === 'latest' ? site.days[0].date : settings.adUnitDay
+  const dayUnits = site.days.find((item) => item.date === day)?.units ?? []
+  /** O bloco não tem ad unit no GAM no dia escolhido. */
+  const missingUnit = (block: TagBlock) => !dayUnits.includes(tagUnitCode(block))
   const status = tagStatus(tag)
   /** Muda um bloco pelo id. */
   const changeBlock = (id: string, patch: Partial<TagBlock>) => setBlocks((current) => current.map((block) => (block.id === id ? { ...block, ...patch } : block)))
   /** Troca o bloco de lugar na ordem de carregamento. */
   const moveBlock = (index: number, offset: number) => setBlocks((current) => { const next = [...current]; const [block] = next.splice(index, 1); next.splice(index + offset, 0, block); return next })
   /** Põe um bloco novo no fim da lista e abre para editar. */
-  const addBlock = (kind: TagBlockKind) => { const block = newTagBlock(kind, kind === 'content' ? freeContent[0] : 0); if (kind === 'fixed' && anchorEdge === 'top') block.edge = 'bottom'; setBlocks((current) => [...current, block]); setOpenId(block.id) }
+  const addBlock = (kind: TagBlockKind, number = 0) => { const block = newTagBlock(kind, number); if (kind === 'fixed' && anchorEdge === 'top') block.edge = 'bottom'; setBlocks((current) => [...current, block]); setOpenId(block.id) }
   /** Publica o rascunho como versão nova: vai para o site em até um minuto. */
   const publish = () => {
     const version: TagVersion = { number: (tag.versions[0]?.number ?? 0) + 1, by: staff ? 'Rafael Lima (Groone)' : 'Marina Costa', at: 'Agora', note: note.trim() || changes[0] || 'Sem descrição', blocks, settings }
@@ -6211,7 +6292,7 @@ function AdTagEditScreen({ initial, staff, back, save, metrics }: { initial: Pro
   const changeSettings = (patch: Partial<TagSettings>) => setSettings((current) => ({ ...current, ...patch }))
   return (
     <>
-      <PageHeader title={tag.domain} sub={staff ? `${tag.client} · Ad tag` : 'Ad tag do site'}
+      <PageHeader title={tag.name} sub={staff ? `${tag.domain} · ${tag.client} · ${tag.key}` : `${tag.domain} · ${tag.key}`}
         back={<button onClick={() => { save({ ...tag, draft: changes.length ? { blocks, settings } : null }); back() }} className="inline-flex items-center gap-1 text-[13px] text-muted-foreground hover:text-foreground"><ArrowLeft className="h-3.5 w-3.5" />Ad tags</button>}
         actions={<>
           {tag.versions.length > 0 && <Button variant="outline" onClick={() => { save({ ...tag, draft: changes.length ? { blocks, settings } : null }); metrics() }}><BarChart3 className="h-4 w-4" />Métricas</Button>}
@@ -6240,15 +6321,23 @@ function AdTagEditScreen({ initial, staff, back, save, metrics }: { initial: Pro
             <div className="grid grid-cols-[minmax(0,1fr)] content-start gap-3">
               <div className="flex flex-wrap items-center justify-between gap-2"><h2 className="text-[15px] font-semibold">Blocos <span className="font-normal text-muted-foreground">na ordem de carregamento</span></h2>
                 <DropdownMenu><DropdownMenuTrigger asChild><Button size="sm" variant="outline"><Plus className="h-4 w-4" />Bloco</Button></DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem disabled={!freeContent.length} onSelect={() => addBlock('content')}>Conteúdo {freeContent[0] ?? ''}</DropdownMenuItem>
-                    {(['anchor', 'interstitial', 'fixed'] as const).map((kind) => <DropdownMenuItem key={kind} disabled={blocks.some((block) => block.kind === kind)} onSelect={() => addBlock(kind)}>{TAG_KIND_LABEL[kind]}</DropdownMenuItem>)}
+                  <DropdownMenuContent align="end" className="w-[260px]">
+                    <DropdownMenuLabel className="text-[12px] font-normal text-muted-foreground">Blocos no GAM em {formatBlockDate(day)}</DropdownMenuLabel>
+                    {dayUnits.map((code) => {
+                      const kind: TagBlockKind = code.startsWith('Content') ? 'content' : ({ Anchor: 'anchor', Interstitial: 'interstitial', Fixed: 'fixed' } as const)[code as 'Anchor' | 'Interstitial' | 'Fixed']
+                      const number = kind === 'content' ? Number(code.slice(7)) : 0
+                      const used = blocks.some((block) => tagUnitCode(block) === code)
+                      const Icon = TAG_KIND_ICON[kind]
+                      return <DropdownMenuItem key={code} disabled={used} onSelect={() => addBlock(kind, number)}><Icon className="h-4 w-4" /><span className="flex-1">{tagUnitName(code)}</span>{used && <span className="text-[12px] text-muted-foreground">na tag</span>}</DropdownMenuItem>
+                    })}
+                    <DropdownMenuSeparator />
+                    <p className="px-2 py-1.5 text-[12px] leading-snug text-muted-foreground">{dayUnits.length < TAG_ALL_UNITS.length ? `${TAG_ALL_UNITS.filter((code) => !dayUnits.includes(code)).map(tagUnitName).join(', ')} não existem nesse dia.` : 'Todos os blocos existem nesse dia.'} A data fica em Integrações.</p>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
               {blocks.map((block, index) => (
                 <TagBlockCard key={block.id} block={block} index={index} total={blocks.length} open={openId === block.id} toggle={() => setOpenId(openId === block.id ? null : block.id)} change={(patch) => changeBlock(block.id, patch)} move={(offset) => moveBlock(index, offset)}
-                  remove={() => setBlocks((current) => current.filter((item) => item.id !== block.id))} picking={pickingId === block.id} startPick={() => setPickingId(pickingId === block.id ? null : block.id)} anchorEdge={block.kind === 'fixed' ? anchorEdge : null} />
+                  remove={() => setBlocks((current) => current.filter((item) => item.id !== block.id))} picking={pickingId === block.id} startPick={() => setPickingId(pickingId === block.id ? null : block.id)} anchorEdge={block.kind === 'fixed' ? anchorEdge : null} missingDay={missingUnit(block) ? formatBlockDate(day) : null} />
               ))}
               {!blocks.length && <div className="rounded-lg border border-dashed bg-card p-8 text-center text-[14px] text-muted-foreground">Nenhum bloco ainda. Comece pelo Conteúdo 1 e pela âncora.</div>}
               <p className="text-[12px] text-muted-foreground">Os primeiros da lista carregam antes. Ad units do dia {formatBlockDate(day)}{settings.adUnitDay === 'latest' ? ' (os mais recentes)' : ''}, por exemplo <span className="font-mono">{blocks[0] ? tagAdUnit(tag.domain, blocks[0], device === 'desktop' ? 'Desktop' : 'Mobile', day) : '—'}</span>.</p>
@@ -6268,36 +6357,42 @@ function AdTagEditScreen({ initial, staff, back, save, metrics }: { initial: Pro
         )}
         {tab === 'integrations' && (
           <div className="grid gap-6 lg:grid-cols-2">
-            <Card title="Geral" desc="Valem para todos os blocos da tag.">
+            <Card title="Geral" desc="Valem para todos os blocos desta tag.">
               <div className="grid gap-5">
+                <Field id="tag-name" label="Nome da tag" hint="Só para o painel. Muda na hora, sem publicar.">
+                  <Input id="tag-name" value={tag.name} onChange={(event) => setTag({ ...tag, name: event.target.value })} onBlur={() => save({ ...tag, name: tag.name.trim() || 'Sem nome', draft: changes.length ? { blocks, settings } : null })} />
+                </Field>
                 <label className="flex items-start gap-3 text-[14px]"><Switch checked={settings.lazyLoad} onCheckedChange={(lazyLoad) => changeSettings({ lazyLoad })} /><span><span className="block font-medium">Carregamento lento</span><span className="text-muted-foreground">Os blocos de conteúdo só carregam perto de aparecer na tela.</span></span></label>
                 <label className="flex items-start gap-3 text-[14px]"><Switch checked={settings.loader} onCheckedChange={(loader) => changeSettings({ loader })} /><span><span className="block font-medium">Tela de carregamento e adblock</span><span className="text-muted-foreground">Mostra o logo enquanto os anúncios carregam e pede para desligar o bloqueador de anúncios.</span></span></label>
                 <Field id="tag-day" label="Ad units" hint="Com “Os mais recentes”, blocos novos criados no GAM entram sozinhos, sem publicar de novo.">
                   <Select value={settings.adUnitDay} onValueChange={(adUnitDay) => changeSettings({ adUnitDay })}>
                     <SelectTrigger id="tag-day"><SelectValue /></SelectTrigger>
-                    <SelectContent><SelectItem value="latest">Os mais recentes ({formatBlockDate(site.days[0])})</SelectItem>{site.days.map((item) => <SelectItem key={item} value={item}>Fixar em {formatBlockDate(item)}</SelectItem>)}</SelectContent>
+                    <SelectContent><SelectItem value="latest">Os mais recentes ({formatBlockDate(site.days[0].date)} · {site.days[0].units.length} blocos)</SelectItem>{site.days.map((item) => <SelectItem key={item.date} value={item.date}>Fixar em {formatBlockDate(item.date)} · {item.units.length} blocos</SelectItem>)}</SelectContent>
                   </Select>
                 </Field>
               </div>
             </Card>
-            <Card title="Google Analytics" desc="A tag carrega o Analytics se o site ainda não tiver.">
-              <Field id="tag-ga" label="ID da métrica" error={settings.analyticsId !== '' && !/^G-[A-Z0-9]{6,12}$/.test(settings.analyticsId) && 'O ID começa com G- seguido de letras e números.'}>
-                <Input id="tag-ga" className="h-9 font-mono text-[13px]" value={settings.analyticsId} onChange={(event) => changeSettings({ analyticsId: event.target.value.toUpperCase().trim() })} placeholder="G-XXXXXXXXXX" />
-              </Field>
-            </Card>
-            <Card title="MGID" desc="Widgets da MGID no site. Deixe vazio o que não usa.">
-              <div className="grid gap-4 sm:grid-cols-2">
-                {([['mgidTagId', 'Tag do site'], ['mgidSmartWidget', 'Smart widget'], ['mgidBackButton', 'Back button'], ['mgidSidebar', 'Sidebar']] as const).map(([key, label]) => (
-                  <Field key={key} id={`tag-${key}`} label={label}><Input id={`tag-${key}`} className="h-9 font-mono text-[13px]" disabled={key !== 'mgidTagId' && !settings.mgidTagId} value={settings[key]} onChange={(event) => changeSettings({ [key]: event.target.value.replace(/\D/g, '') })} placeholder="ID" /></Field>
-                ))}
-              </div>
-            </Card>
-            <Card title="Reward e regras de preço">
-              <div className="grid gap-3 text-[14px]">
-                <p className="flex items-start gap-2"><Gift className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" /><span>Os rewards de {tag.domain} entram pela tag, sem outro script. Se o Google mostrar o offerwall, o reward espera.</span></p>
-                <p className="flex items-start gap-2 text-muted-foreground"><Lock className="mt-0.5 h-4 w-4 shrink-0" /><span>Regras de preço (floor por bloco): chegam depois da ad tag.</span></p>
-              </div>
-            </Card>
+            <div className="grid content-start gap-6">
+              <IntegrationCard icon={<GoogleAnalyticsIcon />} title="Google Analytics" desc="A tag carrega o Analytics se o site ainda não tiver." on={settings.analyticsId !== ''}>
+                <Field id="tag-ga" label="ID da métrica" error={settings.analyticsId !== '' && !/^G-[A-Z0-9]{6,12}$/.test(settings.analyticsId) && 'O ID começa com G- seguido de letras e números.'}>
+                  <Input id="tag-ga" className="h-9 font-mono text-[13px]" value={settings.analyticsId} onChange={(event) => changeSettings({ analyticsId: event.target.value.toUpperCase().trim() })} placeholder="G-XXXXXXXXXX" />
+                </Field>
+              </IntegrationCard>
+              <IntegrationCard icon={<MgidIcon />} title="MGID" desc="Widgets da MGID no site. Deixe vazio o que não usa." on={settings.mgidTagId !== ''}>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {([['mgidTagId', 'Tag do site'], ['mgidSmartWidget', 'Smart widget'], ['mgidBackButton', 'Back button'], ['mgidSidebar', 'Sidebar']] as const).map(([key, label]) => (
+                    <Field key={key} id={`tag-${key}`} label={label}><Input id={`tag-${key}`} className="h-9 font-mono text-[13px]" disabled={key !== 'mgidTagId' && !settings.mgidTagId} value={settings[key]} onChange={(event) => changeSettings({ [key]: event.target.value.replace(/\D/g, '') })} placeholder="ID" /></Field>
+                  ))}
+                </div>
+              </IntegrationCard>
+            </div>
+            <IntegrationCard icon={<span className="grid h-full w-full place-items-center rounded-md bg-foreground text-background"><Gift className="h-4 w-4" /></span>} title="Reward" desc={`Os rewards de ${tag.domain} entram por esta tag, sem outro script.`} on={settings.reward === 'on'}>
+              <ChoiceCards name="Reward na tag" value={settings.reward} onChange={(reward) => changeSettings({ reward })} options={[{ value: 'on', title: 'Ligado', hint: 'Mostra os rewards ativos do site. Se o Google mostrar o offerwall, o reward espera.' }, { value: 'off', title: 'Desligado', hint: 'Esta tag não carrega reward, mesmo com reward ativo no site.' }]} />
+            </IntegrationCard>
+            <IntegrationCard icon={<span className="grid h-full w-full place-items-center rounded-md bg-emerald-600 text-white"><CircleDollarSign className="h-4 w-4" /></span>} title="Regras de preço" desc="Floor por bloco, das regras de preço do site." on={settings.priceRules === 'on'}>
+              <ChoiceCards name="Regras de preço" value={settings.priceRules} onChange={(priceRules) => changeSettings({ priceRules })} options={[{ value: 'on', title: 'Usar', hint: 'A tag manda o floor de cada bloco para o GAM.' }, { value: 'off', title: 'Não usar', hint: 'Os blocos vão sem floor; o GAM decide o preço.' }]} />
+              <p className="mt-3 text-[12px] text-muted-foreground">As regras de preço do Avant chegam depois da ad tag. Até lá a opção fica guardada.</p>
+            </IntegrationCard>
           </div>
         )}
         {tab === 'versions' && (
@@ -6317,10 +6412,10 @@ function AdTagEditScreen({ initial, staff, back, save, metrics }: { initial: Pro
             </tbody>
           </Table>
         )}
-        <InstallDialog open={installOpen} onOpenChange={setInstallOpen} />
+        <InstallDialog open={installOpen} onOpenChange={setInstallOpen} tag={tag} />
         <Dialog open={publishOpen} onOpenChange={setPublishOpen}>
           <DialogContent className="max-w-[520px]">
-            <DialogHeader><DialogTitle>Publicar a versão {(tag.versions[0]?.number ?? 0) + 1}</DialogTitle><DialogDescription>Vai para {tag.domain} em até um minuto. Dá para voltar a qualquer versão depois.</DialogDescription></DialogHeader>
+            <DialogHeader><DialogTitle>Publicar a versão {(tag.versions[0]?.number ?? 0) + 1}</DialogTitle><DialogDescription>Vai para as páginas de {tag.domain} com a tag {tag.name} em até um minuto. Dá para voltar a qualquer versão depois.</DialogDescription></DialogHeader>
             <ul className="grid max-h-[220px] gap-1.5 overflow-y-auto rounded-md border bg-muted p-3 text-[14px]">{changes.map((change) => <li key={change}>• {change}</li>)}</ul>
             <Field id="tag-note" label="Descrição da versão" hint="Opcional. Aparece na lista de versões."><Input id="tag-note" value={note} onChange={(event) => setNote(event.target.value)} placeholder={changes[0]} /></Field>
             <DialogFooter><Button variant="outline" onClick={() => setPublishOpen(false)}>Cancelar</Button><Button onClick={publish}>Publicar</Button></DialogFooter>
@@ -6335,7 +6430,7 @@ function AdTagEditScreen({ initial, staff, back, save, metrics }: { initial: Pro
 function AdTagMetricsScreen({ tag, staff, back, edit }: { tag: ProtoAdTag; staff: boolean; back: () => void; edit: () => void }) {
   const [period, setPeriod] = useState<string>('30')
   const [series, setSeries] = useState<keyof Omit<RewardDay, 'day'>>('opens')
-  const seed = tag.domain.length
+  const seed = tag.domain.length + tag.name.length
   const days: RewardDay[] = Array.from({ length: 30 }, (_item, index) => {
     const opens = tag.lastSeen === null ? 0 : Math.round(tag.pages24h * (0.82 + seeded(seed * 100 + index) * 0.3))
     const clicks = Math.round(opens * (0.84 + seeded(seed * 200 + index) * 0.08))
@@ -6353,7 +6448,7 @@ function AdTagMetricsScreen({ tag, staff, back, edit }: { tag: ProtoAdTag; staff
   ]
   return (
     <>
-      <PageHeader title={tag.domain} sub={staff ? `${tag.client} · Métricas da ad tag` : 'Métricas da ad tag'}
+      <PageHeader title={tag.name} sub={staff ? `${tag.domain} · ${tag.client} · Métricas da ad tag` : `${tag.domain} · Métricas da ad tag`}
         back={<button onClick={back} className="inline-flex items-center gap-1 text-[13px] text-muted-foreground hover:text-foreground"><ArrowLeft className="h-3.5 w-3.5" />Ad tags</button>}
         actions={<><Select value={period} onValueChange={setPeriod}><SelectTrigger aria-label="Período" className="h-9 w-[180px]"><SelectValue /></SelectTrigger><SelectContent>{REWARD_PERIODS.map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent></Select><Button variant="outline" onClick={edit}><Pencil className="h-4 w-4" />Editar</Button></>} />
       <Body>
@@ -6431,10 +6526,11 @@ export default function App() {
   const openRewardMetrics = (id: number, staff: boolean) => { setRewardDraft(rewards.find((item) => item.id === id)!); go(staff ? 'rewardmetricasinterno' : 'rewardmetricas') }
   const openReward = (id: number | null, staff: boolean) => { setRewardDraft(id ? rewards.find((item) => item.id === id)! : blankReward(REWARD_SITES.find((site) => staff || site.client === MY_CLIENT)!)); go(staff ? 'rewardinterno' : 'reward') }
   const [adTags, setAdTags] = useState(INITIAL_AD_TAGS)
-  const [adTagDomain, setAdTagDomain] = useState('acai.com.br')
+  const [adTagId, setAdTagId] = useState('acai-principal')
   /** Abre a ad tag do site (ou começa uma) no painel do cliente ou no interno. */
-  const openAdTagMetrics = (domain: string, staff: boolean) => { setAdTagDomain(domain); go(staff ? 'adtagmetricasinterno' : 'adtagmetricas') }
-  const openAdTag = (domain: string, staff: boolean) => { if (!adTags.some((item) => item.domain === domain)) { const site = TAG_SITES.find((item) => item.domain === domain)!; setAdTags((current) => [...current, { domain, client: site.client, paused: false, draft: null, versions: [], lastSeen: null, seenVersion: null, pages24h: 0, health: [] }]) } setAdTagDomain(domain); go(staff ? 'adtaginterno' : 'adtag') }
+  const openAdTagMetrics = (id: string, staff: boolean) => { setAdTagId(id); go(staff ? 'adtagmetricasinterno' : 'adtagmetricas') }
+  const openAdTag = (id: string, staff: boolean) => { setAdTagId(id); go(staff ? 'adtaginterno' : 'adtag') }
+  const createAdTag = (domain: string, name: string, staff: boolean) => { const site = TAG_SITES.find((item) => item.domain === domain)!; const id = `${domain}-${Math.random().toString(36).slice(2, 8)}`; setAdTags((current) => [...current, { id, name, key: `tg_${Math.random().toString(36).slice(2, 10)}`, domain, client: site.client, paused: false, draft: null, versions: [], lastSeen: null, seenVersion: null, pages24h: 0, health: [] }]); openAdTag(id, staff) }
   /** Grava o reward novo ou editado. */
   const saveReward = (saved: ProtoReward) => setRewards((current) => (saved.id ? current.map((item) => (item.id === saved.id ? saved : item)) : [{ ...saved, id: Math.max(...current.map((item) => item.id)) + 1 }, ...current]))
 
@@ -6506,10 +6602,10 @@ export default function App() {
       case 'rewardsinterno': return <RewardsScreen rewards={rewards} staff open={(id) => openReward(id, true)} metrics={(id) => openRewardMetrics(id, true)} />
       case 'reward': case 'rewardinterno': { const staff = screen === 'rewardinterno'; return <RewardEditScreen key={`${rewardDraft.id}-${screen}`} initial={rewardDraft} rewards={rewards} staff={staff} back={() => go(staff ? 'rewardsinterno' : 'rewards')} save={saveReward} remove={(id) => setRewards((current) => current.filter((item) => item.id !== id))} metrics={() => openRewardMetrics(rewardDraft.id, staff)} /> }
       case 'rewardmetricas': case 'rewardmetricasinterno': { const staff = screen === 'rewardmetricasinterno'; return <RewardMetricsScreen key={rewardDraft.id} reward={rewardDraft} staff={staff} back={() => go(staff ? 'rewardsinterno' : 'rewards')} edit={() => openReward(rewardDraft.id, staff)} /> }
-      case 'adtags': return <AdTagsScreen tags={adTags} staff={false} open={(domain) => openAdTag(domain, false)} metrics={(domain) => openAdTagMetrics(domain, false)} />
-      case 'adtagsinterno': return <AdTagsScreen tags={adTags} staff open={(domain) => openAdTag(domain, true)} metrics={(domain) => openAdTagMetrics(domain, true)} />
-      case 'adtag': case 'adtaginterno': { const staff = screen === 'adtaginterno'; const tag = adTags.find((item) => item.domain === adTagDomain) ?? adTags[0]; return <AdTagEditScreen key={`${tag.domain}-${screen}`} initial={tag} staff={staff} back={() => go(staff ? 'adtagsinterno' : 'adtags')} save={(next) => setAdTags((current) => current.map((item) => (item.domain === next.domain ? next : item)))} metrics={() => openAdTagMetrics(tag.domain, staff)} /> }
-      case 'adtagmetricas': case 'adtagmetricasinterno': { const staff = screen === 'adtagmetricasinterno'; const tag = adTags.find((item) => item.domain === adTagDomain) ?? adTags[0]; return <AdTagMetricsScreen key={tag.domain} tag={tag} staff={staff} back={() => go(staff ? 'adtagsinterno' : 'adtags')} edit={() => openAdTag(tag.domain, staff)} /> }
+      case 'adtags': return <AdTagsScreen tags={adTags} staff={false} open={(id) => openAdTag(id, false)} metrics={(id) => openAdTagMetrics(id, false)} create={(domain, name) => createAdTag(domain, name, false)} />
+      case 'adtagsinterno': return <AdTagsScreen tags={adTags} staff open={(id) => openAdTag(id, true)} metrics={(id) => openAdTagMetrics(id, true)} create={(domain, name) => createAdTag(domain, name, true)} />
+      case 'adtag': case 'adtaginterno': { const staff = screen === 'adtaginterno'; const tag = adTags.find((item) => item.id === adTagId) ?? adTags[0]; return <AdTagEditScreen key={`${tag.id}-${screen}`} initial={tag} staff={staff} back={() => go(staff ? 'adtagsinterno' : 'adtags')} save={(next) => setAdTags((current) => current.map((item) => (item.id === next.id ? next : item)))} metrics={() => openAdTagMetrics(tag.id, staff)} /> }
+      case 'adtagmetricas': case 'adtagmetricasinterno': { const staff = screen === 'adtagmetricasinterno'; const tag = adTags.find((item) => item.id === adTagId) ?? adTags[0]; return <AdTagMetricsScreen key={tag.id} tag={tag} staff={staff} back={() => go(staff ? 'adtagsinterno' : 'adtags')} edit={() => openAdTag(tag.id, staff)} /> }
       case 'tarefa': { const task = tasks.find((item) => item.id === taskId) ?? tasks[0]; return <TaskScreen key={task.id} task={task} update={(next) => setTasks(tasks.map((item) => (item.id === next.id ? next : item)))} back={() => go('tarefas')} /> }
     }
   })()
