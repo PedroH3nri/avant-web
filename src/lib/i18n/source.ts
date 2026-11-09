@@ -3279,6 +3279,11 @@ export const dict = {
   'rw.emptyDeleted': ['Nenhum reward apagado.', 'No deleted rewards.', 'Ningún reward eliminado.'],
   'rw.create': ['Criar reward', 'Create reward', 'Crear reward'],
   'rw.created': ['Reward criado', 'Reward created', 'Reward creado'],
+  'rw.createdNoIcon': [
+    'Reward criado sem a imagem do ícone. Abra o reward e envie a imagem de novo.',
+    'Reward created without the icon image. Open the reward and upload the image again.',
+    'Reward creado sin la imagen del ícono. Abre el reward y envía la imagen de nuevo.',
+  ],
   'rw.saved': ['Reward salvo', 'Reward saved', 'Reward guardado'],
   'rw.more': ['Mais ações', 'More actions', 'Más acciones'],
   'rw.pause': ['Pausar', 'Pause', 'Pausar'],
