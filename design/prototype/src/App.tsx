@@ -5107,14 +5107,18 @@ function RewardBody({ reward, lang = 'pt', onUnlock, onClose }: { reward: ProtoR
       {style.layout === 'header' && (
         <div className="relative flex h-[120px] items-center justify-center" style={{ background: accentGradient(style.accent) }}>
           {hasIcon && <RewardIconView reward={reward} size={48} />}
-          <div className="absolute inset-x-0 -bottom-px h-4" style={{ background: style.body, borderRadius: '50% 50% 0 0 / 100% 100% 0 0' }} aria-hidden="true" />
         </div>
       )}
-      <div className={cn(framed && 'px-7 pb-6', style.layout === 'highlight' && 'pt-10', style.layout === 'header' && 'pt-3')}>
+      <div className={cn(framed && 'px-7 pb-6', style.layout === 'highlight' && 'pt-10', style.layout === 'header' && 'pt-6')}>
         {style.layout === 'simple' && hasIcon && <div className="mb-4"><RewardIconView reward={reward} size={52} /></div>}
         {style.layout === 'highlight' && hasIcon && (
-          <div className="mx-auto mb-5 flex h-[112px] w-[112px] items-center justify-center rounded-full p-2" style={{ background: mix(style.accent, style.body, 0.22), boxShadow: `0 0 0 10px ${mix(style.accent, style.body, 0.1)}` }}>
-            <div className="flex h-full w-full items-center justify-center rounded-full" style={{ background: accentGradient(style.accent) }}><RewardIconView reward={reward} size={46} /></div>
+          <div className="relative mx-auto mb-5 h-[112px] w-[112px]">
+            <style>{'@keyframes reward-pulse { 0% { transform: scale(1); opacity: 0.8 } 100% { transform: scale(1.4); opacity: 0 } } @media (prefers-reduced-motion: reduce) { .reward-pulse { animation: none !important } }'}</style>
+            <span className="reward-pulse absolute inset-0 rounded-full" style={{ background: mix(style.accent, style.body, 0.35), animation: 'reward-pulse 1.8s ease-out infinite' }} aria-hidden="true" />
+            <span className="reward-pulse absolute inset-0 rounded-full" style={{ background: mix(style.accent, style.body, 0.35), animation: 'reward-pulse 1.8s ease-out 0.9s infinite' }} aria-hidden="true" />
+            <div className="relative flex h-full w-full items-center justify-center rounded-full p-2" style={{ background: mix(style.accent, style.body, 0.22) }}>
+              <div className="flex h-full w-full items-center justify-center rounded-full" style={{ background: accentGradient(style.accent) }}><RewardIconView reward={reward} size={46} /></div>
+            </div>
           </div>
         )}
         <h2 className="break-words text-[22px] font-bold leading-tight" style={{ color: style.title }}>{reward.title || 'Título do reward'}</h2>
