@@ -44,7 +44,7 @@ src/
 ```
 
 Domínios: auth, account, home, team, company, currencies, networks, sites, reports,
-results e costs.
+results, costs e rewards.
 
 ## Regras de tela
 
