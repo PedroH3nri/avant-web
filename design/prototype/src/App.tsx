@@ -5012,7 +5012,7 @@ function GamRunScreen({ run, update, back }: { run: GamRun; update: (run: GamRun
 type RewardLayout = 'simple' | 'highlight' | 'header'
 type RewardStyle = { layout: RewardLayout; body: string; border: string; borderWidth: number; title: string; text: string; button: string; buttonText: string; radius: number; font: string; shadow: boolean }
 type RewardIcon = { kind: 'emoji' | 'image' | 'none'; emoji: string; image: string | null }
-type ProtoReward = { id: number; name: string; client: string; domain: string; page: string; active: boolean; icon: RewardIcon; title: string; description: string; button: string; style: RewardStyle; block: string; interval: number; redirect: string | null; updated: string }
+type ProtoReward = { id: number; name: string; client: string; domain: string; page: string; active: boolean; icon: RewardIcon; title: string; description: string; button: string; style: RewardStyle; block: string; cooldown: number; scroll: number; clickElement: string | null; redirect: string | null; updated: string }
 type ProtoRewardSite = { domain: string; client: string; blocks: string[] }
 
 const REWARD_SITES: ProtoRewardSite[] = [
@@ -5049,10 +5049,10 @@ const REWARD_FOOTER: Record<VisitorLang, string> = { pt: 'Oferta patrocinada', e
 const VISITOR_LANGS: [VisitorLang, string][] = [['pt', 'Português'], ['en', 'English'], ['es', 'Español']]
 const REWARD_EMOJIS = ['🎁', '🏆', '🎉', '🚀', '🥳', '🎊', '🔓', '⭐']
 const INITIAL_REWARDS: ProtoReward[] = [
-  { id: 7, name: 'Receita completa do bolo de açaí', client: 'Açaí Mídia', domain: 'acai.com.br', page: 'receitas/bolo-de-acai', active: true, icon: { kind: 'emoji', emoji: '🎁', image: null }, title: 'Receita completa liberada', description: 'Assista a um anúncio curto e veja o passo a passo com as medidas.', button: 'Ver a receita', style: DEFAULT_REWARD_STYLE, block: 'acai_reward_artigo', interval: 30, redirect: null, updated: '08/11/2026 16:20' },
-  { id: 6, name: 'Ebook de sobremesas', client: 'Açaí Mídia', domain: 'receitasdaacai.com.br', page: 'ebook-sobremesas', active: false, icon: { kind: 'emoji', emoji: '📘', image: null }, title: 'Baixe o ebook grátis', description: '40 sobremesas com açaí, prontas em 15 minutos.', button: 'Baixar agora', style: { ...REWARD_PRESETS[2].style, layout: 'highlight', borderWidth: 2, radius: 16, font: 'Poppins', shadow: true }, block: 'receitas_reward', interval: 60, redirect: 'https://receitasdaacai.com.br/ebook-sobremesas/download', updated: '02/11/2026 10:05' },
-  { id: 5, name: 'Comparativo de celulares', client: 'Tech Notícias', domain: 'technoticias.com.br', page: 'reviews/melhores-celulares-2026', active: true, icon: { kind: 'emoji', emoji: '🏆', image: null }, title: 'Ranking completo', description: 'Desbloqueie a tabela com os 20 aparelhos testados.', button: 'Desbloquear', style: { ...REWARD_PRESETS[1].style, body: '#ffffff', title: '#0a0a0a', text: '#525252', border: '#e5e5e5', layout: 'header', borderWidth: 1, radius: 16, font: 'Poppins', shadow: true }, block: 'tech_reward_1', interval: 15, redirect: null, updated: '30/10/2026 09:41' },
-  { id: 4, name: 'Roteiro de 7 dias em Lisboa', client: 'Viagem Fácil', domain: 'viagemfacil.com', page: 'roteiros/lisboa-7-dias', active: true, icon: { kind: 'emoji', emoji: '🧳', image: null }, title: 'Roteiro em PDF', description: 'O roteiro dia a dia com mapa e dicas de restaurantes.', button: 'Quero o roteiro', style: { ...REWARD_PRESETS[3].style, layout: 'simple', borderWidth: 0, radius: 28, font: 'Lora', shadow: true }, block: 'vf_reward', interval: 120, redirect: null, updated: '21/10/2026 14:12' },
+  { id: 7, name: 'Receita completa do bolo de açaí', client: 'Açaí Mídia', domain: 'acai.com.br', page: 'receitas/bolo-de-acai', active: true, icon: { kind: 'emoji', emoji: '🎁', image: null }, title: 'Receita completa liberada', description: 'Assista a um anúncio curto e veja o passo a passo com as medidas.', button: 'Ver a receita', style: DEFAULT_REWARD_STYLE, block: 'acai_reward_artigo', cooldown: 30, scroll: 40, clickElement: null, redirect: null, updated: '08/11/2026 16:20' },
+  { id: 6, name: 'Ebook de sobremesas', client: 'Açaí Mídia', domain: 'receitasdaacai.com.br', page: 'ebook-sobremesas', active: false, icon: { kind: 'emoji', emoji: '📘', image: null }, title: 'Baixe o ebook grátis', description: '40 sobremesas com açaí, prontas em 15 minutos.', button: 'Baixar agora', style: { ...REWARD_PRESETS[2].style, layout: 'highlight', borderWidth: 2, radius: 16, font: 'Poppins', shadow: true }, block: 'receitas_reward', cooldown: 60, scroll: 0, clickElement: '#baixar-ebook', redirect: 'https://receitasdaacai.com.br/ebook-sobremesas/download', updated: '02/11/2026 10:05' },
+  { id: 5, name: 'Comparativo de celulares', client: 'Tech Notícias', domain: 'technoticias.com.br', page: 'reviews/melhores-celulares-2026', active: true, icon: { kind: 'emoji', emoji: '🏆', image: null }, title: 'Ranking completo', description: 'Desbloqueie a tabela com os 20 aparelhos testados.', button: 'Desbloquear', style: { ...REWARD_PRESETS[1].style, body: '#ffffff', title: '#0a0a0a', text: '#525252', border: '#e5e5e5', layout: 'header', borderWidth: 1, radius: 16, font: 'Poppins', shadow: true }, block: 'tech_reward_1', cooldown: 15, scroll: 0, clickElement: null, redirect: null, updated: '30/10/2026 09:41' },
+  { id: 4, name: 'Roteiro de 7 dias em Lisboa', client: 'Viagem Fácil', domain: 'viagemfacil.com', page: 'roteiros/lisboa-7-dias', active: true, icon: { kind: 'emoji', emoji: '🧳', image: null }, title: 'Roteiro em PDF', description: 'O roteiro dia a dia com mapa e dicas de restaurantes.', button: 'Quero o roteiro', style: { ...REWARD_PRESETS[3].style, layout: 'simple', borderWidth: 0, radius: 28, font: 'Lora', shadow: true }, block: 'vf_reward', cooldown: 120, scroll: 60, clickElement: null, redirect: null, updated: '21/10/2026 14:12' },
 ]
 
 /** Fonte CSS do nome da fonte escolhida. */
@@ -5080,7 +5080,7 @@ function mix(first: string, second: string, weight: number) {
 function accentGradient(hex: string) { return `linear-gradient(135deg, ${shade(hex, -0.55)} 0%, ${hex} 100%)` }
 /** Reward novo, no primeiro site disponível. */
 function blankReward(site: ProtoRewardSite): ProtoReward {
-  return { id: 0, name: '', client: site.client, domain: site.domain, page: '', active: true, icon: { kind: 'emoji', emoji: '🎁', image: null }, title: 'Oferta especial', description: 'Desbloqueie sua recompensa agora mesmo!', button: 'Desbloquear', style: DEFAULT_REWARD_STYLE, block: site.blocks[0], interval: 30, redirect: null, updated: 'Agora' }
+  return { id: 0, name: '', client: site.client, domain: site.domain, page: '', active: true, icon: { kind: 'emoji', emoji: '🎁', image: null }, title: 'Oferta especial', description: 'Desbloqueie sua recompensa agora mesmo!', button: 'Desbloquear', style: DEFAULT_REWARD_STYLE, block: site.blocks[0], cooldown: 30, scroll: 0, clickElement: null, redirect: null, updated: 'Agora' }
 }
 
 /** O ícone do reward (emoji, imagem ou nada) no tamanho pedido. */
@@ -5213,7 +5213,7 @@ function RewardsScreen({ rewards, staff, open }: { rewards: ProtoReward[]; staff
                 {staff && <td className={td}>{reward.client}</td>}
                 <td className={cn(td, 'font-mono text-[13px]')}>{reward.domain}</td>
                 <td className={td}>{reward.active ? <Status tone="ok">Ativo</Status> : <Status tone="neutral">Pausado</Status>}</td>
-                <td className={cn(td, 'text-right tnum')}>{reward.interval} min</td>
+                <td className={cn(td, 'text-right tnum')}>{reward.cooldown} min</td>
                 <td className={cn(td, 'whitespace-nowrap tnum text-[13px] text-muted-foreground')}>{reward.updated}</td>
               </tr>
             ))}
@@ -5226,6 +5226,17 @@ function RewardsScreen({ rewards, staff, open }: { rewards: ProtoReward[]; staff
 }
 
 /** Criar ou editar um reward: formulário à esquerda e a pré-visualização ao vivo à direita. */
+type RewardTrigger = 'load' | 'scroll' | 'click'
+/** Em que momento a janela abre, a partir da rolagem e do elemento de clique. */
+function rewardTrigger(reward: ProtoReward): RewardTrigger { return reward.clickElement !== null ? 'click' : reward.scroll > 0 ? 'scroll' : 'load' }
+/** Frase curta que explica quando a janela abre, para a pré-visualização. */
+function triggerSummary(reward: ProtoReward) {
+  const trigger = rewardTrigger(reward)
+  if (trigger === 'click') return reward.clickElement?.trim() ? `Abre quando a pessoa clica em ${reward.clickElement.trim()}.` : 'Abre quando a pessoa clica no elemento escolhido.'
+  if (trigger === 'scroll') return `Abre quando a pessoa rola ${reward.scroll}% da página.`
+  return 'Abre assim que a página carrega.'
+}
+
 /** Miniatura de um layout do reward, para escolher no formulário. */
 function LayoutThumb({ layout }: { layout: RewardLayout }) {
   return (
@@ -5255,10 +5266,11 @@ function RewardEditScreen({ initial, rewards, staff, back, save, remove }: { ini
   const restyle = (patch: Partial<RewardStyle>) => setReward((current) => ({ ...current, style: { ...current.style, ...patch } }))
   const pageTaken = rewards.some((other) => other.id !== reward.id && other.domain === reward.domain && other.page.replace(/^\/+|\/+$/g, '') === reward.page.replace(/^\/+|\/+$/g, '') && reward.page.trim() !== '')
   const redirectOutside = reward.redirect !== null && reward.redirect.trim() !== '' && !/^https:\/\/(www\.)?/.test(reward.redirect.trim()) ? 'O link começa com https://' : reward.redirect !== null && reward.redirect.trim() !== '' && !reward.redirect.trim().replace(/^https:\/\/(www\.)?/, '').startsWith(reward.domain) ? `O link precisa ser de ${reward.domain}.` : false
-  const intervalBad = reward.interval < 5 || reward.interval > 1440
+  const cooldownBad = reward.cooldown < 5 || reward.cooldown > 1440
+  const clickMissing = reward.clickElement !== null && reward.clickElement.trim() === ''
   const lowButton = contrast(style.button, style.buttonText) < 4.5
   const lowText = contrast(style.body, style.title) < 3 || contrast(style.body, style.text) < 4.5
-  const ready = reward.name.trim().length >= 3 && reward.page.trim() !== '' && !pageTaken && reward.title.trim() !== '' && reward.button.trim() !== '' && !intervalBad && !redirectOutside && !(reward.redirect !== null && reward.redirect.trim() === '')
+  const ready = reward.name.trim().length >= 3 && reward.page.trim() !== '' && !pageTaken && reward.title.trim() !== '' && reward.button.trim() !== '' && !cooldownBad && !clickMissing && !redirectOutside && !(reward.redirect !== null && reward.redirect.trim() === '')
   /** Grava o reward e volta para a lista. */
   const submit = () => { save({ ...reward, page: reward.page.replace(/^\/+/, ''), updated: 'Agora' }); toast.success(initial.id ? 'Reward salvo' : 'Reward criado', { description: reward.active ? `Já aparece em ${reward.domain}/${reward.page.replace(/^\/+/, '')}.` : 'Fica pausado até você ativar.' }); back() }
   return (
@@ -5376,8 +5388,29 @@ function RewardEditScreen({ initial, rewards, staff, back, save, remove }: { ini
               </div>
             </Card>
 
-            <Card title="Exibição" desc="Qual anúncio premiado roda e de quanto em quanto tempo a janela volta para a mesma pessoa.">
-              <div className="grid gap-4">
+            <Card title="Exibição" desc="Quando a janela abre, qual anúncio premiado roda e o que acontece depois.">
+              <div className="grid gap-5">
+                <Field id="rw-trigger" label="Quando a janela abre">
+                  <div className="grid gap-3">
+                    <div role="radiogroup" aria-label="Quando a janela abre" className="inline-flex w-fit flex-wrap rounded-md border bg-muted p-0.5">
+                      {([['load', 'Ao carregar a página'], ['scroll', 'Ao rolar a página'], ['click', 'Ao clicar num elemento']] as const).map(([value, label]) => (
+                        <button key={value} type="button" role="radio" aria-checked={rewardTrigger(reward) === value}
+                          onClick={() => change(value === 'load' ? { scroll: 0, clickElement: null } : value === 'scroll' ? { scroll: reward.scroll || 50, clickElement: null } : { scroll: 0, clickElement: reward.clickElement ?? '' })}
+                          className={cn('h-8 rounded px-3 text-[13px] font-medium', rewardTrigger(reward) === value ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground')}>{label}</button>
+                      ))}
+                    </div>
+                    {rewardTrigger(reward) === 'scroll' && (
+                      <Field id="rw-scroll" label={`Rolagem da página · ${reward.scroll}%`} hint="A janela abre quando a pessoa passa desse ponto da página.">
+                        <Slider id="rw-scroll" min={5} max={100} step={5} value={[reward.scroll]} onValueChange={([scroll]) => change({ scroll })} className="py-2" />
+                      </Field>
+                    )}
+                    {rewardTrigger(reward) === 'click' && (
+                      <Field id="rw-click" label="Elemento da página" hint="Seletor CSS do botão ou link do site. A janela abre quando a pessoa clica nele." error={clickMissing && 'Informe o seletor do elemento.'}>
+                        <Input id="rw-click" value={reward.clickElement ?? ''} onChange={(event) => change({ clickElement: event.target.value })} placeholder="#ver-receita ou .botao-download" className="font-mono text-[13px]" />
+                      </Field>
+                    )}
+                  </div>
+                </Field>
                 <div className="grid items-start gap-4 sm:grid-cols-2">
                   <Field id="rw-block" label="Ad unit do reward" hint="Os ad units de reward do site, importados do GAM.">
                     <Select value={reward.block} onValueChange={(block) => change({ block })}>
@@ -5385,8 +5418,8 @@ function RewardEditScreen({ initial, rewards, staff, back, save, remove }: { ini
                       <SelectContent>{site.blocks.map((block) => <SelectItem key={block} value={block} className="font-mono text-[13px]">{block}</SelectItem>)}</SelectContent>
                     </Select>
                   </Field>
-                  <Field id="rw-interval" label="Intervalo para mostrar de novo (minutos)" error={intervalBad && 'De 5 a 1.440 minutos (24 horas).'}>
-                    <Input id="rw-interval" type="number" min={5} max={1440} value={reward.interval} onChange={(event) => change({ interval: Number(event.target.value) })} className="tnum" />
+                  <Field id="rw-cooldown" label="Tempo para mostrar de novo (minutos)" hint="Depois que a pessoa vê a janela, ela só volta a aparecer passado esse tempo." error={cooldownBad && 'De 5 a 1.440 minutos (24 horas).'}>
+                    <Input id="rw-cooldown" type="number" min={5} max={1440} value={reward.cooldown} onChange={(event) => change({ cooldown: Number(event.target.value) })} className="tnum" />
                   </Field>
                 </div>
                 <Field id="rw-redirect" label="Ao terminar o anúncio">
@@ -5411,6 +5444,7 @@ function RewardEditScreen({ initial, rewards, staff, back, save, remove }: { ini
               </div>
             </div>
             <RewardStage reward={reward} device={device} lang={visitorLang} compact />
+            <p className="mt-2 text-[13px] text-muted-foreground">{triggerSummary(reward)}</p>
           </div>
         </div>
       </Body>
