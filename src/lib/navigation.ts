@@ -19,6 +19,7 @@ export type NavGroup = { id: string; key: Key | null; label: Key; icon: Componen
 // a Groone cuida dos seus em Papéis da equipe). Itens com ``separated`` ganham uma linha acima.
 export const NAV_GROUPS: NavGroup[] = [
   { id: 'home', key: null, label: 'nav.home', icon: LayoutDashboard, items: [{ to: '/', key: 'nav.home', icon: LayoutDashboard }] },
+  { id: 'tasks', key: null, label: 'nav.tasks', icon: ListTodo, items: [{ to: '/interno/tarefas', key: 'nav.tasks', icon: ListTodo, internal: true }] },
   {
     id: 'clients',
     key: 'nav.groupInventory',
@@ -31,8 +32,8 @@ export const NAV_GROUPS: NavGroup[] = [
       { to: '/networks', key: 'nav.networks', icon: Network, clientOnly: true },
       { to: '/interno/networks', key: 'nav.networks', icon: Network, internal: true },
       { to: '/interno/contratos', key: 'int.contracts', icon: FileSignature, internal: true },
-      { to: '/sites', key: 'nav.sites', icon: Globe, clientOnly: true },
-      { to: '/interno/sites', key: 'nav.sites', icon: Globe, internal: true },
+      { to: '/sites', key: 'nav.sites', icon: Globe, clientOnly: true, separated: true },
+      { to: '/interno/sites', key: 'nav.sites', icon: Globe, internal: true, separated: true },
       { to: '/rewards', key: 'nav.rewards', icon: Gift, clientOnly: true },
       { to: '/interno/rewards', key: 'nav.rewards', icon: Gift, internal: true },
       { to: '/ad-tags', key: 'nav.adTags', icon: Code2, clientOnly: true },
@@ -62,7 +63,6 @@ export const NAV_GROUPS: NavGroup[] = [
     label: 'nav.groupTools',
     icon: Wrench,
     items: [
-      { to: '/interno/tarefas', key: 'nav.tasks', icon: ListTodo, internal: true },
       { to: '/interno/ferramentas-gam', key: 'nav.gamTools', icon: Wrench, internal: true },
       { to: '/interno/alertas', key: 'nav.alerts', icon: BellRing, internal: true },
       { to: '/interno/envios', key: 'nav.schedules', icon: MailCheck, internal: true },
