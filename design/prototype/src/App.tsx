@@ -6024,7 +6024,7 @@ const PREVIEW_ELEMENTS: { selector: string; kind: 'title' | 'image' | 'text' | '
   { selector: 'article p:nth-of-type(4)', kind: 'text' },
 ]
 /** O site do cliente com os blocos no lugar; na escolha, o bloco aparece onde vai entrar conforme o mouse e o clique fixa. */
-function TagSitePreview({ domain, blocks, device, picking, onPick, path, compact = false }: { domain: string; blocks: TagBlock[]; device: 'desktop' | 'mobile'; picking: string | null; onPick: (selector: string, side: 'before' | 'after') => void; path: string; compact?: boolean }) {
+function TagSitePreview({ domain, blocks, device, picking, onPick, path, compact = false, overlay = null, closeOverlay }: { domain: string; blocks: TagBlock[]; device: 'desktop' | 'mobile'; picking: string | null; onPick: (selector: string, side: 'before' | 'after') => void; path: string; compact?: boolean; overlay?: 'loader' | 'adblock' | null; closeOverlay?: () => void }) {
   const [hover, setHover] = useState<{ selector: string; side: 'before' | 'after' } | null>(null)
   const pickingBlock = blocks.find((block) => block.id === picking) ?? null
   const visible = blocks.filter((block) => (device === 'desktop' ? block.desktop : block.mobile) && (block.ruleMode === 'all' || (block.ruleMode === 'include' ? block.paths.some((item) => path.startsWith(item.replace(/\*$/, ''))) : !block.paths.some((item) => path.startsWith(item.replace(/\*$/, ''))))))
@@ -6048,6 +6048,7 @@ function TagSitePreview({ domain, blocks, device, picking, onPick, path, compact
         {device === 'desktop' && <div className="flex gap-1.5" aria-hidden="true"><span className="h-2.5 w-2.5 rounded-full bg-border" /><span className="h-2.5 w-2.5 rounded-full bg-border" /><span className="h-2.5 w-2.5 rounded-full bg-border" /></div>}
         <div className="min-w-0 flex-1 truncate rounded-md bg-background px-3 py-1 font-mono text-[12px] text-muted-foreground">https://{domain}{path}</div>
       </div>
+      <div className="relative">
       <div className={cn('relative overflow-y-auto bg-white text-neutral-800', compact ? 'h-[420px] lg:h-[calc(100dvh-300px)] lg:min-h-[420px]' : 'h-[640px]')}>
         {fixed && fixed.edge === 'top' && <div className="sticky top-0 z-10 grid h-12 place-items-center border-b-2 border-dashed border-sky-400 bg-sky-50 text-[12px] font-medium text-sky-800">Fixo · {device === 'desktop' ? '728 × 90' : '320 × 50'}</div>}
         <div className="flex items-center justify-between border-b px-5 py-3" aria-hidden="true"><span className="font-serif text-[18px] font-bold">{domain.split('.')[0]}</span><span className="flex gap-3 text-[12px] text-neutral-500"><span>Receitas</span><span>Doces</span><span>Contato</span></span></div>
@@ -6082,6 +6083,27 @@ function TagSitePreview({ domain, blocks, device, picking, onPick, path, compact
         {interstitial && <div className="pointer-events-none absolute right-3 top-14 rounded-full bg-neutral-900 px-2.5 py-1 text-[11px] font-medium text-white">Intersticial na troca de página</div>}
         {anchor && <div className={cn('sticky z-10 grid h-14 place-items-center border-dashed border-sky-400 bg-sky-50 text-[12px] font-medium text-sky-800', anchor.edge === 'bottom' ? 'bottom-0 border-t-2' : 'top-0 border-b-2')}>Âncora · 320 × 50</div>}
         {fixed && fixed.edge === 'bottom' && <div className="sticky bottom-0 z-10 grid h-12 place-items-center border-t-2 border-dashed border-sky-400 bg-sky-50 text-[12px] font-medium text-sky-800">Fixo</div>}
+      </div>
+      {overlay === 'loader' && (
+        <div className="absolute inset-0 z-20 grid place-items-center bg-white animate-in fade-in" role="status" aria-label="Loader da tag">
+          <div className="grid justify-items-center gap-4">
+            <span className="font-serif text-[28px] font-bold text-neutral-900">{domain.split('.')[0]}</span>
+            <span className="relative h-1 w-40 overflow-hidden rounded-full bg-neutral-200"><span className="absolute inset-y-0 left-0 w-1/3 animate-[tagloader_1.1s_ease-in-out_infinite] rounded-full bg-neutral-900" /></span>
+            <span className="text-[12px] text-neutral-500">Carregando…</span>
+          </div>
+          <style>{'@keyframes tagloader { 0% { transform: translateX(-100%) } 100% { transform: translateX(300%) } }'}</style>
+        </div>
+      )}
+      {overlay === 'adblock' && (
+        <div className="absolute inset-0 z-20 grid place-items-center bg-neutral-900/50 p-4" role="dialog" aria-label="Aviso de adblock">
+          <div className="w-full max-w-[320px] rounded-xl bg-white p-5 text-center text-neutral-800 shadow-xl">
+            <span className="font-serif text-[20px] font-bold">{domain.split('.')[0]}</span>
+            <p className="mt-3 text-[15px] font-semibold">Parece que você usa um bloqueador de anúncios</p>
+            <p className="mt-1.5 text-[13px] leading-snug text-neutral-500">Os anúncios mantêm o site gratuito. Desative o bloqueador para {domain} e recarregue a página.</p>
+            <button onClick={closeOverlay} className="mt-4 h-9 w-full rounded-md bg-neutral-900 text-[13px] font-medium text-white">Já desativei</button>
+          </div>
+        </div>
+      )}
       </div>
     </div>
   )
@@ -6261,6 +6283,7 @@ function AdTagEditScreen({ initial, staff, back, save, metrics }: { initial: Pro
   const [openId, setOpenId] = useState<string | null>(blocks.find((block) => block.kind === 'content')?.id ?? null)
   const [pickingId, setPickingId] = useState<string | null>(null)
   const [armedId, setArmedId] = useState<string | null>(null)
+  const [overlay, setOverlay] = useState<'loader' | 'adblock' | null>(null)
   const [dragId, setDragId] = useState<string | null>(null)
   const [dropAt, setDropAt] = useState<number | null>(null)
   const [device, setDevice] = useState<'desktop' | 'mobile'>('desktop')
@@ -6281,6 +6304,8 @@ function AdTagEditScreen({ initial, staff, back, save, metrics }: { initial: Pro
   const changeBlock = (id: string, patch: Partial<TagBlock>) => setBlocks((current) => current.map((block) => (block.id === id ? { ...block, ...patch } : block)))
   /** Troca o bloco de lugar na ordem de carregamento. */
   const moveBlock = (index: number, offset: number) => setBlocks((current) => { const next = [...current]; const [block] = next.splice(index, 1); next.splice(index + offset, 0, block); return next })
+  /** Mostra na prévia o loader por alguns segundos, como o visitante vê ao abrir a página. */
+  const playLoader = () => { setOverlay('loader'); window.setTimeout(() => setOverlay((current) => (current === 'loader' ? null : current)), 2600) }
   /** Solta o bloco arrastado na posição marcada pela linha azul. */
   const dropBlock = () => {
     if (dragId !== null && dropAt !== null) setBlocks((current) => { const from = current.findIndex((block) => block.id === dragId); const to = dropAt > from ? dropAt - 1 : dropAt; if (from === to) return current; const next = [...current]; const [block] = next.splice(from, 1); next.splice(to, 0, block); return next })
@@ -6366,9 +6391,16 @@ function AdTagEditScreen({ initial, staff, back, save, metrics }: { initial: Pro
                   {(['desktop', 'mobile'] as const).map((item) => <button key={item} onClick={() => setDevice(item)} className={cn('inline-flex h-8 items-center gap-1.5 rounded px-3 text-[13px]', device === item ? 'bg-foreground text-background' : 'text-muted-foreground')}>{item === 'desktop' ? <Monitor className="h-4 w-4" /> : <Smartphone className="h-4 w-4" />}{item === 'desktop' ? 'Computador' : 'Celular'}</button>)}
                 </div>
                 <div className="flex min-w-[220px] flex-1 items-center rounded-md border bg-background focus-within:ring-2 focus-within:ring-ring"><span className="shrink-0 border-r bg-muted px-3 py-1.5 font-mono text-[12px] text-muted-foreground">{tag.domain}</span><input aria-label="Página para ver" value={path} onChange={(event) => setPath(event.target.value.startsWith('/') ? event.target.value : `/${event.target.value}`)} className="h-8 min-w-0 flex-1 bg-transparent px-3 font-mono text-[12px] outline-none" /></div>
+                <DropdownMenu><DropdownMenuTrigger asChild><Button size="sm" variant="outline" className="h-9">Simular<ChevronDown className="h-3.5 w-3.5" /></Button></DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-[260px]">
+                    {!settings.loader && <p className="px-2 py-1.5 text-[12px] leading-snug text-muted-foreground">A tela de carregamento está desligada nesta tag. Ligue em Integrações para o visitante ver.</p>}
+                    <DropdownMenuItem onSelect={playLoader}>Tela de carregamento</DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => setOverlay('adblock')}>Visitante com adblock</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
               {pickingId && <div className="flex items-center gap-2 rounded-md border border-sky-300 bg-sky-50 px-3 py-2 text-[13px] text-sky-900"><MousePointerClick className="h-4 w-4" />Clique no elemento onde entra o {tagBlockName(blocks.find((block) => block.id === pickingId)!)}.<button className="ml-auto underline" onClick={() => setPickingId(null)}>Cancelar</button></div>}
-              <TagSitePreview compact domain={tag.domain} blocks={blocks} device={device} path={path} picking={pickingId} onPick={(selector, side) => { changeBlock(pickingId!, { selector, side }); setPickingId(null); toast.success('Lugar escolhido', { description: `${side === 'before' ? 'Antes de' : 'Depois de'} ${selector}` }) }} />
+              <TagSitePreview compact overlay={overlay} closeOverlay={() => setOverlay(null)} domain={tag.domain} blocks={blocks} device={device} path={path} picking={pickingId} onPick={(selector, side) => { changeBlock(pickingId!, { selector, side }); setPickingId(null); toast.success('Lugar escolhido', { description: `${side === 'before' ? 'Antes de' : 'Depois de'} ${selector}` }) }} />
               <p className="text-[12px] text-muted-foreground">A página vem do site (sem os scripts dele) e os blocos são desenhados pelo mesmo código da tag: o que você vê aqui é o que vai ao ar.</p>
             </div>
           </div>
@@ -6381,7 +6413,7 @@ function AdTagEditScreen({ initial, staff, back, save, metrics }: { initial: Pro
                   <Input id="tag-name" value={tag.name} onChange={(event) => setTag({ ...tag, name: event.target.value })} onBlur={() => save({ ...tag, name: tag.name.trim() || 'Sem nome', draft: changes.length ? { blocks, settings } : null })} />
                 </Field>
                 <label className="flex items-start gap-3 text-[14px]"><Switch checked={settings.lazyLoad} onCheckedChange={(lazyLoad) => changeSettings({ lazyLoad })} /><span><span className="block font-medium">Carregamento lento</span><span className="text-muted-foreground">Os blocos de conteúdo só carregam perto de aparecer na tela.</span></span></label>
-                <label className="flex items-start gap-3 text-[14px]"><Switch checked={settings.loader} onCheckedChange={(loader) => changeSettings({ loader })} /><span><span className="block font-medium">Tela de carregamento e adblock</span><span className="text-muted-foreground">Mostra o logo enquanto os anúncios carregam e pede para desligar o bloqueador de anúncios.</span></span></label>
+                <label className="flex items-start gap-3 text-[14px]"><Switch checked={settings.loader} onCheckedChange={(loader) => changeSettings({ loader })} /><span><span className="block font-medium">Tela de carregamento e adblock</span><span className="text-muted-foreground">Mostra o logo enquanto os anúncios carregam e pede para desligar o bloqueador de anúncios.</span><button type="button" className="mt-1 block text-[13px] text-link hover:underline" onClick={(event) => { event.preventDefault(); setTab('blocks'); playLoader() }}>Ver na prévia</button></span></label>
                 <Field id="tag-day" label="Ad units" hint="Com “Os mais recentes”, blocos novos criados no GAM entram sozinhos, sem publicar de novo.">
                   <Select value={settings.adUnitDay} onValueChange={(adUnitDay) => changeSettings({ adUnitDay })}>
                     <SelectTrigger id="tag-day"><SelectValue>{settings.adUnitDay === 'latest' ? `Os mais recentes (${formatBlockDate(site.days[0].date)})` : `Fixar em ${formatBlockDate(settings.adUnitDay)}`} · {dayUnits.length} blocos</SelectValue></SelectTrigger>
