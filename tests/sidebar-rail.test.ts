@@ -92,7 +92,7 @@ describe('SidebarRail', () => {
     expect(wrapper.find('#rail-panel').attributes('aria-hidden')).toBe('false')
     expect(panelLabels(wrapper)).toEqual(['Clientes', 'Equipes', 'Networks do GAM', 'Contratos', 'Sites', 'Rewards', 'Ad tags', 'Loaders', 'Checklists'])
     expect(wrapper.find('#rail-panel [aria-current="page"]').text()).toBe('Clientes')
-    expect(wrapper.find('#rail-panel hr').element.nextElementSibling?.textContent).toBe('Sites')
+    expect(wrapper.find('#rail-panel hr').element.nextElementSibling?.textContent).toBe('Rewards')
     await hoverAndWait(reports!)
     expect(panelLabels(wrapper)).toEqual(['Ad Manager', 'Page Views', 'Resultado', 'Resultado dos clientes', 'Metas', 'Relatórios customizados'])
     const separator = wrapper.find('#rail-panel hr')
