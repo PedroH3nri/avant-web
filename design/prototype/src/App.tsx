@@ -6621,13 +6621,7 @@ function AdTagEditScreen({ initial, staff, back, save, metrics, loaders, editLoa
                 </div>
                 <div className="flex min-w-[220px] flex-1 items-center rounded-md border bg-background focus-within:ring-2 focus-within:ring-ring"><span className="shrink-0 border-r bg-muted px-3 py-1.5 font-mono text-[12px] text-muted-foreground">{tag.domain}</span><input aria-label="Página para ver" value={path} onChange={(event) => setPath(event.target.value.startsWith('/') ? event.target.value : `/${event.target.value}`)} className="h-8 min-w-0 flex-1 bg-transparent px-3 font-mono text-[12px] outline-none" /></div>
                 {overlay === 'loader' && <Button size="sm" className="h-9" disabled={overlayExiting} onClick={closeOverlay}><Check className="h-4 w-4" />Finalizar loader</Button>}
-                <DropdownMenu><DropdownMenuTrigger asChild><Button size="sm" variant="outline" className="h-9">Simular<ChevronDown className="h-3.5 w-3.5" /></Button></DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-[260px]">
-                    {!settings.loader && <p className="px-2 py-1.5 text-[12px] leading-snug text-muted-foreground">Esta tag não tem loader. Escolha um em Integrações.</p>}
-                    <DropdownMenuItem disabled={!settings.loader} onSelect={playLoader}>Loader</DropdownMenuItem>
-                    <DropdownMenuItem disabled={!settings.loader || loaders.find((item) => item.id === settings.loader)?.adblock === 'off'} onSelect={() => setOverlay('adblock')}>Visitante com adblock</DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                {overlay !== 'loader' && <Button size="sm" variant="outline" className="h-9" disabled={!settings.loader} title={settings.loader ? undefined : 'Esta tag não tem loader. Escolha um em Integrações.'} onClick={playLoader}><Loader2 className="h-4 w-4" />Ver loader</Button>}
               </div>
               {pickingId && <div className="flex items-center gap-2 rounded-md border border-sky-300 bg-sky-50 px-3 py-2 text-[13px] text-sky-900"><MousePointerClick className="h-4 w-4" />Clique no elemento onde entra o {tagBlockName(blocks.find((block) => block.id === pickingId)!)}.<button className="ml-auto underline" onClick={() => setPickingId(null)}>Cancelar</button></div>}
               <TagSitePreview compact overlay={overlay} loader={loaders.find((item) => item.id === settings.loader) ?? null} closeOverlay={closeOverlay} overlayExiting={overlayExiting} domain={tag.domain} blocks={blocks} device={device} path={path} picking={pickingId} onPick={(selector, side) => { changeBlock(pickingId!, { selector, side }); setPickingId(null); toast.success('Lugar escolhido', { description: `${side === 'before' ? 'Antes de' : 'Depois de'} ${selector}` }) }} />
