@@ -5820,23 +5820,28 @@ function RewardMetricsScreen({ reward, staff, back, edit }: { reward: ProtoRewar
 type LoaderTemplate = 'groone' | 'solid'
 type LoaderStyle = 'bar' | 'spinner' | 'dots'
 type LoaderAdblock = 'off' | 'warn' | 'block'
-type ProtoLoader = { id: string; name: string; client: string; template: LoaderTemplate; blur: number; background: string; accent: string; style: LoaderStyle; text: string; maxSeconds: number; adblock: LoaderAdblock; adblockTitle: string; adblockText: string; adblockHint: string; adblockButton: string; updated: string }
+type ProtoLoader = { id: string; name: string; client: string; template: LoaderTemplate; blur: number; background: string; accent: string; style: LoaderStyle; text: string; maxSeconds: number; adblock: LoaderAdblock; updated: string }
 
 const LOADER_TEMPLATE_LABEL: Record<LoaderTemplate, string> = { groone: 'GroOne', solid: 'Tela cheia' }
 const LOADER_STYLE_LABEL: Record<LoaderStyle, string> = { bar: 'Barra', spinner: 'Círculo', dots: 'Pontos' }
 const LOADER_ADBLOCK_LABEL: Record<LoaderAdblock, string> = { off: 'Sem aviso de adblock', warn: 'Avisa sobre adblock', block: 'Bloqueia com adblock' }
 const LOADER_BLUR_PX = [0, 4, 8, 14]
 const LOADER_CLIENTS = ['Açaí Mídia', 'Tech Notícias', 'Viagem Fácil']
-const GROONE_ADBLOCK = { adblockTitle: 'Apoie o conteúdo gratuito', adblockText: 'Nosso site é mantido por anúncios responsáveis, que nos ajudam a criar e manter conteúdos de qualidade, sem custo para você. Identificamos um bloqueio de anúncios ativo no seu navegador: desative o bloqueador apenas neste site.', adblockHint: 'Isso não interfere em outros sites e pode ser revertido a qualquer momento.', adblockButton: 'Já desativei, quero continuar' }
+type LoaderLang = 'pt' | 'en' | 'es'
+const ADBLOCK_TEXTS: Record<LoaderLang, { title: string; text: string; detail: string; hint: string; button: string; skip: string }> = {
+  pt: { title: 'Apoie o conteúdo gratuito', text: 'Nosso site é mantido por anúncios responsáveis, que nos ajudam a criar e manter conteúdos de qualidade, sem custo para você.', detail: 'Identificamos um bloqueio de anúncios ativo no seu navegador. Para continuar, pedimos que desative o bloqueador apenas neste site.', hint: 'Isso não interfere em outros sites e pode ser revertido a qualquer momento.', button: 'Já desativei, quero continuar', skip: 'Continuar assim' },
+  en: { title: 'Support free content', text: 'Our site is supported by responsible ads that help us create and maintain quality content at no cost to you.', detail: 'We detected an active ad blocker in your browser. To continue, please disable the blocker only for this site.', hint: 'This does not affect other websites and can be reversed at any time.', button: 'I’ve disabled it — continue', skip: 'Continue anyway' },
+  es: { title: 'Apoya el contenido gratuito', text: 'Nuestro sitio se mantiene gracias a anuncios responsables, que nos ayudan a crear y mantener contenidos de calidad sin costo para ti.', detail: 'Hemos detectado un bloqueador de anuncios activo en tu navegador. Para continuar, te pedimos que desactives el bloqueador solo para este sitio.', hint: 'Esto no afecta a otros sitios web y se puede revertir en cualquier momento.', button: 'Ya lo desactivé, quiero continuar', skip: 'Continuar así' },
+}
 const INITIAL_LOADERS: ProtoLoader[] = [
-  { id: 'l0', name: 'GroOne', client: 'Açaí Mídia', template: 'groone', blur: 2, background: '#080e16', accent: '#087ee5', style: 'spinner', text: '', maxSeconds: 3, adblock: 'block', ...GROONE_ADBLOCK, updated: '09/11/2026' },
-  { id: 'l1', name: 'Açaí roxo', client: 'Açaí Mídia', template: 'solid', blur: 0, background: '#2d0b3a', accent: '#c084fc', style: 'bar', text: 'Carregando…', maxSeconds: 3, adblock: 'warn', adblockTitle: 'Parece que você usa um bloqueador de anúncios', adblockText: 'Os anúncios mantêm o site gratuito. Desative o bloqueador e recarregue a página.', adblockHint: '', adblockButton: 'Já desativei', updated: '06/11/2026' },
-  { id: 'l3', name: 'GroOne azul', client: 'Tech Notícias', template: 'groone', blur: 3, background: '#0f172a', accent: '#38bdf8', style: 'spinner', text: '', maxSeconds: 3, adblock: 'block', ...GROONE_ADBLOCK, updated: '28/10/2026' },
+  { id: 'l0', name: 'GroOne', client: 'Açaí Mídia', template: 'groone', blur: 2, background: '#080e16', accent: '#087ee5', style: 'spinner', text: '', maxSeconds: 3, adblock: 'block', updated: '09/11/2026' },
+  { id: 'l1', name: 'Açaí roxo', client: 'Açaí Mídia', template: 'solid', blur: 0, background: '#2d0b3a', accent: '#c084fc', style: 'bar', text: 'Carregando…', maxSeconds: 3, adblock: 'warn', updated: '06/11/2026' },
+  { id: 'l3', name: 'GroOne azul', client: 'Tech Notícias', template: 'groone', blur: 3, background: '#0f172a', accent: '#38bdf8', style: 'spinner', text: '', maxSeconds: 3, adblock: 'block', updated: '28/10/2026' },
 ]
 
 /** Um loader novo da Empresa, já no modelo GroOne. */
 function blankLoader(client: string): ProtoLoader {
-  return { id: '', name: '', client, template: 'groone', blur: 2, background: '#080e16', accent: '#087ee5', style: 'spinner', text: '', maxSeconds: 3, adblock: 'block', ...GROONE_ADBLOCK, updated: 'Agora' }
+  return { id: '', name: '', client, template: 'groone', blur: 2, background: '#080e16', accent: '#087ee5', style: 'spinner', text: '', maxSeconds: 3, adblock: 'block', updated: 'Agora' }
 }
 /** Cor do texto que dá leitura sobre o fundo do loader. */
 function loaderInk(background: string) {
@@ -5858,7 +5863,8 @@ function SiteIcon({ domain, size = 24 }: { domain: string; size?: number }) {
 }
 
 /** O loader ou o aviso de adblock por cima da página, igual ao que a avant-tag desenha no site. */
-function LoaderView({ loader, mode, domain, onClose }: { loader: ProtoLoader; mode: 'loading' | 'adblock'; domain: string; onClose?: () => void }) {
+function LoaderView({ loader, mode, domain, onClose, lang = 'pt' }: { loader: ProtoLoader; mode: 'loading' | 'adblock'; domain: string; onClose?: () => void; lang?: LoaderLang }) {
+  const copy = ADBLOCK_TEXTS[lang]
   const ink = loaderInk(loader.background)
   const blur = `blur(${LOADER_BLUR_PX[loader.blur] ?? 0}px)`
   if (loader.template === 'groone') {
@@ -5866,11 +5872,12 @@ function LoaderView({ loader, mode, domain, onClose }: { loader: ProtoLoader; mo
       <div className="absolute inset-0 z-20 grid place-items-center overflow-y-auto p-4" style={{ background: loaderTint(loader.background, 0.58), backdropFilter: blur, WebkitBackdropFilter: blur }} role="dialog" aria-label="Aviso de adblock">
         <div className="flex w-full max-w-[400px] flex-col items-center rounded-[20px] border border-white/20 bg-gradient-to-b from-white/[0.14] to-white/[0.08] px-6 pb-5 pt-6 text-center text-[#F0F8FF] shadow-[0_30px_60px_rgba(0,0,0,.45)] backdrop-blur-md">
           <span className="grid h-14 w-14 place-items-center rounded-2xl bg-white/20 shadow-[0_0_5px_#fff]"><SiteIcon domain={domain} size={32} /></span>
-          <p className="mt-4 text-[19px] font-semibold">{loader.adblockTitle}</p>
-          {loader.adblockText && <p className="mt-2 text-[13.5px] leading-relaxed text-[#F0F8FF]/90">{loader.adblockText}</p>}
-          {loader.adblockHint && <p className="mt-3 rounded-lg border border-white/20 px-3 py-2 text-[12px] leading-snug text-[#F0F8FF]/70" style={{ background: loaderTint(loader.background, 0.25) }}>{loader.adblockHint}</p>}
-          <button onClick={onClose} className="mt-4 w-3/4 rounded-[10px] px-4 py-3 text-[14px] font-semibold shadow-[0_18px_36px_rgba(0,0,0,.35)]" style={{ background: '#F0F8FF', color: loader.background }}>{loader.adblockButton || 'Já desativei'}</button>
-          {loader.adblock === 'warn' && <button onClick={onClose} className="mt-2 text-[12px] text-[#F0F8FF]/60 underline">Continuar assim</button>}
+          <p className="mt-4 text-[19px] font-semibold">{copy.title}</p>
+          <p className="mt-2 text-[13.5px] leading-relaxed text-[#F0F8FF]/90">{copy.text}</p>
+          <p className="mt-2 text-[13.5px] leading-relaxed text-[#F0F8FF]/90">{copy.detail}</p>
+          {<p className="mt-3 rounded-lg border border-white/20 px-3 py-2 text-[12px] leading-snug text-[#F0F8FF]/70" style={{ background: loaderTint(loader.background, 0.25) }}>{copy.hint}</p>}
+          <button onClick={onClose} className="mt-4 w-3/4 rounded-[10px] px-4 py-3 text-[14px] font-semibold shadow-[0_18px_36px_rgba(0,0,0,.35)]" style={{ background: '#F0F8FF', color: loader.background }}>{copy.button}</button>
+          {loader.adblock === 'warn' && <button onClick={onClose} className="mt-2 text-[12px] text-[#F0F8FF]/60 underline">{copy.skip}</button>}
           <p className="mt-3 text-[10px] text-[#F0F8FF]/45">GROONE®</p>
         </div>
       </div>
@@ -5890,11 +5897,11 @@ function LoaderView({ loader, mode, domain, onClose }: { loader: ProtoLoader; mo
     <div className="absolute inset-0 z-20 grid place-items-center p-4" style={{ background: loader.adblock === 'block' ? loader.background : 'rgba(23,23,23,0.5)', backdropFilter: blur, WebkitBackdropFilter: blur }} role="dialog" aria-label="Aviso de adblock">
       <div className="flex w-full max-w-[320px] flex-col items-center rounded-xl bg-white p-5 text-center text-neutral-800 shadow-xl">
         <SiteIcon domain={domain} size={36} />
-        <p className="mt-3 text-[15px] font-semibold">{loader.adblockTitle || 'Parece que você usa um bloqueador de anúncios'}</p>
-        {loader.adblockText && <p className="mt-1.5 text-[13px] leading-snug text-neutral-500">{loader.adblockText}</p>}
-        {loader.adblockHint && <p className="mt-2 text-[12px] text-neutral-400">{loader.adblockHint}</p>}
-        <button onClick={onClose} className="mt-4 h-9 w-full rounded-md text-[13px] font-medium" style={{ background: loader.accent, color: loaderInk(loader.accent) }}>{loader.adblockButton || 'Já desativei'}</button>
-        {loader.adblock === 'warn' && <button onClick={onClose} className="mt-2 text-[12px] text-neutral-500 underline">Continuar assim</button>}
+        <p className="mt-3 text-[15px] font-semibold">{copy.title}</p>
+        <p className="mt-1.5 text-[13px] leading-snug text-neutral-500">{copy.text} {copy.detail}</p>
+        <p className="mt-2 text-[12px] text-neutral-400">{copy.hint}</p>
+        <button onClick={onClose} className="mt-4 h-9 w-full rounded-md text-[13px] font-medium" style={{ background: loader.accent, color: loaderInk(loader.accent) }}>{copy.button}</button>
+        {loader.adblock === 'warn' && <button onClick={onClose} className="mt-2 text-[12px] text-neutral-500 underline">{copy.skip}</button>}
       </div>
     </div>
   )
@@ -5955,6 +5962,7 @@ function LoadersScreen({ loaders, tags, staff, open }: { loaders: ProtoLoader[];
 function LoaderEditScreen({ initial, tags, staff, back, save, remove }: { initial: ProtoLoader; tags: ProtoAdTag[]; staff: boolean; back: () => void; save: (loader: ProtoLoader) => ProtoLoader; remove: (id: string) => void }) {
   const [loader, setLoader] = useState(initial)
   const [mode, setMode] = useState<'loading' | 'adblock'>('loading')
+  const [lang, setLang] = useState<LoaderLang>('pt')
   const [device, setDevice] = useState<'desktop' | 'mobile'>('desktop')
   const [playing, setPlaying] = useState(true)
   const used = tags.filter((tag) => (tag.draft?.settings ?? tag.versions[0]?.settings)?.loader === loader.id && loader.id !== '')
@@ -6015,12 +6023,7 @@ function LoaderEditScreen({ initial, tags, staff, back, save, remove }: { initia
             <Card title="Adblock" desc="O que o loader faz quando o visitante usa bloqueador de anúncios.">
               <div className="grid gap-4">
                 <ChoiceCards name="Adblock" value={loader.adblock} onChange={(adblock) => { change({ adblock }); setMode(adblock === 'off' ? 'loading' : 'adblock') }} options={[{ value: 'off', title: 'Não avisar', hint: 'A página abre normal, só sem anúncios.' }, { value: 'warn', title: 'Avisar', hint: 'Mostra o aviso; dá para fechar e continuar.' }, { value: 'block', title: 'Bloquear', hint: 'A página só abre sem o bloqueador.' }]} />
-                {loader.adblock !== 'off' && <>
-                  <Field id="loader-ab-title" label="Título"><Input id="loader-ab-title" value={loader.adblockTitle} onChange={(event) => change({ adblockTitle: event.target.value })} /></Field>
-                  <Field id="loader-ab-text" label="Texto"><Textarea id="loader-ab-text" rows={3} value={loader.adblockText} onChange={(event) => change({ adblockText: event.target.value })} /></Field>
-                  <Field id="loader-ab-hint" label="Observação" hint="Opcional. Aparece num quadro menor."><Input id="loader-ab-hint" value={loader.adblockHint} onChange={(event) => change({ adblockHint: event.target.value })} /></Field>
-                  <Field id="loader-ab-button" label="Botão"><Input id="loader-ab-button" value={loader.adblockButton} onChange={(event) => change({ adblockButton: event.target.value })} /></Field>
-                </>}
+                {loader.adblock !== 'off' && <p className="flex items-start gap-2 rounded-md border bg-muted/40 px-3 py-2.5 text-[12px] leading-snug text-muted-foreground"><Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" />Os textos do aviso são fixos e saem no idioma do navegador do visitante (15 idiomas, os mesmos da g-tag). Veja na prévia em português, inglês ou espanhol.</p>}
               </div>
             </Card>
             <Card title="Nas ad tags" desc={used.length ? 'Mudanças salvas aqui chegam nestas tags em até um minuto, sem publicar a tag de novo.' : 'Nenhuma ad tag usa este loader ainda. Escolha ele em Integrações da ad tag.'}>
@@ -6030,6 +6033,7 @@ function LoaderEditScreen({ initial, tags, staff, back, save, remove }: { initia
           <div className="order-first grid min-w-0 grid-cols-[minmax(0,1fr)] content-start gap-3 lg:sticky lg:top-[124px] lg:order-none lg:self-start">
             <div className="flex flex-wrap items-center gap-2">
               <TagSegmented label="O que ver" value={mode} onChange={(value) => { setMode(value); setPlaying(true) }} options={[['loading', 'Carregando'], ...(loader.adblock !== 'off' ? [['adblock', 'Com adblock'] as ['adblock', string]] : [])]} />
+              {mode === 'adblock' && <TagSegmented label="Idioma do navegador" value={lang} onChange={setLang} options={[['pt', 'PT'], ['en', 'EN'], ['es', 'ES']]} />}
               <TagSegmented label="Aparelho" value={device} onChange={setDevice} options={[['desktop', 'Computador', Monitor], ['mobile', 'Celular', Smartphone]]} />
               {mode === 'loading' && (playing ? <Button size="sm" className="ml-auto h-9" onClick={() => setPlaying(false)}><Check className="h-4 w-4" />Finalizar loader</Button> : <Button size="sm" variant="outline" className="ml-auto h-9" onClick={replay}><RefreshCw className="h-4 w-4" />Mostrar de novo</Button>)}
             </div>
@@ -6040,7 +6044,7 @@ function LoaderEditScreen({ initial, tags, staff, back, save, remove }: { initia
                 <h3 className="mt-4 font-serif text-[24px] font-bold leading-tight">Bolo de açaí cremoso em 30 minutos</h3>
                 <div className="mt-3 h-36 rounded-md bg-gradient-to-br from-purple-200 to-purple-400" />
                 <p className="mt-3 text-[14px] leading-relaxed text-neutral-600">Misture a polpa de açaí com o leite condensado até ficar homogêneo. Acrescente os ovos um a um, batendo sempre.</p>
-                {(mode === 'adblock' || playing) && <LoaderView loader={loader} mode={mode} domain={domain} onClose={() => { if (mode === 'adblock') { setMode('loading'); setPlaying(false) } }} />}
+                {(mode === 'adblock' || playing) && <LoaderView loader={loader} mode={mode} lang={lang} domain={domain} onClose={() => { if (mode === 'adblock') { setMode('loading'); setPlaying(false) } }} />}
                 {mode === 'loading' && !playing && <div className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-neutral-900 px-3 py-1 text-[12px] text-white">Loader finalizado: assim fica a página quando os anúncios carregam</div>}
               </div>
             </div>
