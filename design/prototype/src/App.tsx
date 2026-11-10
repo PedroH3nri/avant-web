@@ -68,12 +68,16 @@ const SCREENS = [
   ['adtags', 'Ad tags'],
   ['adtag', 'Ad tags · Ad tag do site'],
   ['adtagmetricas', 'Ad tags · Métricas'],
+  ['loaders', 'Loaders'],
+  ['loader', 'Loaders · Editar loader'],
   ['adtagsinterno', 'Painel interno · Ad tags'],
   ['adtaginterno', 'Painel interno · Ad tag do site'],
   ['adtagmetricasinterno', 'Painel interno · Métricas da ad tag'],
+  ['loadersinterno', 'Painel interno · Loaders'],
+  ['loaderinterno', 'Painel interno · Editar loader'],
 ] as const
 type Screen = (typeof SCREENS)[number][0]
-const INTERNAL_SCREENS: Screen[] = ['interno', 'cliente', 'contratos', 'resultados', 'papelcomissao', 'minhacomissao', 'comissoes', 'minhasinvoices', 'invoice', 'invoices', 'servicosinvoice', 'modelosdash', 'tarefas', 'tarefa', 'checklists', 'checklist', 'checklistitens', 'ferramentasgam', 'execucaogam', 'rewardsinterno', 'rewardinterno', 'rewardmetricasinterno', 'adtagsinterno', 'adtaginterno', 'adtagmetricasinterno']
+const INTERNAL_SCREENS: Screen[] = ['interno', 'cliente', 'contratos', 'resultados', 'papelcomissao', 'minhacomissao', 'comissoes', 'minhasinvoices', 'invoice', 'invoices', 'servicosinvoice', 'modelosdash', 'tarefas', 'tarefa', 'checklists', 'checklist', 'checklistitens', 'ferramentasgam', 'execucaogam', 'rewardsinterno', 'rewardinterno', 'rewardmetricasinterno', 'adtagsinterno', 'adtaginterno', 'adtagmetricasinterno', 'loadersinterno', 'loaderinterno']
 const isScreen = (s: string): s is Screen => SCREENS.some(([k]) => k === s)
 type T = (k: Key) => string
 
@@ -364,12 +368,12 @@ const CLIENT_RAIL: RailGroup[] = [
   { key: 'inicio', label: 'Início', icon: Home, items: [{ id: 'inicio', label: 'Dashboard' }] },
   { key: 'relatorios', label: 'Relatórios', icon: BarChart3, items: [{ id: 'desempenho', label: 'Ad Manager' }, { id: 'visitas', label: 'Page Views' }, { id: 'relatorios', label: 'Relatórios customizados', also: ['construtor', 'relatorio'], separated: true }] },
   { key: 'financeiro', label: 'Financeiro', icon: Wallet, items: [{ id: 'resultado', label: 'Resultado' }, { id: 'custos', label: 'Custos' }] },
-  { key: 'inventario', label: 'Inventário', icon: Network, items: [{ id: 'networks', label: 'Networks do GAM', also: ['conectar'] }, { id: 'rewards', label: 'Rewards', also: ['reward', 'rewardmetricas'] }, { id: 'adtags', label: 'Ad tags', also: ['adtag', 'adtagmetricas'] }] },
+  { key: 'inventario', label: 'Inventário', icon: Network, items: [{ id: 'networks', label: 'Networks do GAM', also: ['conectar'] }, { id: 'rewards', label: 'Rewards', also: ['reward', 'rewardmetricas'] }, { id: 'adtags', label: 'Ad tags', also: ['adtag', 'adtagmetricas'] }, { id: 'loaders', label: 'Loaders', also: ['loader'] }] },
   { key: 'equipe', label: 'Equipe', icon: Users, items: [{ id: 'equipe', label: 'Membros', also: ['membro'] }, { id: 'grupos', label: 'Grupos', also: ['grupo', 'grupoinativo'] }] },
   { key: 'empresa', label: 'Empresa', icon: Settings, items: [{ id: 'configuracoes', label: 'Configurações' }, { id: 'fiscais', label: 'Dados fiscais' }] },
 ]
 const INTERNAL_RAIL: RailGroup[] = [
-  { key: 'clientes', label: 'Inventário', icon: Users, items: [{ id: 'interno', label: 'Clientes', also: ['cliente'] }, { id: 'contratos', label: 'Contratos' }, { id: 'resultados', label: 'Resultado dos clientes' }, { id: 'checklists', label: 'Checklists', also: ['checklist', 'checklistitens'] }, { id: 'rewardsinterno', label: 'Rewards', also: ['rewardinterno', 'rewardmetricasinterno'] }, { id: 'adtagsinterno', label: 'Ad tags', also: ['adtaginterno', 'adtagmetricasinterno'] }] },
+  { key: 'clientes', label: 'Inventário', icon: Users, items: [{ id: 'interno', label: 'Clientes', also: ['cliente'] }, { id: 'contratos', label: 'Contratos' }, { id: 'resultados', label: 'Resultado dos clientes' }, { id: 'checklists', label: 'Checklists', also: ['checklist', 'checklistitens'] }, { id: 'rewardsinterno', label: 'Rewards', also: ['rewardinterno', 'rewardmetricasinterno'] }, { id: 'adtagsinterno', label: 'Ad tags', also: ['adtaginterno', 'adtagmetricasinterno'] }, { id: 'loadersinterno', label: 'Loaders', also: ['loaderinterno'] }] },
   { key: 'comissoes', label: 'Comissões', icon: Wallet, items: [{ id: 'minhacomissao', label: 'Minha comissão' }, { id: 'minhasinvoices', label: 'Minhas invoices' }, { id: 'comissoes', label: 'Comissões da equipe' }, { id: 'invoices', label: 'Invoices', also: ['servicosinvoice', 'invoice'] }] },
   { key: 'ferramentas', label: 'Ferramentas', icon: Wrench, items: [{ id: 'tarefas', label: 'Tarefas', also: ['tarefa'] }, { id: 'modelosdash', label: 'Modelos de dashboard' }, { id: 'ferramentasgam', label: 'Ferramentas do GAM', also: ['execucaogam'] }] },
   { key: 'equipegroone', label: 'Equipe', icon: ShieldCheck, items: [{ id: 'papelcomissao', label: 'Papéis da Equipe Groone' }] },
@@ -5811,12 +5815,192 @@ function RewardMetricsScreen({ reward, staff, back, edit }: { reward: ProtoRewar
   )
 }
 
+/* ---------- Loaders (tela de carregamento e aviso de adblock, usados pelas ad tags) ---------- */
+
+type LoaderStyle = 'bar' | 'spinner' | 'dots'
+type LoaderAdblock = 'off' | 'warn' | 'block'
+type ProtoLoader = { id: string; name: string; client: string; logoText: string; background: string; accent: string; style: LoaderStyle; text: string; maxSeconds: number; adblock: LoaderAdblock; adblockTitle: string; adblockText: string; adblockButton: string; updated: string }
+
+const LOADER_STYLE_LABEL: Record<LoaderStyle, string> = { bar: 'Barra', spinner: 'Círculo', dots: 'Pontos' }
+const LOADER_ADBLOCK_LABEL: Record<LoaderAdblock, string> = { off: 'Sem aviso de adblock', warn: 'Avisa sobre adblock', block: 'Bloqueia com adblock' }
+const LOADER_CLIENTS = ['Açaí Mídia', 'Tech Notícias', 'Viagem Fácil']
+const INITIAL_LOADERS: ProtoLoader[] = [
+  { id: 'l1', name: 'Açaí roxo', client: 'Açaí Mídia', logoText: 'acai', background: '#2d0b3a', accent: '#c084fc', style: 'bar', text: 'Carregando…', maxSeconds: 3, adblock: 'warn', adblockTitle: 'Parece que você usa um bloqueador de anúncios', adblockText: 'Os anúncios mantêm o site gratuito. Desative o bloqueador e recarregue a página.', adblockButton: 'Já desativei', updated: '06/11/2026' },
+  { id: 'l2', name: 'Branco simples', client: 'Açaí Mídia', logoText: 'acai', background: '#ffffff', accent: '#171717', style: 'spinner', text: '', maxSeconds: 2, adblock: 'off', adblockTitle: '', adblockText: '', adblockButton: '', updated: '02/11/2026' },
+  { id: 'l3', name: 'Tech escuro', client: 'Tech Notícias', logoText: 'TechNotícias', background: '#0f172a', accent: '#38bdf8', style: 'dots', text: 'Um instante', maxSeconds: 3, adblock: 'block', adblockTitle: 'Desative o bloqueador para continuar', adblockText: 'O Tech Notícias é gratuito graças aos anúncios.', adblockButton: 'Recarregar', updated: '28/10/2026' },
+]
+
+/** Um loader novo da Empresa, com o visual mais simples. */
+function blankLoader(client: string): ProtoLoader {
+  return { id: '', name: '', client, logoText: '', background: '#ffffff', accent: '#171717', style: 'bar', text: 'Carregando…', maxSeconds: 3, adblock: 'off', adblockTitle: 'Parece que você usa um bloqueador de anúncios', adblockText: 'Os anúncios mantêm o site gratuito. Desative o bloqueador e recarregue a página.', adblockButton: 'Já desativei', updated: 'Agora' }
+}
+/** Cor do texto que dá leitura sobre o fundo do loader. */
+function loaderInk(background: string) {
+  const hex = background.replace('#', '')
+  const [red, green, blue] = [0, 2, 4].map((start) => parseInt(hex.slice(start, start + 2), 16) || 0)
+  return red * 0.299 + green * 0.587 + blue * 0.114 > 150 ? '#171717' : '#ffffff'
+}
+
+/** O loader ou o aviso de adblock por cima da página, igual ao que a avant-tag desenha no site. */
+function LoaderView({ loader, mode, domain, onClose }: { loader: ProtoLoader; mode: 'loading' | 'adblock'; domain: string; onClose?: () => void }) {
+  const ink = loaderInk(loader.background)
+  const logo = loader.logoText || domain.split('.')[0]
+  if (mode === 'adblock') return (
+    <div className="absolute inset-0 z-20 grid place-items-center p-4" style={{ background: loader.adblock === 'block' ? loader.background : 'rgba(23,23,23,0.5)' }} role="dialog" aria-label="Aviso de adblock">
+      <div className="w-full max-w-[320px] rounded-xl bg-white p-5 text-center text-neutral-800 shadow-xl">
+        <span className="font-serif text-[20px] font-bold">{logo}</span>
+        <p className="mt-3 text-[15px] font-semibold">{loader.adblockTitle || 'Parece que você usa um bloqueador de anúncios'}</p>
+        {loader.adblockText && <p className="mt-1.5 text-[13px] leading-snug text-neutral-500">{loader.adblockText}</p>}
+        <button onClick={onClose} className="mt-4 h-9 w-full rounded-md text-[13px] font-medium" style={{ background: loader.accent, color: loaderInk(loader.accent) }}>{loader.adblockButton || 'Já desativei'}</button>
+        {loader.adblock === 'warn' && <button onClick={onClose} className="mt-2 text-[12px] text-neutral-500 underline">Continuar assim</button>}
+      </div>
+    </div>
+  )
+  return (
+    <div className="absolute inset-0 z-20 grid place-items-center animate-in fade-in" style={{ background: loader.background, color: ink }} role="status" aria-label="Loader">
+      <div className="grid justify-items-center gap-4 px-4 text-center">
+        <span className="font-serif text-[28px] font-bold">{logo}</span>
+        {loader.style === 'bar' && <span className="relative h-1 w-40 overflow-hidden rounded-full" style={{ background: `${ink}22` }}><span className="absolute inset-y-0 left-0 w-1/3 animate-[loaderbar_1.1s_ease-in-out_infinite] rounded-full" style={{ background: loader.accent }} /></span>}
+        {loader.style === 'spinner' && <span className="h-8 w-8 animate-spin rounded-full border-[3px]" style={{ borderColor: `${ink}22`, borderTopColor: loader.accent }} />}
+        {loader.style === 'dots' && <span className="flex gap-1.5">{[0, 1, 2].map((dot) => <span key={dot} className="h-2.5 w-2.5 animate-bounce rounded-full" style={{ background: loader.accent, animationDelay: `${dot * 0.15}s` }} />)}</span>}
+        {loader.text && <span className="text-[12px] opacity-70">{loader.text}</span>}
+      </div>
+      <style>{'@keyframes loaderbar { 0% { transform: translateX(-100%) } 100% { transform: translateX(300%) } }'}</style>
+    </div>
+  )
+}
+
+/** Lista dos loaders: cada Empresa monta os seus e liga em qualquer ad tag. */
+function LoadersScreen({ loaders, tags, staff, open }: { loaders: ProtoLoader[]; tags: ProtoAdTag[]; staff: boolean; open: (id: string | null) => void }) {
+  const [query, setQuery] = useState('')
+  const visible = loaders.filter((loader) => (staff || loader.client === MY_CLIENT) && `${loader.name} ${loader.client}`.toLowerCase().includes(query.toLowerCase()))
+  return (
+    <>
+      <PageHeader title="Loaders" sub={staff ? 'As telas de carregamento de todos os clientes. Cada ad tag escolhe o seu loader em Integrações.' : 'A tela que aparece enquanto os anúncios carregam, com o aviso de adblock. Monte do seu jeito e ligue nas ad tags.'}
+        actions={<Button onClick={() => open(null)}><Plus className="h-4 w-4" />Novo loader</Button>} />
+      <Body>
+        <div className="relative w-full sm:w-[280px]"><Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input aria-label="Buscar loaders" className="h-9 pl-9" placeholder={staff ? 'Nome ou cliente' : 'Nome'} value={query} onChange={(event) => setQuery(event.target.value)} /></div>
+        <Table min={staff ? 860 : 720}>
+          <thead><tr><th className={th}>Loader</th>{staff && <th className={th}>Cliente</th>}<th className={th}>Animação</th><th className={th}>Adblock</th><th className={th}>Nas ad tags</th><th className={th}>Atualizado</th></tr></thead>
+          <tbody>
+            {visible.map((loader) => {
+              const used = tags.filter((tag) => (tag.draft?.settings ?? tag.versions[0]?.settings)?.loader === loader.id)
+              return (
+                <tr key={loader.id} className="hover:bg-muted">
+                  <td className={td}>
+                    <button className="flex items-center gap-3 text-left" onClick={() => open(loader.id)}>
+                      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md border" style={{ background: loader.background }} aria-hidden="true"><span className="h-1 w-5 rounded-full" style={{ background: loader.accent }} /></span>
+                      <span className="font-medium hover:underline">{loader.name}</span>
+                    </button>
+                  </td>
+                  {staff && <td className={td}>{loader.client}</td>}
+                  <td className={td}>{LOADER_STYLE_LABEL[loader.style]} · até {loader.maxSeconds} s</td>
+                  <td className={td}>{loader.adblock === 'off' ? <span className="text-muted-foreground">Sem aviso</span> : loader.adblock === 'warn' ? 'Avisa' : 'Bloqueia'}</td>
+                  <td className={cn(td, 'text-[13px]')}>{used.length ? used.map((tag) => `${tag.domain} · ${tag.name}`).join(', ') : <span className="text-muted-foreground">Nenhuma</span>}</td>
+                  <td className={cn(td, 'whitespace-nowrap tnum text-[13px] text-muted-foreground')}>{loader.updated}</td>
+                </tr>
+              )
+            })}
+            {!visible.length && <tr><td className={cn(td, 'py-12 text-center')} colSpan={staff ? 6 : 5}><Loader2 className="mx-auto h-5 w-5 text-muted-foreground" /><p className="mt-2 font-medium">Nenhum loader {query ? 'com esse nome' : 'ainda'}</p><p className="text-[14px] text-muted-foreground">Crie um loader e escolha ele na ad tag do site.</p></td></tr>}
+          </tbody>
+        </Table>
+      </Body>
+    </>
+  )
+}
+
+/** Criar ou editar um loader: formulário à esquerda e a prévia tocando à direita. */
+function LoaderEditScreen({ initial, tags, staff, back, save, remove }: { initial: ProtoLoader; tags: ProtoAdTag[]; staff: boolean; back: () => void; save: (loader: ProtoLoader) => ProtoLoader; remove: (id: string) => void }) {
+  const [loader, setLoader] = useState(initial)
+  const [mode, setMode] = useState<'loading' | 'adblock'>('loading')
+  const [device, setDevice] = useState<'desktop' | 'mobile'>('desktop')
+  const [playing, setPlaying] = useState(true)
+  const used = tags.filter((tag) => (tag.draft?.settings ?? tag.versions[0]?.settings)?.loader === loader.id && loader.id !== '')
+  const domain = TAG_SITES.find((site) => site.client === loader.client)?.domain ?? 'seusite.com.br'
+  /** Muda um campo do loader. */
+  const change = (patch: Partial<ProtoLoader>) => setLoader((current) => ({ ...current, ...patch }))
+  /** Toca o loader de novo na prévia, pelo tempo máximo escolhido. */
+  const replay = () => { setMode('loading'); setPlaying(true) }
+  useEffect(() => { if (mode !== 'loading' || !playing) return; const timer = window.setTimeout(() => setPlaying(false), loader.maxSeconds * 1000); return () => window.clearTimeout(timer) }, [mode, playing, loader.maxSeconds])
+  return (
+    <>
+      <PageHeader title={initial.id ? initial.name : 'Novo loader'} sub={staff ? `${loader.client} · Loader` : 'Loader das ad tags'}
+        back={<button onClick={back} className="inline-flex items-center gap-1 text-[13px] text-muted-foreground hover:text-foreground"><ArrowLeft className="h-3.5 w-3.5" />Loaders</button>}
+        actions={<>
+          {initial.id && <Button variant="outline" disabled={used.length > 0} title={used.length ? 'Tire o loader das ad tags antes de apagar.' : undefined} onClick={() => { remove(initial.id); toast.success('Loader apagado'); back() }}><Trash2 className="h-4 w-4" />Apagar</Button>}
+          <Button disabled={!loader.name.trim()} onClick={() => { const saved = save({ ...loader, name: loader.name.trim(), updated: 'Agora' }); setLoader(saved); toast.success('Loader salvo', { description: used.length ? `As ad tags que usam este loader recebem a mudança em até um minuto.` : 'Escolha ele em Integrações de uma ad tag.' }) }}>Salvar</Button>
+        </>} />
+      <Body>
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,440px)_minmax(0,1fr)]">
+          <div className="grid grid-cols-[minmax(0,1fr)] content-start gap-6">
+            <Card title="Loader">
+              <div className="grid gap-4">
+                <Field id="loader-name" label="Nome" hint="Só para o painel."><Input id="loader-name" value={loader.name} onChange={(event) => change({ name: event.target.value })} placeholder="Ex.: Roxo com logo" /></Field>
+                {staff && !initial.id && <Field id="loader-client" label="Cliente"><Select value={loader.client} onValueChange={(client) => change({ client })}><SelectTrigger id="loader-client"><SelectValue /></SelectTrigger><SelectContent>{LOADER_CLIENTS.map((client) => <SelectItem key={client} value={client}>{client}</SelectItem>)}</SelectContent></Select></Field>}
+                <Field id="loader-logo" label="Logo" hint="Texto em destaque. Vazio usa o nome do site."><Input id="loader-logo" value={loader.logoText} onChange={(event) => change({ logoText: event.target.value })} placeholder={domain.split('.')[0]} /></Field>
+                <Field id="loader-text" label="Texto embaixo" hint="Opcional."><Input id="loader-text" value={loader.text} onChange={(event) => change({ text: event.target.value })} placeholder="Carregando…" /></Field>
+              </div>
+            </Card>
+            <Card title="Aparência">
+              <div className="grid gap-5">
+                <TagBlockSection title="Animação"><TagSegmented label="Animação" value={loader.style} onChange={(style) => { change({ style }); replay() }} options={[['bar', 'Barra'], ['spinner', 'Círculo'], ['dots', 'Pontos']]} /></TagBlockSection>
+                <div className="grid grid-cols-2 gap-3">
+                  {([['background', 'Fundo'], ['accent', 'Destaque']] as const).map(([key, label]) => (
+                    <label key={key} className="grid gap-1.5 text-[13px] font-medium">{label}
+                      <span className="flex h-9 items-center gap-2 rounded-md border bg-background px-2"><input type="color" value={loader[key]} onChange={(event) => change({ [key]: event.target.value })} className="h-6 w-6 cursor-pointer rounded border-0 bg-transparent p-0" aria-label={`Cor de ${label.toLowerCase()}`} /><span className="font-mono text-[12px] font-normal uppercase text-muted-foreground">{loader[key]}</span></span>
+                    </label>
+                  ))}
+                </div>
+                <TagBlockSection title="Tempo máximo" aside="Some antes se os anúncios carregarem">
+                  <TagSegmented label="Tempo máximo" value={loader.maxSeconds} onChange={(maxSeconds) => { change({ maxSeconds }); replay() }} options={[[1, '1 s'], [2, '2 s'], [3, '3 s'], [5, '5 s']]} />
+                </TagBlockSection>
+              </div>
+            </Card>
+            <Card title="Adblock" desc="O que o loader faz quando o visitante usa bloqueador de anúncios.">
+              <div className="grid gap-4">
+                <ChoiceCards name="Adblock" value={loader.adblock} onChange={(adblock) => { change({ adblock }); setMode(adblock === 'off' ? 'loading' : 'adblock') }} options={[{ value: 'off', title: 'Não avisar', hint: 'A página abre normal, só sem anúncios.' }, { value: 'warn', title: 'Avisar', hint: 'Mostra o aviso; dá para fechar e continuar.' }, { value: 'block', title: 'Bloquear', hint: 'A página só abre sem o bloqueador.' }]} />
+                {loader.adblock !== 'off' && <>
+                  <Field id="loader-ab-title" label="Título"><Input id="loader-ab-title" value={loader.adblockTitle} onChange={(event) => change({ adblockTitle: event.target.value })} /></Field>
+                  <Field id="loader-ab-text" label="Texto"><Textarea id="loader-ab-text" rows={3} value={loader.adblockText} onChange={(event) => change({ adblockText: event.target.value })} /></Field>
+                  <Field id="loader-ab-button" label="Botão"><Input id="loader-ab-button" value={loader.adblockButton} onChange={(event) => change({ adblockButton: event.target.value })} /></Field>
+                </>}
+              </div>
+            </Card>
+            <Card title="Nas ad tags" desc={used.length ? 'Mudanças salvas aqui chegam nestas tags em até um minuto, sem publicar a tag de novo.' : 'Nenhuma ad tag usa este loader ainda. Escolha ele em Integrações da ad tag.'}>
+              {used.length > 0 && <ul className="grid gap-1.5 text-[14px]">{used.map((tag) => <li key={tag.id}><span className="font-mono text-[13px]">{tag.domain}</span> · {tag.name}</li>)}</ul>}
+            </Card>
+          </div>
+          <div className="order-first grid min-w-0 grid-cols-[minmax(0,1fr)] content-start gap-3 lg:sticky lg:top-[124px] lg:order-none lg:self-start">
+            <div className="flex flex-wrap items-center gap-2">
+              <TagSegmented label="O que ver" value={mode} onChange={(value) => { setMode(value); setPlaying(true) }} options={[['loading', 'Carregando'], ...(loader.adblock !== 'off' ? [['adblock', 'Com adblock'] as ['adblock', string]] : [])]} />
+              <TagSegmented label="Aparelho" value={device} onChange={setDevice} options={[['desktop', 'Computador', Monitor], ['mobile', 'Celular', Smartphone]]} />
+              <Button size="sm" variant="outline" className="ml-auto h-9" onClick={replay}><RefreshCw className="h-4 w-4" />Repetir</Button>
+            </div>
+            <div className={cn('mx-auto overflow-hidden rounded-xl border bg-card shadow-sm', device === 'mobile' ? 'w-[360px] max-w-full' : 'w-full')}>
+              <div className="flex items-center gap-2 border-b bg-muted px-3 py-2"><div className="min-w-0 flex-1 truncate rounded-md bg-background px-3 py-1 font-mono text-[12px] text-muted-foreground">https://{domain}/</div></div>
+              <div className="relative h-[420px] overflow-hidden bg-white p-5 text-neutral-800 lg:h-[calc(100dvh-300px)] lg:min-h-[420px]">
+                <p className="font-serif text-[18px] font-bold">{domain.split('.')[0]}</p>
+                <h3 className="mt-4 font-serif text-[24px] font-bold leading-tight">Bolo de açaí cremoso em 30 minutos</h3>
+                <div className="mt-3 h-36 rounded-md bg-gradient-to-br from-purple-200 to-purple-400" />
+                <p className="mt-3 text-[14px] leading-relaxed text-neutral-600">Misture a polpa de açaí com o leite condensado até ficar homogêneo. Acrescente os ovos um a um, batendo sempre.</p>
+                {(mode === 'adblock' || playing) && <LoaderView loader={loader} mode={mode} domain={domain} onClose={() => (mode === 'adblock' ? setMode('loading') : setPlaying(false))} />}
+                {mode === 'loading' && !playing && <div className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-neutral-900 px-3 py-1 text-[12px] text-white">Os anúncios carregaram e o loader saiu · Repetir</div>}
+              </div>
+            </div>
+            <p className="text-[12px] text-muted-foreground">O loader é desenhado pelo mesmo código da avant-tag: o que você vê aqui é o que vai ao ar.</p>
+          </div>
+        </div>
+      </Body>
+    </>
+  )
+}
+
 /* ---------- Ad tag (a tag de anúncios do site: blocos, integrações, saúde e versões) ---------- */
 
 type TagBlockKind = 'anchor' | 'interstitial' | 'fixed' | 'content'
 type TagRuleMode = 'all' | 'include' | 'exclude'
 type TagBlock = { id: string; kind: TagBlockKind; number: number; desktop: boolean; mobile: boolean; edge: 'top' | 'bottom'; selector: string; side: 'before' | 'after'; refresh: number | null; mgidArticle: string; ruleMode: TagRuleMode; paths: string[] }
-type TagSettings = { lazyLoad: boolean; loader: boolean; adUnitDay: string; analyticsId: string; mgidTagId: string; mgidSmartWidget: string; mgidBackButton: string; mgidSidebar: string; reward: 'on' | 'off'; priceRules: 'on' | 'off' }
+type TagSettings = { lazyLoad: boolean; loader: string; adUnitDay: string; analyticsId: string; mgidTagId: string; mgidSmartWidget: string; mgidBackButton: string; mgidSidebar: string; reward: 'on' | 'off'; priceRules: 'on' | 'off' }
 type TagVersion = { number: number; by: string; at: string; note: string; blocks: TagBlock[]; settings: TagSettings }
 type TagHealthRow = { block: string; served: number; filled: number; viewable: number }
 type ProtoAdTag = { id: string; name: string; key: string; domain: string; client: string; paused: boolean; draft: { blocks: TagBlock[]; settings: TagSettings } | null; versions: TagVersion[]; lastSeen: string | null; seenVersion: number | null; pages24h: number; health: TagHealthRow[] }
@@ -5839,7 +6023,7 @@ const TAG_SITES: { domain: string; client: string; days: { date: string; units: 
   { domain: 'technoticias.com.br', client: 'Tech Notícias', days: [{ date: '2026-10-05', units: tagUnits(5, ['Anchor', 'Interstitial', 'Fixed']) }, { date: '2026-06-20', units: tagUnits(3, ['Anchor']) }] },
   { domain: 'viagemfacil.com', client: 'Viagem Fácil', days: [{ date: '2026-07-11', units: tagUnits(3, ['Anchor', 'Interstitial']) }] },
 ]
-const DEFAULT_TAG_SETTINGS: TagSettings = { lazyLoad: true, loader: false, adUnitDay: 'latest', analyticsId: '', mgidTagId: '', mgidSmartWidget: '', mgidBackButton: '', mgidSidebar: '', reward: 'on', priceRules: 'off' }
+const DEFAULT_TAG_SETTINGS: TagSettings = { lazyLoad: true, loader: '', adUnitDay: 'latest', analyticsId: '', mgidTagId: '', mgidSmartWidget: '', mgidBackButton: '', mgidSidebar: '', reward: 'on', priceRules: 'off' }
 /** Um bloco novo do tipo pedido, com os valores mais comuns. */
 function newTagBlock(kind: TagBlockKind, number = 0): TagBlock {
   return { id: `${kind}-${number}-${Math.random().toString(36).slice(2, 7)}`, kind, number, desktop: true, mobile: true, edge: kind === 'fixed' ? 'top' : 'bottom', selector: '', side: 'after', refresh: null, mgidArticle: '', ruleMode: 'all', paths: [] }
@@ -5855,11 +6039,11 @@ const ACAI_BLOCKS: TagBlock[] = [
 const INITIAL_AD_TAGS: ProtoAdTag[] = [
   {
     id: 'acai-principal', name: 'Principal', key: 'tg_4m8r2wza', domain: 'acai.com.br', client: 'Açaí Mídia', paused: false, lastSeen: 'há 2 min', seenVersion: 7, pages24h: 48210,
-    draft: { blocks: ACAI_BLOCKS.map((block) => (block.id === 'c1' ? { ...block, refresh: 60 } : block)), settings: { ...DEFAULT_TAG_SETTINGS, analyticsId: 'G-8KQ2LM1Z0P', mgidTagId: '972311' } },
+    draft: { blocks: ACAI_BLOCKS.map((block) => (block.id === 'c1' ? { ...block, refresh: 60 } : block)), settings: { ...DEFAULT_TAG_SETTINGS, analyticsId: 'G-8KQ2LM1Z0P', mgidTagId: '972311', loader: 'l1' } },
     versions: [
-      { number: 7, by: 'Marina Costa', at: '07/11/2026 15:42', note: 'Conteúdo 3 só no celular', blocks: ACAI_BLOCKS, settings: { ...DEFAULT_TAG_SETTINGS, analyticsId: 'G-8KQ2LM1Z0P', mgidTagId: '972311' } },
-      { number: 6, by: 'Rafael Lima (Groone)', at: '01/11/2026 10:08', note: 'Intersticial fora da página de contato', blocks: ACAI_BLOCKS.map((block) => (block.id === 'c3' ? { ...block, desktop: true } : block)), settings: { ...DEFAULT_TAG_SETTINGS, analyticsId: 'G-8KQ2LM1Z0P', mgidTagId: '972311' } },
-      { number: 5, by: 'Marina Costa', at: '24/10/2026 18:30', note: 'Artigo MGID no Conteúdo 2', blocks: ACAI_BLOCKS.filter((block) => block.id !== 'fx'), settings: { ...DEFAULT_TAG_SETTINGS, analyticsId: 'G-8KQ2LM1Z0P', mgidTagId: '972311' } },
+      { number: 7, by: 'Marina Costa', at: '07/11/2026 15:42', note: 'Conteúdo 3 só no celular', blocks: ACAI_BLOCKS, settings: { ...DEFAULT_TAG_SETTINGS, analyticsId: 'G-8KQ2LM1Z0P', mgidTagId: '972311', loader: 'l1' } },
+      { number: 6, by: 'Rafael Lima (Groone)', at: '01/11/2026 10:08', note: 'Intersticial fora da página de contato', blocks: ACAI_BLOCKS.map((block) => (block.id === 'c3' ? { ...block, desktop: true } : block)), settings: { ...DEFAULT_TAG_SETTINGS, analyticsId: 'G-8KQ2LM1Z0P', mgidTagId: '972311', loader: 'l1' } },
+      { number: 5, by: 'Marina Costa', at: '24/10/2026 18:30', note: 'Artigo MGID no Conteúdo 2', blocks: ACAI_BLOCKS.filter((block) => block.id !== 'fx'), settings: { ...DEFAULT_TAG_SETTINGS, analyticsId: 'G-8KQ2LM1Z0P', mgidTagId: '972311', loader: 'l1' } },
     ],
     health: [
       { block: 'Conteúdo 1', served: 48210, filled: 93, viewable: 71 },
@@ -5910,7 +6094,7 @@ function tagChanges(before: TagVersion | undefined, blocks: TagBlock[], settings
     if (previous.mgidArticle !== block.mgidArticle) changes.push(`${tagBlockName(block)}: artigo MGID mudou`)
   })
   before.blocks.filter((block) => !blocks.some((item) => item.id === block.id)).forEach((block) => changes.push(`${tagBlockName(block)} removido`))
-  const labels: Record<keyof TagSettings, string> = { lazyLoad: 'Carregamento lento', loader: 'Tela de carregamento', adUnitDay: 'Data dos blocos', analyticsId: 'Google Analytics', mgidTagId: 'Tag MGID', mgidSmartWidget: 'MGID smart widget', mgidBackButton: 'MGID back button', mgidSidebar: 'MGID sidebar', reward: 'Reward', priceRules: 'Regras de preço' }
+  const labels: Record<keyof TagSettings, string> = { lazyLoad: 'Carregamento lento', loader: 'Loader', adUnitDay: 'Data dos blocos', analyticsId: 'Google Analytics', mgidTagId: 'Tag MGID', mgidSmartWidget: 'MGID smart widget', mgidBackButton: 'MGID back button', mgidSidebar: 'MGID sidebar', reward: 'Reward', priceRules: 'Regras de preço' }
   ;(Object.keys(labels) as (keyof TagSettings)[]).forEach((key) => { if (before.settings[key] !== settings[key]) changes.push(`${labels[key]} mudou`) })
   return changes
 }
@@ -6024,7 +6208,7 @@ const PREVIEW_ELEMENTS: { selector: string; kind: 'title' | 'image' | 'text' | '
   { selector: 'article p:nth-of-type(4)', kind: 'text' },
 ]
 /** O site do cliente com os blocos no lugar; na escolha, o bloco aparece onde vai entrar conforme o mouse e o clique fixa. */
-function TagSitePreview({ domain, blocks, device, picking, onPick, path, compact = false, overlay = null, closeOverlay }: { domain: string; blocks: TagBlock[]; device: 'desktop' | 'mobile'; picking: string | null; onPick: (selector: string, side: 'before' | 'after') => void; path: string; compact?: boolean; overlay?: 'loader' | 'adblock' | null; closeOverlay?: () => void }) {
+function TagSitePreview({ domain, blocks, device, picking, onPick, path, compact = false, overlay = null, loader = null, closeOverlay }: { domain: string; blocks: TagBlock[]; device: 'desktop' | 'mobile'; picking: string | null; onPick: (selector: string, side: 'before' | 'after') => void; path: string; compact?: boolean; overlay?: 'loader' | 'adblock' | null; loader?: ProtoLoader | null; closeOverlay?: () => void }) {
   const [hover, setHover] = useState<{ selector: string; side: 'before' | 'after' } | null>(null)
   const pickingBlock = blocks.find((block) => block.id === picking) ?? null
   const visible = blocks.filter((block) => (device === 'desktop' ? block.desktop : block.mobile) && (block.ruleMode === 'all' || (block.ruleMode === 'include' ? block.paths.some((item) => path.startsWith(item.replace(/\*$/, ''))) : !block.paths.some((item) => path.startsWith(item.replace(/\*$/, ''))))))
@@ -6084,26 +6268,7 @@ function TagSitePreview({ domain, blocks, device, picking, onPick, path, compact
         {anchor && <div className={cn('sticky z-10 grid h-14 place-items-center border-dashed border-sky-400 bg-sky-50 text-[12px] font-medium text-sky-800', anchor.edge === 'bottom' ? 'bottom-0 border-t-2' : 'top-0 border-b-2')}>Âncora · 320 × 50</div>}
         {fixed && fixed.edge === 'bottom' && <div className="sticky bottom-0 z-10 grid h-12 place-items-center border-t-2 border-dashed border-sky-400 bg-sky-50 text-[12px] font-medium text-sky-800">Fixo</div>}
       </div>
-      {overlay === 'loader' && (
-        <div className="absolute inset-0 z-20 grid place-items-center bg-white animate-in fade-in" role="status" aria-label="Loader da tag">
-          <div className="grid justify-items-center gap-4">
-            <span className="font-serif text-[28px] font-bold text-neutral-900">{domain.split('.')[0]}</span>
-            <span className="relative h-1 w-40 overflow-hidden rounded-full bg-neutral-200"><span className="absolute inset-y-0 left-0 w-1/3 animate-[tagloader_1.1s_ease-in-out_infinite] rounded-full bg-neutral-900" /></span>
-            <span className="text-[12px] text-neutral-500">Carregando…</span>
-          </div>
-          <style>{'@keyframes tagloader { 0% { transform: translateX(-100%) } 100% { transform: translateX(300%) } }'}</style>
-        </div>
-      )}
-      {overlay === 'adblock' && (
-        <div className="absolute inset-0 z-20 grid place-items-center bg-neutral-900/50 p-4" role="dialog" aria-label="Aviso de adblock">
-          <div className="w-full max-w-[320px] rounded-xl bg-white p-5 text-center text-neutral-800 shadow-xl">
-            <span className="font-serif text-[20px] font-bold">{domain.split('.')[0]}</span>
-            <p className="mt-3 text-[15px] font-semibold">Parece que você usa um bloqueador de anúncios</p>
-            <p className="mt-1.5 text-[13px] leading-snug text-neutral-500">Os anúncios mantêm o site gratuito. Desative o bloqueador para {domain} e recarregue a página.</p>
-            <button onClick={closeOverlay} className="mt-4 h-9 w-full rounded-md bg-neutral-900 text-[13px] font-medium text-white">Já desativei</button>
-          </div>
-        </div>
-      )}
+      {overlay && loader && <LoaderView loader={loader} mode={overlay === 'loader' ? 'loading' : 'adblock'} domain={domain} onClose={closeOverlay} />}
       </div>
     </div>
   )
@@ -6274,7 +6439,7 @@ function IntegrationCard({ icon, title, desc, on, children }: { icon: React.Reac
 }
 
 /** A ad tag de um site: blocos com o site ao lado, integrações, saúde e versões. */
-function AdTagEditScreen({ initial, staff, back, save, metrics }: { initial: ProtoAdTag; staff: boolean; back: () => void; save: (tag: ProtoAdTag) => void; metrics: () => void }) {
+function AdTagEditScreen({ initial, staff, back, save, metrics, loaders, editLoader }: { initial: ProtoAdTag; staff: boolean; back: () => void; save: (tag: ProtoAdTag) => void; metrics: () => void; loaders: ProtoLoader[]; editLoader: (id: string | null) => void }) {
   const live = initial.versions[0]
   const [tag, setTag] = useState(initial)
   const [blocks, setBlocks] = useState<TagBlock[]>(initial.draft?.blocks ?? live?.blocks ?? [])
@@ -6284,6 +6449,7 @@ function AdTagEditScreen({ initial, staff, back, save, metrics }: { initial: Pro
   const [pickingId, setPickingId] = useState<string | null>(null)
   const [armedId, setArmedId] = useState<string | null>(null)
   const [overlay, setOverlay] = useState<'loader' | 'adblock' | null>(null)
+  const clientLoaders = loaders.filter((item) => item.client === initial.client)
   const [dragId, setDragId] = useState<string | null>(null)
   const [dropAt, setDropAt] = useState<number | null>(null)
   const [device, setDevice] = useState<'desktop' | 'mobile'>('desktop')
@@ -6305,7 +6471,9 @@ function AdTagEditScreen({ initial, staff, back, save, metrics }: { initial: Pro
   /** Troca o bloco de lugar na ordem de carregamento. */
   const moveBlock = (index: number, offset: number) => setBlocks((current) => { const next = [...current]; const [block] = next.splice(index, 1); next.splice(index + offset, 0, block); return next })
   /** Mostra na prévia o loader por alguns segundos, como o visitante vê ao abrir a página. */
-  const playLoader = () => { setOverlay('loader'); window.setTimeout(() => setOverlay((current) => (current === 'loader' ? null : current)), 2600) }
+  const playLoader = () => { setOverlay('loader'); window.setTimeout(() => setOverlay((current) => (current === 'loader' ? null : current)), (loaders.find((item) => item.id === settings.loader)?.maxSeconds ?? 3) * 1000) }
+  /** Guarda o rascunho e abre o loader para editar. */
+  const goToLoader = (id: string | null) => { save({ ...tag, draft: changes.length ? { blocks, settings } : null }); editLoader(id) }
   /** Solta o bloco arrastado na posição marcada pela linha azul. */
   const dropBlock = () => {
     if (dragId !== null && dropAt !== null) setBlocks((current) => { const from = current.findIndex((block) => block.id === dragId); const to = dropAt > from ? dropAt - 1 : dropAt; if (from === to) return current; const next = [...current]; const [block] = next.splice(from, 1); next.splice(to, 0, block); return next })
@@ -6393,14 +6561,14 @@ function AdTagEditScreen({ initial, staff, back, save, metrics }: { initial: Pro
                 <div className="flex min-w-[220px] flex-1 items-center rounded-md border bg-background focus-within:ring-2 focus-within:ring-ring"><span className="shrink-0 border-r bg-muted px-3 py-1.5 font-mono text-[12px] text-muted-foreground">{tag.domain}</span><input aria-label="Página para ver" value={path} onChange={(event) => setPath(event.target.value.startsWith('/') ? event.target.value : `/${event.target.value}`)} className="h-8 min-w-0 flex-1 bg-transparent px-3 font-mono text-[12px] outline-none" /></div>
                 <DropdownMenu><DropdownMenuTrigger asChild><Button size="sm" variant="outline" className="h-9">Simular<ChevronDown className="h-3.5 w-3.5" /></Button></DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-[260px]">
-                    {!settings.loader && <p className="px-2 py-1.5 text-[12px] leading-snug text-muted-foreground">A tela de carregamento está desligada nesta tag. Ligue em Integrações para o visitante ver.</p>}
-                    <DropdownMenuItem onSelect={playLoader}>Tela de carregamento</DropdownMenuItem>
-                    <DropdownMenuItem onSelect={() => setOverlay('adblock')}>Visitante com adblock</DropdownMenuItem>
+                    {!settings.loader && <p className="px-2 py-1.5 text-[12px] leading-snug text-muted-foreground">Esta tag não tem loader. Escolha um em Integrações.</p>}
+                    <DropdownMenuItem disabled={!settings.loader} onSelect={playLoader}>Loader</DropdownMenuItem>
+                    <DropdownMenuItem disabled={!settings.loader || loaders.find((item) => item.id === settings.loader)?.adblock === 'off'} onSelect={() => setOverlay('adblock')}>Visitante com adblock</DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
               {pickingId && <div className="flex items-center gap-2 rounded-md border border-sky-300 bg-sky-50 px-3 py-2 text-[13px] text-sky-900"><MousePointerClick className="h-4 w-4" />Clique no elemento onde entra o {tagBlockName(blocks.find((block) => block.id === pickingId)!)}.<button className="ml-auto underline" onClick={() => setPickingId(null)}>Cancelar</button></div>}
-              <TagSitePreview compact overlay={overlay} closeOverlay={() => setOverlay(null)} domain={tag.domain} blocks={blocks} device={device} path={path} picking={pickingId} onPick={(selector, side) => { changeBlock(pickingId!, { selector, side }); setPickingId(null); toast.success('Lugar escolhido', { description: `${side === 'before' ? 'Antes de' : 'Depois de'} ${selector}` }) }} />
+              <TagSitePreview compact overlay={overlay} loader={loaders.find((item) => item.id === settings.loader) ?? null} closeOverlay={() => setOverlay(null)} domain={tag.domain} blocks={blocks} device={device} path={path} picking={pickingId} onPick={(selector, side) => { changeBlock(pickingId!, { selector, side }); setPickingId(null); toast.success('Lugar escolhido', { description: `${side === 'before' ? 'Antes de' : 'Depois de'} ${selector}` }) }} />
               <p className="text-[12px] text-muted-foreground">A página vem do site (sem os scripts dele) e os blocos são desenhados pelo mesmo código da tag: o que você vê aqui é o que vai ao ar.</p>
             </div>
           </div>
@@ -6413,7 +6581,6 @@ function AdTagEditScreen({ initial, staff, back, save, metrics }: { initial: Pro
                   <Input id="tag-name" value={tag.name} onChange={(event) => setTag({ ...tag, name: event.target.value })} onBlur={() => save({ ...tag, name: tag.name.trim() || 'Sem nome', draft: changes.length ? { blocks, settings } : null })} />
                 </Field>
                 <label className="flex items-start gap-3 text-[14px]"><Switch checked={settings.lazyLoad} onCheckedChange={(lazyLoad) => changeSettings({ lazyLoad })} /><span><span className="block font-medium">Carregamento lento</span><span className="text-muted-foreground">Os blocos de conteúdo só carregam perto de aparecer na tela.</span></span></label>
-                <label className="flex items-start gap-3 text-[14px]"><Switch checked={settings.loader} onCheckedChange={(loader) => changeSettings({ loader })} /><span><span className="block font-medium">Tela de carregamento e adblock</span><span className="text-muted-foreground">Mostra o logo enquanto os anúncios carregam e pede para desligar o bloqueador de anúncios.</span><button type="button" className="mt-1 block text-[13px] text-link hover:underline" onClick={(event) => { event.preventDefault(); setTab('blocks'); playLoader() }}>Ver na prévia</button></span></label>
                 <Field id="tag-day" label="Ad units" hint="Com “Os mais recentes”, blocos novos criados no GAM entram sozinhos, sem publicar de novo.">
                   <Select value={settings.adUnitDay} onValueChange={(adUnitDay) => changeSettings({ adUnitDay })}>
                     <SelectTrigger id="tag-day"><SelectValue>{settings.adUnitDay === 'latest' ? `Os mais recentes (${formatBlockDate(site.days[0].date)})` : `Fixar em ${formatBlockDate(settings.adUnitDay)}`} · {dayUnits.length} blocos</SelectValue></SelectTrigger>
@@ -6436,6 +6603,14 @@ function AdTagEditScreen({ initial, staff, back, save, metrics }: { initial: Pro
                 </div>
               </IntegrationCard>
             </div>
+            <IntegrationCard icon={<span className="grid h-full w-full place-items-center rounded-md bg-sky-600 text-white"><Loader2 className="h-4 w-4" /></span>} title="Loader" desc="A tela enquanto os anúncios carregam e o aviso de adblock. Os loaders ficam em Inventário > Loaders." on={settings.loader !== ''}>
+              <ChoiceCards name="Loader da tag" value={settings.loader} onChange={(loader) => changeSettings({ loader })} options={[{ value: '', title: 'Sem loader', hint: 'A página abre direto, sem tela de carregamento.' }, ...clientLoaders.map((item) => ({ value: item.id, title: item.name, hint: `${LOADER_STYLE_LABEL[item.style]} · até ${item.maxSeconds} s · ${LOADER_ADBLOCK_LABEL[item.adblock].toLowerCase()}` }))]} />
+              <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[13px]">
+                {settings.loader && <button className="text-link hover:underline" onClick={() => { setTab('blocks'); playLoader() }}>Ver na prévia</button>}
+                {settings.loader && <button className="text-link hover:underline" onClick={() => goToLoader(settings.loader)}>Editar este loader</button>}
+                <button className="text-link hover:underline" onClick={() => goToLoader(null)}>Criar loader</button>
+              </div>
+            </IntegrationCard>
             <IntegrationCard icon={<span className="grid h-full w-full place-items-center rounded-md bg-foreground text-background"><Gift className="h-4 w-4" /></span>} title="Reward" desc={`Os rewards de ${tag.domain} entram por esta tag, sem outro script.`} on={settings.reward === 'on'}>
               <ChoiceCards name="Reward na tag" value={settings.reward} onChange={(reward) => changeSettings({ reward })} options={[{ value: 'on', title: 'Ligado', hint: 'Mostra os rewards ativos do site. Se o Google mostrar o offerwall, o reward espera.' }, { value: 'off', title: 'Desligado', hint: 'Esta tag não carrega reward, mesmo com reward ativo no site.' }]} />
             </IntegrationCard>
@@ -6577,7 +6752,12 @@ export default function App() {
   const openReward = (id: number | null, staff: boolean) => { setRewardDraft(id ? rewards.find((item) => item.id === id)! : blankReward(REWARD_SITES.find((site) => staff || site.client === MY_CLIENT)!)); go(staff ? 'rewardinterno' : 'reward') }
   const [adTags, setAdTags] = useState(INITIAL_AD_TAGS)
   const [adTagId, setAdTagId] = useState('acai-principal')
+  const [loaders, setLoaders] = useState(INITIAL_LOADERS)
+  const [loaderDraft, setLoaderDraft] = useState<ProtoLoader>(INITIAL_LOADERS[0])
+  const [loaderBack, setLoaderBack] = useState<Screen | null>(null)
   /** Abre a ad tag do site (ou começa uma) no painel do cliente ou no interno. */
+  const openLoader = (id: string | null, staff: boolean, from: Screen | null = null) => { setLoaderDraft(id ? loaders.find((item) => item.id === id)! : blankLoader(staff ? LOADER_CLIENTS[0] : MY_CLIENT)); setLoaderBack(from); go(staff ? 'loaderinterno' : 'loader') }
+  const saveLoader = (saved: ProtoLoader) => { const next = saved.id ? saved : { ...saved, id: `l${Date.now()}` }; setLoaders((current) => (saved.id ? current.map((item) => (item.id === saved.id ? next : item)) : [next, ...current])); return next }
   const openAdTagMetrics = (id: string, staff: boolean) => { setAdTagId(id); go(staff ? 'adtagmetricasinterno' : 'adtagmetricas') }
   const openAdTag = (id: string, staff: boolean) => { setAdTagId(id); go(staff ? 'adtaginterno' : 'adtag') }
   const createAdTag = (domain: string, name: string, staff: boolean) => { const site = TAG_SITES.find((item) => item.domain === domain)!; const id = `${domain}-${Math.random().toString(36).slice(2, 8)}`; setAdTags((current) => [...current, { id, name, key: `tg_${Math.random().toString(36).slice(2, 10)}`, domain, client: site.client, paused: false, draft: null, versions: [], lastSeen: null, seenVersion: null, pages24h: 0, health: [] }]); openAdTag(id, staff) }
@@ -6654,7 +6834,10 @@ export default function App() {
       case 'rewardmetricas': case 'rewardmetricasinterno': { const staff = screen === 'rewardmetricasinterno'; return <RewardMetricsScreen key={rewardDraft.id} reward={rewardDraft} staff={staff} back={() => go(staff ? 'rewardsinterno' : 'rewards')} edit={() => openReward(rewardDraft.id, staff)} /> }
       case 'adtags': return <AdTagsScreen tags={adTags} staff={false} open={(id) => openAdTag(id, false)} metrics={(id) => openAdTagMetrics(id, false)} create={(domain, name) => createAdTag(domain, name, false)} />
       case 'adtagsinterno': return <AdTagsScreen tags={adTags} staff open={(id) => openAdTag(id, true)} metrics={(id) => openAdTagMetrics(id, true)} create={(domain, name) => createAdTag(domain, name, true)} />
-      case 'adtag': case 'adtaginterno': { const staff = screen === 'adtaginterno'; const tag = adTags.find((item) => item.id === adTagId) ?? adTags[0]; return <AdTagEditScreen key={`${tag.id}-${screen}`} initial={tag} staff={staff} back={() => go(staff ? 'adtagsinterno' : 'adtags')} save={(next) => setAdTags((current) => current.map((item) => (item.id === next.id ? next : item)))} metrics={() => openAdTagMetrics(tag.id, staff)} /> }
+      case 'adtag': case 'adtaginterno': { const staff = screen === 'adtaginterno'; const tag = adTags.find((item) => item.id === adTagId) ?? adTags[0]; return <AdTagEditScreen key={`${tag.id}-${screen}`} initial={tag} staff={staff} back={() => go(staff ? 'adtagsinterno' : 'adtags')} save={(next) => setAdTags((current) => current.map((item) => (item.id === next.id ? next : item)))} metrics={() => openAdTagMetrics(tag.id, staff)} loaders={loaders} editLoader={(id) => { const tagLoader = id ?? null; openLoader(tagLoader, staff, staff ? 'adtaginterno' : 'adtag'); if (!tagLoader) setLoaderDraft(blankLoader(tag.client)) }} /> }
+      case 'loaders': return <LoadersScreen loaders={loaders} tags={adTags} staff={false} open={(id) => openLoader(id, false)} />
+      case 'loadersinterno': return <LoadersScreen loaders={loaders} tags={adTags} staff open={(id) => openLoader(id, true)} />
+      case 'loader': case 'loaderinterno': { const staff = screen === 'loaderinterno'; return <LoaderEditScreen key={`${loaderDraft.id}-${screen}`} initial={loaderDraft} tags={adTags} staff={staff} back={() => { go(loaderBack ?? (staff ? 'loadersinterno' : 'loaders')); setLoaderBack(null) }} save={saveLoader} remove={(id) => setLoaders((current) => current.filter((item) => item.id !== id))} /> }
       case 'adtagmetricas': case 'adtagmetricasinterno': { const staff = screen === 'adtagmetricasinterno'; const tag = adTags.find((item) => item.id === adTagId) ?? adTags[0]; return <AdTagMetricsScreen key={tag.id} tag={tag} staff={staff} back={() => go(staff ? 'adtagsinterno' : 'adtags')} edit={() => openAdTag(tag.id, staff)} /> }
       case 'tarefa': { const task = tasks.find((item) => item.id === taskId) ?? tasks[0]; return <TaskScreen key={task.id} task={task} update={(next) => setTasks(tasks.map((item) => (item.id === next.id ? next : item)))} back={() => go('tarefas')} /> }
     }
