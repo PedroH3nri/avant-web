@@ -17,12 +17,12 @@ describe('menu do painel', () => {
   beforeAll(() => (lang.value = 'pt'))
 
   it('mostra os mesmos itens para a equipe Groone, sem filtrar por permissão', () => {
-    expect(labels(true)).toEqual(['Dashboard', 'Clientes', 'Equipes', 'Networks do GAM', 'Contratos', 'Sites', 'Rewards', 'Loaders', 'Checklists', 'Ad Manager', 'Page Views', 'Resultado', 'Resultado dos clientes', 'Metas', 'Relatórios customizados', 'Tarefas', 'Ferramentas do GAM', 'Alertas', 'Envios agendados', 'Modelos de dashboard', 'Minha comissão', 'Minhas invoices', 'Comissões', 'Invoices', 'Equipe Groone', 'Papéis da equipe', 'Custos'])
+    expect(labels(true)).toEqual(['Dashboard', 'Clientes', 'Equipes', 'Networks do GAM', 'Contratos', 'Sites', 'Rewards', 'Ad tags', 'Loaders', 'Checklists', 'Ad Manager', 'Page Views', 'Resultado', 'Resultado dos clientes', 'Metas', 'Relatórios customizados', 'Tarefas', 'Ferramentas do GAM', 'Alertas', 'Envios agendados', 'Modelos de dashboard', 'Minha comissão', 'Minhas invoices', 'Comissões', 'Invoices', 'Equipe Groone', 'Papéis da equipe', 'Custos'])
     expect(headers(true)).toEqual(['Inventário', 'Relatórios', 'Ferramentas', 'Comissões', 'Empresa'])
   })
 
   it('quem não é da equipe Groone não vê os itens internos', () => {
-    expect(labels(false)).toEqual(['Dashboard', 'Equipes', 'Networks do GAM', 'Sites', 'Rewards', 'Loaders', 'Ad Manager', 'Page Views', 'Resultado', 'Relatórios customizados', 'Papéis e permissões', 'Custos'])
+    expect(labels(false)).toEqual(['Dashboard', 'Equipes', 'Networks do GAM', 'Sites', 'Rewards', 'Ad tags', 'Loaders', 'Ad Manager', 'Page Views', 'Resultado', 'Relatórios customizados', 'Papéis e permissões', 'Custos'])
     expect(headers(false)).toEqual(['Inventário', 'Relatórios', 'Empresa'])
     expect(labels(false)).not.toContain('Equipe Groone')
   })
@@ -51,6 +51,7 @@ describe('menu do painel', () => {
       ['/interno/sites', 'Sites'],
       ['/interno/rewards/abc/metricas', 'Rewards'],
       ['/interno/loaders/abc', 'Loaders'],
+      ['/interno/ad-tags/abc/metricas', 'Ad tags'],
       ['/relatorios/123', 'Relatórios customizados'],
       ['/dashboards/123', 'Dashboard'],
       ['/interno/tarefas/123', 'Tarefas'],
