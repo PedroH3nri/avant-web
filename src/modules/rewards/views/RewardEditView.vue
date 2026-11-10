@@ -204,9 +204,10 @@ function toggleLead(on: boolean) {
   previewIndex.value = 0
 }
 
-/** Liga ou desliga o redirecionamento ao fim do anúncio. */
+/** Liga ou desliga o redirecionamento ao fim do anúncio; escolher a opção já marcada não apaga a página. */
 function toggleRedirect(on: boolean) {
-  if (input.value) input.value.redirect_path = on ? '' : null
+  if (!input.value || (input.value.redirect_path !== null) === on) return
+  input.value.redirect_path = on ? '' : null
 }
 
 /** Grava o reward (e a imagem do ícone) e volta para a lista. */
@@ -575,8 +576,26 @@ const segment = (selected: boolean) => ['h-8 rounded px-3 text-[13px] font-mediu
               />
             </Field>
             <div class="grid gap-3">
-              <span class="text-[13px] font-medium">{{ t('rw.afterAd') }}</span>
-              <Checkbox id="rw-redirect" :model-value="input.redirect_path !== null" :label="input.redirect_path !== null ? t('rw.redirectOn') : t('rw.redirectOff')" @update:model-value="toggleRedirect" />
+              <span id="rw-after-ad" class="text-[13px] font-medium">{{ t('rw.afterAd') }}</span>
+              <div role="radiogroup" aria-labelledby="rw-after-ad" class="grid gap-2 sm:grid-cols-2">
+                <button
+                  v-for="redirect in [false, true]"
+                  :key="String(redirect)"
+                  type="button"
+                  role="radio"
+                  :aria-checked="(input.redirect_path !== null) === redirect"
+                  :class="['flex items-start gap-3 rounded-lg border px-3 py-2.5 text-left transition-colors hover:bg-accent', (input.redirect_path !== null) === redirect && 'border-foreground ring-1 ring-foreground']"
+                  @click="toggleRedirect(redirect)"
+                >
+                  <span :class="['mt-0.5 grid size-4 shrink-0 place-items-center rounded-full border', (input.redirect_path !== null) === redirect ? 'border-foreground' : 'border-input']" aria-hidden="true">
+                    <span v-if="(input.redirect_path !== null) === redirect" class="size-2 rounded-full bg-foreground" />
+                  </span>
+                  <span>
+                    <span class="block text-[14px] font-medium">{{ redirect ? t('rw.redirectOn') : t('rw.redirectOff') }}</span>
+                    <span class="block text-[12px] text-muted-foreground">{{ redirect ? t('rw.redirectOnHint') : t('rw.redirectOffHint') }}</span>
+                  </span>
+                </button>
+              </div>
               <Field
                 v-if="input.redirect_path !== null"
                 id="rw-redirect-page"
