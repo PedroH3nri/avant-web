@@ -5862,8 +5862,13 @@ function SiteIcon({ domain, size = 24 }: { domain: string; size?: number }) {
   return <span className="inline-grid shrink-0 place-items-center rounded-[22%] font-bold text-white" style={{ width: size, height: size, background: icon.color, fontSize: size * 0.55 }} aria-label={`Ícone de ${domain}`}>{icon.letter}</span>
 }
 
+/** O loader por cima da página, com saída suave (fade e o blur sumindo) ao finalizar. */
+function LoaderView({ exiting = false, ...props }: { loader: ProtoLoader; mode: 'loading' | 'adblock'; domain: string; onClose?: () => void; lang?: LoaderLang; exiting?: boolean }) {
+  return <div className={cn('absolute inset-0 z-20', exiting && 'pointer-events-none')} style={{ opacity: exiting ? 0 : 1, transform: exiting ? 'scale(1.02)' : 'none', transition: 'opacity 400ms ease-out, transform 400ms ease-out' }}><LoaderLayer {...props} /></div>
+}
+
 /** O loader ou o aviso de adblock por cima da página, igual ao que a avant-tag desenha no site. */
-function LoaderView({ loader, mode, domain, onClose, lang = 'pt' }: { loader: ProtoLoader; mode: 'loading' | 'adblock'; domain: string; onClose?: () => void; lang?: LoaderLang }) {
+function LoaderLayer({ loader, mode, domain, onClose, lang = 'pt' }: { loader: ProtoLoader; mode: 'loading' | 'adblock'; domain: string; onClose?: () => void; lang?: LoaderLang }) {
   const copy = ADBLOCK_TEXTS[lang]
   const ink = loaderInk(loader.background)
   const blur = `blur(${LOADER_BLUR_PX[loader.blur] ?? 0}px)`
@@ -5952,6 +5957,9 @@ function LoaderEditScreen({ initial, tags, staff, back, save, remove }: { initia
   const [loader, setLoader] = useState(initial)
   const [mode, setMode] = useState<'loading' | 'adblock'>('loading')
   const [lang, setLang] = useState<LoaderLang>('pt')
+  const [exiting, setExiting] = useState(false)
+  /** Finaliza o loader com a saída suave, como no site quando os anúncios carregam. */
+  const finish = () => { setExiting(true); window.setTimeout(() => { setPlaying(false); setExiting(false) }, 400) }
   const [device, setDevice] = useState<'desktop' | 'mobile'>('desktop')
   const [playing, setPlaying] = useState(true)
   const used = tags.filter((tag) => (tag.draft?.settings ?? tag.versions[0]?.settings)?.loader === loader.id && loader.id !== '')
@@ -6024,7 +6032,7 @@ function LoaderEditScreen({ initial, tags, staff, back, save, remove }: { initia
               <TagSegmented label="O que ver" value={mode} onChange={(value) => { setMode(value); setPlaying(true) }} options={[['loading', 'Carregando'], ...(loader.adblock !== 'off' ? [['adblock', 'Com adblock'] as ['adblock', string]] : [])]} />
               {mode === 'adblock' && <TagSegmented label="Idioma do navegador" value={lang} onChange={setLang} options={[['pt', 'PT'], ['en', 'EN'], ['es', 'ES']]} />}
               <TagSegmented label="Aparelho" value={device} onChange={setDevice} options={[['desktop', 'Computador', Monitor], ['mobile', 'Celular', Smartphone]]} />
-              {mode === 'loading' && (playing ? <Button size="sm" className="ml-auto h-9" onClick={() => setPlaying(false)}><Check className="h-4 w-4" />Finalizar loader</Button> : <Button size="sm" variant="outline" className="ml-auto h-9" onClick={replay}><RefreshCw className="h-4 w-4" />Mostrar de novo</Button>)}
+              {mode === 'loading' && (playing ? <Button size="sm" className="ml-auto h-9" disabled={exiting} onClick={finish}><Check className="h-4 w-4" />Finalizar loader</Button> : <Button size="sm" variant="outline" className="ml-auto h-9" onClick={replay}><RefreshCw className="h-4 w-4" />Mostrar de novo</Button>)}
             </div>
             <div className={cn('mx-auto overflow-hidden rounded-xl border bg-card shadow-sm', device === 'mobile' ? 'w-[360px] max-w-full' : 'w-full')}>
               <div className="flex items-center gap-2 border-b bg-muted px-3 py-2"><div className="min-w-0 flex-1 truncate rounded-md bg-background px-3 py-1 font-mono text-[12px] text-muted-foreground">https://{domain}/</div></div>
@@ -6033,7 +6041,7 @@ function LoaderEditScreen({ initial, tags, staff, back, save, remove }: { initia
                 <h3 className="mt-4 font-serif text-[24px] font-bold leading-tight">Bolo de açaí cremoso em 30 minutos</h3>
                 <div className="mt-3 h-36 rounded-md bg-gradient-to-br from-purple-200 to-purple-400" />
                 <p className="mt-3 text-[14px] leading-relaxed text-neutral-600">Misture a polpa de açaí com o leite condensado até ficar homogêneo. Acrescente os ovos um a um, batendo sempre.</p>
-                {(mode === 'adblock' || playing) && <LoaderView loader={loader} mode={mode} lang={lang} domain={domain} onClose={() => { if (mode === 'adblock') { setMode('loading'); setPlaying(false) } }} />}
+                {(mode === 'adblock' || playing) && <LoaderView loader={loader} mode={mode} lang={lang} domain={domain} exiting={exiting} onClose={() => { if (mode === 'adblock') { setExiting(true); window.setTimeout(() => { setMode('loading'); setPlaying(false); setExiting(false) }, 400) } }} />}
                 {mode === 'loading' && !playing && <div className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-neutral-900 px-3 py-1 text-[12px] text-white">Loader finalizado: assim fica a página quando os anúncios carregam</div>}
               </div>
             </div>
@@ -6258,7 +6266,7 @@ const PREVIEW_ELEMENTS: { selector: string; kind: 'title' | 'image' | 'text' | '
   { selector: 'article p:nth-of-type(4)', kind: 'text' },
 ]
 /** O site do cliente com os blocos no lugar; na escolha, o bloco aparece onde vai entrar conforme o mouse e o clique fixa. */
-function TagSitePreview({ domain, blocks, device, picking, onPick, path, compact = false, overlay = null, loader = null, closeOverlay }: { domain: string; blocks: TagBlock[]; device: 'desktop' | 'mobile'; picking: string | null; onPick: (selector: string, side: 'before' | 'after') => void; path: string; compact?: boolean; overlay?: 'loader' | 'adblock' | null; loader?: ProtoLoader | null; closeOverlay?: () => void }) {
+function TagSitePreview({ domain, blocks, device, picking, onPick, path, compact = false, overlay = null, loader = null, closeOverlay, overlayExiting = false }: { domain: string; blocks: TagBlock[]; device: 'desktop' | 'mobile'; picking: string | null; onPick: (selector: string, side: 'before' | 'after') => void; path: string; compact?: boolean; overlay?: 'loader' | 'adblock' | null; loader?: ProtoLoader | null; closeOverlay?: () => void; overlayExiting?: boolean }) {
   const [hover, setHover] = useState<{ selector: string; side: 'before' | 'after' } | null>(null)
   const pickingBlock = blocks.find((block) => block.id === picking) ?? null
   const visible = blocks.filter((block) => (device === 'desktop' ? block.desktop : block.mobile) && (block.ruleMode === 'all' || (block.ruleMode === 'include' ? block.paths.some((item) => path.startsWith(item.replace(/\*$/, ''))) : !block.paths.some((item) => path.startsWith(item.replace(/\*$/, ''))))))
@@ -6318,7 +6326,7 @@ function TagSitePreview({ domain, blocks, device, picking, onPick, path, compact
         {anchor && <div className={cn('sticky z-10 grid h-14 place-items-center border-dashed border-sky-400 bg-sky-50 text-[12px] font-medium text-sky-800', anchor.edge === 'bottom' ? 'bottom-0 border-t-2' : 'top-0 border-b-2')}>Âncora · 320 × 50</div>}
         {fixed && fixed.edge === 'bottom' && <div className="sticky bottom-0 z-10 grid h-12 place-items-center border-t-2 border-dashed border-sky-400 bg-sky-50 text-[12px] font-medium text-sky-800">Fixo</div>}
       </div>
-      {overlay && loader && <LoaderView loader={loader} mode={overlay === 'loader' ? 'loading' : 'adblock'} domain={domain} onClose={closeOverlay} />}
+      {overlay && loader && <LoaderView loader={loader} mode={overlay === 'loader' ? 'loading' : 'adblock'} domain={domain} onClose={closeOverlay} exiting={overlayExiting} />}
       </div>
     </div>
   )
@@ -6521,7 +6529,10 @@ function AdTagEditScreen({ initial, staff, back, save, metrics, loaders, editLoa
   /** Troca o bloco de lugar na ordem de carregamento. */
   const moveBlock = (index: number, offset: number) => setBlocks((current) => { const next = [...current]; const [block] = next.splice(index, 1); next.splice(index + offset, 0, block); return next })
   /** Mostra o loader na prévia; ele fica até clicar em Finalizar loader. */
+  const [overlayExiting, setOverlayExiting] = useState(false)
   const playLoader = () => setOverlay('loader')
+  /** Fecha o loader ou o aviso da prévia com a saída suave. */
+  const closeOverlay = () => { setOverlayExiting(true); window.setTimeout(() => { setOverlay(null); setOverlayExiting(false) }, 400) }
   /** Guarda o rascunho e abre o loader para editar. */
   const goToLoader = (id: string | null) => { save({ ...tag, draft: changes.length ? { blocks, settings } : null }); editLoader(id) }
   /** Solta o bloco arrastado na posição marcada pela linha azul. */
@@ -6609,7 +6620,7 @@ function AdTagEditScreen({ initial, staff, back, save, metrics, loaders, editLoa
                   {(['desktop', 'mobile'] as const).map((item) => <button key={item} onClick={() => setDevice(item)} className={cn('inline-flex h-8 items-center gap-1.5 rounded px-3 text-[13px]', device === item ? 'bg-foreground text-background' : 'text-muted-foreground')}>{item === 'desktop' ? <Monitor className="h-4 w-4" /> : <Smartphone className="h-4 w-4" />}{item === 'desktop' ? 'Computador' : 'Celular'}</button>)}
                 </div>
                 <div className="flex min-w-[220px] flex-1 items-center rounded-md border bg-background focus-within:ring-2 focus-within:ring-ring"><span className="shrink-0 border-r bg-muted px-3 py-1.5 font-mono text-[12px] text-muted-foreground">{tag.domain}</span><input aria-label="Página para ver" value={path} onChange={(event) => setPath(event.target.value.startsWith('/') ? event.target.value : `/${event.target.value}`)} className="h-8 min-w-0 flex-1 bg-transparent px-3 font-mono text-[12px] outline-none" /></div>
-                {overlay === 'loader' && <Button size="sm" className="h-9" onClick={() => setOverlay(null)}><Check className="h-4 w-4" />Finalizar loader</Button>}
+                {overlay === 'loader' && <Button size="sm" className="h-9" disabled={overlayExiting} onClick={closeOverlay}><Check className="h-4 w-4" />Finalizar loader</Button>}
                 <DropdownMenu><DropdownMenuTrigger asChild><Button size="sm" variant="outline" className="h-9">Simular<ChevronDown className="h-3.5 w-3.5" /></Button></DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-[260px]">
                     {!settings.loader && <p className="px-2 py-1.5 text-[12px] leading-snug text-muted-foreground">Esta tag não tem loader. Escolha um em Integrações.</p>}
@@ -6619,7 +6630,7 @@ function AdTagEditScreen({ initial, staff, back, save, metrics, loaders, editLoa
                 </DropdownMenu>
               </div>
               {pickingId && <div className="flex items-center gap-2 rounded-md border border-sky-300 bg-sky-50 px-3 py-2 text-[13px] text-sky-900"><MousePointerClick className="h-4 w-4" />Clique no elemento onde entra o {tagBlockName(blocks.find((block) => block.id === pickingId)!)}.<button className="ml-auto underline" onClick={() => setPickingId(null)}>Cancelar</button></div>}
-              <TagSitePreview compact overlay={overlay} loader={loaders.find((item) => item.id === settings.loader) ?? null} closeOverlay={() => setOverlay(null)} domain={tag.domain} blocks={blocks} device={device} path={path} picking={pickingId} onPick={(selector, side) => { changeBlock(pickingId!, { selector, side }); setPickingId(null); toast.success('Lugar escolhido', { description: `${side === 'before' ? 'Antes de' : 'Depois de'} ${selector}` }) }} />
+              <TagSitePreview compact overlay={overlay} loader={loaders.find((item) => item.id === settings.loader) ?? null} closeOverlay={closeOverlay} overlayExiting={overlayExiting} domain={tag.domain} blocks={blocks} device={device} path={path} picking={pickingId} onPick={(selector, side) => { changeBlock(pickingId!, { selector, side }); setPickingId(null); toast.success('Lugar escolhido', { description: `${side === 'before' ? 'Antes de' : 'Depois de'} ${selector}` }) }} />
               <p className="text-[12px] text-muted-foreground">A página vem do site (sem os scripts dele) e os blocos são desenhados pelo mesmo código da tag: o que você vê aqui é o que vai ao ar.</p>
             </div>
           </div>
