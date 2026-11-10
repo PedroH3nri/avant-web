@@ -5867,42 +5867,31 @@ function LoaderView({ loader, mode, domain, onClose, lang = 'pt' }: { loader: Pr
   const copy = ADBLOCK_TEXTS[lang]
   const ink = loaderInk(loader.background)
   const blur = `blur(${LOADER_BLUR_PX[loader.blur] ?? 0}px)`
-  if (loader.template === 'groone') {
-    if (mode === 'adblock') return (
-      <div className="absolute inset-0 z-20 grid place-items-center overflow-y-auto p-4" style={{ background: loaderTint(loader.background, 0.58), backdropFilter: blur, WebkitBackdropFilter: blur }} role="dialog" aria-label="Aviso de adblock">
-        <div className="flex w-full max-w-[400px] flex-col items-center rounded-[20px] border border-white/20 bg-gradient-to-b from-white/[0.14] to-white/[0.08] px-6 pb-5 pt-6 text-center text-[#F0F8FF] shadow-[0_30px_60px_rgba(0,0,0,.45)] backdrop-blur-md">
-          <span className="grid h-14 w-14 place-items-center rounded-2xl bg-white/20 shadow-[0_0_5px_#fff]"><SiteIcon domain={domain} size={32} /></span>
-          <p className="mt-4 text-[19px] font-semibold">{copy.title}</p>
-          <p className="mt-2 text-[13.5px] leading-relaxed text-[#F0F8FF]/90">{copy.text}</p>
-          <p className="mt-2 text-[13.5px] leading-relaxed text-[#F0F8FF]/90">{copy.detail}</p>
-          {<p className="mt-3 rounded-lg border border-white/20 px-3 py-2 text-[12px] leading-snug text-[#F0F8FF]/70" style={{ background: loaderTint(loader.background, 0.25) }}>{copy.hint}</p>}
-          <button onClick={onClose} className="mt-4 w-3/4 rounded-[10px] px-4 py-3 text-[14px] font-semibold shadow-[0_18px_36px_rgba(0,0,0,.35)]" style={{ background: '#F0F8FF', color: loader.background }}>{copy.button}</button>
-          {loader.adblock === 'warn' && <button onClick={onClose} className="mt-2 text-[12px] text-[#F0F8FF]/60 underline">{copy.skip}</button>}
-          <p className="mt-3 text-[10px] text-[#F0F8FF]/45">GROONE®</p>
-        </div>
-      </div>
-    )
-    return (
-      <div className="absolute inset-0 z-20 grid place-items-center animate-in fade-in" style={{ background: loaderTint(loader.background, 0.58), backdropFilter: blur, WebkitBackdropFilter: blur }} role="status" aria-label="Loader">
-        <div className="relative grid h-16 w-16 place-items-center">
-          <span className="absolute inset-0 animate-spin rounded-full border border-white/20" style={{ animationDuration: '.75s', filter: `drop-shadow(0 0 6px ${loader.accent})` }}>
-            <span className="absolute -inset-[3px] rounded-full" style={{ background: `conic-gradient(from 0deg, #F0F8FF, ${loaderTint(loader.accent, 0.5)}, transparent 70%)`, WebkitMask: 'radial-gradient(farthest-side, transparent calc(100% - 4px), #000 0)', mask: 'radial-gradient(farthest-side, transparent calc(100% - 4px), #000 0)' }} />
-          </span>
-          <SiteIcon domain={domain} size={30} />
-        </div>
-      </div>
-    )
-  }
+  const veil = { background: loaderTint(loader.background, 0.58), backdropFilter: blur, WebkitBackdropFilter: blur }
   if (mode === 'adblock') return (
-    <div className="absolute inset-0 z-20 grid place-items-center p-4" style={{ background: loader.adblock === 'block' ? loader.background : 'rgba(23,23,23,0.5)', backdropFilter: blur, WebkitBackdropFilter: blur }} role="dialog" aria-label="Aviso de adblock">
-      <div className="flex w-full max-w-[320px] flex-col items-center rounded-xl bg-white p-5 text-center text-neutral-800 shadow-xl">
-        <SiteIcon domain={domain} size={36} />
-        <p className="mt-3 text-[15px] font-semibold">{copy.title}</p>
-        <p className="mt-1.5 text-[13px] leading-snug text-neutral-500">{copy.text} {copy.detail}</p>
-        <p className="mt-2 text-[12px] text-neutral-400">{copy.hint}</p>
-        <button onClick={onClose} className="mt-4 h-9 w-full rounded-md text-[13px] font-medium" style={{ background: loader.accent, color: loaderInk(loader.accent) }}>{copy.button}</button>
-        {loader.adblock === 'warn' && <button onClick={onClose} className="mt-2 text-[12px] text-neutral-500 underline">{copy.skip}</button>}
+    <div className="absolute inset-0 z-20 grid place-items-center overflow-y-auto p-4 animate-in fade-in" style={loader.template === 'groone' ? veil : { background: loader.adblock === 'block' ? loader.background : 'rgba(23,23,23,0.5)', backdropFilter: blur, WebkitBackdropFilter: blur }} role="dialog" aria-label="Aviso de adblock">
+      <div className="flex w-full max-w-[340px] flex-col items-center rounded-2xl bg-white px-6 pb-5 pt-6 text-center text-neutral-800 shadow-[0_24px_48px_-12px_rgba(0,0,0,.35)] ring-1 ring-black/5 animate-in zoom-in-95 fade-in">
+        <SiteIcon domain={domain} size={40} />
+        <p className="mt-4 text-[17px] font-semibold tracking-[-0.01em]">{copy.title}</p>
+        <p className="mt-2 text-[13px] leading-relaxed text-neutral-500">{copy.text} {copy.detail}</p>
+        <p className="mt-3 w-full rounded-lg bg-neutral-100 px-3 py-2 text-[12px] leading-snug text-neutral-500">{copy.hint}</p>
+        <button onClick={onClose} className="mt-4 h-10 w-full rounded-lg text-[13px] font-semibold transition-[filter] hover:brightness-110" style={{ background: loader.accent, color: loaderInk(loader.accent) }}>{copy.button}</button>
+        {loader.adblock === 'warn' && <button onClick={onClose} className="mt-2 text-[12px] text-neutral-500 hover:text-neutral-800">{copy.skip}</button>}
+        <p className="mt-4 text-[10px] tracking-[0.08em] text-neutral-300">GROONE®</p>
       </div>
+    </div>
+  )
+  if (loader.template === 'groone') return (
+    <div className="absolute inset-0 z-20 grid place-items-center animate-in fade-in duration-300" style={veil} role="status" aria-label="Loader">
+      <div className="relative grid h-[72px] w-[72px] place-items-center">
+        <span className="absolute inset-0 rounded-full" style={{ boxShadow: `0 0 28px 2px ${loaderTint(loader.accent, 0.35)}` }} />
+        <svg viewBox="0 0 72 72" className="absolute inset-0 h-full w-full animate-[groonespin_1.4s_linear_infinite]" aria-hidden="true">
+          <circle cx="36" cy="36" r="33" fill="none" stroke="rgba(255,255,255,.12)" strokeWidth="2.5" />
+          <circle cx="36" cy="36" r="33" fill="none" stroke={loader.accent} strokeWidth="2.5" strokeLinecap="round" className="animate-[groonedash_1.4s_ease-in-out_infinite]" style={{ strokeDasharray: '1 207', strokeDashoffset: 0, filter: `drop-shadow(0 0 4px ${loader.accent})` }} />
+        </svg>
+        <SiteIcon domain={domain} size={30} />
+      </div>
+      <style>{'@keyframes groonespin { to { transform: rotate(360deg) } } @keyframes groonedash { 0% { stroke-dasharray: 1 207; stroke-dashoffset: 0 } 50% { stroke-dasharray: 120 207; stroke-dashoffset: -30 } 100% { stroke-dasharray: 1 207; stroke-dashoffset: -206 } } @media (prefers-reduced-motion: reduce) { svg { animation: none !important } circle { animation: none !important; stroke-dasharray: 60 207 !important } }'}</style>
     </div>
   )
   return (
