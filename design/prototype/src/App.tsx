@@ -5877,11 +5877,11 @@ function LoaderView({ loader, mode, domain, onClose }: { loader: ProtoLoader; mo
     )
     return (
       <div className="absolute inset-0 z-20 grid place-items-center animate-in fade-in" style={{ background: loaderTint(loader.background, 0.58), backdropFilter: blur, WebkitBackdropFilter: blur }} role="status" aria-label="Loader">
-        <span className="absolute left-4 top-4"><SiteIcon domain={domain} size={26} /></span>
-        <div className="rounded-2xl border border-white/15 bg-white/10 px-[18px] py-4 backdrop-blur-md">
-          <span className="relative block h-[46px] w-[46px] animate-spin rounded-full border border-white/20" style={{ animationDuration: '.75s', filter: `drop-shadow(0 0 6px ${loader.accent})` }}>
+        <div className="relative grid h-16 w-16 place-items-center">
+          <span className="absolute inset-0 animate-spin rounded-full border border-white/20" style={{ animationDuration: '.75s', filter: `drop-shadow(0 0 6px ${loader.accent})` }}>
             <span className="absolute -inset-[3px] rounded-full" style={{ background: `conic-gradient(from 0deg, #F0F8FF, ${loaderTint(loader.accent, 0.5)}, transparent 70%)`, WebkitMask: 'radial-gradient(farthest-side, transparent calc(100% - 4px), #000 0)', mask: 'radial-gradient(farthest-side, transparent calc(100% - 4px), #000 0)' }} />
           </span>
+          <SiteIcon domain={domain} size={30} />
         </div>
       </div>
     )
@@ -5983,9 +5983,9 @@ function LoaderEditScreen({ initial, tags, staff, back, save, remove }: { initia
                     {(['groone', 'solid'] as const).map((template) => (
                       <button key={template} role="radio" aria-checked={loader.template === template} onClick={() => { change({ template, ...(template === 'groone' ? { style: 'spinner' as const, blur: loader.blur || 2 } : {}) }); replay() }} className={cn('grid gap-2 rounded-md border p-2 text-left', loader.template === template ? 'border-foreground' : 'hover:border-foreground/40')}>
                         <span className="relative grid h-16 place-items-center overflow-hidden rounded bg-gradient-to-br from-purple-200 to-sky-200" aria-hidden="true">
-                          {template === 'groone' ? <><span className="absolute inset-0 bg-slate-900/50 backdrop-blur-[2px]" /><span className="relative grid h-8 w-8 place-items-center rounded-lg border border-white/20 bg-white/10"><span className="h-4 w-4 animate-spin rounded-full border-2 border-white/25 border-t-sky-400" /></span></> : <><span className="absolute inset-0 bg-neutral-900" /><span className="relative h-1 w-10 rounded-full bg-white/80" /></>}
+                          {template === 'groone' ? <><span className="absolute inset-0 bg-slate-900/50 backdrop-blur-[2px]" /><span className="relative grid h-8 w-8 place-items-center"><span className="absolute inset-0 animate-spin rounded-full border-2 border-white/25 border-t-sky-400" /><span className="h-3.5 w-3.5 rounded-[3px] bg-violet-600" /></span></> : <><span className="absolute inset-0 bg-neutral-900" /><span className="relative h-1 w-10 rounded-full bg-white/80" /></>}
                         </span>
-                        <span className="text-[13px] font-medium">{LOADER_TEMPLATE_LABEL[template]}<span className="block text-[12px] font-normal text-muted-foreground">{template === 'groone' ? 'Vidro com spin por cima da página, como na g-tag.' : 'Cobre a página com uma cor e uma animação.'}</span></span>
+                        <span className="text-[13px] font-medium">{LOADER_TEMPLATE_LABEL[template]}<span className="block text-[12px] font-normal text-muted-foreground">{template === 'groone' ? 'Véu com blur e o ícone do site no meio do spin, como na g-tag.' : 'Cobre a página com uma cor e uma animação.'}</span></span>
                       </button>
                     ))}
                   </div>
