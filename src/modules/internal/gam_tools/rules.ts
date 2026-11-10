@@ -8,7 +8,7 @@ export const TOOL_CARDS: ToolCard[] = ['config', 'setup', 'key_values', 'sync', 
 export const WRITING_TOOLS: GamToolKind[] = ['config', 'setup', 'key_values']
 export const FORMATS: GamFormat[] = ['light', 'gtag']
 export const BLOCK_COUNT: Record<GamFormat, number> = { light: 14, gtag: 27 }
-export const KEY_NAMES = ['utm_term', 'utm_source', 'utm_medium', 'utm_content', 'utm_campaign', 'land_uri', 'id_post_wp', 'content_hash']
+export const KEY_NAMES = ['utm_term', 'utm_source', 'utm_medium', 'utm_content', 'utm_campaign', 'land_uri', 'id_post_wp', 'content_hash', 'groone_prices', 'groone_group']
 export const STEP_TONE: Record<GamStepState, 'ok' | 'bad' | 'neutral' | 'ochre'> = {
   pending: 'neutral',
   running: 'ochre',

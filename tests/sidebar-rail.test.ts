@@ -90,7 +90,7 @@ describe('SidebarRail', () => {
     const [, , clients, reports, tools] = wrapper.findAll('nav[aria-label="Menu principal"] > *')
     await hoverAndWait(clients!)
     expect(wrapper.find('#rail-panel').attributes('aria-hidden')).toBe('false')
-    expect(panelLabels(wrapper)).toEqual(['Clientes', 'Equipes', 'Networks do GAM', 'Contratos', 'Sites', 'Rewards', 'Ad tags', 'Loaders', 'Checklists'])
+    expect(panelLabels(wrapper)).toEqual(['Clientes', 'Equipes', 'Networks do GAM', 'Contratos', 'Sites', 'Rewards', 'Ad tags', 'Loaders', 'Regras de preço', 'Checklists'])
     expect(wrapper.find('#rail-panel [aria-current="page"]').text()).toBe('Clientes')
     expect(wrapper.find('#rail-panel hr').element.nextElementSibling?.textContent).toBe('Rewards')
     await hoverAndWait(reports!)
