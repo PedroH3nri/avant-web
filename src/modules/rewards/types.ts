@@ -7,7 +7,7 @@ import type {
   RewardLayout,
   RewardLeadKind,
   RewardTrigger,
-} from '@/embed/reward/types'
+} from 'avant-tag/reward'
 
 export type { RewardIconKind, RewardLayout, RewardLeadKind, RewardTrigger }
 

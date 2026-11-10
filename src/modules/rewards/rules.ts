@@ -1,7 +1,7 @@
 /** Regras de tela dos rewards: valores iniciais, modelos de cor, conferência do formulário, prévia e métricas. */
 
-import { luminance } from '@/embed/reward/colors'
-import type { PublicReward } from '@/embed/reward/types'
+import { luminance } from 'avant-tag/reward'
+import type { PublicReward } from 'avant-tag/reward'
 import type { Reward, RewardInput, RewardLayout, RewardMetrics, RewardStyle } from '@/modules/rewards/types'
 
 export const MAX_QUESTIONS = 5
