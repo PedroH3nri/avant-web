@@ -5817,22 +5817,26 @@ function RewardMetricsScreen({ reward, staff, back, edit }: { reward: ProtoRewar
 
 /* ---------- Loaders (tela de carregamento e aviso de adblock, usados pelas ad tags) ---------- */
 
+type LoaderTemplate = 'groone' | 'solid'
 type LoaderStyle = 'bar' | 'spinner' | 'dots'
 type LoaderAdblock = 'off' | 'warn' | 'block'
-type ProtoLoader = { id: string; name: string; client: string; logoText: string; background: string; accent: string; style: LoaderStyle; text: string; maxSeconds: number; adblock: LoaderAdblock; adblockTitle: string; adblockText: string; adblockButton: string; updated: string }
+type ProtoLoader = { id: string; name: string; client: string; template: LoaderTemplate; blur: number; background: string; accent: string; style: LoaderStyle; text: string; maxSeconds: number; adblock: LoaderAdblock; adblockTitle: string; adblockText: string; adblockHint: string; adblockButton: string; updated: string }
 
+const LOADER_TEMPLATE_LABEL: Record<LoaderTemplate, string> = { groone: 'GroOne', solid: 'Tela cheia' }
 const LOADER_STYLE_LABEL: Record<LoaderStyle, string> = { bar: 'Barra', spinner: 'Círculo', dots: 'Pontos' }
 const LOADER_ADBLOCK_LABEL: Record<LoaderAdblock, string> = { off: 'Sem aviso de adblock', warn: 'Avisa sobre adblock', block: 'Bloqueia com adblock' }
+const LOADER_BLUR_PX = [0, 4, 8, 14]
 const LOADER_CLIENTS = ['Açaí Mídia', 'Tech Notícias', 'Viagem Fácil']
+const GROONE_ADBLOCK = { adblockTitle: 'Apoie o conteúdo gratuito', adblockText: 'Nosso site é mantido por anúncios responsáveis, que nos ajudam a criar e manter conteúdos de qualidade, sem custo para você. Identificamos um bloqueio de anúncios ativo no seu navegador: desative o bloqueador apenas neste site.', adblockHint: 'Isso não interfere em outros sites e pode ser revertido a qualquer momento.', adblockButton: 'Já desativei, quero continuar' }
 const INITIAL_LOADERS: ProtoLoader[] = [
-  { id: 'l1', name: 'Açaí roxo', client: 'Açaí Mídia', logoText: 'acai', background: '#2d0b3a', accent: '#c084fc', style: 'bar', text: 'Carregando…', maxSeconds: 3, adblock: 'warn', adblockTitle: 'Parece que você usa um bloqueador de anúncios', adblockText: 'Os anúncios mantêm o site gratuito. Desative o bloqueador e recarregue a página.', adblockButton: 'Já desativei', updated: '06/11/2026' },
-  { id: 'l2', name: 'Branco simples', client: 'Açaí Mídia', logoText: 'acai', background: '#ffffff', accent: '#171717', style: 'spinner', text: '', maxSeconds: 2, adblock: 'off', adblockTitle: '', adblockText: '', adblockButton: '', updated: '02/11/2026' },
-  { id: 'l3', name: 'Tech escuro', client: 'Tech Notícias', logoText: 'TechNotícias', background: '#0f172a', accent: '#38bdf8', style: 'dots', text: 'Um instante', maxSeconds: 3, adblock: 'block', adblockTitle: 'Desative o bloqueador para continuar', adblockText: 'O Tech Notícias é gratuito graças aos anúncios.', adblockButton: 'Recarregar', updated: '28/10/2026' },
+  { id: 'l0', name: 'GroOne', client: 'Açaí Mídia', template: 'groone', blur: 2, background: '#080e16', accent: '#087ee5', style: 'spinner', text: '', maxSeconds: 3, adblock: 'block', ...GROONE_ADBLOCK, updated: '09/11/2026' },
+  { id: 'l1', name: 'Açaí roxo', client: 'Açaí Mídia', template: 'solid', blur: 0, background: '#2d0b3a', accent: '#c084fc', style: 'bar', text: 'Carregando…', maxSeconds: 3, adblock: 'warn', adblockTitle: 'Parece que você usa um bloqueador de anúncios', adblockText: 'Os anúncios mantêm o site gratuito. Desative o bloqueador e recarregue a página.', adblockHint: '', adblockButton: 'Já desativei', updated: '06/11/2026' },
+  { id: 'l3', name: 'GroOne azul', client: 'Tech Notícias', template: 'groone', blur: 3, background: '#0f172a', accent: '#38bdf8', style: 'spinner', text: '', maxSeconds: 3, adblock: 'block', ...GROONE_ADBLOCK, updated: '28/10/2026' },
 ]
 
-/** Um loader novo da Empresa, com o visual mais simples. */
+/** Um loader novo da Empresa, já no modelo GroOne. */
 function blankLoader(client: string): ProtoLoader {
-  return { id: '', name: '', client, logoText: '', background: '#ffffff', accent: '#171717', style: 'bar', text: 'Carregando…', maxSeconds: 3, adblock: 'off', adblockTitle: 'Parece que você usa um bloqueador de anúncios', adblockText: 'Os anúncios mantêm o site gratuito. Desative o bloqueador e recarregue a página.', adblockButton: 'Já desativei', updated: 'Agora' }
+  return { id: '', name: '', client, template: 'groone', blur: 2, background: '#080e16', accent: '#087ee5', style: 'spinner', text: '', maxSeconds: 3, adblock: 'block', ...GROONE_ADBLOCK, updated: 'Agora' }
 }
 /** Cor do texto que dá leitura sobre o fundo do loader. */
 function loaderInk(background: string) {
@@ -5840,17 +5844,55 @@ function loaderInk(background: string) {
   const [red, green, blue] = [0, 2, 4].map((start) => parseInt(hex.slice(start, start + 2), 16) || 0)
   return red * 0.299 + green * 0.587 + blue * 0.114 > 150 ? '#171717' : '#ffffff'
 }
+/** A cor em rgba com a transparência dada, para o véu por cima da página. */
+function loaderTint(color: string, alpha: number) {
+  const hex = color.replace('#', '')
+  const [red, green, blue] = [0, 2, 4].map((start) => parseInt(hex.slice(start, start + 2), 16) || 0)
+  return `rgba(${red}, ${green}, ${blue}, ${alpha})`
+}
+const SITE_ICONS: Record<string, { letter: string; color: string }> = { 'acai.com.br': { letter: 'a', color: '#6d28d9' }, 'receitasdaacai.com.br': { letter: 'r', color: '#9333ea' }, 'technoticias.com.br': { letter: 'T', color: '#0ea5e9' }, 'viagemfacil.com': { letter: 'v', color: '#f97316' } }
+/** O ícone do site (o favicon que a tag lê da página), aqui desenhado com a letra e a cor do site. */
+function SiteIcon({ domain, size = 24 }: { domain: string; size?: number }) {
+  const icon = SITE_ICONS[domain] ?? { letter: domain[0] ?? '?', color: '#525252' }
+  return <span className="inline-grid shrink-0 place-items-center rounded-[22%] font-bold text-white" style={{ width: size, height: size, background: icon.color, fontSize: size * 0.55 }} aria-label={`Ícone de ${domain}`}>{icon.letter}</span>
+}
 
 /** O loader ou o aviso de adblock por cima da página, igual ao que a avant-tag desenha no site. */
 function LoaderView({ loader, mode, domain, onClose }: { loader: ProtoLoader; mode: 'loading' | 'adblock'; domain: string; onClose?: () => void }) {
   const ink = loaderInk(loader.background)
-  const logo = loader.logoText || domain.split('.')[0]
+  const blur = `blur(${LOADER_BLUR_PX[loader.blur] ?? 0}px)`
+  if (loader.template === 'groone') {
+    if (mode === 'adblock') return (
+      <div className="absolute inset-0 z-20 grid place-items-center overflow-y-auto p-4" style={{ background: loaderTint(loader.background, 0.58), backdropFilter: blur, WebkitBackdropFilter: blur }} role="dialog" aria-label="Aviso de adblock">
+        <div className="flex w-full max-w-[400px] flex-col items-center rounded-[20px] border border-white/20 bg-gradient-to-b from-white/[0.14] to-white/[0.08] px-6 pb-5 pt-6 text-center text-[#F0F8FF] shadow-[0_30px_60px_rgba(0,0,0,.45)] backdrop-blur-md">
+          <span className="grid h-14 w-14 place-items-center rounded-2xl bg-white/20 shadow-[0_0_5px_#fff]"><SiteIcon domain={domain} size={32} /></span>
+          <p className="mt-4 text-[19px] font-semibold">{loader.adblockTitle}</p>
+          {loader.adblockText && <p className="mt-2 text-[13.5px] leading-relaxed text-[#F0F8FF]/90">{loader.adblockText}</p>}
+          {loader.adblockHint && <p className="mt-3 rounded-lg border border-white/20 px-3 py-2 text-[12px] leading-snug text-[#F0F8FF]/70" style={{ background: loaderTint(loader.background, 0.25) }}>{loader.adblockHint}</p>}
+          <button onClick={onClose} className="mt-4 w-3/4 rounded-[10px] px-4 py-3 text-[14px] font-semibold shadow-[0_18px_36px_rgba(0,0,0,.35)]" style={{ background: '#F0F8FF', color: loader.background }}>{loader.adblockButton || 'Já desativei'}</button>
+          {loader.adblock === 'warn' && <button onClick={onClose} className="mt-2 text-[12px] text-[#F0F8FF]/60 underline">Continuar assim</button>}
+          <p className="mt-3 text-[10px] text-[#F0F8FF]/45">GROONE®</p>
+        </div>
+      </div>
+    )
+    return (
+      <div className="absolute inset-0 z-20 grid place-items-center animate-in fade-in" style={{ background: loaderTint(loader.background, 0.58), backdropFilter: blur, WebkitBackdropFilter: blur }} role="status" aria-label="Loader">
+        <span className="absolute left-4 top-4"><SiteIcon domain={domain} size={26} /></span>
+        <div className="rounded-2xl border border-white/15 bg-white/10 px-[18px] py-4 backdrop-blur-md">
+          <span className="relative block h-[46px] w-[46px] animate-spin rounded-full border border-white/20" style={{ animationDuration: '.75s', filter: `drop-shadow(0 0 6px ${loader.accent})` }}>
+            <span className="absolute -inset-[3px] rounded-full" style={{ background: `conic-gradient(from 0deg, #F0F8FF, ${loaderTint(loader.accent, 0.5)}, transparent 70%)`, WebkitMask: 'radial-gradient(farthest-side, transparent calc(100% - 4px), #000 0)', mask: 'radial-gradient(farthest-side, transparent calc(100% - 4px), #000 0)' }} />
+          </span>
+        </div>
+      </div>
+    )
+  }
   if (mode === 'adblock') return (
-    <div className="absolute inset-0 z-20 grid place-items-center p-4" style={{ background: loader.adblock === 'block' ? loader.background : 'rgba(23,23,23,0.5)' }} role="dialog" aria-label="Aviso de adblock">
-      <div className="w-full max-w-[320px] rounded-xl bg-white p-5 text-center text-neutral-800 shadow-xl">
-        <span className="font-serif text-[20px] font-bold">{logo}</span>
+    <div className="absolute inset-0 z-20 grid place-items-center p-4" style={{ background: loader.adblock === 'block' ? loader.background : 'rgba(23,23,23,0.5)', backdropFilter: blur, WebkitBackdropFilter: blur }} role="dialog" aria-label="Aviso de adblock">
+      <div className="flex w-full max-w-[320px] flex-col items-center rounded-xl bg-white p-5 text-center text-neutral-800 shadow-xl">
+        <SiteIcon domain={domain} size={36} />
         <p className="mt-3 text-[15px] font-semibold">{loader.adblockTitle || 'Parece que você usa um bloqueador de anúncios'}</p>
         {loader.adblockText && <p className="mt-1.5 text-[13px] leading-snug text-neutral-500">{loader.adblockText}</p>}
+        {loader.adblockHint && <p className="mt-2 text-[12px] text-neutral-400">{loader.adblockHint}</p>}
         <button onClick={onClose} className="mt-4 h-9 w-full rounded-md text-[13px] font-medium" style={{ background: loader.accent, color: loaderInk(loader.accent) }}>{loader.adblockButton || 'Já desativei'}</button>
         {loader.adblock === 'warn' && <button onClick={onClose} className="mt-2 text-[12px] text-neutral-500 underline">Continuar assim</button>}
       </div>
@@ -5859,7 +5901,7 @@ function LoaderView({ loader, mode, domain, onClose }: { loader: ProtoLoader; mo
   return (
     <div className="absolute inset-0 z-20 grid place-items-center animate-in fade-in" style={{ background: loader.background, color: ink }} role="status" aria-label="Loader">
       <div className="grid justify-items-center gap-4 px-4 text-center">
-        <span className="font-serif text-[28px] font-bold">{logo}</span>
+        <SiteIcon domain={domain} size={48} />
         {loader.style === 'bar' && <span className="relative h-1 w-40 overflow-hidden rounded-full" style={{ background: `${ink}22` }}><span className="absolute inset-y-0 left-0 w-1/3 animate-[loaderbar_1.1s_ease-in-out_infinite] rounded-full" style={{ background: loader.accent }} /></span>}
         {loader.style === 'spinner' && <span className="h-8 w-8 animate-spin rounded-full border-[3px]" style={{ borderColor: `${ink}22`, borderTopColor: loader.accent }} />}
         {loader.style === 'dots' && <span className="flex gap-1.5">{[0, 1, 2].map((dot) => <span key={dot} className="h-2.5 w-2.5 animate-bounce rounded-full" style={{ background: loader.accent, animationDelay: `${dot * 0.15}s` }} />)}</span>}
@@ -5881,7 +5923,7 @@ function LoadersScreen({ loaders, tags, staff, open }: { loaders: ProtoLoader[];
       <Body>
         <div className="relative w-full sm:w-[280px]"><Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input aria-label="Buscar loaders" className="h-9 pl-9" placeholder={staff ? 'Nome ou cliente' : 'Nome'} value={query} onChange={(event) => setQuery(event.target.value)} /></div>
         <Table min={staff ? 860 : 720}>
-          <thead><tr><th className={th}>Loader</th>{staff && <th className={th}>Cliente</th>}<th className={th}>Animação</th><th className={th}>Adblock</th><th className={th}>Nas ad tags</th><th className={th}>Atualizado</th></tr></thead>
+          <thead><tr><th className={th}>Loader</th>{staff && <th className={th}>Cliente</th>}<th className={th}>Modelo</th><th className={th}>Adblock</th><th className={th}>Nas ad tags</th><th className={th}>Atualizado</th></tr></thead>
           <tbody>
             {visible.map((loader) => {
               const used = tags.filter((tag) => (tag.draft?.settings ?? tag.versions[0]?.settings)?.loader === loader.id)
@@ -5889,12 +5931,12 @@ function LoadersScreen({ loaders, tags, staff, open }: { loaders: ProtoLoader[];
                 <tr key={loader.id} className="hover:bg-muted">
                   <td className={td}>
                     <button className="flex items-center gap-3 text-left" onClick={() => open(loader.id)}>
-                      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md border" style={{ background: loader.background }} aria-hidden="true"><span className="h-1 w-5 rounded-full" style={{ background: loader.accent }} /></span>
+                      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md border" style={{ background: loader.background }} aria-hidden="true">{loader.template === 'groone' ? <span className="h-4 w-4 rounded-full border-2 border-white/25" style={{ borderTopColor: loader.accent }} /> : <span className="h-1 w-5 rounded-full" style={{ background: loader.accent }} />}</span>
                       <span className="font-medium hover:underline">{loader.name}</span>
                     </button>
                   </td>
                   {staff && <td className={td}>{loader.client}</td>}
-                  <td className={td}>{LOADER_STYLE_LABEL[loader.style]} · até {loader.maxSeconds} s</td>
+                  <td className={td}>{loader.template === 'groone' ? `GroOne · blur ${loader.blur}` : `Tela cheia · ${LOADER_STYLE_LABEL[loader.style].toLowerCase()}`} · até {loader.maxSeconds} s</td>
                   <td className={td}>{loader.adblock === 'off' ? <span className="text-muted-foreground">Sem aviso</span> : loader.adblock === 'warn' ? 'Avisa' : 'Bloqueia'}</td>
                   <td className={cn(td, 'text-[13px]')}>{used.length ? used.map((tag) => `${tag.domain} · ${tag.name}`).join(', ') : <span className="text-muted-foreground">Nenhuma</span>}</td>
                   <td className={cn(td, 'whitespace-nowrap tnum text-[13px] text-muted-foreground')}>{loader.updated}</td>
@@ -5935,22 +5977,37 @@ function LoaderEditScreen({ initial, tags, staff, back, save, remove }: { initia
           <div className="grid grid-cols-[minmax(0,1fr)] content-start gap-6">
             <Card title="Loader">
               <div className="grid gap-4">
-                <Field id="loader-name" label="Nome" hint="Só para o painel."><Input id="loader-name" value={loader.name} onChange={(event) => change({ name: event.target.value })} placeholder="Ex.: Roxo com logo" /></Field>
+                <Field id="loader-name" label="Nome" hint="Só para o painel."><Input id="loader-name" value={loader.name} onChange={(event) => change({ name: event.target.value })} placeholder="Ex.: GroOne azul" /></Field>
                 {staff && !initial.id && <Field id="loader-client" label="Cliente"><Select value={loader.client} onValueChange={(client) => change({ client })}><SelectTrigger id="loader-client"><SelectValue /></SelectTrigger><SelectContent>{LOADER_CLIENTS.map((client) => <SelectItem key={client} value={client}>{client}</SelectItem>)}</SelectContent></Select></Field>}
-                <Field id="loader-logo" label="Logo" hint="Texto em destaque. Vazio usa o nome do site."><Input id="loader-logo" value={loader.logoText} onChange={(event) => change({ logoText: event.target.value })} placeholder={domain.split('.')[0]} /></Field>
-                <Field id="loader-text" label="Texto embaixo" hint="Opcional."><Input id="loader-text" value={loader.text} onChange={(event) => change({ text: event.target.value })} placeholder="Carregando…" /></Field>
+                <TagBlockSection title="Modelo">
+                  <div role="radiogroup" aria-label="Modelo" className="grid grid-cols-2 gap-2">
+                    {(['groone', 'solid'] as const).map((template) => (
+                      <button key={template} role="radio" aria-checked={loader.template === template} onClick={() => { change({ template, ...(template === 'groone' ? { style: 'spinner' as const, blur: loader.blur || 2 } : {}) }); replay() }} className={cn('grid gap-2 rounded-md border p-2 text-left', loader.template === template ? 'border-foreground' : 'hover:border-foreground/40')}>
+                        <span className="relative grid h-16 place-items-center overflow-hidden rounded bg-gradient-to-br from-purple-200 to-sky-200" aria-hidden="true">
+                          {template === 'groone' ? <><span className="absolute inset-0 bg-slate-900/50 backdrop-blur-[2px]" /><span className="relative grid h-8 w-8 place-items-center rounded-lg border border-white/20 bg-white/10"><span className="h-4 w-4 animate-spin rounded-full border-2 border-white/25 border-t-sky-400" /></span></> : <><span className="absolute inset-0 bg-neutral-900" /><span className="relative h-1 w-10 rounded-full bg-white/80" /></>}
+                        </span>
+                        <span className="text-[13px] font-medium">{LOADER_TEMPLATE_LABEL[template]}<span className="block text-[12px] font-normal text-muted-foreground">{template === 'groone' ? 'Vidro com spin por cima da página, como na g-tag.' : 'Cobre a página com uma cor e uma animação.'}</span></span>
+                      </button>
+                    ))}
+                  </div>
+                </TagBlockSection>
+                <TagBlockSection title="Ícone" aside="Lido do site">
+                  <div className="flex items-center gap-3 rounded-md border bg-muted/40 px-3 py-2.5"><SiteIcon domain={domain} size={28} /><span className="text-[12px] leading-snug text-muted-foreground">A tag usa o ícone do próprio site (o favicon da página). Sem ícone, mostra o nome do site.</span></div>
+                </TagBlockSection>
               </div>
             </Card>
             <Card title="Aparência">
               <div className="grid gap-5">
-                <TagBlockSection title="Animação"><TagSegmented label="Animação" value={loader.style} onChange={(style) => { change({ style }); replay() }} options={[['bar', 'Barra'], ['spinner', 'Círculo'], ['dots', 'Pontos']]} /></TagBlockSection>
+                {loader.template === 'groone' && <TagBlockSection title="Blur do fundo" aside={loader.blur === 0 ? 'Sem blur' : `${LOADER_BLUR_PX[loader.blur]} px`}><TagSegmented label="Blur do fundo" value={loader.blur} onChange={(blur) => change({ blur })} options={[[0, '0'], [1, '1'], [2, '2'], [3, '3']]} /></TagBlockSection>}
+                {loader.template === 'solid' && <TagBlockSection title="Animação"><TagSegmented label="Animação" value={loader.style} onChange={(style) => { change({ style }); replay() }} options={[['bar', 'Barra'], ['spinner', 'Círculo'], ['dots', 'Pontos']]} /></TagBlockSection>}
                 <div className="grid grid-cols-2 gap-3">
-                  {([['background', 'Fundo'], ['accent', 'Destaque']] as const).map(([key, label]) => (
+                  {([['background', loader.template === 'groone' ? 'Véu' : 'Fundo'], ['accent', loader.template === 'groone' ? 'Brilho do spin' : 'Destaque']] as const).map(([key, label]) => (
                     <label key={key} className="grid gap-1.5 text-[13px] font-medium">{label}
-                      <span className="flex h-9 items-center gap-2 rounded-md border bg-background px-2"><input type="color" value={loader[key]} onChange={(event) => change({ [key]: event.target.value })} className="h-6 w-6 cursor-pointer rounded border-0 bg-transparent p-0" aria-label={`Cor de ${label.toLowerCase()}`} /><span className="font-mono text-[12px] font-normal uppercase text-muted-foreground">{loader[key]}</span></span>
+                      <span className="flex h-9 items-center gap-2 rounded-md border bg-background px-2"><input type="color" value={loader[key]} onChange={(event) => change({ [key]: event.target.value })} className="h-6 w-6 cursor-pointer rounded border-0 bg-transparent p-0" aria-label={`Cor: ${label}`} /><span className="font-mono text-[12px] font-normal uppercase text-muted-foreground">{loader[key]}</span></span>
                     </label>
                   ))}
                 </div>
+                {loader.template === 'solid' && <Field id="loader-text" label="Texto embaixo" hint="Opcional."><Input id="loader-text" value={loader.text} onChange={(event) => change({ text: event.target.value })} placeholder="Carregando…" /></Field>}
                 <TagBlockSection title="Tempo máximo" aside="Some antes se os anúncios carregarem">
                   <TagSegmented label="Tempo máximo" value={loader.maxSeconds} onChange={(maxSeconds) => { change({ maxSeconds }); replay() }} options={[[1, '1 s'], [2, '2 s'], [3, '3 s'], [5, '5 s']]} />
                 </TagBlockSection>
@@ -5962,6 +6019,7 @@ function LoaderEditScreen({ initial, tags, staff, back, save, remove }: { initia
                 {loader.adblock !== 'off' && <>
                   <Field id="loader-ab-title" label="Título"><Input id="loader-ab-title" value={loader.adblockTitle} onChange={(event) => change({ adblockTitle: event.target.value })} /></Field>
                   <Field id="loader-ab-text" label="Texto"><Textarea id="loader-ab-text" rows={3} value={loader.adblockText} onChange={(event) => change({ adblockText: event.target.value })} /></Field>
+                  <Field id="loader-ab-hint" label="Observação" hint="Opcional. Aparece num quadro menor."><Input id="loader-ab-hint" value={loader.adblockHint} onChange={(event) => change({ adblockHint: event.target.value })} /></Field>
                   <Field id="loader-ab-button" label="Botão"><Input id="loader-ab-button" value={loader.adblockButton} onChange={(event) => change({ adblockButton: event.target.value })} /></Field>
                 </>}
               </div>
@@ -6039,11 +6097,11 @@ const ACAI_BLOCKS: TagBlock[] = [
 const INITIAL_AD_TAGS: ProtoAdTag[] = [
   {
     id: 'acai-principal', name: 'Principal', key: 'tg_4m8r2wza', domain: 'acai.com.br', client: 'Açaí Mídia', paused: false, lastSeen: 'há 2 min', seenVersion: 7, pages24h: 48210,
-    draft: { blocks: ACAI_BLOCKS.map((block) => (block.id === 'c1' ? { ...block, refresh: 60 } : block)), settings: { ...DEFAULT_TAG_SETTINGS, analyticsId: 'G-8KQ2LM1Z0P', mgidTagId: '972311', loader: 'l1' } },
+    draft: { blocks: ACAI_BLOCKS.map((block) => (block.id === 'c1' ? { ...block, refresh: 60 } : block)), settings: { ...DEFAULT_TAG_SETTINGS, analyticsId: 'G-8KQ2LM1Z0P', mgidTagId: '972311', loader: 'l0' } },
     versions: [
-      { number: 7, by: 'Marina Costa', at: '07/11/2026 15:42', note: 'Conteúdo 3 só no celular', blocks: ACAI_BLOCKS, settings: { ...DEFAULT_TAG_SETTINGS, analyticsId: 'G-8KQ2LM1Z0P', mgidTagId: '972311', loader: 'l1' } },
-      { number: 6, by: 'Rafael Lima (Groone)', at: '01/11/2026 10:08', note: 'Intersticial fora da página de contato', blocks: ACAI_BLOCKS.map((block) => (block.id === 'c3' ? { ...block, desktop: true } : block)), settings: { ...DEFAULT_TAG_SETTINGS, analyticsId: 'G-8KQ2LM1Z0P', mgidTagId: '972311', loader: 'l1' } },
-      { number: 5, by: 'Marina Costa', at: '24/10/2026 18:30', note: 'Artigo MGID no Conteúdo 2', blocks: ACAI_BLOCKS.filter((block) => block.id !== 'fx'), settings: { ...DEFAULT_TAG_SETTINGS, analyticsId: 'G-8KQ2LM1Z0P', mgidTagId: '972311', loader: 'l1' } },
+      { number: 7, by: 'Marina Costa', at: '07/11/2026 15:42', note: 'Conteúdo 3 só no celular', blocks: ACAI_BLOCKS, settings: { ...DEFAULT_TAG_SETTINGS, analyticsId: 'G-8KQ2LM1Z0P', mgidTagId: '972311', loader: 'l0' } },
+      { number: 6, by: 'Rafael Lima (Groone)', at: '01/11/2026 10:08', note: 'Intersticial fora da página de contato', blocks: ACAI_BLOCKS.map((block) => (block.id === 'c3' ? { ...block, desktop: true } : block)), settings: { ...DEFAULT_TAG_SETTINGS, analyticsId: 'G-8KQ2LM1Z0P', mgidTagId: '972311', loader: 'l0' } },
+      { number: 5, by: 'Marina Costa', at: '24/10/2026 18:30', note: 'Artigo MGID no Conteúdo 2', blocks: ACAI_BLOCKS.filter((block) => block.id !== 'fx'), settings: { ...DEFAULT_TAG_SETTINGS, analyticsId: 'G-8KQ2LM1Z0P', mgidTagId: '972311', loader: 'l0' } },
     ],
     health: [
       { block: 'Conteúdo 1', served: 48210, filled: 93, viewable: 71 },
@@ -6604,7 +6662,7 @@ function AdTagEditScreen({ initial, staff, back, save, metrics, loaders, editLoa
               </IntegrationCard>
             </div>
             <IntegrationCard icon={<span className="grid h-full w-full place-items-center rounded-md bg-sky-600 text-white"><Loader2 className="h-4 w-4" /></span>} title="Loader" desc="A tela enquanto os anúncios carregam e o aviso de adblock. Os loaders ficam em Inventário > Loaders." on={settings.loader !== ''}>
-              <ChoiceCards name="Loader da tag" value={settings.loader} onChange={(loader) => changeSettings({ loader })} options={[{ value: '', title: 'Sem loader', hint: 'A página abre direto, sem tela de carregamento.' }, ...clientLoaders.map((item) => ({ value: item.id, title: item.name, hint: `${LOADER_STYLE_LABEL[item.style]} · até ${item.maxSeconds} s · ${LOADER_ADBLOCK_LABEL[item.adblock].toLowerCase()}` }))]} />
+              <ChoiceCards name="Loader da tag" value={settings.loader} onChange={(loader) => changeSettings({ loader })} options={[{ value: '', title: 'Sem loader', hint: 'A página abre direto, sem tela de carregamento.' }, ...clientLoaders.map((item) => ({ value: item.id, title: item.name, hint: `${item.template === 'groone' ? `GroOne · blur ${item.blur}` : `Tela cheia · ${LOADER_STYLE_LABEL[item.style].toLowerCase()}`} · até ${item.maxSeconds} s · ${LOADER_ADBLOCK_LABEL[item.adblock].toLowerCase()}` }))]} />
               <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[13px]">
                 {settings.loader && <button className="text-link hover:underline" onClick={() => { setTab('blocks'); playLoader() }}>Ver na prévia</button>}
                 {settings.loader && <button className="text-link hover:underline" onClick={() => goToLoader(settings.loader)}>Editar este loader</button>}
