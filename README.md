@@ -40,7 +40,6 @@ src/
   components/       componentes comuns e ui/ (shadcn-vue)
   layouts/          AppShell, AuthFrame e a página 404
   stores/session.ts sessão da pessoa
-  embed/reward/     o reward.js (janela, etapas, anúncio premiado), sem Vue; a prévia do painel usa o mesmo render
 ```
 
 Domínios: auth, account, home, team, company, currencies, networks, sites, reports,
@@ -66,15 +65,18 @@ AVANT_API_URL=http://localhost:8000 pnpm dev   # o Vite repassa /api para o avan
 pnpm lint && pnpm typecheck && pnpm test && pnpm build
 ```
 
-## reward.js
+## tag.js e reward.js
 
-O script que o cliente põe no site (`<script async src="https://avant.groone.com/reward.js">`).
-Sai de `src/embed/reward/` num build próprio (`vite.embed.config.ts`, IIFE de um arquivo, em
-`dist/reward.js`). Busca `GET /api/reward/v2?url=...` na origem de onde veio, escolhe os ad units
-pelo aparelho (celular abaixo de 768 px), respeita o gatilho e o intervalo (`localStorage`), abre
-a janela num shadow DOM e mostra o anúncio premiado do GPT (`OutOfPageFormat.REWARDED`). Eventos
-vão por `sendBeacon` para `/api/reward/events` e o contato por `fetch` para `/api/reward/leads`,
-os dois em `text/plain` para não ter preflight.
+Os scripts que o cliente põe no site saem do pacote `avant-tag` (instalado por tag git, como a
+API instala o core):
+
+- `tag.js`: a ad tag completa, com o reward dentro (`<script async src="https://avant.groone.com/tag.js" data-tag="tg_..."></script>`).
+- `reward.js`: só o reward, no mesmo endereço de sempre. Com os dois na página, o reward roda uma vez só.
+
+O `pnpm build` gera os dois depois do painel (`vite.embed.config.ts` com `ENTRY=tag` e
+`ENTRY=reward`, um IIFE de um arquivo cada, em `dist/tag.js` e `dist/reward.js`). As prévias do
+painel usam o mesmo render: `avant-tag/reward` no reward e `avant-tag/loader` no loader. Mudar o
+que roda no site é mudar o `avant-tag` e subir a tag em `package.json`.
 
 ## Imagem
 
@@ -83,7 +85,7 @@ docker build -t ghcr.io/pedroh3nri/avant-web .
 ```
 
 nginx sem root na porta 8080, com `/healthz`, fallback para o `index.html`, cache longo em
-`/assets`, `/reward.js` aberto para qualquer origem (cache de 10 minutos) e cabeçalhos de segurança (CSP só com a própria origem). O nginx do avant-infra
+`/assets`, `/tag.js` e `/reward.js` abertos para qualquer origem (cache de 10 minutos) e cabeçalhos de segurança (CSP só com a própria origem). O nginx do avant-infra
 manda `/api` para o avant-api e o resto para cá.
 
 `develop` publica em staging e `main` em produção.
