@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Toaster, toast } from 'sonner'
-import { Check, ChevronsUpDown, Copy, Loader2, Plus, RefreshCw, Search, X, AlertTriangle, ArrowLeft, MoreHorizontal, Lock, Mail, ExternalLink, Home, Users, Network, Settings, ShieldCheck, Menu, BarChart3, Wallet, Download, Trash2, Pin, PinOff, Pencil, LayoutGrid, List, Wrench, Gift, Monitor, Smartphone, Code2, MousePointerClick, ChevronUp, ChevronDown, History, PanelBottom, PanelTop, Maximize, TextQuote, CircleDollarSign } from 'lucide-react'
+import { Check, ChevronsUpDown, Copy, Loader2, Plus, RefreshCw, Search, X, AlertTriangle, ArrowLeft, MoreHorizontal, Lock, Mail, ExternalLink, Home, Users, Network, Settings, ShieldCheck, Menu, BarChart3, Wallet, Download, Trash2, Pin, PinOff, Pencil, LayoutGrid, List, Wrench, Gift, Monitor, Smartphone, Code2, MousePointerClick, ChevronUp, ChevronDown, History, PanelBottom, PanelTop, Maximize, TextQuote, CircleDollarSign, GripVertical } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -6131,7 +6131,7 @@ function TagBlockSection({ title, aside, children }: { title: string; aside?: Re
 }
 
 /** O cartão de um bloco: fechado mostra o resumo; aberto, onde entra, aparelhos, páginas e anúncio. */
-function TagBlockCard({ block, index, total, open, toggle, change, move, remove, picking, startPick, anchorEdge, missingDay }: { block: TagBlock; index: number; total: number; open: boolean; toggle: () => void; change: (patch: Partial<TagBlock>) => void; move: (offset: number) => void; remove: () => void; picking: boolean; startPick: () => void; anchorEdge: 'top' | 'bottom' | null; missingDay: string | null }) {
+function TagBlockCard({ block, index, total, open, toggle, change, move, remove, picking, startPick, anchorEdge, missingDay, armDrag }: { block: TagBlock; index: number; total: number; open: boolean; toggle: () => void; change: (patch: Partial<TagBlock>) => void; move: (offset: number) => void; remove: () => void; picking: boolean; startPick: () => void; anchorEdge: 'top' | 'bottom' | null; missingDay: string | null; armDrag: (armed: boolean) => void }) {
   const KindIcon = TAG_KIND_ICON[block.kind]
   const where = block.kind === 'content' ? (block.selector ? `${block.side === 'before' ? 'Antes de' : 'Depois de'} ${block.selector}` : 'Falta escolher onde entra') : block.kind === 'interstitial' ? 'Na troca de página' : block.edge === 'top' ? 'No topo da tela' : 'No rodapé da tela'
   const pages = block.ruleMode === 'all' ? 'Em todas' : `${block.ruleMode === 'include' ? 'Só em' : 'Fora de'} ${block.paths.length} ${block.paths.length === 1 ? 'caminho' : 'caminhos'}`
@@ -6140,7 +6140,8 @@ function TagBlockCard({ block, index, total, open, toggle, change, move, remove,
   const problem = missingDay ? `Não existe no GAM em ${missingDay}` : noDevice ? 'Ligue pelo menos um aparelho' : block.kind === 'content' && !block.selector ? 'Falta escolher onde entra' : fixedClash ? 'Do mesmo lado da âncora' : null
   return (
     <div className={cn('rounded-lg border bg-card transition-shadow', open && 'shadow-sm', picking && 'ring-2 ring-sky-500', problem && !open && 'border-warn/50')}>
-      <div className="flex items-center gap-2 py-2.5 pl-3 pr-2">
+      <div className="flex items-center gap-2 py-2.5 pl-1.5 pr-2">
+        <span onPointerDown={() => armDrag(true)} onPointerUp={() => armDrag(false)} className="cursor-grab rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground active:cursor-grabbing" aria-label="Arrastar para mudar a ordem" title="Arraste para mudar a ordem"><GripVertical className="h-4 w-4" /></span>
         <button className="flex min-w-0 flex-1 items-center gap-3 text-left" onClick={toggle} aria-expanded={open}>
           <span className={cn('grid h-9 w-9 shrink-0 place-items-center rounded-md border', open ? 'bg-foreground text-background' : 'bg-muted text-muted-foreground')}><KindIcon className="h-4 w-4" /></span>
           <span className="min-w-0 flex-1">
@@ -6259,6 +6260,9 @@ function AdTagEditScreen({ initial, staff, back, save, metrics }: { initial: Pro
   const [tab, setTab] = useState<'blocks' | 'integrations' | 'versions'>('blocks')
   const [openId, setOpenId] = useState<string | null>(blocks.find((block) => block.kind === 'content')?.id ?? null)
   const [pickingId, setPickingId] = useState<string | null>(null)
+  const [armedId, setArmedId] = useState<string | null>(null)
+  const [dragId, setDragId] = useState<string | null>(null)
+  const [dropAt, setDropAt] = useState<number | null>(null)
   const [device, setDevice] = useState<'desktop' | 'mobile'>('desktop')
   const [path, setPath] = useState('/receitas/bolo-de-acai')
   const [publishOpen, setPublishOpen] = useState(false)
@@ -6277,6 +6281,11 @@ function AdTagEditScreen({ initial, staff, back, save, metrics }: { initial: Pro
   const changeBlock = (id: string, patch: Partial<TagBlock>) => setBlocks((current) => current.map((block) => (block.id === id ? { ...block, ...patch } : block)))
   /** Troca o bloco de lugar na ordem de carregamento. */
   const moveBlock = (index: number, offset: number) => setBlocks((current) => { const next = [...current]; const [block] = next.splice(index, 1); next.splice(index + offset, 0, block); return next })
+  /** Solta o bloco arrastado na posição marcada pela linha azul. */
+  const dropBlock = () => {
+    if (dragId !== null && dropAt !== null) setBlocks((current) => { const from = current.findIndex((block) => block.id === dragId); const to = dropAt > from ? dropAt - 1 : dropAt; if (from === to) return current; const next = [...current]; const [block] = next.splice(from, 1); next.splice(to, 0, block); return next })
+    setDragId(null); setArmedId(null); setDropAt(null)
+  }
   /** Põe um bloco novo no fim da lista e abre para editar. */
   const addBlock = (kind: TagBlockKind, number = 0) => { const block = newTagBlock(kind, number); if (kind === 'fixed' && anchorEdge === 'top') block.edge = 'bottom'; setBlocks((current) => [...current, block]); setOpenId(block.id) }
   /** Publica o rascunho como versão nova: vai para o site em até um minuto. */
@@ -6336,8 +6345,17 @@ function AdTagEditScreen({ initial, staff, back, save, metrics }: { initial: Pro
                 </DropdownMenu>
               </div>
               {blocks.map((block, index) => (
-                <TagBlockCard key={block.id} block={block} index={index} total={blocks.length} open={openId === block.id} toggle={() => setOpenId(openId === block.id ? null : block.id)} change={(patch) => changeBlock(block.id, patch)} move={(offset) => moveBlock(index, offset)}
-                  remove={() => setBlocks((current) => current.filter((item) => item.id !== block.id))} picking={pickingId === block.id} startPick={() => setPickingId(pickingId === block.id ? null : block.id)} anchorEdge={block.kind === 'fixed' ? anchorEdge : null} missingDay={missingUnit(block) ? formatBlockDate(day) : null} />
+                <div key={block.id} draggable={armedId === block.id}
+                  onDragStart={(event) => { setDragId(block.id); event.dataTransfer.effectAllowed = 'move'; event.dataTransfer.setData('text/plain', block.id) }}
+                  onDragEnd={() => { setDragId(null); setArmedId(null); setDropAt(null) }}
+                  onDragOver={(event) => { if (!dragId) return; event.preventDefault(); const rect = event.currentTarget.getBoundingClientRect(); const at = event.clientY < rect.top + rect.height / 2 ? index : index + 1; if (at !== dropAt) setDropAt(at) }}
+                  onDrop={(event) => { event.preventDefault(); dropBlock() }}
+                  className={cn('relative', dragId === block.id && 'opacity-40')}>
+                  {dragId && dropAt === index && <div className="pointer-events-none absolute -top-[7px] left-0 right-0 h-0.5 rounded-full bg-sky-500" />}
+                  {dragId && dropAt === index + 1 && index === blocks.length - 1 && <div className="pointer-events-none absolute -bottom-[7px] left-0 right-0 h-0.5 rounded-full bg-sky-500" />}
+                  <TagBlockCard block={block} index={index} total={blocks.length} open={openId === block.id} toggle={() => setOpenId(openId === block.id ? null : block.id)} change={(patch) => changeBlock(block.id, patch)} move={(offset) => moveBlock(index, offset)}
+                    remove={() => setBlocks((current) => current.filter((item) => item.id !== block.id))} picking={pickingId === block.id} startPick={() => setPickingId(pickingId === block.id ? null : block.id)} anchorEdge={block.kind === 'fixed' ? anchorEdge : null} missingDay={missingUnit(block) ? formatBlockDate(day) : null} armDrag={(armed) => setArmedId(armed ? block.id : null)} />
+                </div>
               ))}
               {!blocks.length && <div className="rounded-lg border border-dashed bg-card p-8 text-center text-[14px] text-muted-foreground">Nenhum bloco ainda. Comece pelo Conteúdo 1 e pela âncora.</div>}
               <p className="text-[12px] text-muted-foreground">Os primeiros da lista carregam antes. Ad units do dia {formatBlockDate(day)}{settings.adUnitDay === 'latest' ? ' (os mais recentes)' : ''}, por exemplo <span className="font-mono">{blocks[0] ? tagAdUnit(tag.domain, blocks[0], device === 'desktop' ? 'Desktop' : 'Mobile', day) : '—'}</span>.</p>
