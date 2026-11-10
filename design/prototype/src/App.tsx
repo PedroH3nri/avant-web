@@ -6366,8 +6366,9 @@ function AdTagEditScreen({ initial, staff, back, save, metrics }: { initial: Pro
                 <label className="flex items-start gap-3 text-[14px]"><Switch checked={settings.loader} onCheckedChange={(loader) => changeSettings({ loader })} /><span><span className="block font-medium">Tela de carregamento e adblock</span><span className="text-muted-foreground">Mostra o logo enquanto os anúncios carregam e pede para desligar o bloqueador de anúncios.</span></span></label>
                 <Field id="tag-day" label="Ad units" hint="Com “Os mais recentes”, blocos novos criados no GAM entram sozinhos, sem publicar de novo.">
                   <Select value={settings.adUnitDay} onValueChange={(adUnitDay) => changeSettings({ adUnitDay })}>
-                    <SelectTrigger id="tag-day"><SelectValue /></SelectTrigger>
-                    <SelectContent><SelectItem value="latest">Os mais recentes ({formatBlockDate(site.days[0].date)} · {site.days[0].units.length} blocos)</SelectItem>{site.days.map((item) => <SelectItem key={item.date} value={item.date}>Fixar em {formatBlockDate(item.date)} · {item.units.length} blocos</SelectItem>)}</SelectContent>
+                    <SelectTrigger id="tag-day"><SelectValue>{settings.adUnitDay === 'latest' ? `Os mais recentes (${formatBlockDate(site.days[0].date)})` : `Fixar em ${formatBlockDate(settings.adUnitDay)}`} · {dayUnits.length} blocos</SelectValue></SelectTrigger>
+                  <p className="text-[12px] text-muted-foreground">{dayUnits.map(tagUnitName).join(', ')}</p>
+                    <SelectContent className="max-w-[min(520px,calc(100vw-32px))]">{[{ value: 'latest', title: `Os mais recentes (${formatBlockDate(site.days[0].date)})`, units: site.days[0].units }, ...site.days.map((item) => ({ value: item.date, title: `Fixar em ${formatBlockDate(item.date)}`, units: item.units }))].map((option) => <SelectItem key={option.value} value={option.value} className="py-2"><span className="block">{option.title}</span><span className="block whitespace-normal text-[12px] text-muted-foreground">{option.units.length} blocos: {option.units.map(tagUnitName).join(', ')}</span></SelectItem>)}</SelectContent>
                   </Select>
                 </Field>
               </div>
