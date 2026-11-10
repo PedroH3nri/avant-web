@@ -5961,9 +5961,8 @@ function LoaderEditScreen({ initial, tags, staff, back, save, remove }: { initia
   const domain = TAG_SITES.find((site) => site.client === loader.client)?.domain ?? 'seusite.com.br'
   /** Muda um campo do loader. */
   const change = (patch: Partial<ProtoLoader>) => setLoader((current) => ({ ...current, ...patch }))
-  /** Toca o loader de novo na prévia, pelo tempo máximo escolhido. */
+  /** Mostra o loader de novo na prévia; ele só sai pelo botão Finalizar loader. */
   const replay = () => { setMode('loading'); setPlaying(true) }
-  useEffect(() => { if (mode !== 'loading' || !playing) return; const timer = window.setTimeout(() => setPlaying(false), loader.maxSeconds * 1000); return () => window.clearTimeout(timer) }, [mode, playing, loader.maxSeconds])
   return (
     <>
       <PageHeader title={initial.id ? initial.name : 'Novo loader'} sub={staff ? `${loader.client} · Loader` : 'Loader das ad tags'}
@@ -6032,7 +6031,7 @@ function LoaderEditScreen({ initial, tags, staff, back, save, remove }: { initia
             <div className="flex flex-wrap items-center gap-2">
               <TagSegmented label="O que ver" value={mode} onChange={(value) => { setMode(value); setPlaying(true) }} options={[['loading', 'Carregando'], ...(loader.adblock !== 'off' ? [['adblock', 'Com adblock'] as ['adblock', string]] : [])]} />
               <TagSegmented label="Aparelho" value={device} onChange={setDevice} options={[['desktop', 'Computador', Monitor], ['mobile', 'Celular', Smartphone]]} />
-              <Button size="sm" variant="outline" className="ml-auto h-9" onClick={replay}><RefreshCw className="h-4 w-4" />Repetir</Button>
+              {mode === 'loading' && (playing ? <Button size="sm" className="ml-auto h-9" onClick={() => setPlaying(false)}><Check className="h-4 w-4" />Finalizar loader</Button> : <Button size="sm" variant="outline" className="ml-auto h-9" onClick={replay}><RefreshCw className="h-4 w-4" />Mostrar de novo</Button>)}
             </div>
             <div className={cn('mx-auto overflow-hidden rounded-xl border bg-card shadow-sm', device === 'mobile' ? 'w-[360px] max-w-full' : 'w-full')}>
               <div className="flex items-center gap-2 border-b bg-muted px-3 py-2"><div className="min-w-0 flex-1 truncate rounded-md bg-background px-3 py-1 font-mono text-[12px] text-muted-foreground">https://{domain}/</div></div>
@@ -6041,8 +6040,8 @@ function LoaderEditScreen({ initial, tags, staff, back, save, remove }: { initia
                 <h3 className="mt-4 font-serif text-[24px] font-bold leading-tight">Bolo de açaí cremoso em 30 minutos</h3>
                 <div className="mt-3 h-36 rounded-md bg-gradient-to-br from-purple-200 to-purple-400" />
                 <p className="mt-3 text-[14px] leading-relaxed text-neutral-600">Misture a polpa de açaí com o leite condensado até ficar homogêneo. Acrescente os ovos um a um, batendo sempre.</p>
-                {(mode === 'adblock' || playing) && <LoaderView loader={loader} mode={mode} domain={domain} onClose={() => (mode === 'adblock' ? setMode('loading') : setPlaying(false))} />}
-                {mode === 'loading' && !playing && <div className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-neutral-900 px-3 py-1 text-[12px] text-white">Os anúncios carregaram e o loader saiu · Repetir</div>}
+                {(mode === 'adblock' || playing) && <LoaderView loader={loader} mode={mode} domain={domain} onClose={() => { if (mode === 'adblock') { setMode('loading'); setPlaying(false) } }} />}
+                {mode === 'loading' && !playing && <div className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-neutral-900 px-3 py-1 text-[12px] text-white">Loader finalizado: assim fica a página quando os anúncios carregam</div>}
               </div>
             </div>
             <p className="text-[12px] text-muted-foreground">O loader é desenhado pelo mesmo código da avant-tag: o que você vê aqui é o que vai ao ar.</p>
@@ -6528,8 +6527,8 @@ function AdTagEditScreen({ initial, staff, back, save, metrics, loaders, editLoa
   const changeBlock = (id: string, patch: Partial<TagBlock>) => setBlocks((current) => current.map((block) => (block.id === id ? { ...block, ...patch } : block)))
   /** Troca o bloco de lugar na ordem de carregamento. */
   const moveBlock = (index: number, offset: number) => setBlocks((current) => { const next = [...current]; const [block] = next.splice(index, 1); next.splice(index + offset, 0, block); return next })
-  /** Mostra na prévia o loader por alguns segundos, como o visitante vê ao abrir a página. */
-  const playLoader = () => { setOverlay('loader'); window.setTimeout(() => setOverlay((current) => (current === 'loader' ? null : current)), (loaders.find((item) => item.id === settings.loader)?.maxSeconds ?? 3) * 1000) }
+  /** Mostra o loader na prévia; ele fica até clicar em Finalizar loader. */
+  const playLoader = () => setOverlay('loader')
   /** Guarda o rascunho e abre o loader para editar. */
   const goToLoader = (id: string | null) => { save({ ...tag, draft: changes.length ? { blocks, settings } : null }); editLoader(id) }
   /** Solta o bloco arrastado na posição marcada pela linha azul. */
@@ -6617,6 +6616,7 @@ function AdTagEditScreen({ initial, staff, back, save, metrics, loaders, editLoa
                   {(['desktop', 'mobile'] as const).map((item) => <button key={item} onClick={() => setDevice(item)} className={cn('inline-flex h-8 items-center gap-1.5 rounded px-3 text-[13px]', device === item ? 'bg-foreground text-background' : 'text-muted-foreground')}>{item === 'desktop' ? <Monitor className="h-4 w-4" /> : <Smartphone className="h-4 w-4" />}{item === 'desktop' ? 'Computador' : 'Celular'}</button>)}
                 </div>
                 <div className="flex min-w-[220px] flex-1 items-center rounded-md border bg-background focus-within:ring-2 focus-within:ring-ring"><span className="shrink-0 border-r bg-muted px-3 py-1.5 font-mono text-[12px] text-muted-foreground">{tag.domain}</span><input aria-label="Página para ver" value={path} onChange={(event) => setPath(event.target.value.startsWith('/') ? event.target.value : `/${event.target.value}`)} className="h-8 min-w-0 flex-1 bg-transparent px-3 font-mono text-[12px] outline-none" /></div>
+                {overlay === 'loader' && <Button size="sm" className="h-9" onClick={() => setOverlay(null)}><Check className="h-4 w-4" />Finalizar loader</Button>}
                 <DropdownMenu><DropdownMenuTrigger asChild><Button size="sm" variant="outline" className="h-9">Simular<ChevronDown className="h-3.5 w-3.5" /></Button></DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-[260px]">
                     {!settings.loader && <p className="px-2 py-1.5 text-[12px] leading-snug text-muted-foreground">Esta tag não tem loader. Escolha um em Integrações.</p>}
