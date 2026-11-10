@@ -1,9 +1,8 @@
 <script setup lang="ts">
 /** A prévia do reward: uma página de mentira num navegador ou celular, com a janela desenhada pelo mesmo render do reward.js. */
 import { onBeforeUnmount, onMounted, useTemplateRef, watch } from 'vue'
-import { fontStylesheet } from '@/embed/reward/fonts'
-import { renderReward } from '@/embed/reward/render'
-import type { PublicReward, RewardStep, VisitorLanguage } from '@/embed/reward/types'
+import { fontStylesheet, renderReward } from 'avant-tag/reward'
+import type { PublicReward, RewardStep, VisitorLanguage } from 'avant-tag/reward'
 
 const props = defineProps<{ reward: PublicReward; step: RewardStep; language: VisitorLanguage; device: 'desktop' | 'mobile'; domain: string; path: string }>()
 const emit = defineEmits<{ next: [] }>()

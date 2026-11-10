@@ -16,9 +16,11 @@ describe('imagem do painel', () => {
 })
 
 describe('nginx do painel', () => {
-  it('serve o reward.js para qualquer origem, com cache curto', () => {
+  it('serve o tag.js e o reward.js para qualquer origem, com cache curto', () => {
     const config = rootFile('docker/nginx.conf')
-    const block = config.slice(config.indexOf('location = /reward.js'))
+    const start = config.indexOf('location ~ ^/(tag|reward)\\.js$')
+    expect(start).toBeGreaterThan(-1)
+    const block = config.slice(start)
     expect(block).toContain('Access-Control-Allow-Origin "*"')
     expect(block).toContain('max-age=600')
   })
