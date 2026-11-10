@@ -3,7 +3,7 @@
 import { computed, type Component } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
-import { BellRing, Building2, ChartLine, Code2, Coins, Eye, FileChartColumn, FileSignature, FileText, Gift, Globe, IdCard, LayoutDashboard, LayoutTemplate, ListChecks, ListTodo, LoaderCircle, MailCheck, Network, Receipt, ReceiptText, Scale, ShieldCheck, Target, Users, UsersRound, Wallet, Wrench } from 'lucide-vue-next'
+import { BellRing, Building2, ChartLine, CircleDollarSign, Code2, Coins, Eye, FileChartColumn, FileSignature, FileText, Gift, Globe, IdCard, LayoutDashboard, LayoutTemplate, ListChecks, ListTodo, LoaderCircle, MailCheck, Network, Receipt, ReceiptText, Scale, ShieldCheck, Target, Users, UsersRound, Wallet, Wrench } from 'lucide-vue-next'
 import { ApiError } from '@/lib/api'
 import { errorText, type Key } from '@/lib/i18n'
 import { useSession } from '@/stores/session'
@@ -40,6 +40,8 @@ export const NAV_GROUPS: NavGroup[] = [
       { to: '/interno/ad-tags', key: 'nav.adTags', icon: Code2, internal: true },
       { to: '/loaders', key: 'nav.loaders', icon: LoaderCircle, clientOnly: true },
       { to: '/interno/loaders', key: 'nav.loaders', icon: LoaderCircle, internal: true },
+      { to: '/regras-de-preco', key: 'nav.priceRules', icon: CircleDollarSign, clientOnly: true },
+      { to: '/interno/regras-de-preco', key: 'nav.priceRules', icon: CircleDollarSign, internal: true },
       { to: '/interno/checklists', key: 'nav.checklists', icon: ListChecks, internal: true },
     ],
   },

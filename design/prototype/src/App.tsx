@@ -75,9 +75,15 @@ const SCREENS = [
   ['adtagmetricasinterno', 'Painel interno · Métricas da ad tag'],
   ['loadersinterno', 'Painel interno · Loaders'],
   ['loaderinterno', 'Painel interno · Editar loader'],
+  ['regraspreco', 'Regras de preço'],
+  ['regrasite', 'Regras de preço · Site'],
+  ['regra', 'Regras de preço · Histórico da regra'],
+  ['regrasprecointerno', 'Painel interno · Regras de preço'],
+  ['regrasiteinterno', 'Painel interno · Regras de preço do site'],
+  ['regrainterno', 'Painel interno · Histórico da regra'],
 ] as const
 type Screen = (typeof SCREENS)[number][0]
-const INTERNAL_SCREENS: Screen[] = ['interno', 'cliente', 'contratos', 'resultados', 'papelcomissao', 'minhacomissao', 'comissoes', 'minhasinvoices', 'invoice', 'invoices', 'servicosinvoice', 'modelosdash', 'tarefas', 'tarefa', 'checklists', 'checklist', 'checklistitens', 'ferramentasgam', 'execucaogam', 'rewardsinterno', 'rewardinterno', 'rewardmetricasinterno', 'adtagsinterno', 'adtaginterno', 'adtagmetricasinterno', 'loadersinterno', 'loaderinterno']
+const INTERNAL_SCREENS: Screen[] = ['interno', 'cliente', 'contratos', 'resultados', 'papelcomissao', 'minhacomissao', 'comissoes', 'minhasinvoices', 'invoice', 'invoices', 'servicosinvoice', 'modelosdash', 'tarefas', 'tarefa', 'checklists', 'checklist', 'checklistitens', 'ferramentasgam', 'execucaogam', 'rewardsinterno', 'rewardinterno', 'rewardmetricasinterno', 'adtagsinterno', 'adtaginterno', 'adtagmetricasinterno', 'loadersinterno', 'loaderinterno', 'regrasprecointerno', 'regrasiteinterno', 'regrainterno']
 const isScreen = (s: string): s is Screen => SCREENS.some(([k]) => k === s)
 type T = (k: Key) => string
 
@@ -368,12 +374,12 @@ const CLIENT_RAIL: RailGroup[] = [
   { key: 'inicio', label: 'Início', icon: Home, items: [{ id: 'inicio', label: 'Dashboard' }] },
   { key: 'relatorios', label: 'Relatórios', icon: BarChart3, items: [{ id: 'desempenho', label: 'Ad Manager' }, { id: 'visitas', label: 'Page Views' }, { id: 'relatorios', label: 'Relatórios customizados', also: ['construtor', 'relatorio'], separated: true }] },
   { key: 'financeiro', label: 'Financeiro', icon: Wallet, items: [{ id: 'resultado', label: 'Resultado' }, { id: 'custos', label: 'Custos' }] },
-  { key: 'inventario', label: 'Inventário', icon: Network, items: [{ id: 'networks', label: 'Networks do GAM', also: ['conectar'] }, { id: 'rewards', label: 'Rewards', also: ['reward', 'rewardmetricas'] }, { id: 'adtags', label: 'Ad tags', also: ['adtag', 'adtagmetricas'] }, { id: 'loaders', label: 'Loaders', also: ['loader'] }] },
+  { key: 'inventario', label: 'Inventário', icon: Network, items: [{ id: 'networks', label: 'Networks do GAM', also: ['conectar'] }, { id: 'rewards', label: 'Rewards', also: ['reward', 'rewardmetricas'] }, { id: 'adtags', label: 'Ad tags', also: ['adtag', 'adtagmetricas'] }, { id: 'loaders', label: 'Loaders', also: ['loader'] }, { id: 'regraspreco', label: 'Regras de preço', also: ['regrasite', 'regra'] }] },
   { key: 'equipe', label: 'Equipe', icon: Users, items: [{ id: 'equipe', label: 'Membros', also: ['membro'] }, { id: 'grupos', label: 'Grupos', also: ['grupo', 'grupoinativo'] }] },
   { key: 'empresa', label: 'Empresa', icon: Settings, items: [{ id: 'configuracoes', label: 'Configurações' }, { id: 'fiscais', label: 'Dados fiscais' }] },
 ]
 const INTERNAL_RAIL: RailGroup[] = [
-  { key: 'clientes', label: 'Inventário', icon: Users, items: [{ id: 'interno', label: 'Clientes', also: ['cliente'] }, { id: 'contratos', label: 'Contratos' }, { id: 'resultados', label: 'Resultado dos clientes' }, { id: 'checklists', label: 'Checklists', also: ['checklist', 'checklistitens'] }, { id: 'rewardsinterno', label: 'Rewards', also: ['rewardinterno', 'rewardmetricasinterno'] }, { id: 'adtagsinterno', label: 'Ad tags', also: ['adtaginterno', 'adtagmetricasinterno'] }, { id: 'loadersinterno', label: 'Loaders', also: ['loaderinterno'] }] },
+  { key: 'clientes', label: 'Inventário', icon: Users, items: [{ id: 'interno', label: 'Clientes', also: ['cliente'] }, { id: 'contratos', label: 'Contratos' }, { id: 'resultados', label: 'Resultado dos clientes' }, { id: 'checklists', label: 'Checklists', also: ['checklist', 'checklistitens'] }, { id: 'rewardsinterno', label: 'Rewards', also: ['rewardinterno', 'rewardmetricasinterno'] }, { id: 'adtagsinterno', label: 'Ad tags', also: ['adtaginterno', 'adtagmetricasinterno'] }, { id: 'loadersinterno', label: 'Loaders', also: ['loaderinterno'] }, { id: 'regrasprecointerno', label: 'Regras de preço', also: ['regrasiteinterno', 'regrainterno'] }] },
   { key: 'comissoes', label: 'Comissões', icon: Wallet, items: [{ id: 'minhacomissao', label: 'Minha comissão' }, { id: 'minhasinvoices', label: 'Minhas invoices' }, { id: 'comissoes', label: 'Comissões da equipe' }, { id: 'invoices', label: 'Invoices', also: ['servicosinvoice', 'invoice'] }] },
   { key: 'ferramentas', label: 'Ferramentas', icon: Wrench, items: [{ id: 'tarefas', label: 'Tarefas', also: ['tarefa'] }, { id: 'modelosdash', label: 'Modelos de dashboard' }, { id: 'ferramentasgam', label: 'Ferramentas do GAM', also: ['execucaogam'] }] },
   { key: 'equipegroone', label: 'Equipe', icon: ShieldCheck, items: [{ id: 'papelcomissao', label: 'Papéis da Equipe Groone' }] },
@@ -4779,7 +4785,7 @@ type ProtoGamNetwork = { code: string; name: string; client: string; currency: s
 const GAM_TOOLS: Record<GamToolKind, { name: string; desc: string; writes: boolean; icon: typeof Wrench }> = {
   config: { name: 'Configuração completa', desc: 'Key values, order AdExchange, blocos pai e filho, line items e criativo, associa tudo e aprova a order. Para network nova.', writes: true, icon: Wrench },
   setup: { name: 'Setup de anúncio', desc: 'Cria os blocos e liga aos line items dos sites escolhidos, no formato Tag Light ou GTag. Para site novo numa network pronta.', writes: true, icon: Plus },
-  keyvalues: { name: 'Gerar key values', desc: 'Confere e cria as 8 keys (utm_*, land_uri, id_post_wp, content_hash) e os valores de id_post_wp.', writes: true, icon: List },
+  keyvalues: { name: 'Gerar key values', desc: 'Confere e cria as 10 keys (utm_*, land_uri, id_post_wp, content_hash, groone_prices, groone_group) e os valores de id_post_wp, dos degraus de preço e dos grupos.', writes: true, icon: List },
   sync: { name: 'Sincronizar agora', desc: 'Busca sites e blocos novos no GAM sem esperar a importação das 6 horas.', writes: false, icon: RefreshCw },
   install: { name: 'Arquivo de instalação', desc: 'O passo a passo do AdInserter de cada site, em português, inglês ou espanhol. Vários sites saem num .zip.', writes: false, icon: Download },
   adstxt: { name: 'Linhas do ads.txt', desc: 'As linhas que o cliente põe no ads.txt, com o seller ID da network filha.', writes: false, icon: Copy },
@@ -4803,7 +4809,7 @@ function gamSteps(tool: GamToolKind, network: ProtoGamNetwork, sites: string[], 
   const delivery = [step('order', 'Order AdExchange'), ...perSite, step('lineitems', format === 'light' ? 'Line item Display' : `${blocks} line items`), step('creative', 'Criativo "Display All requested sizes"'), step('association', 'Associar criativo aos line items'), step('approve', 'Aprovar a order')]
   if (tool === 'config') return [step('info', `Conectar na network ${network.code}`), step('keyvalues', 'Key values'), step('domains', 'Sites aprovados no GAM'), ...delivery]
   if (tool === 'setup') return [step('info', `Conectar na network ${network.code}`), ...delivery]
-  if (tool === 'keyvalues') return [step('info', `Conectar na network ${network.code}`), step('keys', '8 keys'), step('values', 'Valores de id_post_wp (1 a 9999)')]
+  if (tool === 'keyvalues') return [step('info', `Conectar na network ${network.code}`), step('keys', '10 keys'), step('values', 'Valores de id_post_wp (1 a 9999)'), step('prices', `Valores de groone_prices (200 degraus em ${network.currency})`), step('groups', 'Valores de groone_group (regra e controle)')]
   return [step('info', `Conectar na network ${network.code}`), step('sites', 'Sites'), step('blocks', 'Blocos')]
 }
 
@@ -4811,7 +4817,9 @@ function gamSteps(tool: GamToolKind, network: ProtoGamNetwork, sites: string[], 
 function gamStepResult(step: GamStep, network: ProtoGamNetwork): Pick<GamStep, 'state' | 'detail'> {
   if (step.key === 'info') return { state: 'done', detail: `${network.name} · ${network.currency}` }
   if (step.key === 'order') return network.order ? { state: 'existed', detail: 'Order 3456789012, aprovada' } : { state: 'done', detail: 'Order 3456790001 criada' }
-  if (step.key === 'keyvalues' || step.key === 'keys') return network.keyValues === 8 ? { state: 'existed', detail: 'As 8 keys já existiam' } : { state: 'done', detail: `${8 - network.keyValues} keys criadas` }
+  if (step.key === 'keyvalues' || step.key === 'keys') return network.keyValues === 10 ? { state: 'existed', detail: 'As 10 keys já existiam' } : { state: 'done', detail: `${10 - network.keyValues} keys criadas` }
+  if (step.key === 'prices') return { state: 'done', detail: `200 valores, de ${priceMoney(PRICE_TIERS[0], network.currency)} a ${priceMoney(PRICE_TIERS[199], network.currency)}` }
+  if (step.key === 'groups') return { state: 'done', detail: '2 valores: regra e controle' }
   if (step.key === 'values') return { state: 'done', detail: '9.999 valores, 0 repetidos' }
   if (step.key.startsWith('parent-')) { const site = network.sites.find((item) => `parent-${item.domain}` === step.key); return site?.parent ? { state: 'existed', detail: 'Bloco 22198765 já existia' } : { state: 'done', detail: 'Bloco 22198790 criado' } }
   if (step.key.startsWith('child-')) return { state: 'done', detail: 'Criados com a data de hoje no nome (_20261103)' }
@@ -4876,7 +4884,7 @@ function GamToolsScreen({ runs, start, open }: { runs: GamRun[]; start: (run: Ga
             <span>Cliente <span className="text-foreground">{network.client}</span></span>
             <span>Moeda <span className="text-foreground">{network.currency}</span></span>
             <span>Sites <span className="tnum text-foreground">{network.sites.length}</span></span>
-            <span>Key values <span className="tnum text-foreground">{network.keyValues}/8</span></span>
+            <span>Key values <span className="tnum text-foreground">{network.keyValues}/10</span></span>
             <span>Order AdExchange {network.order ? <span className="text-foreground">aprovada</span> : <span className="text-foreground">não existe</span>}</span>
           </div>
         </div>
@@ -4944,8 +4952,9 @@ function GamToolsScreen({ runs, start, open }: { runs: GamRun[]; start: (run: Ga
 
       <Dialog open={tool === 'keyvalues'} onOpenChange={(value) => !value && setTool(null)}>
         <DialogContent className="max-w-[480px]">
-          <DialogHeader><DialogTitle>Gerar key values</DialogTitle><DialogDescription>Na network {network.name}. Tem {network.keyValues} das 8 keys.</DialogDescription></DialogHeader>
-          <p className="font-mono text-[13px] text-muted-foreground">utm_term, utm_source, utm_medium, utm_content, utm_campaign, land_uri, id_post_wp, content_hash</p>
+          <DialogHeader><DialogTitle>Gerar key values</DialogTitle><DialogDescription>Na network {network.name}. Tem {network.keyValues} das 10 keys.</DialogDescription></DialogHeader>
+          <p className="font-mono text-[13px] text-muted-foreground">utm_term, utm_source, utm_medium, utm_content, utm_campaign, land_uri, id_post_wp, content_hash, groone_prices, groone_group</p>
+          <p className="text-[13px] text-muted-foreground">Os valores de groone_prices são os 200 degraus em {network.currency}, a moeda da network. As Unified Pricing Rules de cada degrau continuam no gerador de regras.</p>
           <DialogFooter><Button variant="outline" onClick={() => setTool(null)}>Cancelar</Button><Button onClick={() => run('keyvalues')}>Rodar no GAM</Button></DialogFooter>
         </DialogContent>
       </Dialog>
@@ -6765,6 +6774,380 @@ function AdTagMetricsScreen({ tag, staff, back, edit }: { tag: ProtoAdTag; staff
   )
 }
 
+/* ---------- regras de preço (decisão 14, avant-web#268) ---------- */
+
+type PriceStatus = 'active' | 'paused' | 'disabled'
+type PriceAction = 'up' | 'down' | 'hold' | 'initial'
+type PriceReason = 'manual' | 'stable' | 'pmr_down_floor' | 'pmr_up_over_roof' | 'insufficient_volume' | 'responses_server_drop' | 'initial_rule_creation'
+type PriceBlockModel = 'automatic' | 'none'
+type PriceSite = { domain: string; client: string; network: string; currency: string | null; supported: boolean; keys: boolean; active: boolean; control: number; blocks: Record<string, PriceBlockModel>; available: string[] }
+type PriceConfig = { automatic: boolean; pmrFloor: number; pmrEmergency: number; minRequests: number; floorMin: number; floorMax: number; step: number }
+type PriceRuleRow = { id: string; domain: string; hash: string; block: string; country: string; floor: number; status: PriceStatus; updated: string; config: PriceConfig | null }
+type PriceHour = { label: string; day: string; floor: number; ecpm: number; pmr: number; revenue: number; requests: number; action: PriceAction; reason: PriceReason; before: number }
+
+const PRICE_STATUS: Record<PriceStatus, [string, 'ok' | 'neutral' | 'ochre']> = { active: ['Ativa', 'ok'], paused: ['Pausada', 'ochre'], disabled: ['Desligada', 'neutral'] }
+const PRICE_ACTION: Record<PriceAction, string> = { up: 'Subiu', down: 'Desceu', hold: 'Manteve', initial: 'Primeiro floor' }
+const PRICE_REASON: Record<PriceReason, string> = {
+  manual: 'Mudança feita à mão no painel.',
+  stable: 'Sem mudança que justifique mexer no floor.',
+  pmr_down_floor: 'O PMR ficou abaixo do piso ou da emergência.',
+  pmr_up_over_roof: 'O PMR ficou acima do piso: dá para pedir mais.',
+  insufficient_volume: 'Pouco volume na hora: só desce se o PMR estiver abaixo do piso.',
+  responses_server_drop: 'O PMR caiu mais de 10% contra a média e a receita por requisição não subiu.',
+  initial_rule_creation: 'A regra começou em 50% do eCPM médio.',
+}
+const PRICE_BLOCKS = ['Content1_Desktop', 'Content1_Mobile', 'Content2_Desktop', 'Content2_Mobile', 'Content3_Mobile', 'Anchor_Mobile', 'Interstitial_Mobile', 'Fixed_Desktop', 'Rewards_Mobile', 'Offerwall']
+const PRICE_COUNTRIES = ['BR', 'PT', 'US', 'MX', 'AR']
+/** Os 200 degraus de uma moeda: escala geométrica de cerca de 3,7% (0,50 a 800,00), como no Genius. */
+const PRICE_TIERS = Array.from({ length: 200 }, (_item, index) => Math.round(0.5 * Math.pow(1600, index / 199) * 100) / 100)
+/** O degrau mais perto de um valor, porque o floor sempre cai num degrau. */
+function nearestTier(value: number) { return PRICE_TIERS.reduce((best, tier) => (Math.abs(tier - value) < Math.abs(best - value) ? tier : best), PRICE_TIERS[0]) }
+/** O valor na moeda da network, sem conversão. */
+function priceMoney(value: number, currency: string | null) { return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: currency ?? 'USD', minimumFractionDigits: 2 }).format(value) }
+
+const INITIAL_PRICE_SITES: PriceSite[] = [
+  { domain: 'acai.com.br', client: 'Açaí Mídia', network: 'Açaí Mídia MCM', currency: 'BRL', supported: true, keys: true, active: true, control: 10, available: PRICE_BLOCKS, blocks: { Content1_Desktop: 'automatic', Content1_Mobile: 'automatic', Content2_Desktop: 'automatic', Content2_Mobile: 'automatic', Content3_Mobile: 'automatic' } },
+  { domain: 'receitasdaacai.com.br', client: 'Açaí Mídia', network: 'Açaí Mídia MCM', currency: 'BRL', supported: true, keys: true, active: false, control: 10, available: PRICE_BLOCKS.slice(0, 7), blocks: {} },
+  { domain: 'technoticias.com.br', client: 'Tech Notícias', network: 'Tech Notícias MCM', currency: 'USD', supported: true, keys: false, active: false, control: 10, available: PRICE_BLOCKS, blocks: { Content1_Mobile: 'automatic' } },
+  { domain: 'viagemfacil.com', client: 'Viagem Fácil', network: 'Viagem Fácil', currency: 'ARS', supported: false, keys: false, active: false, control: 10, available: PRICE_BLOCKS.slice(0, 6), blocks: {} },
+]
+const PRICE_HASHES = ['a9f3k2', 'm2x81q', 'zp04te', 'k7d1vv', 'b3r9ux', 'q0w5nn', 'h8c2ls']
+/** As regras de exemplo de um site: hash × bloco × país, só nos blocos com a Automática. */
+function priceRules(site: PriceSite): PriceRuleRow[] {
+  if (!site.active) return []
+  const blocks = Object.keys(site.blocks).filter((block) => site.blocks[block] === 'automatic')
+  return PRICE_HASHES.flatMap((hash, hashIndex) => blocks.flatMap((block, blockIndex) => PRICE_COUNTRIES.slice(0, hashIndex < 2 ? 3 : 1).map((country, countryIndex) => {
+    const seed = hashIndex * 97 + blockIndex * 13 + countryIndex * 7
+    const status: PriceStatus = seed % 23 === 0 ? 'paused' : seed % 31 === 0 ? 'disabled' : 'active'
+    return { id: `${hash}-${block}-${country}`, domain: site.domain, hash, block, country, floor: nearestTier((block.includes('Desktop') ? 2.4 : 1.1) * (country === 'BR' ? 1 : 0.6) * (0.7 + seeded(seed) * 0.8)), status, updated: `Hoje, ${String(14 - (seed % 9)).padStart(2, '0')}:58`, config: { automatic: seed % 11 !== 0, pmrFloor: 62 + (seed % 9), pmrEmergency: 41 + (seed % 7), minRequests: 50 + (seed % 5) * 40, floorMin: 0.6 + (seed % 4) * 0.1, floorMax: 1.8 + (seed % 5) * 0.2, step: 1 } }
+  })))
+}
+/** As horas de exemplo de uma regra, da mais velha à de agora, terminando no floor atual: floor, eCPM, PMR, receita e a decisão. */
+function priceHours(rule: PriceRuleRow, days: number): PriceHour[] {
+  const seed = rule.hash.charCodeAt(0) + rule.block.length + rule.country.charCodeAt(0)
+  let floor = rule.floor
+  const rows: PriceHour[] = []
+  for (let hoursAgo = 0; hoursAgo < days * 24; hoursAgo += 1) {
+    const total = 10 * 24 + 14 - hoursAgo
+    const hour = total % 24
+    const day = `${String(Math.floor(total / 24)).padStart(2, '0')}/11`
+    const requests = Math.round((hour > 7 && hour < 23 ? 900 : 240) * (0.8 + seeded(seed + hoursAgo) * 0.4))
+    const pmr = 40 + seeded(seed * 3 + hoursAgo) * 45
+    const ecpm = floor * (1.35 + seeded(seed * 5 + hoursAgo) * 0.4)
+    const revenue = (requests * (pmr / 100) * ecpm) / 1000
+    const oldest = hoursAgo === days * 24 - 1
+    const action: PriceAction = oldest ? 'initial' : pmr >= 72 ? 'up' : pmr < 50 ? 'down' : 'hold'
+    const reason: PriceReason = action === 'initial' ? 'initial_rule_creation' : action === 'up' ? 'pmr_up_over_roof' : action === 'down' ? (requests < 300 ? 'insufficient_volume' : 'pmr_down_floor') : 'stable'
+    const tierIndex = PRICE_TIERS.indexOf(nearestTier(floor))
+    const before = action === 'up' ? PRICE_TIERS[Math.max(0, tierIndex - 1)] : action === 'down' ? PRICE_TIERS[Math.min(199, tierIndex + 1)] : floor
+    rows.push({ label: `${day} ${String(hour).padStart(2, '0')}h`, day, floor, ecpm, pmr, revenue, requests, action, reason, before })
+    floor = before
+  }
+  return rows.reverse()
+}
+/** A receita por mil requisições de exemplo, por dia, dos visitantes da regra e do controle. */
+function priceGain(site: PriceSite) {
+  return Array.from({ length: 30 }, (_item, index) => {
+    const control = 3.1 + seeded(site.domain.length * 10 + index) * 0.6 + index * 0.01
+    const rule = control * (1.06 + seeded(site.domain.length * 20 + index) * 0.12 + Math.min(index, 10) * 0.004)
+    return { day: `${String(((index + 10) % 30) + 1).padStart(2, '0')}/${index < 20 ? '10' : '11'}`, rule, control }
+  })
+}
+
+/** Gráfico de linhas com uma série principal e, opcional, uma segunda tracejada no mesmo eixo. */
+function PricePairChart({ labels, main, second, mainLabel, secondLabel, format, step = false }: { labels: string[]; main: number[]; second?: number[]; mainLabel: string; secondLabel?: string; format: (value: number) => string; step?: boolean }) {
+  const [hover, setHover] = useState<number | null>(null)
+  const width = 960, height = 240, left = 72, right = 12, top = 12, bottom = 26
+  const max = Math.max(...main, ...(second ?? [])) * 1.15 || 1
+  const xAt = (index: number) => left + (labels.length === 1 ? 0 : (index * (width - left - right)) / (labels.length - 1))
+  const yAt = (value: number) => top + (height - top - bottom) * (1 - value / max)
+  /** O caminho da série; em degraus quando o valor só muda de hora em hora. */
+  const path = (values: number[], stepped: boolean) => values.map((value, index) => (index === 0 ? `M${xAt(0).toFixed(1)},${yAt(value).toFixed(1)}` : stepped ? `H${xAt(index).toFixed(1)}V${yAt(value).toFixed(1)}` : `L${xAt(index).toFixed(1)},${yAt(value).toFixed(1)}`)).join('')
+  const every = Math.max(1, Math.ceil(labels.length / 8))
+  /** Move a cruz para o ponto mais perto do mouse ou da seta do teclado. */
+  const pick = (index: number) => setHover(Math.min(labels.length - 1, Math.max(0, index)))
+  return (
+    <div className="relative">
+      {second && <div className="mb-3 flex flex-wrap gap-4 text-[13px] text-muted-foreground"><span className="flex items-center gap-1.5"><span className="h-0.5 w-4 bg-foreground" />{mainLabel}</span><span className="flex items-center gap-1.5"><span className="h-0 w-4 border-t-2 border-dashed border-muted-foreground/60" />{secondLabel}</span></div>}
+      <svg viewBox={`0 0 ${width} ${height}`} className="h-[240px] w-full outline-none focus-visible:ring-2 focus-visible:ring-ring" role="img" aria-label={mainLabel} tabIndex={0}
+        onKeyDown={(event) => { if (event.key === 'ArrowRight') pick((hover ?? -1) + 1); if (event.key === 'ArrowLeft') pick((hover ?? labels.length) - 1) }}
+        onMouseLeave={() => setHover(null)} onBlur={() => setHover(null)}
+        onMouseMove={(event) => { const box = event.currentTarget.getBoundingClientRect(); const position = ((event.clientX - box.left) / box.width) * width; pick(Math.round(((position - left) / (width - left - right)) * (labels.length - 1))) }}>
+        {[0, 0.5, 1].map((fraction) => <g key={fraction}><line x1={left} x2={width - right} y1={yAt(max * fraction)} y2={yAt(max * fraction)} className="stroke-border" /><text x={left - 8} y={yAt(max * fraction) + 4} textAnchor="end" className="fill-muted-foreground text-[11px] tnum">{format(max * fraction)}</text></g>)}
+        {labels.map((label, index) => index % every === 0 && <text key={`${label}-${index}`} x={xAt(index)} y={height - 6} textAnchor="middle" className="fill-muted-foreground text-[11px] tnum">{label.split(' ')[0]}</text>)}
+        {second && <path d={path(second, false)} fill="none" className="stroke-muted-foreground/60" strokeWidth={2} strokeDasharray="4 4" strokeLinejoin="round" />}
+        <path d={`${path(main, step)}L${xAt(main.length - 1)},${yAt(0)}L${xAt(0)},${yAt(0)}Z`} className="fill-foreground/[0.04]" />
+        <path d={path(main, step)} fill="none" className="stroke-foreground" strokeWidth={2} strokeLinejoin="round" />
+        {hover !== null && <><line x1={xAt(hover)} x2={xAt(hover)} y1={top} y2={height - bottom} className="stroke-muted-foreground/50" />{second && <circle cx={xAt(hover)} cy={yAt(second[hover])} r={4} className="fill-muted-foreground stroke-card" strokeWidth={2} />}<circle cx={xAt(hover)} cy={yAt(main[hover])} r={4} className="fill-foreground stroke-card" strokeWidth={2} /></>}
+      </svg>
+      {hover !== null && (
+        <div className="pointer-events-none absolute top-8 rounded-md border bg-popover px-3 py-2 text-[13px] shadow-md" style={{ left: `clamp(0px, calc(${(xAt(hover) / width) * 100}% - 90px), calc(100% - 180px))`, width: 180 }}>
+          <div className="font-medium">{labels[hover]}</div>
+          <div className="mt-1 flex justify-between gap-3"><span className="text-muted-foreground">{mainLabel}</span><span className="tnum">{format(main[hover])}</span></div>
+          {second && <div className="flex justify-between gap-3"><span className="text-muted-foreground">{secondLabel}</span><span className="tnum">{format(second[hover])}</span></div>}
+        </div>
+      )}
+      <table className="sr-only"><thead><tr><th>Quando</th><th>{mainLabel}</th>{second && <th>{secondLabel}</th>}</tr></thead><tbody>{labels.map((label, index) => <tr key={`${label}-${index}`}><td>{label}</td><td>{format(main[index])}</td>{second && <td>{format(second[index])}</td>}</tr>)}</tbody></table>
+    </div>
+  )
+}
+
+/** Paginação de 10 itens, como nas outras listas do painel. */
+function PricePager({ page, total, onPage }: { page: number; total: number; onPage: (page: number) => void }) {
+  const pages = Math.max(1, Math.ceil(total / 10))
+  if (pages === 1) return null
+  return (
+    <div className="flex items-center justify-between text-[13px] text-muted-foreground">
+      <span className="tnum">{(page - 1) * 10 + 1}–{Math.min(page * 10, total)} de {int.format(total)}</span>
+      <div className="flex gap-2"><Button size="sm" variant="outline" disabled={page === 1} onClick={() => onPage(page - 1)}>Anterior</Button><Button size="sm" variant="outline" disabled={page === pages} onClick={() => onPage(page + 1)}>Próxima</Button></div>
+    </div>
+  )
+}
+
+/** A situação da regra de preço do site, para a lista e o cabeçalho. */
+function priceSiteStatus(site: PriceSite): { tone: 'ok' | 'neutral' | 'ochre' | 'warn'; label: string } {
+  if (!site.currency) return { tone: 'neutral', label: 'Esperando o GAM' }
+  if (!site.supported) return { tone: 'warn', label: `Moeda ${site.currency} sem degraus` }
+  if (!site.active) return { tone: 'neutral', label: 'Desligada' }
+  if (!Object.values(site.blocks).includes('automatic')) return { tone: 'ochre', label: 'Ligada, sem blocos' }
+  return { tone: 'ok', label: 'Ligada' }
+}
+/** O ganho médio da regra contra o controle nos últimos 30 dias, em porcentagem. */
+function priceGainPercent(site: PriceSite) {
+  const days = priceGain(site)
+  const rule = days.reduce((total, day) => total + day.rule, 0)
+  const control = days.reduce((total, day) => total + day.control, 0)
+  return ((rule - control) / control) * 100
+}
+
+/** Lista dos sites com a regra de preço: ligada ou não, controle, blocos e ganho; no interno, de todos os clientes. */
+function PriceSitesScreen({ sites, staff, open }: { sites: PriceSite[]; staff: boolean; open: (domain: string) => void }) {
+  const [query, setQuery] = useState('')
+  const shown = sites.filter((site) => (staff || site.client === MY_CLIENT) && `${site.domain} ${site.client}`.toLowerCase().includes(query.toLowerCase()))
+  return (
+    <>
+      <PageHeader title="Regras de preço" sub={staff ? 'O floor automático dos sites de todos os clientes. Só quem tem a permissão interna muda a configuração.' : 'O floor automático de cada bloco, por página e país. Uma parte dos visitantes fica sem regra para medir o ganho.'} />
+      <Body>
+        <div className="relative w-full sm:w-[280px]"><Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input aria-label="Buscar sites" className="h-9 pl-9" placeholder={staff ? 'Site ou cliente' : 'Site'} value={query} onChange={(event) => setQuery(event.target.value)} /></div>
+        <Table min={staff ? 960 : 820}>
+          <thead><tr><th className={th}>Site</th>{staff && <th className={th}>Cliente</th>}<th className={th}>Situação</th><th className={cn(th, 'text-right')}>Controle</th><th className={cn(th, 'text-right')}>Blocos</th><th className={cn(th, 'text-right')}>Regras ativas</th><th className={cn(th, 'text-right')}>Ganho em 30 dias</th><th className={th}><span className="sr-only">Ação</span></th></tr></thead>
+          <tbody>
+            {shown.map((site) => {
+              const status = priceSiteStatus(site)
+              const rules = priceRules(site)
+              const blocks = Object.values(site.blocks).filter((model) => model === 'automatic').length
+              const gain = site.active && blocks ? priceGainPercent(site) : null
+              return (
+                <tr key={site.domain} className="hover:bg-muted">
+                  <td className={td}><button className="font-mono text-[13px] font-medium hover:underline" onClick={() => open(site.domain)}>{site.domain}</button><div className="text-[12px] text-muted-foreground">{site.network}{site.currency ? ` · ${site.currency}` : ''}</div></td>
+                  {staff && <td className={td}>{site.client}</td>}
+                  <td className={td}><Status tone={status.tone}>{status.label}</Status></td>
+                  <td className={cn(td, 'text-right tnum')}>{site.active ? `${site.control}%` : '—'}</td>
+                  <td className={cn(td, 'text-right tnum')}>{blocks} de {site.available.length}</td>
+                  <td className={cn(td, 'text-right tnum')}>{rules.length ? int.format(rules.filter((rule) => rule.status === 'active').length) : '—'}</td>
+                  <td className={cn(td, 'text-right tnum')}>{gain === null ? <span className="text-muted-foreground">—</span> : <span className={gain >= 0 ? 'text-ok' : 'text-bad'}>{gain >= 0 ? '↑' : '↓'} {pct.format(Math.abs(gain))}%</span>}</td>
+                  <td className={cn(td, 'text-right')}><Button size="sm" variant="outline" onClick={() => open(site.domain)}>Abrir</Button></td>
+                </tr>
+              )
+            })}
+            {!shown.length && <tr><td className={cn(td, 'py-12 text-center')} colSpan={staff ? 8 : 7}><CircleDollarSign className="mx-auto h-5 w-5 text-muted-foreground" /><p className="mt-2 font-medium">Nenhum site com esse nome</p></td></tr>}
+          </tbody>
+        </Table>
+        <p className="text-[13px] text-muted-foreground">Ganho: receita por mil requisições dos visitantes com regra contra os do controle, na moeda da network.</p>
+      </Body>
+    </>
+  )
+}
+
+/** Regra de preço de um site: ligar, percentual de controle, blocos com o modelo, ganho contra o controle e a lista de regras. */
+function PriceSiteScreen({ initial, staff, back, save, openRule }: { initial: PriceSite; staff: boolean; back: () => void; save: (site: PriceSite) => void; openRule: (id: string) => void }) {
+  const [site, setSite] = useState(initial)
+  const [hashQuery, setHashQuery] = useState('')
+  const [country, setCountry] = useState('all')
+  const [page, setPage] = useState(1)
+  const blocked = !site.currency || !site.supported
+  const dirty = JSON.stringify(site) !== JSON.stringify(initial)
+  const rules = priceRules(initial).filter((rule) => rule.hash.includes(hashQuery.trim().toLowerCase()) && (country === 'all' || rule.country === country))
+  const gain = priceGain(initial)
+  const ruleTotal = gain.reduce((total, day) => total + day.rule, 0) / gain.length
+  const controlTotal = gain.reduce((total, day) => total + day.control, 0) / gain.length
+  const status = priceSiteStatus(initial)
+  const showGain = initial.active && Object.values(initial.blocks).includes('automatic')
+  return (
+    <>
+      <PageHeader title={site.domain} sub={`${staff ? `${site.client} · ` : ''}${site.network} · Regras de preço${site.currency ? ` em ${site.currency}` : ''}`}
+        back={<button onClick={back} className="inline-flex items-center gap-1 text-[13px] text-muted-foreground hover:text-foreground"><ArrowLeft className="h-3.5 w-3.5" />Regras de preço</button>}
+        actions={<Status tone={status.tone}>{status.label}</Status>} />
+      <Body>
+        {!site.currency && <div className="flex items-start gap-2 rounded-md border px-3 py-2 text-[13px] text-muted-foreground"><Loader2 className="mt-0.5 h-4 w-4 shrink-0" />A moeda da network aparece na primeira sincronia dos números do GAM. Até lá a regra não pode ser ligada.</div>}
+        {site.currency && !site.supported && <div className="flex items-start gap-2 rounded-md border border-warn/40 bg-warn/10 px-3 py-2 text-[13px]"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warn" />A network usa {site.currency}, que ainda não tem os 200 degraus. A regra de preço funciona em USD, BRL, MXN, PEN, GBP, EUR, COP, CLP e BOB. Fale com a Groone para incluir a moeda.</div>}
+        {!blocked && !site.keys && <div className="flex items-start gap-2 rounded-md border border-ochre/40 bg-ochre-soft px-3 py-2 text-[13px] text-ochre"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />A network ainda não tem as keys groone_prices e groone_group nem as Unified Pricing Rules. {staff ? 'Rode "Gerar key values" nas Ferramentas do GAM e crie as regras com o gerador.' : 'A Groone cria as duas antes de a regra valer.'}</div>}
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
+          <Card title="Configuração" desc="Ligada, a tag pede os floors do site e manda o do bloco para o GAM. O motor revê cada regra a cada hora."
+            footerNote={dirty ? 'Muda na tag em até 1 hora.' : undefined} footer={<Button disabled={!dirty} onClick={() => { save(site); toast.success('Regra de preço salva') }}>Salvar</Button>}>
+            <div className="grid gap-5">
+              <label className="flex items-center gap-3 text-[14px]"><Switch checked={site.active} disabled={blocked} onCheckedChange={(active) => setSite({ ...site, active })} />{site.active ? 'Ligada no site' : 'Desligada'}</label>
+              <Field id="price-control" label={`Grupo de controle: ${site.control}% dos visitantes`} hint="Esses visitantes não recebem floor. A diferença de receita entre os dois grupos é o ganho da regra. Vai de 0% a 50%.">
+                <Slider id="price-control" min={0} max={50} step={1} value={[site.control]} disabled={blocked} onValueChange={([control]) => setSite({ ...site, control })} className="py-2" />
+              </Field>
+            </div>
+          </Card>
+          <Card pad={false}>
+            <div className="p-6"><h2 className="text-[20px] font-semibold tracking-tight">Blocos</h2><p className="mt-2 max-w-[70ch] text-[14px] text-muted-foreground">Cada bloco roda um modelo só, para um não atrapalhar o aprendizado do outro. Âncora, intersticial, reward e offerwall vão ter um modelo próprio.</p></div>
+            <div className="max-h-[360px] overflow-y-auto border-t">
+              <table className="w-full text-left text-[14px] [&_tbody_tr:last-child_td]:border-b-0">
+                <thead className="sticky top-0 bg-card"><tr><th className={th}>Bloco</th><th className={th}>Modelo</th></tr></thead>
+                <tbody>{site.available.map((block) => (
+                  <tr key={block}><td className={cn(td, 'py-2 font-mono text-[13px]')}>{block}</td><td className={cn(td, 'py-2')}>
+                    <Select value={site.blocks[block] ?? 'none'} disabled={blocked} onValueChange={(model) => setSite({ ...site, blocks: { ...site.blocks, [block]: model as PriceBlockModel } })}>
+                      <SelectTrigger aria-label={`Modelo de ${block}`} className="h-8 w-full max-w-[180px]"><SelectValue /></SelectTrigger>
+                      <SelectContent><SelectItem value="automatic">Automática</SelectItem><SelectItem value="none">Sem regra</SelectItem></SelectContent>
+                    </Select>
+                  </td></tr>
+                ))}</tbody>
+              </table>
+            </div>
+          </Card>
+        </div>
+        {showGain && (
+          <Card title="Ganho contra o controle" desc={`Receita por mil requisições, por dia, dos visitantes com regra e dos ${initial.control}% do controle. Vem do key-value groone_group do GAM.`}>
+            <div className="mb-5 grid grid-cols-1 gap-px overflow-hidden rounded-lg border bg-border sm:grid-cols-3">
+              {([['Com regra', priceMoney(ruleTotal, initial.currency)], ['Controle', priceMoney(controlTotal, initial.currency)], ['Ganho', `${ruleTotal >= controlTotal ? '↑' : '↓'} ${pct.format(Math.abs(((ruleTotal - controlTotal) / controlTotal) * 100))}%`]] as const).map(([label, value]) => (
+                <div key={label} className="bg-card p-4"><div className="text-[13px] text-muted-foreground">{label}</div><div className={cn('mt-1 text-[24px] font-semibold tracking-[-0.03em] tnum', label === 'Ganho' && (ruleTotal >= controlTotal ? 'text-ok' : 'text-bad'))}>{value}</div></div>
+              ))}
+            </div>
+            <PricePairChart labels={gain.map((day) => day.day)} main={gain.map((day) => day.rule)} second={gain.map((day) => day.control)} mainLabel="Com regra" secondLabel="Controle" format={(value) => priceMoney(value, initial.currency)} />
+          </Card>
+        )}
+        {initial.active && (
+          <section className="grid gap-3">
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div><h2 className="text-[20px] font-semibold tracking-tight">Regras</h2><p className="mt-1 text-[14px] text-muted-foreground">Uma por página (content_hash), bloco e país. Entram todo dia as que passaram de 300 requisições elegíveis ontem.</p></div>
+              <div className="flex flex-wrap gap-2">
+                <div className="relative w-full sm:w-[200px]"><Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input aria-label="Buscar hash" className="h-9 pl-9 font-mono" placeholder="content_hash" value={hashQuery} onChange={(event) => { setHashQuery(event.target.value); setPage(1) }} /></div>
+                <Select value={country} onValueChange={(value) => { setCountry(value); setPage(1) }}><SelectTrigger aria-label="País" className="h-9 w-[140px]"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Todos os países</SelectItem>{PRICE_COUNTRIES.map((code) => <SelectItem key={code} value={code}>{code}</SelectItem>)}</SelectContent></Select>
+              </div>
+            </div>
+            <Table min={760}>
+              <thead><tr><th className={th}>content_hash</th><th className={th}>Bloco</th><th className={th}>País</th><th className={cn(th, 'text-right')}>Floor</th><th className={th}>Situação</th><th className={th}>Mudou</th><th className={th}><span className="sr-only">Ação</span></th></tr></thead>
+              <tbody>
+                {rules.slice((page - 1) * 10, page * 10).map((rule) => (
+                  <tr key={rule.id} className="hover:bg-muted">
+                    <td className={cn(td, 'font-mono text-[13px]')}>{rule.hash}</td>
+                    <td className={cn(td, 'font-mono text-[13px]')}>{rule.block}</td>
+                    <td className={td}>{rule.country}</td>
+                    <td className={cn(td, 'text-right tnum')}>{priceMoney(rule.floor, initial.currency)}</td>
+                    <td className={td}><Status tone={PRICE_STATUS[rule.status][1]}>{PRICE_STATUS[rule.status][0]}</Status>{rule.config && !rule.config.automatic && <span className="ml-2"><Badge>Limites à mão</Badge></span>}</td>
+                    <td className={cn(td, 'whitespace-nowrap text-[13px] text-muted-foreground')}>{rule.updated}</td>
+                    <td className={cn(td, 'text-right')}><Button size="sm" variant="outline" onClick={() => openRule(rule.id)}><History className="h-4 w-4" />Histórico</Button></td>
+                  </tr>
+                ))}
+                {!rules.length && <tr><td className={cn(td, 'py-12 text-center')} colSpan={7}><p className="font-medium">Nenhuma regra ainda</p><p className="mt-1 text-[13px] text-muted-foreground">{hashQuery || country !== 'all' ? 'Nada com esse filtro.' : 'As primeiras regras entram amanhã às 04:00, com os números de hoje.'}</p></td></tr>}
+              </tbody>
+            </Table>
+            <PricePager page={page} total={rules.length} onPage={setPage} />
+          </section>
+        )}
+      </Body>
+    </>
+  )
+}
+
+/** Histórico de uma regra: floor contra eCPM, PMR e receita por hora, as decisões do motor e os limites. */
+function PriceRuleScreen({ initial, site, staff, back }: { initial: PriceRuleRow; site: PriceSite; staff: boolean; back: () => void }) {
+  const [rule, setRule] = useState(initial)
+  const [period, setPeriod] = useState('2')
+  const [series, setSeries] = useState<'floor' | 'pmr' | 'revenue' | 'requests'>('floor')
+  const [page, setPage] = useState(1)
+  const [config, setConfig] = useState<PriceConfig>(initial.config ?? { automatic: true, pmrFloor: 65, pmrEmergency: 45, minRequests: 50, floorMin: 0.6, floorMax: 1.8, step: 1 })
+  const [floorOpen, setFloorOpen] = useState(false)
+  const [floorText, setFloorText] = useState(String(initial.floor).replace('.', ','))
+  const hours = useMemo(() => priceHours(initial, Number(period)), [initial, period])
+  const decisions = [...hours].reverse()
+  const money = (value: number) => priceMoney(value, site.currency)
+  const last24 = hours.slice(-24)
+  const sum = (key: 'revenue' | 'requests') => last24.reduce((total, hour) => total + hour[key], 0)
+  const tiles: [string, string][] = [['Floor agora', money(rule.floor)], ['eCPM em 24 h', money(last24.reduce((total, hour) => total + hour.ecpm, 0) / last24.length)], ['PMR em 24 h', `${pct.format(last24.reduce((total, hour) => total + hour.pmr, 0) / last24.length)}%`], ['Receita em 24 h', money(sum('revenue'))]]
+  const typed = Number(floorText.replace(',', '.'))
+  const chart = {
+    floor: { main: hours.map((hour) => hour.floor), second: hours.map((hour) => hour.ecpm), mainLabel: 'Floor', secondLabel: 'eCPM', format: money, step: true },
+    pmr: { main: hours.map((hour) => hour.pmr), second: undefined, mainLabel: 'PMR', secondLabel: undefined, format: (value: number) => `${pct.format(value)}%`, step: false },
+    revenue: { main: hours.map((hour) => hour.revenue), second: undefined, mainLabel: 'Receita', secondLabel: undefined, format: money, step: false },
+    requests: { main: hours.map((hour) => hour.requests), second: undefined, mainLabel: 'Requisições elegíveis', secondLabel: undefined, format: (value: number) => int.format(Math.round(value)), step: false },
+  }[series]
+  /** Muda a situação da regra: pausada não recebe floor nem é mexida pelo motor. */
+  const changeStatus = (status: PriceStatus) => { setRule({ ...rule, status }); toast.success(`Regra ${PRICE_STATUS[status][0].toLowerCase()}`) }
+  const manual = !config.automatic
+  return (
+    <>
+      <PageHeader title={`${rule.block} · ${rule.country}`} sub={`${site.domain}${staff ? ` · ${site.client}` : ''} · content_hash ${rule.hash} · valores em ${site.currency}`}
+        back={<button onClick={back} className="inline-flex items-center gap-1 text-[13px] text-muted-foreground hover:text-foreground"><ArrowLeft className="h-3.5 w-3.5" />{site.domain}</button>}
+        actions={<>
+          <Select value={period} onValueChange={(value) => { setPeriod(value); setPage(1) }}><SelectTrigger aria-label="Período" className="h-9 w-[160px]"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="2">Últimas 48 horas</SelectItem><SelectItem value="7">Últimos 7 dias</SelectItem><SelectItem value="31">Últimos 31 dias</SelectItem></SelectContent></Select>
+          <Button variant="outline" onClick={() => setFloorOpen(true)}><Pencil className="h-4 w-4" />Floor à mão</Button>
+          <DropdownMenu><DropdownMenuTrigger asChild><Button variant="outline" aria-label="Mais ações"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end">
+            {rule.status !== 'active' && <DropdownMenuItem onClick={() => changeStatus('active')}>Ativar</DropdownMenuItem>}
+            {rule.status !== 'paused' && <DropdownMenuItem onClick={() => changeStatus('paused')}>Pausar</DropdownMenuItem>}
+            {rule.status !== 'disabled' && <DropdownMenuItem onClick={() => changeStatus('disabled')}>Desligar</DropdownMenuItem>}
+          </DropdownMenuContent></DropdownMenu>
+        </>} />
+      <Body>
+        {rule.status !== 'active' && <div className="flex items-start gap-2 rounded-md border border-ochre/40 bg-ochre-soft px-3 py-2 text-[13px] text-ochre"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />{rule.status === 'paused' ? 'Pausada: a tag não manda floor para esta página e o motor não mexe nela.' : 'Desligada: fica fora do motor e da tag até alguém ativar de novo.'}</div>}
+        <div className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border bg-border lg:grid-cols-4">
+          {tiles.map(([label, value]) => <div key={label} className="bg-card p-4"><div className="flex items-center gap-2 text-[13px] text-muted-foreground">{label}{label === 'Floor agora' && <Status tone={PRICE_STATUS[rule.status][1]}>{PRICE_STATUS[rule.status][0]}</Status>}</div><div className="mt-1 text-[24px] font-semibold tracking-[-0.03em] tnum max-sm:text-[20px]">{value}</div></div>)}
+        </div>
+        <Card title="Por hora">
+          <div className="mb-4 inline-flex flex-wrap rounded-md border bg-muted p-0.5" role="radiogroup" aria-label="Métrica do gráfico">
+            {([['floor', 'Floor e eCPM'], ['pmr', 'PMR'], ['revenue', 'Receita'], ['requests', 'Requisições']] as const).map(([value, label]) => <button key={value} role="radio" aria-checked={series === value} onClick={() => setSeries(value)} className={cn('h-8 rounded px-3 text-[13px] font-medium', series === value ? 'bg-background shadow-sm' : 'text-muted-foreground hover:text-foreground')}>{label}</button>)}
+          </div>
+          <PricePairChart key={series} labels={hours.map((hour) => hour.label)} {...chart} />
+          <p className="mt-3 text-[13px] text-muted-foreground">PMR: respostas servidas sobre requisições elegíveis. Horas no horário de Brasília.</p>
+        </Card>
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+          <section className="grid content-start gap-3">
+            <h2 className="text-[20px] font-semibold tracking-tight">Decisões do motor</h2>
+            <Table min={620}>
+              <thead><tr><th className={th}>Hora</th><th className={th}>Ação</th><th className={cn(th, 'text-right')}>Floor</th><th className={th}>Motivo</th></tr></thead>
+              <tbody>{decisions.slice((page - 1) * 10, page * 10).map((hour) => (
+                <tr key={hour.label}>
+                  <td className={cn(td, 'whitespace-nowrap tnum')}>{hour.label}</td>
+                  <td className={td}><span className="inline-flex items-center gap-1.5 whitespace-nowrap text-[13px]">{hour.action === 'up' ? <ChevronUp className="h-4 w-4 text-ok" /> : hour.action === 'down' ? <ChevronDown className="h-4 w-4 text-bad" /> : <span className="w-4 text-center text-muted-foreground">·</span>}{PRICE_ACTION[hour.action]}</span></td>
+                  <td className={cn(td, 'whitespace-nowrap text-right tnum')}>{hour.before === hour.floor ? money(hour.floor) : <><span className="text-muted-foreground">{money(hour.before)} → </span>{money(hour.floor)}</>}</td>
+                  <td className={cn(td, 'text-[13px] text-muted-foreground')}>{PRICE_REASON[hour.reason]}</td>
+                </tr>
+              ))}</tbody>
+            </Table>
+            <PricePager page={page} total={decisions.length} onPage={setPage} />
+          </section>
+          <Card title="Limites" desc={config.automatic ? 'O motor recalcula a cada hora pelo PMR e o eCPM médio do tipo de bloco.' : 'Valem os limites gravados aqui, sem recálculo.'}
+            footer={<Button disabled={!manual} onClick={() => { setRule({ ...rule, config }); toast.success('Limites salvos') }}>Salvar limites</Button>}>
+            <div className="grid gap-4">
+              <label className="flex items-center gap-3 text-[14px]"><Switch checked={config.automatic} onCheckedChange={(automatic) => setConfig({ ...config, automatic })} />{config.automatic ? 'Calculados pelo motor' : 'Definidos à mão'}</label>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field id="cfg-pmr-floor" label="Piso do PMR (%)" hint="Acima dele o floor sobe."><Input id="cfg-pmr-floor" className="tnum" disabled={!manual} value={config.pmrFloor} onChange={(event) => setConfig({ ...config, pmrFloor: Number(event.target.value) || 0 })} /></Field>
+                <Field id="cfg-pmr-emergency" label="Emergência do PMR (%)" hint="Abaixo dela desce na hora."><Input id="cfg-pmr-emergency" className="tnum" disabled={!manual} value={config.pmrEmergency} onChange={(event) => setConfig({ ...config, pmrEmergency: Number(event.target.value) || 0 })} /></Field>
+                <Field id="cfg-floor-min" label={`Floor mínimo (${site.currency})`}><Input id="cfg-floor-min" className="tnum" disabled={!manual} value={String(config.floorMin).replace('.', ',')} onChange={(event) => setConfig({ ...config, floorMin: Number(event.target.value.replace(',', '.')) || 0 })} /></Field>
+                <Field id="cfg-floor-max" label={`Floor máximo (${site.currency})`}><Input id="cfg-floor-max" className="tnum" disabled={!manual} value={String(config.floorMax).replace('.', ',')} onChange={(event) => setConfig({ ...config, floorMax: Number(event.target.value.replace(',', '.')) || 0 })} /></Field>
+                <Field id="cfg-min-requests" label="Volume mínimo por hora" hint="Requisições elegíveis."><Input id="cfg-min-requests" className="tnum" disabled={!manual} value={config.minRequests} onChange={(event) => setConfig({ ...config, minRequests: Number(event.target.value) || 0 })} /></Field>
+                <Field id="cfg-step" label="Degraus por decisão" hint="De 1 a 10."><Input id="cfg-step" className="tnum" disabled={!manual} value={config.step} onChange={(event) => setConfig({ ...config, step: Math.min(10, Math.max(1, Number(event.target.value) || 1)) })} /></Field>
+              </div>
+            </div>
+          </Card>
+        </div>
+        <Dialog open={floorOpen} onOpenChange={setFloorOpen}>
+          <DialogContent className="max-w-[420px]">
+            <DialogHeader><DialogTitle>Floor à mão</DialogTitle><DialogDescription>O valor vai para o degrau mais perto e chega na tag em até 1 hora. Com os limites calculados pelo motor, ele volta a mexer na próxima hora.</DialogDescription></DialogHeader>
+            <Field id="manual-floor" label={`Floor (${site.currency})`} hint={typed > 0 ? `Fica ${money(nearestTier(typed))}, o degrau mais perto.` : 'Entre 0,50 e 800,00.'}>
+              <Input id="manual-floor" className="tnum" inputMode="decimal" value={floorText} onChange={(event) => setFloorText(event.target.value)} />
+            </Field>
+            <DialogFooter><Button variant="outline" onClick={() => setFloorOpen(false)}>Cancelar</Button><Button disabled={!(typed > 0)} onClick={() => { setRule({ ...rule, floor: nearestTier(typed) }); setFloorOpen(false); toast.success('Floor gravado') }}>Gravar floor</Button></DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </Body>
+    </>
+  )
+}
+
 export default function App() {
   const initial = typeof location !== 'undefined' && isScreen(location.hash.slice(1)) ? (location.hash.slice(1) as Screen) : 'equipe'
   const [screen, setScreen] = useState<Screen>(initial)
@@ -6811,6 +7194,9 @@ export default function App() {
   const [loaders, setLoaders] = useState(INITIAL_LOADERS)
   const [loaderDraft, setLoaderDraft] = useState<ProtoLoader>(INITIAL_LOADERS[0])
   const [loaderBack, setLoaderBack] = useState<Screen | null>(null)
+  const [priceSites, setPriceSites] = useState(INITIAL_PRICE_SITES)
+  const [priceDomain, setPriceDomain] = useState('acai.com.br')
+  const [priceRuleId, setPriceRuleId] = useState('')
   /** Abre a ad tag do site (ou começa uma) no painel do cliente ou no interno. */
   const openLoader = (id: string | null, staff: boolean, from: Screen | null = null) => { setLoaderDraft(id ? loaders.find((item) => item.id === id)! : blankLoader(staff ? LOADER_CLIENTS[0] : MY_CLIENT)); setLoaderBack(from); go(staff ? 'loaderinterno' : 'loader') }
   const saveLoader = (saved: ProtoLoader) => { const next = saved.id ? saved : { ...saved, id: `l${Date.now()}` }; setLoaders((current) => (saved.id ? current.map((item) => (item.id === saved.id ? next : item)) : [next, ...current])); return next }
@@ -6895,6 +7281,9 @@ export default function App() {
       case 'loadersinterno': return <LoadersScreen loaders={loaders} tags={adTags} staff open={(id) => openLoader(id, true)} />
       case 'loader': case 'loaderinterno': { const staff = screen === 'loaderinterno'; return <LoaderEditScreen key={`${loaderDraft.id}-${screen}`} initial={loaderDraft} tags={adTags} staff={staff} back={() => { go(loaderBack ?? (staff ? 'loadersinterno' : 'loaders')); setLoaderBack(null) }} save={saveLoader} remove={(id) => setLoaders((current) => current.filter((item) => item.id !== id))} /> }
       case 'adtagmetricas': case 'adtagmetricasinterno': { const staff = screen === 'adtagmetricasinterno'; const tag = adTags.find((item) => item.id === adTagId) ?? adTags[0]; return <AdTagMetricsScreen key={tag.id} tag={tag} staff={staff} back={() => go(staff ? 'adtagsinterno' : 'adtags')} edit={() => openAdTag(tag.id, staff)} /> }
+      case 'regraspreco': case 'regrasprecointerno': { const staff = screen === 'regrasprecointerno'; return <PriceSitesScreen sites={priceSites} staff={staff} open={(domain) => { setPriceDomain(domain); go(staff ? 'regrasiteinterno' : 'regrasite') }} /> }
+      case 'regrasite': case 'regrasiteinterno': { const staff = screen === 'regrasiteinterno'; const site = priceSites.find((item) => item.domain === priceDomain) ?? priceSites[0]; return <PriceSiteScreen key={`${site.domain}-${JSON.stringify(site)}`} initial={site} staff={staff} back={() => go(staff ? 'regrasprecointerno' : 'regraspreco')} save={(next) => setPriceSites((current) => current.map((item) => (item.domain === next.domain ? next : item)))} openRule={(id) => { setPriceRuleId(id); go(staff ? 'regrainterno' : 'regra') }} /> }
+      case 'regra': case 'regrainterno': { const staff = screen === 'regrainterno'; const site = priceSites.find((item) => item.domain === priceDomain) ?? priceSites[0]; const rules = priceRules(site.active ? site : priceSites[0]); const rule = rules.find((item) => item.id === priceRuleId) ?? rules[0]; return <PriceRuleScreen key={rule.id} initial={rule} site={site.active ? site : priceSites[0]} staff={staff} back={() => go(staff ? 'regrasiteinterno' : 'regrasite')} /> }
       case 'tarefa': { const task = tasks.find((item) => item.id === taskId) ?? tasks[0]; return <TaskScreen key={task.id} task={task} update={(next) => setTasks(tasks.map((item) => (item.id === next.id ? next : item)))} back={() => go('tarefas')} /> }
     }
   })()
