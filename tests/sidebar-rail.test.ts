@@ -76,7 +76,7 @@ describe('SidebarRail', () => {
     const testRouter = router()
     await testRouter.push('/interno/contratos')
     const wrapper = mount(SidebarRail, { global: { plugins: [testRouter] } })
-    expect(railLabels(wrapper)).toEqual(['Dashboard', 'Inventário', 'Relatórios', 'Ferramentas', 'Comissões', 'Empresa'])
+    expect(railLabels(wrapper)).toEqual(['Dashboard', 'Tarefas', 'Inventário', 'Relatórios', 'Ferramentas', 'Comissões', 'Empresa'])
     expect(wrapper.find('nav [aria-current]').text()).toBe('Inventário')
     expect(wrapper.find('#rail-panel').attributes('aria-hidden')).toBe('true')
   })
@@ -87,18 +87,19 @@ describe('SidebarRail', () => {
     const testRouter = router()
     await testRouter.push('/interno')
     const wrapper = mount(SidebarRail, { global: { plugins: [testRouter] } })
-    const [, clients, reports, tools] = wrapper.findAll('nav[aria-label="Menu principal"] > *')
+    const [, , clients, reports, tools] = wrapper.findAll('nav[aria-label="Menu principal"] > *')
     await hoverAndWait(clients!)
     expect(wrapper.find('#rail-panel').attributes('aria-hidden')).toBe('false')
     expect(panelLabels(wrapper)).toEqual(['Clientes', 'Equipes', 'Networks do GAM', 'Contratos', 'Sites', 'Rewards', 'Ad tags', 'Loaders', 'Checklists'])
     expect(wrapper.find('#rail-panel [aria-current="page"]').text()).toBe('Clientes')
+    expect(wrapper.find('#rail-panel hr').element.nextElementSibling?.textContent).toBe('Sites')
     await hoverAndWait(reports!)
     expect(panelLabels(wrapper)).toEqual(['Ad Manager', 'Page Views', 'Resultado', 'Resultado dos clientes', 'Metas', 'Relatórios customizados'])
     const separator = wrapper.find('#rail-panel hr')
     expect(separator.exists()).toBe(true)
     expect(separator.element.nextElementSibling?.textContent).toBe('Relatórios customizados')
     await hoverAndWait(tools!)
-    expect(panelLabels(wrapper)).toEqual(['Tarefas', 'Ferramentas do GAM', 'Alertas', 'Envios agendados', 'Modelos de dashboard'])
+    expect(panelLabels(wrapper)).toEqual(['Ferramentas do GAM', 'Alertas', 'Envios agendados', 'Modelos de dashboard'])
   })
 
   it('fecha o painel ao abrir uma tela e não abre painel para o Dashboard', async () => {
@@ -123,7 +124,7 @@ describe('SidebarRail', () => {
     const testRouter = router()
     await testRouter.push('/')
     const wrapper = mount(SidebarRail, { global: { plugins: [testRouter] } })
-    const company = wrapper.findAll('nav[aria-label="Menu principal"] > *')[5]!
+    const company = wrapper.findAll('nav[aria-label="Menu principal"] > *')[6]!
     await company.trigger('click')
     await flushPromises()
     expect(testRouter.currentRoute.value.path).toBe('/interno/equipe')
@@ -153,7 +154,7 @@ describe('SidebarRail', () => {
     const testRouter = router()
     await testRouter.push('/')
     const wrapper = mount(SidebarRail, { global: { plugins: [testRouter] } })
-    const clients = wrapper.findAll('nav[aria-label="Menu principal"] > *')[1]!
+    const clients = wrapper.findAll('nav[aria-label="Menu principal"] > *')[2]!
     await wrapper.find('div').trigger('pointerdown', { pointerType: 'touch' })
     await clients.trigger('click')
     await flushPromises()
@@ -171,7 +172,7 @@ describe('SidebarRail', () => {
     const drawerPanel = () => wrapper.findAll('#rail-panel-drawer a').map((link) => link.text())
     expect(wrapper.find('#rail-panel-drawer').attributes('aria-hidden')).toBe('false')
     expect(drawerPanel()[0]).toBe('Clientes')
-    await wrapper.findAll('nav[aria-label="Menu principal"] > *')[2]!.trigger('click')
+    await wrapper.findAll('nav[aria-label="Menu principal"] > *')[3]!.trigger('click')
     expect(testRouter.currentRoute.value.path).toBe('/interno/contratos')
     expect(drawerPanel()[0]).toBe('Ad Manager')
     await wrapper.findAll('#rail-panel-drawer a').find((link) => link.text() === 'Metas')!.trigger('click')
@@ -188,7 +189,7 @@ describe('SidebarRail', () => {
     const wrapper = mount(SidebarRail, { props: { drawer: true }, global: { plugins: [testRouter] } })
     const panel = () => wrapper.find('#rail-panel-drawer')
     expect(panel().attributes('aria-hidden')).toBe('true')
-    const clients = wrapper.findAll('nav[aria-label="Menu principal"] > *')[1]!
+    const clients = wrapper.findAll('nav[aria-label="Menu principal"] > *')[2]!
     await clients.trigger('click')
     expect(panel().attributes('aria-hidden')).toBe('false')
     expect(wrapper.findAll('#rail-panel-drawer a')[0]!.text()).toBe('Clientes')
