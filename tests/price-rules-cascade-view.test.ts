@@ -149,6 +149,13 @@ describe('tela do site com a Cascata', () => {
     expect(view.text()).not.toContain('Alterações não salvas')
   })
 
+  it('com bloco na Cascata e nenhuma regra ainda, mostra quando as regras entram', async () => {
+    service.rules.mockResolvedValue(page([]))
+    const view = mount(PriceRuleSiteView, { attachTo: document.body })
+    await flushPromises()
+    expect(view.text()).toContain('As regras da Cascata entram amanhã às 04:00, com os números de hoje.')
+  })
+
   it('grava a Cascata no bloco fixo', async () => {
     service.saveBlocks.mockResolvedValue(site)
     const view = mount(PriceRuleSiteView, { attachTo: document.body })
@@ -168,12 +175,20 @@ describe('tela da regra Cascata', () => {
     await flushPromises()
     const funnel = view.findAll('[data-try]')
     expect(funnel).toHaveLength(4)
+    /** Os números do cartão: oferecidas, compradas, compra e receita. */
+    const numbers = (card: (typeof funnel)[number]) => card.findAll('dd').map(plain)
     expect(plain(funnel[0]!)).toContain('R$ 1,22')
-    expect(funnel[0]!.text()).toContain('200')
-    expect(funnel[0]!.text()).toContain('80')
+    expect(numbers(funnel[0]!)).toEqual(['200', '80', '40,00%', 'R$ 0,12'])
     expect(funnel[3]!.text()).toContain('Sem floor')
-    expect(funnel[3]!.text()).toContain('60')
+    expect(numbers(funnel[3]!)).toEqual(['60', '40', '66,67%', 'R$ 0,01'])
     expect(view.text()).toContain('A 1ª tentativa encheu acima do limite: dá para começar mais alto.')
+  })
+
+  it('a tabela de decisões não mostra a compra na 1ª, que vem em outro fuso', async () => {
+    const view = mount(CascadeRuleView, { attachTo: document.body })
+    await flushPromises()
+    const decisions = view.findAll('table').find((table) => table.text().includes('Motivo'))!
+    expect(decisions.findAll('th').map((header) => header.text())).toEqual(['Hora', 'Ação', 'Ponto de partida', 'Motivo'])
   })
 
   it('salvar limites manda drop_tiers', async () => {
