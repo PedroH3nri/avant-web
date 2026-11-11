@@ -115,7 +115,7 @@ afterEach(() => {
 })
 
 describe('tela do site com a Cascata', () => {
-  it('âncora só oferece Cascata e Sem regra; conteúdo, Automática e Sem regra; offerwall, o texto do Google', async () => {
+  it('todo bloco menos o offerwall oferece Automática, Cascata e Sem regra, com a recomendada marcada', async () => {
     const view = mount(PriceRuleSiteView, { attachTo: document.body })
     await flushPromises()
     /** Os rótulos das opções do bloco. */
@@ -124,12 +124,41 @@ describe('tela do site com a Cascata', () => {
         .find(`[aria-label="Modelo de ${block}"]`)
         .findAll('[role="radio"]')
         .map((option) => option.text())
-    expect(optionsOf('Anchor_Mobile')).toEqual(['Cascata', 'Sem regra'])
-    expect(optionsOf('Fixed_Desktop')).toEqual(['Cascata', 'Sem regra'])
-    expect(optionsOf('Content1_Mobile')).toEqual(['Automática', 'Sem regra'])
+    expect(optionsOf('Anchor_Mobile')).toEqual(['Automática', 'Cascata recomendado', 'Sem regra'])
+    expect(optionsOf('Fixed_Desktop')).toEqual(['Automática', 'Cascata recomendado', 'Sem regra'])
+    expect(optionsOf('Content1_Mobile')).toEqual(['Automática recomendado', 'Cascata', 'Sem regra'])
     expect(view.find('[aria-label="Modelo de Offerwall"]').exists()).toBe(false)
     expect(view.text()).toContain('Do Google, sem floor')
     expect(view.text()).toContain('1 com a Automática · 1 com a Cascata')
+    expect(view.text()).toContain('No conteúdo, no intersticial e no reward, as tentativas começam depois do teste em página real.')
+  })
+
+  it('usa o recomendado da api e, sem ele, o do tipo do bloco', async () => {
+    service.settings.mockResolvedValue({ ...site, recommended_models: { Content1_Mobile: 'cascade' } })
+    const view = mount(PriceRuleSiteView, { attachTo: document.body })
+    await flushPromises()
+    /** O rótulo da opção marcada como recomendada no bloco. */
+    const recommendedOf = (block: string) =>
+      view
+        .find(`[aria-label="Modelo de ${block}"]`)
+        .findAll('[role="radio"]')
+        .map((option) => option.text())
+        .find((text) => text.endsWith('recomendado'))
+    expect(recommendedOf('Content1_Mobile')).toBe('Cascata recomendado')
+    expect(recommendedOf('Anchor_Mobile')).toBe('Cascata recomendado')
+  })
+
+  it('não troca o modelo salvo e deixa o bloco novo sem regra', async () => {
+    service.settings.mockResolvedValue({ ...site, blocks: [{ block: 'Anchor_Mobile', model: 'automatic' }, { block: 'Content1_Mobile', model: 'cascade' }] })
+    const view = mount(PriceRuleSiteView, { attachTo: document.body })
+    await flushPromises()
+    /** O rótulo da opção escolhida no bloco. */
+    const chosenOf = (block: string) => view.find(`[aria-label="Modelo de ${block}"]`).find('[aria-checked="true"]').text()
+    expect(chosenOf('Anchor_Mobile')).toBe('Automática')
+    expect(chosenOf('Content1_Mobile')).toBe('Cascata')
+    expect(chosenOf('Fixed_Desktop')).toBe('Sem regra')
+    expect(view.text()).toContain('1 com a Automática · 1 com a Cascata')
+    expect(view.text()).not.toContain('Alterações não salvas')
   })
 
   it('mostra a escada e as compras de cada regra da Cascata', async () => {
@@ -156,12 +185,13 @@ describe('tela do site com a Cascata', () => {
     expect(view.text()).toContain('As regras da Cascata entram amanhã às 04:00, com os números de hoje.')
   })
 
-  it('grava a Cascata no bloco fixo', async () => {
+  it('grava a Cascata no bloco fixo e atualiza o contador', async () => {
     service.saveBlocks.mockResolvedValue(site)
     const view = mount(PriceRuleSiteView, { attachTo: document.body })
     await flushPromises()
     const fixed = view.find('[aria-label="Modelo de Fixed_Desktop"]').findAll('[role="radio"]')
-    await fixed[0]!.trigger('click')
+    await fixed[1]!.trigger('click')
+    expect(view.text()).toContain('1 com a Automática · 2 com a Cascata')
     const save = view.findAll('button').find((button) => button.text() === 'Salvar')!
     await save.trigger('click')
     await flushPromises()
