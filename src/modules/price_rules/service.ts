@@ -3,6 +3,7 @@
 import { api, type Query } from '@/lib/api'
 import type { Page } from '@/lib/types'
 import type {
+  CascadeHour,
   PriceRule,
   PriceRuleConfigInput,
   PriceRuleDetails,
@@ -29,7 +30,7 @@ export function priceRuleService(internal: boolean) {
       api.put<PriceRuleSite>(`${site(siteId)}/settings`, { active, control_percent: controlPercent }),
     /** Troca os blocos marcados e o modelo de cada um. */
     saveBlocks: (siteId: string, blocks: Record<string, PriceRuleModel>) => api.put<PriceRuleSite>(`${site(siteId)}/blocks`, { blocks }),
-    /** Uma página das regras, com filtro por hash (`content_hash`) e país (`country`). */
+    /** Uma página das regras, com filtro por hash (`content_hash`), país (`country`) e modelo (`model`). */
     rules: (siteId: string, query?: Query) => api.get<Page<PriceRule>>(site(siteId), query),
     /** Uma regra com os limites. */
     rule: (siteId: string, ruleId: string) => api.get<PriceRuleDetails>(`${site(siteId)}/${ruleId}`),
@@ -38,7 +39,10 @@ export function priceRuleService(internal: boolean) {
       api.get<PriceRuleHistoryEntry[]>(`${site(siteId)}/${ruleId}/history`, { start, end }),
     /** Os números do GAM hora a hora no período, a mais nova primeiro. */
     hours: (siteId: string, ruleId: string, start: string, end: string) => api.get<PriceRuleHour[]>(`${site(siteId)}/${ruleId}/hours`, { start, end }),
-    /** Grava os limites da regra. */
+    /** Os números da Cascata hora a hora no período, por tentativa, a mais nova primeiro. */
+    cascadeHours: (siteId: string, ruleId: string, start: string, end: string) =>
+      api.get<CascadeHour[]>(`${site(siteId)}/${ruleId}/cascade-hours`, { start, end }),
+    /** Grava os limites da regra; na Cascata, sempre com `drop_tiers`. */
     saveConfig: (siteId: string, ruleId: string, config: PriceRuleConfigInput) => api.put<PriceRuleDetails>(`${site(siteId)}/${ruleId}/config`, config),
     /** Ativa, pausa ou desliga a regra. */
     setStatus: (siteId: string, ruleId: string, status: PriceRuleStatus) => api.patch<PriceRule>(`${site(siteId)}/${ruleId}`, { status }),
