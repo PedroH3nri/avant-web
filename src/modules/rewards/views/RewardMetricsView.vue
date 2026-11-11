@@ -3,6 +3,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { AlertTriangle, ArrowLeft, Pencil } from 'lucide-vue-next'
+import { colorVar, metricColor } from '@/lib/metric-colors'
 import LineChart from '@/components/charts/LineChart.vue'
 import LoadError from '@/components/LoadError.vue'
 import PageBody from '@/components/PageBody.vue'
@@ -71,7 +72,7 @@ const chart = computed(() => {
   const key: Key = `rw.kpi.${series.value}`
   return {
     labels: days.map((day) => dayText(day.day, locale.value)),
-    series: [{ key: series.value, name: t(key), values: days.map((day) => day[series.value]) }],
+    series: [{ key: series.value, name: t(key), values: days.map((day) => day[series.value]), color: colorVar(metricColor(series.value)) }],
     description: t('rw.dailyDesc', { metric: t(key) }),
   }
 })

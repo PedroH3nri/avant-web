@@ -640,13 +640,13 @@ function LineChart({ current, previous, metric }: { current: DayPoint[]; previou
         ))}
         {current.map((p, i) => i % step === 0 && <text key={p.day} x={x(i)} y={H - 8} textAnchor="middle" className="fill-muted-foreground text-[11px] tnum">{p.day}</text>)}
         {previous && <path d={path(before)} fill="none" className="stroke-muted-foreground/60" strokeWidth={2} strokeDasharray="4 4" strokeLinejoin="round" />}
-        <path d={`${path(now)}L${x(now.length - 1)},${y(0)}L${x(0)},${y(0)}Z`} className="fill-foreground/[0.04]" />
-        <path d={path(now)} fill="none" className="stroke-foreground" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+        <path d={`${path(now)}L${x(now.length - 1)},${y(0)}L${x(0)},${y(0)}Z`} style={{ fill: neonOf(metric.key), fillOpacity: 0.1 }} />
+        <path d={path(now)} fill="none" style={{ stroke: neonOf(metric.key) }} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
         {hover !== null && (
           <g>
             <line x1={x(hover)} x2={x(hover)} y1={T} y2={H - B} className="stroke-muted-foreground/50" strokeWidth={1} />
             {previous && <circle cx={x(hover)} cy={y(before[hover])} r={4} className="fill-muted-foreground stroke-card" strokeWidth={2} />}
-            <circle cx={x(hover)} cy={y(now[hover])} r={4} className="fill-foreground stroke-card" strokeWidth={2} />
+            <circle cx={x(hover)} cy={y(now[hover])} r={4} className="stroke-card" style={{ fill: neonOf(metric.key) }} strokeWidth={2} />
           </g>
         )}
       </svg>
@@ -706,7 +706,7 @@ function PerformanceScreen() {
           <div className="flex flex-wrap items-baseline justify-between gap-3">
             <h2 className="text-[16px] font-semibold tracking-tight">{metric.label} por dia</h2>
             <div className="flex items-center gap-4 text-[13px] text-muted-foreground">
-              <span className="flex items-center gap-1.5"><span className="h-0.5 w-4 bg-foreground" />Período atual</span>
+              <span className="flex items-center gap-1.5"><span className="h-0.5 w-4" style={{ background: neonOf(metric.key) }} />Período atual</span>
               {compare && <span className="flex items-center gap-1.5"><span className="w-4 border-t-2 border-dashed border-muted-foreground/60" />Período anterior</span>}
             </div>
           </div>
@@ -2366,9 +2366,18 @@ const NEON = [
   { key: 'magenta', label: 'Magenta', value: '#FF2BD6' },
   { key: 'violet', label: 'Violeta', value: '#8B5CFF' },
   { key: 'orange', label: 'Laranja', value: '#FF7A00' },
-  { key: 'yellow', label: 'Amarelo', value: '#FFE600' },
+  { key: 'yellow', label: 'Dourado', value: '#FFC400' },
   { key: 'red', label: 'Vermelho', value: '#FF1744' },
 ]
+/** Cor fixa de cada métrica em todos os gráficos: receita verde, eCPM/RPM dourado, impressões violeta, requisições laranja, taxas ciano, cliques/page views/floor magenta. */
+const METRIC_NEON: Record<string, string> = {
+  revenue: '#39FF14', revenue_gross: '#39FF14', ecpm: '#FFC400', rpmre: '#FFC400', page_rpm: '#FFC400',
+  impressions: '#8B5CFF', viewable_impressions: '#8B5CFF', unfilled_impressions: '#FF1744',
+  eligible_requests: '#FF7A00', requests: '#FF7A00', pmr: '#00E5FF', fill_rate: '#00E5FF', ctr: '#00E5FF', active_view: '#00E5FF',
+  clicks: '#FF2BD6', page_views: '#FF2BD6', floor: '#FF2BD6', opens: '#8B5CFF', completed: '#39FF14', pages: '#FF2BD6', rendered: '#8B5CFF', empty: '#FF1744',
+}
+/** A cor neon de uma métrica; métrica personalizada fica com o ciano. */
+const neonOf = (key: string) => METRIC_NEON[key] ?? '#00E5FF'
 const SCALES: { key: ScaleMode; label: string; desc: string }[] = [
   { key: 'green_red', label: 'Começa verde, fica vermelho', desc: 'Para o que é melhor baixo, como custo.' },
   { key: 'red_green', label: 'Começa vermelho, fica verde', desc: 'Para o que é melhor alto, como receita.' },
@@ -2431,7 +2440,7 @@ function sampleValue(metric: string, row: string, kind: Kind) {
   return Math.round(182000 * f)
 }
 const TIME_DIMS = ['date', 'week', 'month', 'hour']
-const SPLIT_COLORS = ['#00E5FF', '#FF2BD6', '#39FF14', '#FF7A00', '#8B5CFF', '#FFE600', '#FF1744']
+const SPLIT_COLORS = ['#00E5FF', '#FF2BD6', '#39FF14', '#FF7A00', '#8B5CFF', '#FFC400', '#FF1744']
 const MAX_SERIES = 10
 function dimValues(draft: ReportDraft, dim: string) {
   const days = PERIODS.find(([k]) => k === draft.period)![2]
@@ -2517,7 +2526,7 @@ function ReportThumb({ report, customs }: { report: ReportDraft; customs: Custom
   const first = report.metrics[0]
   if (!first) return null
   const def = metricDef(first, customs)
-  const color = report.styles[first]?.color
+  const color = report.styles[first]?.color ?? neonOf(first)
   const rows = dimRows(report)
   const values = rows.map((r) => sampleValue(first, r, def.kind))
   const max = Math.max(...values) || 1
@@ -2538,7 +2547,7 @@ function ReportThumb({ report, customs }: { report: ReportDraft; customs: Custom
     const path = values.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join('')
     return (
       <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="h-full w-full" aria-hidden="true">
-        {report.chart === 'area' && <path d={`${path}L${W},${H}L0,${H}Z`} className="fill-foreground/[0.06]" />}
+        {report.chart === 'area' && <path d={`${path}L${W},${H}L0,${H}Z`} style={{ fill: color, fillOpacity: 0.12 }} />}
         <path d={path} fill="none" strokeWidth={2} vectorEffect="non-scaling-stroke" className="stroke-foreground" style={{ stroke: color }} />
       </svg>
     )
@@ -2782,7 +2791,7 @@ function ReportViewScreen({ report, customs, pinned, onPin, onBack, onEdit, onDu
             const scale = report.styles[m.key]?.scale
             return (
               <div key={m.key} className="bg-card p-5">
-                <div className="flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground">{report.styles[m.key]?.color && <span className="h-2 w-2 rounded-full" style={{ background: report.styles[m.key]?.color }} aria-hidden="true" />}{m.label}{m.custom && <Badge>Sua</Badge>}</div>
+                <div className="flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground"><span className="h-2 w-2 rounded-full" style={{ background: report.styles[m.key]?.color ?? neonOf(m.key) }} aria-hidden="true" />{m.label}{m.custom && <Badge>Sua</Badge>}</div>
                 <div className={cn('mt-1 font-semibold tracking-[-0.04em] tnum', report.chart === 'kpi' ? 'text-[44px]' : 'text-[28px]')} style={scale ? { color: `hsl(${scaleHue(scale, now)} 75% 38%)` } : undefined}>{fmt(m.kind, now)}</div>
                 <div className="mt-1 min-h-5">{compare ? <Delta now={now} before={sampleValue(m.key, `prev-${period}`, m.kind)} /> : <span className="text-[13px] text-muted-foreground">{PERIOD_LABEL[period]}</span>}</div>
               </div>
@@ -2810,7 +2819,7 @@ function ReportChart({ draft, customs }: { draft: ReportDraft; customs: CustomDe
   if (!chartAllowed(draft.chart, metrics.length, draft.dims.length)) return <p className="py-16 text-center text-[14px] text-muted-foreground">{CHART_LABEL[draft.chart]} pede: {CHARTS.find((c) => c.key === draft.chart)!.rule.toLowerCase()}.</p>
   const first = metrics[0]
   const value = (m: string, row: string, kind: Kind) => sampleValue(m, row, kind)
-  const colorOf = (key: string) => draft.styles[key]?.color
+  const colorOf = (key: string) => draft.styles[key]?.color ?? neonOf(key)
   if (draft.chart === 'kpi') {
     const now = value(first.key, 'total', first.kind)
     const scale = draft.styles[first.key]?.scale
@@ -5662,8 +5671,8 @@ function RewardDailyChart({ days, series }: { days: RewardDay[]; series: keyof O
         onMouseMove={(event) => { const box = event.currentTarget.getBoundingClientRect(); const position = ((event.clientX - box.left) / box.width) * width; setHover(Math.min(days.length - 1, Math.max(0, Math.round(((position - left) / (width - left - right)) * (days.length - 1))))) }}>
         {[0, 0.5, 1].map((fraction) => <g key={fraction}><line x1={left} x2={width - right} y1={yAt(max * fraction)} y2={yAt(max * fraction)} className="stroke-border" /><text x={left - 8} y={yAt(max * fraction) + 4} textAnchor="end" className="fill-muted-foreground text-[11px] tnum">{int.format(Math.round(max * fraction))}</text></g>)}
         {days.map((day, index) => index % every === 0 && <text key={day.day} x={xAt(index)} y={height - 6} textAnchor="middle" className="fill-muted-foreground text-[11px] tnum">{day.day}</text>)}
-        <path d={`${line}L${xAt(values.length - 1)},${yAt(0)}L${xAt(0)},${yAt(0)}Z`} className="fill-foreground/[0.04]" />
-        <path d={line} fill="none" className="stroke-foreground" strokeWidth={2} strokeLinejoin="round" />
+        <path d={`${line}L${xAt(values.length - 1)},${yAt(0)}L${xAt(0)},${yAt(0)}Z`} style={{ fill: neonOf(series), fillOpacity: 0.1 }} />
+        <path d={line} fill="none" style={{ stroke: neonOf(series) }} strokeWidth={2} strokeLinejoin="round" />
         {hover !== null && <><line x1={xAt(hover)} x2={xAt(hover)} y1={top} y2={height - bottom} className="stroke-muted-foreground/50" /><circle cx={xAt(hover)} cy={yAt(values[hover])} r={4} className="fill-foreground stroke-card" strokeWidth={2} /></>}
       </svg>
       {hover !== null && <div className="pointer-events-none absolute top-1 rounded-md border bg-popover px-3 py-2 text-[13px] shadow-md" style={{ left: `clamp(0px, calc(${(xAt(hover) / width) * 100}% - 70px), calc(100% - 140px))`, width: 140 }}><div className="font-medium">{days[hover].day}</div><div className="tnum">{int.format(values[hover])}</div></div>}
@@ -6802,6 +6811,15 @@ const PRICE_COUNTRIES = ['BR', 'PT', 'US', 'MX', 'AR']
 const PRICE_TIERS = Array.from({ length: 200 }, (_item, index) => Math.round(0.5 * Math.pow(1600, index / 199) * 100) / 100)
 /** O degrau mais perto de um valor, porque o floor sempre cai num degrau. */
 function nearestTier(value: number) { return PRICE_TIERS.reduce((best, tier) => (Math.abs(tier - value) < Math.abs(best - value) ? tier : best), PRICE_TIERS[0]) }
+/** Escolha de um dos 200 degraus da moeda: o floor nunca é um valor livre. */
+function PriceTierSelect({ id, value, currency, onChange, min = 0, max = 199 }: { id: string; value: number; currency: string | null; onChange: (tier: number) => void; min?: number; max?: number }) {
+  return (
+    <Select value={String(nearestTier(value))} onValueChange={(tier) => onChange(Number(tier))}>
+      <SelectTrigger id={id} className="tnum"><SelectValue /></SelectTrigger>
+      <SelectContent className="max-h-[280px]">{PRICE_TIERS.slice(min, max + 1).map((tier) => <SelectItem key={tier} value={String(tier)} className="tnum">{priceMoney(tier, currency)}</SelectItem>)}</SelectContent>
+    </Select>
+  )
+}
 /** O valor na moeda da network, sem conversão. */
 function priceMoney(value: number, currency: string | null) { return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: currency ?? 'USD', minimumFractionDigits: 2 }).format(value) }
 
@@ -6854,8 +6872,11 @@ function priceGain(site: PriceSite) {
   })
 }
 
-/** Gráfico de linhas com uma série principal e, opcional, uma segunda tracejada no mesmo eixo. */
-function PricePairChart({ labels, main, second, mainLabel, secondLabel, format, step = false }: { labels: string[]; main: number[]; second?: number[]; mainLabel: string; secondLabel?: string; format: (value: number) => string; step?: boolean }) {
+/** Cor neon de cada métrica nos gráficos, da paleta dos relatórios: eCPM dourado, receita verde e assim por diante. */
+const PRICE_METRIC_COLOR = { floor: '#FF2BD6', ecpm: '#FFC400', revenue: '#39FF14', pmr: '#00E5FF', requests: '#FF7A00', control: '#A3A3A3' } as const
+
+/** Gráfico de linhas com uma série principal e, opcional, uma segunda no mesmo eixo, cada uma com sua cor neon. */
+function PricePairChart({ labels, main, second, mainLabel, secondLabel, format, step = false, mainColor, secondColor }: { labels: string[]; main: number[]; second?: number[]; mainLabel: string; secondLabel?: string; format: (value: number) => string; step?: boolean; mainColor: string; secondColor?: string }) {
   const [hover, setHover] = useState<number | null>(null)
   const width = 960, height = 240, left = 72, right = 12, top = 12, bottom = 26
   const max = Math.max(...main, ...(second ?? [])) * 1.15 || 1
@@ -6868,23 +6889,23 @@ function PricePairChart({ labels, main, second, mainLabel, secondLabel, format, 
   const pick = (index: number) => setHover(Math.min(labels.length - 1, Math.max(0, index)))
   return (
     <div className="relative">
-      {second && <div className="mb-3 flex flex-wrap gap-4 text-[13px] text-muted-foreground"><span className="flex items-center gap-1.5"><span className="h-0.5 w-4 bg-foreground" />{mainLabel}</span><span className="flex items-center gap-1.5"><span className="h-0 w-4 border-t-2 border-dashed border-muted-foreground/60" />{secondLabel}</span></div>}
+      {second && <div className="mb-3 flex flex-wrap gap-4 text-[13px] text-muted-foreground"><span className="flex items-center gap-1.5"><span className="h-0.5 w-4" style={{ background: mainColor }} />{mainLabel}</span><span className="flex items-center gap-1.5"><span className="h-0.5 w-4" style={{ background: secondColor }} />{secondLabel}</span></div>}
       <svg viewBox={`0 0 ${width} ${height}`} className="h-[240px] w-full outline-none focus-visible:ring-2 focus-visible:ring-ring" role="img" aria-label={mainLabel} tabIndex={0}
         onKeyDown={(event) => { if (event.key === 'ArrowRight') pick((hover ?? -1) + 1); if (event.key === 'ArrowLeft') pick((hover ?? labels.length) - 1) }}
         onMouseLeave={() => setHover(null)} onBlur={() => setHover(null)}
         onMouseMove={(event) => { const box = event.currentTarget.getBoundingClientRect(); const position = ((event.clientX - box.left) / box.width) * width; pick(Math.round(((position - left) / (width - left - right)) * (labels.length - 1))) }}>
         {[0, 0.5, 1].map((fraction) => <g key={fraction}><line x1={left} x2={width - right} y1={yAt(max * fraction)} y2={yAt(max * fraction)} className="stroke-border" /><text x={left - 8} y={yAt(max * fraction) + 4} textAnchor="end" className="fill-muted-foreground text-[11px] tnum">{format(max * fraction)}</text></g>)}
         {labels.map((label, index) => index % every === 0 && <text key={`${label}-${index}`} x={xAt(index)} y={height - 6} textAnchor="middle" className="fill-muted-foreground text-[11px] tnum">{label.split(' ')[0]}</text>)}
-        {second && <path d={path(second, false)} fill="none" className="stroke-muted-foreground/60" strokeWidth={2} strokeDasharray="4 4" strokeLinejoin="round" />}
-        <path d={`${path(main, step)}L${xAt(main.length - 1)},${yAt(0)}L${xAt(0)},${yAt(0)}Z`} className="fill-foreground/[0.04]" />
-        <path d={path(main, step)} fill="none" className="stroke-foreground" strokeWidth={2} strokeLinejoin="round" />
-        {hover !== null && <><line x1={xAt(hover)} x2={xAt(hover)} y1={top} y2={height - bottom} className="stroke-muted-foreground/50" />{second && <circle cx={xAt(hover)} cy={yAt(second[hover])} r={4} className="fill-muted-foreground stroke-card" strokeWidth={2} />}<circle cx={xAt(hover)} cy={yAt(main[hover])} r={4} className="fill-foreground stroke-card" strokeWidth={2} /></>}
+        {second && <path d={path(second, false)} fill="none" stroke={secondColor} strokeWidth={2} strokeLinejoin="round" />}
+        <path d={`${path(main, step)}L${xAt(main.length - 1)},${yAt(0)}L${xAt(0)},${yAt(0)}Z`} fill={mainColor} fillOpacity={0.08} />
+        <path d={path(main, step)} fill="none" stroke={mainColor} strokeWidth={2.5} strokeLinejoin="round" />
+        {hover !== null && <><line x1={xAt(hover)} x2={xAt(hover)} y1={top} y2={height - bottom} className="stroke-muted-foreground/50" />{second && <circle cx={xAt(hover)} cy={yAt(second[hover])} r={4} fill={secondColor} className="stroke-card" strokeWidth={2} />}<circle cx={xAt(hover)} cy={yAt(main[hover])} r={4} fill={mainColor} className="stroke-card" strokeWidth={2} /></>}
       </svg>
       {hover !== null && (
         <div className="pointer-events-none absolute top-8 rounded-md border bg-popover px-3 py-2 text-[13px] shadow-md" style={{ left: `clamp(0px, calc(${(xAt(hover) / width) * 100}% - 90px), calc(100% - 180px))`, width: 180 }}>
           <div className="font-medium">{labels[hover]}</div>
-          <div className="mt-1 flex justify-between gap-3"><span className="text-muted-foreground">{mainLabel}</span><span className="tnum">{format(main[hover])}</span></div>
-          {second && <div className="flex justify-between gap-3"><span className="text-muted-foreground">{secondLabel}</span><span className="tnum">{format(second[hover])}</span></div>}
+          <div className="mt-1 flex justify-between gap-3"><span className="flex items-center gap-1.5 text-muted-foreground"><span className="h-2 w-2 rounded-full" style={{ background: mainColor }} />{mainLabel}</span><span className="tnum">{format(main[hover])}</span></div>
+          {second && <div className="flex justify-between gap-3"><span className="flex items-center gap-1.5 text-muted-foreground"><span className="h-2 w-2 rounded-full" style={{ background: secondColor }} />{secondLabel}</span><span className="tnum">{format(second[hover])}</span></div>}
         </div>
       )}
       <table className="sr-only"><thead><tr><th>Quando</th><th>{mainLabel}</th>{second && <th>{secondLabel}</th>}</tr></thead><tbody>{labels.map((label, index) => <tr key={`${label}-${index}`}><td>{label}</td><td>{format(main[index])}</td>{second && <td>{format(second[index])}</td>}</tr>)}</tbody></table>
@@ -6959,20 +6980,91 @@ function PriceSitesScreen({ sites, staff, open }: { sites: PriceSite[]; staff: b
   )
 }
 
-/** Regra de preço de um site: ligar, percentual de controle, blocos com o modelo, ganho contra o controle e a lista de regras. */
+/** Escolha do modelo de um bloco: Automática ou sem regra. */
+function PriceBlockToggle({ block, value, disabled, onChange }: { block: string; value: PriceBlockModel; disabled: boolean; onChange: (model: PriceBlockModel) => void }) {
+  return (
+    <div className="inline-flex shrink-0 rounded-md border bg-card p-0.5" role="radiogroup" aria-label={`Modelo de ${block}`}>
+      {([['automatic', 'Automática'], ['none', 'Sem regra']] as const).map(([model, label]) => (
+        <button key={model} type="button" role="radio" aria-checked={value === model} disabled={disabled} onClick={() => onChange(model)} className={cn('h-7 rounded-[4px] px-3 text-[13px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50', value === model ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground')}>{label}</button>
+      ))}
+    </div>
+  )
+}
+
+/** Configuração do site em um card só: ligar, grupo de controle e o modelo de cada bloco, com um salvar para tudo. */
+function PriceSiteConfig({ site, initial, blocked, setSite, save }: { site: PriceSite; initial: PriceSite; blocked: boolean; setSite: (site: PriceSite) => void; save: () => void }) {
+  const dirty = JSON.stringify(site) !== JSON.stringify(initial)
+  const automatic = site.available.filter((block) => site.blocks[block] === 'automatic').length
+  return (
+    <section className="overflow-hidden rounded-lg border bg-card">
+      <div className="px-6 pt-6">
+        <h2 className="text-[20px] font-semibold tracking-tight">Configuração</h2>
+        <p className="mt-2 max-w-[70ch] text-[14px] text-muted-foreground">Ligada, a tag pede os floors do site e manda o do bloco para o GAM. O motor revê cada regra a cada hora.</p>
+      </div>
+      <div className="mt-6 grid gap-6 border-t p-6 md:grid-cols-2 md:gap-10">
+        <div className="flex items-start justify-between gap-4">
+          <div><div className="text-[14px] font-medium">Regra no site</div><p className="mt-1 text-[13px] text-muted-foreground">{site.active ? 'Ligada: os visitantes fora do controle recebem floor.' : 'Desligada: nenhum visitante recebe floor.'}</p></div>
+          <Switch aria-label="Regra no site" checked={site.active} disabled={blocked} onCheckedChange={(active) => setSite({ ...site, active })} />
+        </div>
+        <Field id="price-control" label={`Grupo de controle: ${site.control}% dos visitantes`} hint="Esses visitantes não recebem floor. A diferença de receita entre os dois grupos é o ganho da regra. Vai de 0% a 50%.">
+          <Slider id="price-control" min={0} max={50} step={1} value={[site.control]} disabled={blocked} onValueChange={([control]) => setSite({ ...site, control })} className="py-2" />
+        </Field>
+      </div>
+      <div className="border-t p-6">
+        <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1"><div className="text-[14px] font-medium">Blocos</div><div className="text-[13px] text-muted-foreground tnum">{automatic} de {site.available.length} com a Automática</div></div>
+        <p className="mt-1 text-[13px] text-muted-foreground">Cada bloco roda um modelo só. Âncora, intersticial, reward e offerwall vão ter um modelo próprio.</p>
+        <ul className="mt-4 grid gap-2 md:grid-cols-2">
+          {site.available.map((block) => (
+            <li key={block} className="flex items-center justify-between gap-3 rounded-md border px-3 py-2">
+              <span className="min-w-0 truncate font-mono text-[13px]">{block}</span>
+              <PriceBlockToggle block={block} value={site.blocks[block] ?? 'none'} disabled={blocked} onChange={(model) => setSite({ ...site, blocks: { ...site.blocks, [block]: model } })} />
+            </li>
+          ))}
+        </ul>
+      </div>
+      {dirty && (
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t bg-muted px-6 py-3">
+          <div className="text-[13px] text-muted-foreground">Alterações não salvas. Mudam na tag em até 1 hora.</div>
+          <div className="flex gap-2"><Button variant="outline" onClick={() => setSite(initial)}>Descartar</Button><Button onClick={save}>Salvar</Button></div>
+        </div>
+      )}
+    </section>
+  )
+}
+
+/** Números do site no topo: ganho contra o controle, receita por mil requisições dos dois grupos e regras ativas. */
+function PriceSiteSummary({ site, ruleTotal, controlTotal, showGain, activeRules }: { site: PriceSite; ruleTotal: number; controlTotal: number; showGain: boolean; activeRules: number }) {
+  const gain = ((ruleTotal - controlTotal) / controlTotal) * 100
+  const tiles: [string, string, string, string?][] = [
+    ['Ganho em 30 dias', showGain ? `${gain >= 0 ? '↑' : '↓'} ${pct.format(Math.abs(gain))}%` : '—', showGain ? 'Com regra contra o controle' : 'Escolha a Automática em um bloco', showGain ? (gain >= 0 ? 'text-ok' : 'text-bad') : undefined],
+    ['Com regra', showGain ? priceMoney(ruleTotal, site.currency) : '—', 'Receita por mil requisições'],
+    ['Controle', showGain ? priceMoney(controlTotal, site.currency) : '—', `${site.control}% dos visitantes, sem floor`],
+    ['Regras ativas', String(activeRules), 'Página, bloco e país'],
+  ]
+  return (
+    <div className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border bg-border lg:grid-cols-4">
+      {tiles.map(([label, value, hint, tone]) => (
+        <div key={label} className="bg-card p-4"><div className="text-[13px] text-muted-foreground">{label}</div><div className={cn('mt-1 text-[24px] font-semibold tracking-[-0.03em] tnum', tone)}>{value}</div><div className="mt-1 text-[12px] text-muted-foreground">{hint}</div></div>
+      ))}
+    </div>
+  )
+}
+
+/** Regra de preço de um site: números do topo, gráfico do ganho, lista de regras e a configuração. */
 function PriceSiteScreen({ initial, staff, back, save, openRule }: { initial: PriceSite; staff: boolean; back: () => void; save: (site: PriceSite) => void; openRule: (id: string) => void }) {
   const [site, setSite] = useState(initial)
   const [hashQuery, setHashQuery] = useState('')
   const [country, setCountry] = useState('all')
   const [page, setPage] = useState(1)
   const blocked = !site.currency || !site.supported
-  const dirty = JSON.stringify(site) !== JSON.stringify(initial)
-  const rules = priceRules(initial).filter((rule) => rule.hash.includes(hashQuery.trim().toLowerCase()) && (country === 'all' || rule.country === country))
+  const allRules = priceRules(initial)
+  const rules = allRules.filter((rule) => rule.hash.includes(hashQuery.trim().toLowerCase()) && (country === 'all' || rule.country === country))
   const gain = priceGain(initial)
   const ruleTotal = gain.reduce((total, day) => total + day.rule, 0) / gain.length
   const controlTotal = gain.reduce((total, day) => total + day.control, 0) / gain.length
   const status = priceSiteStatus(initial)
   const showGain = initial.active && Object.values(initial.blocks).includes('automatic')
+  const config = <PriceSiteConfig site={site} initial={initial} blocked={blocked} setSite={setSite} save={() => { save(site); toast.success('Regra de preço salva') }} />
   return (
     <>
       <PageHeader title={site.domain} sub={`${staff ? `${site.client} · ` : ''}${site.network} · Regras de preço${site.currency ? ` em ${site.currency}` : ''}`}
@@ -6982,41 +7074,11 @@ function PriceSiteScreen({ initial, staff, back, save, openRule }: { initial: Pr
         {!site.currency && <div className="flex items-start gap-2 rounded-md border px-3 py-2 text-[13px] text-muted-foreground"><Loader2 className="mt-0.5 h-4 w-4 shrink-0" />A moeda da network aparece na primeira sincronia dos números do GAM. Até lá a regra não pode ser ligada.</div>}
         {site.currency && !site.supported && <div className="flex items-start gap-2 rounded-md border border-warn/40 bg-warn/10 px-3 py-2 text-[13px]"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warn" />A network usa {site.currency}, que ainda não tem os 200 degraus. A regra de preço funciona em USD, BRL, MXN, PEN, GBP, EUR, COP, CLP e BOB. Fale com a Groone para incluir a moeda.</div>}
         {!blocked && !site.keys && <div className="flex items-start gap-2 rounded-md border border-ochre/40 bg-ochre-soft px-3 py-2 text-[13px] text-ochre"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />A network ainda não tem as keys groone_prices e groone_group nem as Unified Pricing Rules. {staff ? 'Rode "Gerar key values" nas Ferramentas do GAM e crie as regras com o gerador.' : 'A Groone cria as duas antes de a regra valer.'}</div>}
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
-          <Card title="Configuração" desc="Ligada, a tag pede os floors do site e manda o do bloco para o GAM. O motor revê cada regra a cada hora."
-            footerNote={dirty ? 'Muda na tag em até 1 hora.' : undefined} footer={<Button disabled={!dirty} onClick={() => { save(site); toast.success('Regra de preço salva') }}>Salvar</Button>}>
-            <div className="grid gap-5">
-              <label className="flex items-center gap-3 text-[14px]"><Switch checked={site.active} disabled={blocked} onCheckedChange={(active) => setSite({ ...site, active })} />{site.active ? 'Ligada no site' : 'Desligada'}</label>
-              <Field id="price-control" label={`Grupo de controle: ${site.control}% dos visitantes`} hint="Esses visitantes não recebem floor. A diferença de receita entre os dois grupos é o ganho da regra. Vai de 0% a 50%.">
-                <Slider id="price-control" min={0} max={50} step={1} value={[site.control]} disabled={blocked} onValueChange={([control]) => setSite({ ...site, control })} className="py-2" />
-              </Field>
-            </div>
-          </Card>
-          <Card pad={false}>
-            <div className="p-6"><h2 className="text-[20px] font-semibold tracking-tight">Blocos</h2><p className="mt-2 max-w-[70ch] text-[14px] text-muted-foreground">Cada bloco roda um modelo só, para um não atrapalhar o aprendizado do outro. Âncora, intersticial, reward e offerwall vão ter um modelo próprio.</p></div>
-            <div className="max-h-[360px] overflow-y-auto border-t">
-              <table className="w-full text-left text-[14px] [&_tbody_tr:last-child_td]:border-b-0">
-                <thead className="sticky top-0 bg-card"><tr><th className={th}>Bloco</th><th className={th}>Modelo</th></tr></thead>
-                <tbody>{site.available.map((block) => (
-                  <tr key={block}><td className={cn(td, 'py-2 font-mono text-[13px]')}>{block}</td><td className={cn(td, 'py-2')}>
-                    <Select value={site.blocks[block] ?? 'none'} disabled={blocked} onValueChange={(model) => setSite({ ...site, blocks: { ...site.blocks, [block]: model as PriceBlockModel } })}>
-                      <SelectTrigger aria-label={`Modelo de ${block}`} className="h-8 w-full max-w-[180px]"><SelectValue /></SelectTrigger>
-                      <SelectContent><SelectItem value="automatic">Automática</SelectItem><SelectItem value="none">Sem regra</SelectItem></SelectContent>
-                    </Select>
-                  </td></tr>
-                ))}</tbody>
-              </table>
-            </div>
-          </Card>
-        </div>
+        {!initial.active && config}
+        {initial.active && <PriceSiteSummary site={initial} ruleTotal={ruleTotal} controlTotal={controlTotal} showGain={showGain} activeRules={allRules.filter((rule) => rule.status === 'active').length} />}
         {showGain && (
-          <Card title="Ganho contra o controle" desc={`Receita por mil requisições, por dia, dos visitantes com regra e dos ${initial.control}% do controle. Vem do key-value groone_group do GAM.`}>
-            <div className="mb-5 grid grid-cols-1 gap-px overflow-hidden rounded-lg border bg-border sm:grid-cols-3">
-              {([['Com regra', priceMoney(ruleTotal, initial.currency)], ['Controle', priceMoney(controlTotal, initial.currency)], ['Ganho', `${ruleTotal >= controlTotal ? '↑' : '↓'} ${pct.format(Math.abs(((ruleTotal - controlTotal) / controlTotal) * 100))}%`]] as const).map(([label, value]) => (
-                <div key={label} className="bg-card p-4"><div className="text-[13px] text-muted-foreground">{label}</div><div className={cn('mt-1 text-[24px] font-semibold tracking-[-0.03em] tnum', label === 'Ganho' && (ruleTotal >= controlTotal ? 'text-ok' : 'text-bad'))}>{value}</div></div>
-              ))}
-            </div>
-            <PricePairChart labels={gain.map((day) => day.day)} main={gain.map((day) => day.rule)} second={gain.map((day) => day.control)} mainLabel="Com regra" secondLabel="Controle" format={(value) => priceMoney(value, initial.currency)} />
+          <Card title="Com regra e controle por dia" desc={`Receita por mil requisições dos visitantes com regra e dos ${initial.control}% do controle, nos últimos 30 dias. Vem do key-value groone_group do GAM.`}>
+            <PricePairChart labels={gain.map((day) => day.day)} main={gain.map((day) => day.rule)} second={gain.map((day) => day.control)} mainLabel="Com regra" secondLabel="Controle" mainColor={PRICE_METRIC_COLOR.revenue} secondColor={PRICE_METRIC_COLOR.control} format={(value) => priceMoney(value, initial.currency)} />
           </Card>
         )}
         {initial.active && (
@@ -7048,6 +7110,7 @@ function PriceSiteScreen({ initial, staff, back, save, openRule }: { initial: Pr
             <PricePager page={page} total={rules.length} onPage={setPage} />
           </section>
         )}
+        {initial.active && config}
       </Body>
     </>
   )
@@ -7059,32 +7122,33 @@ function PriceRuleScreen({ initial, site, staff, back }: { initial: PriceRuleRow
   const [period, setPeriod] = useState('2')
   const [series, setSeries] = useState<'floor' | 'pmr' | 'revenue' | 'requests'>('floor')
   const [page, setPage] = useState(1)
-  const [config, setConfig] = useState<PriceConfig>(initial.config ?? { automatic: true, pmrFloor: 65, pmrEmergency: 45, minRequests: 50, floorMin: 0.6, floorMax: 1.8, step: 1 })
+  const [savedConfig, setSavedConfig] = useState<PriceConfig>(initial.config ?? { automatic: true, pmrFloor: 65, pmrEmergency: 45, minRequests: 50, floorMin: 0.6, floorMax: 1.8, step: 1 })
+  const [config, setConfig] = useState<PriceConfig>(savedConfig)
   const [floorOpen, setFloorOpen] = useState(false)
-  const [floorText, setFloorText] = useState(String(initial.floor).replace('.', ','))
+  const [floorTier, setFloorTier] = useState(nearestTier(initial.floor))
   const hours = useMemo(() => priceHours(initial, Number(period)), [initial, period])
   const decisions = [...hours].reverse()
   const money = (value: number) => priceMoney(value, site.currency)
   const last24 = hours.slice(-24)
   const sum = (key: 'revenue' | 'requests') => last24.reduce((total, hour) => total + hour[key], 0)
   const tiles: [string, string][] = [['Floor agora', money(rule.floor)], ['eCPM em 24 h', money(last24.reduce((total, hour) => total + hour.ecpm, 0) / last24.length)], ['PMR em 24 h', `${pct.format(last24.reduce((total, hour) => total + hour.pmr, 0) / last24.length)}%`], ['Receita em 24 h', money(sum('revenue'))]]
-  const typed = Number(floorText.replace(',', '.'))
   const chart = {
-    floor: { main: hours.map((hour) => hour.floor), second: hours.map((hour) => hour.ecpm), mainLabel: 'Floor', secondLabel: 'eCPM', format: money, step: true },
-    pmr: { main: hours.map((hour) => hour.pmr), second: undefined, mainLabel: 'PMR', secondLabel: undefined, format: (value: number) => `${pct.format(value)}%`, step: false },
-    revenue: { main: hours.map((hour) => hour.revenue), second: undefined, mainLabel: 'Receita', secondLabel: undefined, format: money, step: false },
-    requests: { main: hours.map((hour) => hour.requests), second: undefined, mainLabel: 'Requisições elegíveis', secondLabel: undefined, format: (value: number) => int.format(Math.round(value)), step: false },
+    floor: { main: hours.map((hour) => hour.floor), second: hours.map((hour) => hour.ecpm), mainLabel: 'Floor', secondLabel: 'eCPM', mainColor: PRICE_METRIC_COLOR.floor, secondColor: PRICE_METRIC_COLOR.ecpm, format: money, step: true },
+    pmr: { main: hours.map((hour) => hour.pmr), second: undefined, mainLabel: 'PMR', secondLabel: undefined, mainColor: PRICE_METRIC_COLOR.pmr, secondColor: undefined, format: (value: number) => `${pct.format(value)}%`, step: false },
+    revenue: { main: hours.map((hour) => hour.revenue), second: undefined, mainLabel: 'Receita', secondLabel: undefined, mainColor: PRICE_METRIC_COLOR.revenue, secondColor: undefined, format: money, step: false },
+    requests: { main: hours.map((hour) => hour.requests), second: undefined, mainLabel: 'Requisições elegíveis', secondLabel: undefined, mainColor: PRICE_METRIC_COLOR.requests, secondColor: undefined, format: (value: number) => int.format(Math.round(value)), step: false },
   }[series]
   /** Muda a situação da regra: pausada não recebe floor nem é mexida pelo motor. */
   const changeStatus = (status: PriceStatus) => { setRule({ ...rule, status }); toast.success(`Regra ${PRICE_STATUS[status][0].toLowerCase()}`) }
-  const manual = !config.automatic
+  const limitsDirty = JSON.stringify(config) !== JSON.stringify(savedConfig)
+  const limits: [string, string, string][] = [['Piso do PMR', `${config.pmrFloor}%`, 'Acima dele o floor sobe'], ['Emergência do PMR', `${config.pmrEmergency}%`, 'Abaixo dela desce na hora'], ['Volume mínimo', `${int.format(config.minRequests)}/h`, 'Requisições elegíveis'], ['Floor mínimo', money(config.floorMin), 'Nunca desce abaixo'], ['Floor máximo', money(config.floorMax), 'Nunca sobe acima'], ['Degraus por decisão', String(config.step), 'De 1 a 3']]
   return (
     <>
       <PageHeader title={`${rule.block} · ${rule.country}`} sub={`${site.domain}${staff ? ` · ${site.client}` : ''} · content_hash ${rule.hash} · valores em ${site.currency}`}
         back={<button onClick={back} className="inline-flex items-center gap-1 text-[13px] text-muted-foreground hover:text-foreground"><ArrowLeft className="h-3.5 w-3.5" />{site.domain}</button>}
         actions={<>
           <Select value={period} onValueChange={(value) => { setPeriod(value); setPage(1) }}><SelectTrigger aria-label="Período" className="h-9 w-[160px]"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="2">Últimas 48 horas</SelectItem><SelectItem value="7">Últimos 7 dias</SelectItem><SelectItem value="31">Últimos 31 dias</SelectItem></SelectContent></Select>
-          <Button variant="outline" onClick={() => setFloorOpen(true)}><Pencil className="h-4 w-4" />Floor à mão</Button>
+          <Button variant="outline" onClick={() => { setFloorTier(nearestTier(rule.floor)); setFloorOpen(true) }}><Pencil className="h-4 w-4" />Floor à mão</Button>
           <DropdownMenu><DropdownMenuTrigger asChild><Button variant="outline" aria-label="Mais ações"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end">
             {rule.status !== 'active' && <DropdownMenuItem onClick={() => changeStatus('active')}>Ativar</DropdownMenuItem>}
             {rule.status !== 'paused' && <DropdownMenuItem onClick={() => changeStatus('paused')}>Pausar</DropdownMenuItem>}
@@ -7103,44 +7167,62 @@ function PriceRuleScreen({ initial, site, staff, back }: { initial: PriceRuleRow
           <PricePairChart key={series} labels={hours.map((hour) => hour.label)} {...chart} />
           <p className="mt-3 text-[13px] text-muted-foreground">PMR: respostas servidas sobre requisições elegíveis. Horas no horário de Brasília.</p>
         </Card>
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
-          <section className="grid content-start gap-3">
-            <h2 className="text-[20px] font-semibold tracking-tight">Decisões do motor</h2>
-            <Table min={620}>
-              <thead><tr><th className={th}>Hora</th><th className={th}>Ação</th><th className={cn(th, 'text-right')}>Floor</th><th className={th}>Motivo</th></tr></thead>
-              <tbody>{decisions.slice((page - 1) * 10, page * 10).map((hour) => (
-                <tr key={hour.label}>
-                  <td className={cn(td, 'whitespace-nowrap tnum')}>{hour.label}</td>
-                  <td className={td}><span className="inline-flex items-center gap-1.5 whitespace-nowrap text-[13px]">{hour.action === 'up' ? <ChevronUp className="h-4 w-4 text-ok" /> : hour.action === 'down' ? <ChevronDown className="h-4 w-4 text-bad" /> : <span className="w-4 text-center text-muted-foreground">·</span>}{PRICE_ACTION[hour.action]}</span></td>
-                  <td className={cn(td, 'whitespace-nowrap text-right tnum')}>{hour.before === hour.floor ? money(hour.floor) : <><span className="text-muted-foreground">{money(hour.before)} → </span>{money(hour.floor)}</>}</td>
-                  <td className={cn(td, 'text-[13px] text-muted-foreground')}>{PRICE_REASON[hour.reason]}</td>
-                </tr>
-              ))}</tbody>
-            </Table>
-            <PricePager page={page} total={decisions.length} onPage={setPage} />
-          </section>
-          <Card title="Limites" desc={config.automatic ? 'O motor recalcula a cada hora pelo PMR e o eCPM médio do tipo de bloco.' : 'Valem os limites gravados aqui, sem recálculo.'}
-            footer={<Button disabled={!manual} onClick={() => { setRule({ ...rule, config }); toast.success('Limites salvos') }}>Salvar limites</Button>}>
-            <div className="grid gap-4">
-              <label className="flex items-center gap-3 text-[14px]"><Switch checked={config.automatic} onCheckedChange={(automatic) => setConfig({ ...config, automatic })} />{config.automatic ? 'Calculados pelo motor' : 'Definidos à mão'}</label>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field id="cfg-pmr-floor" label="Piso do PMR (%)" hint="Acima dele o floor sobe."><Input id="cfg-pmr-floor" className="tnum" disabled={!manual} value={config.pmrFloor} onChange={(event) => setConfig({ ...config, pmrFloor: Number(event.target.value) || 0 })} /></Field>
-                <Field id="cfg-pmr-emergency" label="Emergência do PMR (%)" hint="Abaixo dela desce na hora."><Input id="cfg-pmr-emergency" className="tnum" disabled={!manual} value={config.pmrEmergency} onChange={(event) => setConfig({ ...config, pmrEmergency: Number(event.target.value) || 0 })} /></Field>
-                <Field id="cfg-floor-min" label={`Floor mínimo (${site.currency})`}><Input id="cfg-floor-min" className="tnum" disabled={!manual} value={String(config.floorMin).replace('.', ',')} onChange={(event) => setConfig({ ...config, floorMin: Number(event.target.value.replace(',', '.')) || 0 })} /></Field>
-                <Field id="cfg-floor-max" label={`Floor máximo (${site.currency})`}><Input id="cfg-floor-max" className="tnum" disabled={!manual} value={String(config.floorMax).replace('.', ',')} onChange={(event) => setConfig({ ...config, floorMax: Number(event.target.value.replace(',', '.')) || 0 })} /></Field>
-                <Field id="cfg-min-requests" label="Volume mínimo por hora" hint="Requisições elegíveis."><Input id="cfg-min-requests" className="tnum" disabled={!manual} value={config.minRequests} onChange={(event) => setConfig({ ...config, minRequests: Number(event.target.value) || 0 })} /></Field>
-                <Field id="cfg-step" label="Degraus por decisão" hint="De 1 a 10."><Input id="cfg-step" className="tnum" disabled={!manual} value={config.step} onChange={(event) => setConfig({ ...config, step: Math.min(10, Math.max(1, Number(event.target.value) || 1)) })} /></Field>
-              </div>
+        <section className="overflow-hidden rounded-lg border bg-card">
+          <div className="flex flex-wrap items-start justify-between gap-4 p-6">
+            <div><h2 className="text-[20px] font-semibold tracking-tight">Limites</h2><p className="mt-2 max-w-[70ch] text-[14px] text-muted-foreground">{config.automatic ? 'O motor recalcula a cada hora pelo PMR e pelo eCPM médio do tipo de bloco. Estes são os valores de agora.' : 'Valem os limites gravados aqui, sem recálculo do motor.'}</p></div>
+            <div className="inline-flex shrink-0 rounded-md border bg-card p-0.5" role="radiogroup" aria-label="Quem define os limites">
+              {([[true, 'Calculados pelo motor'], [false, 'Definidos à mão']] as const).map(([automatic, label]) => (
+                <button key={label} type="button" role="radio" aria-checked={config.automatic === automatic} onClick={() => setConfig({ ...config, automatic })} className={cn('h-8 rounded-[4px] px-3 text-[13px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', config.automatic === automatic ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground')}>{label}</button>
+              ))}
             </div>
-          </Card>
-        </div>
+          </div>
+          {config.automatic ? (
+            <dl className="grid grid-cols-2 gap-px border-t bg-border sm:grid-cols-3 lg:grid-cols-6">
+              {limits.map(([label, value, hint]) => <div key={label} className="bg-card px-6 py-4"><dt className="text-[13px] text-muted-foreground">{label}</dt><dd className="mt-1 text-[18px] font-semibold tracking-[-0.02em] tnum">{value}</dd><dd className="mt-0.5 text-[12px] text-muted-foreground">{hint}</dd></div>)}
+            </dl>
+          ) : (
+            <div className="grid gap-4 border-t p-6 sm:grid-cols-2 lg:grid-cols-3">
+              <Field id="cfg-pmr-floor" label="Piso do PMR (%)" hint="Acima dele o floor sobe."><Input id="cfg-pmr-floor" className="tnum" value={config.pmrFloor} onChange={(event) => setConfig({ ...config, pmrFloor: Number(event.target.value) || 0 })} /></Field>
+              <Field id="cfg-pmr-emergency" label="Emergência do PMR (%)" hint="Abaixo dela o floor desce na hora."><Input id="cfg-pmr-emergency" className="tnum" value={config.pmrEmergency} onChange={(event) => setConfig({ ...config, pmrEmergency: Number(event.target.value) || 0 })} /></Field>
+              <Field id="cfg-min-requests" label="Volume mínimo por hora" hint="Requisições elegíveis para o floor subir."><Input id="cfg-min-requests" className="tnum" value={config.minRequests} onChange={(event) => setConfig({ ...config, minRequests: Number(event.target.value) || 0 })} /></Field>
+              <Field id="cfg-floor-min" label={`Floor mínimo (${site.currency})`} hint="Um dos degraus da moeda. O motor nunca desce abaixo."><PriceTierSelect id="cfg-floor-min" value={config.floorMin} currency={site.currency} max={PRICE_TIERS.indexOf(nearestTier(config.floorMax))} onChange={(floorMin) => setConfig({ ...config, floorMin })} /></Field>
+              <Field id="cfg-floor-max" label={`Floor máximo (${site.currency})`} hint="Um dos degraus da moeda. O motor nunca sobe acima."><PriceTierSelect id="cfg-floor-max" value={config.floorMax} currency={site.currency} min={PRICE_TIERS.indexOf(nearestTier(config.floorMin))} onChange={(floorMax) => setConfig({ ...config, floorMax })} /></Field>
+              <Field id="cfg-step" label="Degraus por decisão" hint="Quanto o floor anda por hora, de 1 a 3 degraus.">
+                <div id="cfg-step" className="inline-flex rounded-md border bg-card p-0.5" role="radiogroup" aria-label="Degraus por decisão">
+                  {[1, 2, 3].map((step) => <button key={step} type="button" role="radio" aria-checked={config.step === step} onClick={() => setConfig({ ...config, step })} className={cn('h-8 w-12 rounded-[4px] text-[13px] font-medium tnum focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', config.step === step ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground')}>{step}</button>)}
+                </div>
+              </Field>
+            </div>
+          )}
+          {limitsDirty && (
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t bg-muted px-6 py-3">
+              <div className="text-[13px] text-muted-foreground">{config.automatic ? 'O motor volta a calcular os limites na próxima hora.' : 'Os limites valem a partir da próxima hora.'}</div>
+              <div className="flex gap-2"><Button variant="outline" onClick={() => setConfig(savedConfig)}>Descartar</Button><Button onClick={() => { setSavedConfig(config); setRule({ ...rule, config }); toast.success('Limites salvos') }}>Salvar limites</Button></div>
+            </div>
+          )}
+        </section>
+        <section className="grid gap-3">
+          <div><h2 className="text-[20px] font-semibold tracking-tight">Decisões do motor</h2><p className="mt-1 text-[14px] text-muted-foreground">Uma linha por hora, da mais nova para a mais velha, com o floor antes e depois e o motivo.</p></div>
+          <Table min={720}>
+            <thead><tr><th className={th}>Hora</th><th className={th}>Ação</th><th className={cn(th, 'text-right')}>Floor</th><th className={th}>Motivo</th></tr></thead>
+            <tbody>{decisions.slice((page - 1) * 10, page * 10).map((hour) => (
+              <tr key={hour.label}>
+                <td className={cn(td, 'whitespace-nowrap tnum')}>{hour.label}</td>
+                <td className={td}><span className="inline-flex items-center gap-1.5 whitespace-nowrap text-[13px]">{hour.action === 'up' ? <ChevronUp className="h-4 w-4 text-ok" /> : hour.action === 'down' ? <ChevronDown className="h-4 w-4 text-bad" /> : <span className="w-4 text-center text-muted-foreground">·</span>}{PRICE_ACTION[hour.action]}</span></td>
+                <td className={cn(td, 'whitespace-nowrap text-right tnum')}>{hour.before === hour.floor ? money(hour.floor) : <><span className="text-muted-foreground">{money(hour.before)} → </span>{money(hour.floor)}</>}</td>
+                <td className={cn(td, 'text-[13px] text-muted-foreground')}>{PRICE_REASON[hour.reason]}</td>
+              </tr>
+            ))}</tbody>
+          </Table>
+          <PricePager page={page} total={decisions.length} onPage={setPage} />
+        </section>
         <Dialog open={floorOpen} onOpenChange={setFloorOpen}>
           <DialogContent className="max-w-[420px]">
-            <DialogHeader><DialogTitle>Floor à mão</DialogTitle><DialogDescription>O valor vai para o degrau mais perto e chega na tag em até 1 hora. Com os limites calculados pelo motor, ele volta a mexer na próxima hora.</DialogDescription></DialogHeader>
-            <Field id="manual-floor" label={`Floor (${site.currency})`} hint={typed > 0 ? `Fica ${money(nearestTier(typed))}, o degrau mais perto.` : 'Entre 0,50 e 800,00.'}>
-              <Input id="manual-floor" className="tnum" inputMode="decimal" value={floorText} onChange={(event) => setFloorText(event.target.value)} />
+            <DialogHeader><DialogTitle>Floor à mão</DialogTitle><DialogDescription>O floor chega na tag em até 1 hora. Com os limites calculados pelo motor, ele volta a mexer na próxima hora.</DialogDescription></DialogHeader>
+            <Field id="manual-floor" label={`Floor (${site.currency})`} hint={`Um dos 200 degraus em ${site.currency}, de ${money(PRICE_TIERS[0])} a ${money(PRICE_TIERS[199])}. São os mesmos valores das Unified Pricing Rules do GAM.`}>
+              <PriceTierSelect id="manual-floor" value={floorTier} currency={site.currency} onChange={setFloorTier} />
             </Field>
-            <DialogFooter><Button variant="outline" onClick={() => setFloorOpen(false)}>Cancelar</Button><Button disabled={!(typed > 0)} onClick={() => { setRule({ ...rule, floor: nearestTier(typed) }); setFloorOpen(false); toast.success('Floor gravado') }}>Gravar floor</Button></DialogFooter>
+            <DialogFooter><Button variant="outline" onClick={() => setFloorOpen(false)}>Cancelar</Button><Button disabled={floorTier === rule.floor} onClick={() => { setRule({ ...rule, floor: floorTier }); setFloorOpen(false); toast.success('Floor gravado') }}>Gravar floor</Button></DialogFooter>
           </DialogContent>
         </Dialog>
       </Body>

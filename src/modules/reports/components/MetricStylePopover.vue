@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils'
 import { scaleError, seriesColor, SERIES_COLORS, syncText } from '@/modules/reports/rules'
 import type { MetricStyle, ScaleMode, SeriesColor } from '@/modules/reports/types'
 
-const props = defineProps<{ label: string; metricStyle: MetricStyle; disabled: boolean }>()
+const props = defineProps<{ label: string; metricStyle: MetricStyle; disabled: boolean; defaultColor?: SeriesColor }>()
 const emit = defineEmits<{ change: [style: MetricStyle] }>()
 const MODES: ScaleMode[] = ['green_red', 'red_green']
 const mode = ref<ScaleMode | null>(props.metricStyle.scale?.mode ?? null)
@@ -28,7 +28,7 @@ const number = (text: string) => (text.trim() === '' ? Number.NaN : Number(text.
 const error = computed(() => (mode.value ? scaleError({ mode: mode.value, from: number(from.value), to: number(to.value) }) : null))
 /** Gradiente do modo, do verde ao vermelho ou ao contrário. */
 const gradient = (scaleMode: ScaleMode) => `linear-gradient(90deg, hsl(${scaleMode === 'green_red' ? 135 : 0} 75% 45%), hsl(${scaleMode === 'green_red' ? 0 : 135} 75% 45%))`
-const swatch = computed(() => (props.metricStyle.scale ? gradient(props.metricStyle.scale.mode) : (seriesColor(props.metricStyle.color) ?? 'hsl(var(--foreground))')))
+const swatch = computed(() => (props.metricStyle.scale ? gradient(props.metricStyle.scale.mode) : (seriesColor(props.metricStyle.color ?? props.defaultColor) ?? 'hsl(var(--foreground))')))
 
 /** Troca a cor e mantém a aparência. */
 function pickColor(color: SeriesColor | undefined) {

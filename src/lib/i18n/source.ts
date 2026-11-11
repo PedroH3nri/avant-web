@@ -332,7 +332,7 @@ export const dict = {
   'report.colors.magenta': ['Magenta', 'Magenta', 'Magenta'],
   'report.colors.violet': ['Violeta', 'Violet', 'Violeta'],
   'report.colors.orange': ['Laranja', 'Orange', 'Naranja'],
-  'report.colors.yellow': ['Amarelo', 'Yellow', 'Amarillo'],
+  'report.colors.yellow': ['Dourado', 'Gold', 'Dorado'],
   'report.colors.red': ['Vermelho', 'Red', 'Rojo'],
   'report.scale': ['Aparência pelo valor', 'Look by value', 'Apariencia por valor'],
   'report.scaleNone': ['Nenhuma', 'None', 'Ninguna'],

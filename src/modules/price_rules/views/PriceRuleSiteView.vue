@@ -5,6 +5,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useDebounceFn } from '@vueuse/core'
 import { AlertTriangle, ArrowLeft, History, LoaderCircle, Search } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
+import { colorVar, metricColor } from '@/lib/metric-colors'
 import LineChart from '@/components/charts/LineChart.vue'
 import LoadError from '@/components/LoadError.vue'
 import PageBody from '@/components/PageBody.vue'
@@ -74,7 +75,7 @@ const gainChart = computed(() => {
   return {
     labels: series.days.map((day) => dayText(day, locale.value)),
     series: [
-      { key: 'rule', name: t('pr.gain.rule'), values: series.rule },
+      { key: 'rule', name: t('pr.gain.rule'), values: series.rule, color: colorVar(metricColor('revenue')) },
       { key: 'control', name: t('pr.gain.control'), values: series.control, tone: 'muted' as const, dashed: true },
     ],
   }
