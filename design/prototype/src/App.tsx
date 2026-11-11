@@ -78,12 +78,14 @@ const SCREENS = [
   ['regraspreco', 'Regras de preço'],
   ['regrasite', 'Regras de preço · Site'],
   ['regra', 'Regras de preço · Histórico da regra'],
+  ['cascata', 'Regras de preço · Cascata do bloco'],
   ['regrasprecointerno', 'Painel interno · Regras de preço'],
   ['regrasiteinterno', 'Painel interno · Regras de preço do site'],
   ['regrainterno', 'Painel interno · Histórico da regra'],
+  ['cascatainterno', 'Painel interno · Cascata do bloco'],
 ] as const
 type Screen = (typeof SCREENS)[number][0]
-const INTERNAL_SCREENS: Screen[] = ['interno', 'cliente', 'contratos', 'resultados', 'papelcomissao', 'minhacomissao', 'comissoes', 'minhasinvoices', 'invoice', 'invoices', 'servicosinvoice', 'modelosdash', 'tarefas', 'tarefa', 'checklists', 'checklist', 'checklistitens', 'ferramentasgam', 'execucaogam', 'rewardsinterno', 'rewardinterno', 'rewardmetricasinterno', 'adtagsinterno', 'adtaginterno', 'adtagmetricasinterno', 'loadersinterno', 'loaderinterno', 'regrasprecointerno', 'regrasiteinterno', 'regrainterno']
+const INTERNAL_SCREENS: Screen[] = ['interno', 'cliente', 'contratos', 'resultados', 'papelcomissao', 'minhacomissao', 'comissoes', 'minhasinvoices', 'invoice', 'invoices', 'servicosinvoice', 'modelosdash', 'tarefas', 'tarefa', 'checklists', 'checklist', 'checklistitens', 'ferramentasgam', 'execucaogam', 'rewardsinterno', 'rewardinterno', 'rewardmetricasinterno', 'adtagsinterno', 'adtaginterno', 'adtagmetricasinterno', 'loadersinterno', 'loaderinterno', 'regrasprecointerno', 'regrasiteinterno', 'regrainterno', 'cascatainterno']
 const isScreen = (s: string): s is Screen => SCREENS.some(([k]) => k === s)
 type T = (k: Key) => string
 
@@ -374,12 +376,12 @@ const CLIENT_RAIL: RailGroup[] = [
   { key: 'inicio', label: 'Início', icon: Home, items: [{ id: 'inicio', label: 'Dashboard' }] },
   { key: 'relatorios', label: 'Relatórios', icon: BarChart3, items: [{ id: 'desempenho', label: 'Ad Manager' }, { id: 'visitas', label: 'Page Views' }, { id: 'relatorios', label: 'Relatórios customizados', also: ['construtor', 'relatorio'], separated: true }] },
   { key: 'financeiro', label: 'Financeiro', icon: Wallet, items: [{ id: 'resultado', label: 'Resultado' }, { id: 'custos', label: 'Custos' }] },
-  { key: 'inventario', label: 'Inventário', icon: Network, items: [{ id: 'networks', label: 'Networks do GAM', also: ['conectar'] }, { id: 'rewards', label: 'Rewards', also: ['reward', 'rewardmetricas'] }, { id: 'adtags', label: 'Ad tags', also: ['adtag', 'adtagmetricas'] }, { id: 'loaders', label: 'Loaders', also: ['loader'] }, { id: 'regraspreco', label: 'Regras de preço', also: ['regrasite', 'regra'] }] },
+  { key: 'inventario', label: 'Inventário', icon: Network, items: [{ id: 'networks', label: 'Networks do GAM', also: ['conectar'] }, { id: 'rewards', label: 'Rewards', also: ['reward', 'rewardmetricas'] }, { id: 'adtags', label: 'Ad tags', also: ['adtag', 'adtagmetricas'] }, { id: 'loaders', label: 'Loaders', also: ['loader'] }, { id: 'regraspreco', label: 'Regras de preço', also: ['regrasite', 'regra', 'cascata'] }] },
   { key: 'equipe', label: 'Equipe', icon: Users, items: [{ id: 'equipe', label: 'Membros', also: ['membro'] }, { id: 'grupos', label: 'Grupos', also: ['grupo', 'grupoinativo'] }] },
   { key: 'empresa', label: 'Empresa', icon: Settings, items: [{ id: 'configuracoes', label: 'Configurações' }, { id: 'fiscais', label: 'Dados fiscais' }] },
 ]
 const INTERNAL_RAIL: RailGroup[] = [
-  { key: 'clientes', label: 'Inventário', icon: Users, items: [{ id: 'interno', label: 'Clientes', also: ['cliente'] }, { id: 'contratos', label: 'Contratos' }, { id: 'resultados', label: 'Resultado dos clientes' }, { id: 'checklists', label: 'Checklists', also: ['checklist', 'checklistitens'] }, { id: 'rewardsinterno', label: 'Rewards', also: ['rewardinterno', 'rewardmetricasinterno'] }, { id: 'adtagsinterno', label: 'Ad tags', also: ['adtaginterno', 'adtagmetricasinterno'] }, { id: 'loadersinterno', label: 'Loaders', also: ['loaderinterno'] }, { id: 'regrasprecointerno', label: 'Regras de preço', also: ['regrasiteinterno', 'regrainterno'] }] },
+  { key: 'clientes', label: 'Inventário', icon: Users, items: [{ id: 'interno', label: 'Clientes', also: ['cliente'] }, { id: 'contratos', label: 'Contratos' }, { id: 'resultados', label: 'Resultado dos clientes' }, { id: 'checklists', label: 'Checklists', also: ['checklist', 'checklistitens'] }, { id: 'rewardsinterno', label: 'Rewards', also: ['rewardinterno', 'rewardmetricasinterno'] }, { id: 'adtagsinterno', label: 'Ad tags', also: ['adtaginterno', 'adtagmetricasinterno'] }, { id: 'loadersinterno', label: 'Loaders', also: ['loaderinterno'] }, { id: 'regrasprecointerno', label: 'Regras de preço', also: ['regrasiteinterno', 'regrainterno', 'cascatainterno'] }] },
   { key: 'comissoes', label: 'Comissões', icon: Wallet, items: [{ id: 'minhacomissao', label: 'Minha comissão' }, { id: 'minhasinvoices', label: 'Minhas invoices' }, { id: 'comissoes', label: 'Comissões da equipe' }, { id: 'invoices', label: 'Invoices', also: ['servicosinvoice', 'invoice'] }] },
   { key: 'ferramentas', label: 'Ferramentas', icon: Wrench, items: [{ id: 'tarefas', label: 'Tarefas', also: ['tarefa'] }, { id: 'modelosdash', label: 'Modelos de dashboard' }, { id: 'ferramentasgam', label: 'Ferramentas do GAM', also: ['execucaogam'] }] },
   { key: 'equipegroone', label: 'Equipe', icon: ShieldCheck, items: [{ id: 'papelcomissao', label: 'Papéis da Equipe Groone' }] },
@@ -6788,7 +6790,7 @@ function AdTagMetricsScreen({ tag, staff, back, edit }: { tag: ProtoAdTag; staff
 type PriceStatus = 'active' | 'paused' | 'disabled'
 type PriceAction = 'up' | 'down' | 'hold' | 'initial'
 type PriceReason = 'manual' | 'stable' | 'pmr_down_floor' | 'pmr_up_over_roof' | 'insufficient_volume' | 'responses_server_drop' | 'initial_rule_creation'
-type PriceBlockModel = 'automatic' | 'none'
+type PriceBlockModel = 'automatic' | 'cascade' | 'none'
 type PriceSite = { domain: string; client: string; network: string; currency: string | null; supported: boolean; keys: boolean; active: boolean; control: number; blocks: Record<string, PriceBlockModel>; available: string[] }
 type PriceConfig = { automatic: boolean; pmrFloor: number; pmrEmergency: number; minRequests: number; floorMin: number; floorMax: number; step: number }
 type PriceRuleRow = { id: string; domain: string; hash: string; block: string; country: string; floor: number; status: PriceStatus; updated: string; config: PriceConfig | null }
@@ -6824,7 +6826,7 @@ function PriceTierSelect({ id, value, currency, onChange, min = 0, max = 199 }: 
 function priceMoney(value: number, currency: string | null) { return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: currency ?? 'USD', minimumFractionDigits: 2 }).format(value) }
 
 const INITIAL_PRICE_SITES: PriceSite[] = [
-  { domain: 'acai.com.br', client: 'Açaí Mídia', network: 'Açaí Mídia MCM', currency: 'BRL', supported: true, keys: true, active: true, control: 10, available: PRICE_BLOCKS, blocks: { Content1_Desktop: 'automatic', Content1_Mobile: 'automatic', Content2_Desktop: 'automatic', Content2_Mobile: 'automatic', Content3_Mobile: 'automatic' } },
+  { domain: 'acai.com.br', client: 'Açaí Mídia', network: 'Açaí Mídia MCM', currency: 'BRL', supported: true, keys: true, active: true, control: 10, available: PRICE_BLOCKS, blocks: { Content1_Desktop: 'automatic', Content1_Mobile: 'automatic', Content2_Desktop: 'automatic', Content2_Mobile: 'automatic', Content3_Mobile: 'automatic', Anchor_Mobile: 'cascade', Interstitial_Mobile: 'cascade', Fixed_Desktop: 'cascade', Rewards_Mobile: 'cascade' } },
   { domain: 'receitasdaacai.com.br', client: 'Açaí Mídia', network: 'Açaí Mídia MCM', currency: 'BRL', supported: true, keys: true, active: false, control: 10, available: PRICE_BLOCKS.slice(0, 7), blocks: {} },
   { domain: 'technoticias.com.br', client: 'Tech Notícias', network: 'Tech Notícias MCM', currency: 'USD', supported: true, keys: false, active: false, control: 10, available: PRICE_BLOCKS, blocks: { Content1_Mobile: 'automatic' } },
   { domain: 'viagemfacil.com', client: 'Viagem Fácil', network: 'Viagem Fácil', currency: 'ARS', supported: false, keys: false, active: false, control: 10, available: PRICE_BLOCKS.slice(0, 6), blocks: {} },
@@ -6872,8 +6874,83 @@ function priceGain(site: PriceSite) {
   })
 }
 
+type CascadeStatus = PriceStatus
+type CascadeConfig = { automatic: boolean; floorMin: number; floorMax: number; drop: number; fillHigh: number; minRequests: number }
+type CascadeRule = { id: string; block: string; country: string; start: number; status: CascadeStatus; updated: string; config: CascadeConfig }
+type CascadeAction = 'up' | 'down' | 'hold' | 'initial'
+type CascadeReason = 'manual' | 'stable' | 'fills_first' | 'fills_late' | 'insufficient_volume' | 'initial'
+type CascadeHour = { label: string; start: number; ecpm: number; fillFirst: number; fillAll: number; revenue: number; requests: number; action: CascadeAction; reason: CascadeReason; before: number }
+type CascadeAttempt = { attempt: number; floor: number | null; requests: number; filled: number; revenue: number }
+const CASCADE_REASON: Record<CascadeReason, string> = {
+  manual: 'Mudança feita à mão no painel.',
+  stable: 'As compras se espalham pelas tentativas: o ponto de partida fica.',
+  fills_first: 'A 1ª tentativa encheu acima do limite: dá para começar mais alto.',
+  fills_late: 'A maior parte só comprou na 3ª ou 4ª tentativa: começa mais baixo.',
+  insufficient_volume: 'Pouco volume na hora: o motor espera mais dados.',
+  initial: 'A cascata começou no eCPM médio do bloco e do país em 7 dias.',
+}
+const CASCADE_ATTEMPTS = 4
+const CASCADE_MAX_MS = 3000
+/** O tipo do bloco para a regra: conteúdo usa a Automática, âncora, intersticial, fixo e reward a Cascata, e o offerwall é do Google. */
+function priceBlockKind(block: string): 'content' | 'cascade' | 'offerwall' {
+  if (block.startsWith('Offerwall')) return 'offerwall'
+  return /^(Anchor|Interstitial|Fixed|Rewards)/.test(block) ? 'cascade' : 'content'
+}
+/** A escada da cascata: os 3 floors com floor, descendo `drop` degraus por tentativa, e a 4ª sem floor. */
+function cascadeLadder(start: number, drop: number): (number | null)[] {
+  const first = PRICE_TIERS.indexOf(nearestTier(start))
+  return [0, 1, 2].map((step) => PRICE_TIERS[Math.max(0, first - step * drop)]).concat([null])
+}
+/** As regras de exemplo da Cascata de um site: uma por bloco e país, sem content_hash. */
+function priceCascades(site: PriceSite): CascadeRule[] {
+  if (!site.active) return []
+  const blocks = Object.keys(site.blocks).filter((block) => site.blocks[block] === 'cascade')
+  return blocks.flatMap((block, blockIndex) => PRICE_COUNTRIES.slice(0, 3).map((country, countryIndex) => {
+    const seed = blockIndex * 17 + countryIndex * 5 + 3
+    const base = block.startsWith('Rewards') ? 6.5 : block.startsWith('Interstitial') ? 3.2 : 1.4
+    return { id: `cascata-${block}-${country}`, block, country, start: nearestTier(base * (country === 'BR' ? 1 : 0.55) * (0.85 + seeded(seed) * 0.3)), status: seed % 19 === 0 ? 'paused' : 'active', updated: `Hoje, ${String(14 - (seed % 6)).padStart(2, '0')}:58`, config: { automatic: true, floorMin: nearestTier(base * 0.3), floorMax: nearestTier(base * 3), drop: 2, fillHigh: 60, minRequests: 200 } }
+  }))
+}
+/** O funil de exemplo das 24 horas: pedidos, compras e receita em cada tentativa da escada. */
+function cascadeAttempts(rule: CascadeRule, drop: number): CascadeAttempt[] {
+  const ladder = cascadeLadder(rule.start, drop)
+  const rates = [0.38 + seeded(rule.block.length) * 0.12, 0.3, 0.26, 0.62]
+  let requests = rule.block.startsWith('Rewards') ? 1800 : 5200
+  return ladder.map((floor, index) => {
+    const filled = Math.round(requests * rates[index])
+    const price = (floor ?? rule.start * 0.55) * (1.25 + index * 0.05)
+    const row = { attempt: index + 1, floor, requests, filled, revenue: (filled * price) / 1000 }
+    requests -= filled
+    return row
+  })
+}
+/** As horas de exemplo da Cascata, da mais velha à de agora: ponto de partida, compra na 1ª e na escada, receita e a decisão. */
+function cascadeHours(rule: CascadeRule, days: number): CascadeHour[] {
+  const seed = rule.block.length * 7 + rule.country.charCodeAt(0)
+  let start = rule.start
+  const rows: CascadeHour[] = []
+  for (let hoursAgo = 0; hoursAgo < days * 24; hoursAgo += 1) {
+    const total = 10 * 24 + 14 - hoursAgo
+    const hour = total % 24
+    const day = `${String(Math.floor(total / 24)).padStart(2, '0')}/11`
+    const requests = Math.round((hour > 7 && hour < 23 ? 260 : 70) * (0.8 + seeded(seed + hoursAgo) * 0.4))
+    const fillFirst = 25 + seeded(seed * 3 + hoursAgo) * 45
+    const fillAll = Math.min(97, fillFirst + 35 + seeded(seed * 7 + hoursAgo) * 15)
+    const ecpm = start * (1.2 + seeded(seed * 5 + hoursAgo) * 0.3)
+    const revenue = (requests * (fillAll / 100) * ecpm * 0.85) / 1000
+    const oldest = hoursAgo === days * 24 - 1
+    const action: CascadeAction = oldest ? 'initial' : requests < 200 ? 'hold' : fillFirst >= 60 ? 'up' : fillFirst < 32 ? 'down' : 'hold'
+    const reason: CascadeReason = action === 'initial' ? 'initial' : requests < 200 ? 'insufficient_volume' : action === 'up' ? 'fills_first' : action === 'down' ? 'fills_late' : 'stable'
+    const tierIndex = PRICE_TIERS.indexOf(nearestTier(start))
+    const before = action === 'up' ? PRICE_TIERS[Math.max(0, tierIndex - 1)] : action === 'down' ? PRICE_TIERS[Math.min(199, tierIndex + 1)] : start
+    rows.push({ label: `${day} ${String(hour).padStart(2, '0')}h`, start, ecpm, fillFirst, fillAll, revenue, requests, action, reason, before })
+    start = before
+  }
+  return rows.reverse()
+}
+
 /** Cor neon de cada métrica nos gráficos, da paleta dos relatórios: eCPM dourado, receita verde e assim por diante. */
-const PRICE_METRIC_COLOR = { floor: '#FF2BD6', ecpm: '#FFC400', revenue: '#39FF14', pmr: '#00E5FF', requests: '#FF7A00', control: '#A3A3A3' } as const
+const PRICE_METRIC_COLOR = { floor: '#FF2BD6', ecpm: '#FFC400', revenue: '#39FF14', pmr: '#00E5FF', fill: '#00E5FF', impressions: '#8B5CFF', requests: '#FF7A00', control: '#A3A3A3' } as const
 
 /** Gráfico de linhas com uma série principal e, opcional, uma segunda no mesmo eixo, cada uma com sua cor neon. */
 function PricePairChart({ labels, main, second, mainLabel, secondLabel, format, step = false, mainColor, secondColor }: { labels: string[]; main: number[]; second?: number[]; mainLabel: string; secondLabel?: string; format: (value: number) => string; step?: boolean; mainColor: string; secondColor?: string }) {
@@ -6956,7 +7033,7 @@ function PriceSitesScreen({ sites, staff, open }: { sites: PriceSite[]; staff: b
             {shown.map((site) => {
               const status = priceSiteStatus(site)
               const rules = priceRules(site)
-              const blocks = Object.values(site.blocks).filter((model) => model === 'automatic').length
+              const blocks = Object.values(site.blocks).filter((model) => model !== 'none').length
               const gain = site.active && blocks ? priceGainPercent(site) : null
               return (
                 <tr key={site.domain} className="hover:bg-muted">
@@ -6980,11 +7057,14 @@ function PriceSitesScreen({ sites, staff, open }: { sites: PriceSite[]; staff: b
   )
 }
 
-/** Escolha do modelo de um bloco: Automática ou sem regra. */
+/** Escolha do modelo de um bloco: conteúdo usa a Automática, âncora, intersticial, fixo e reward a Cascata; o offerwall é do Google e fica sem regra. */
 function PriceBlockToggle({ block, value, disabled, onChange }: { block: string; value: PriceBlockModel; disabled: boolean; onChange: (model: PriceBlockModel) => void }) {
+  const kind = priceBlockKind(block)
+  if (kind === 'offerwall') return <span className="shrink-0 text-[13px] text-muted-foreground">Do Google, sem floor</span>
+  const options = (kind === 'cascade' ? [['cascade', 'Cascata'], ['none', 'Sem regra']] : [['automatic', 'Automática'], ['none', 'Sem regra']]) as [PriceBlockModel, string][]
   return (
     <div className="inline-flex shrink-0 rounded-md border bg-card p-0.5" role="radiogroup" aria-label={`Modelo de ${block}`}>
-      {([['automatic', 'Automática'], ['none', 'Sem regra']] as const).map(([model, label]) => (
+      {options.map(([model, label]) => (
         <button key={model} type="button" role="radio" aria-checked={value === model} disabled={disabled} onClick={() => onChange(model)} className={cn('h-7 rounded-[4px] px-3 text-[13px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50', value === model ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground')}>{label}</button>
       ))}
     </div>
@@ -6995,6 +7075,7 @@ function PriceBlockToggle({ block, value, disabled, onChange }: { block: string;
 function PriceSiteConfig({ site, initial, blocked, setSite, save }: { site: PriceSite; initial: PriceSite; blocked: boolean; setSite: (site: PriceSite) => void; save: () => void }) {
   const dirty = JSON.stringify(site) !== JSON.stringify(initial)
   const automatic = site.available.filter((block) => site.blocks[block] === 'automatic').length
+  const cascade = site.available.filter((block) => site.blocks[block] === 'cascade').length
   return (
     <section className="overflow-hidden rounded-lg border bg-card">
       <div className="px-6 pt-6">
@@ -7011,8 +7092,8 @@ function PriceSiteConfig({ site, initial, blocked, setSite, save }: { site: Pric
         </Field>
       </div>
       <div className="border-t p-6">
-        <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1"><div className="text-[14px] font-medium">Blocos</div><div className="text-[13px] text-muted-foreground tnum">{automatic} de {site.available.length} com a Automática</div></div>
-        <p className="mt-1 text-[13px] text-muted-foreground">Cada bloco roda um modelo só. Âncora, intersticial, reward e offerwall vão ter um modelo próprio.</p>
+        <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1"><div className="text-[14px] font-medium">Blocos</div><div className="text-[13px] text-muted-foreground tnum">{automatic} com a Automática · {cascade} com a Cascata</div></div>
+        <p className="mt-1 text-[13px] text-muted-foreground">Cada bloco roda um modelo só. Conteúdo usa a Automática. Âncora, intersticial, fixo e reward usam a Cascata: se ninguém compra, a tag dá um novo lance com floor menor, até 4 tentativas, a última sem floor. O offerwall é do Google e fica sem regra.</p>
         <ul className="mt-4 grid gap-2 md:grid-cols-2">
           {site.available.map((block) => (
             <li key={block} className="flex items-center justify-between gap-3 rounded-md border px-3 py-2">
@@ -7051,7 +7132,7 @@ function PriceSiteSummary({ site, ruleTotal, controlTotal, showGain, activeRules
 }
 
 /** Regra de preço de um site: números do topo, gráfico do ganho, lista de regras e a configuração. */
-function PriceSiteScreen({ initial, staff, back, save, openRule }: { initial: PriceSite; staff: boolean; back: () => void; save: (site: PriceSite) => void; openRule: (id: string) => void }) {
+function PriceSiteScreen({ initial, staff, back, save, openRule, openCascade }: { initial: PriceSite; staff: boolean; back: () => void; save: (site: PriceSite) => void; openRule: (id: string) => void; openCascade: (id: string) => void }) {
   const [site, setSite] = useState(initial)
   const [hashQuery, setHashQuery] = useState('')
   const [country, setCountry] = useState('all')
@@ -7063,7 +7144,8 @@ function PriceSiteScreen({ initial, staff, back, save, openRule }: { initial: Pr
   const ruleTotal = gain.reduce((total, day) => total + day.rule, 0) / gain.length
   const controlTotal = gain.reduce((total, day) => total + day.control, 0) / gain.length
   const status = priceSiteStatus(initial)
-  const showGain = initial.active && Object.values(initial.blocks).includes('automatic')
+  const showGain = initial.active && Object.values(initial.blocks).some((model) => model !== 'none')
+  const cascades = priceCascades(initial)
   const config = <PriceSiteConfig site={site} initial={initial} blocked={blocked} setSite={setSite} save={() => { save(site); toast.success('Regra de preço salva') }} />
   return (
     <>
@@ -7075,7 +7157,7 @@ function PriceSiteScreen({ initial, staff, back, save, openRule }: { initial: Pr
         {site.currency && !site.supported && <div className="flex items-start gap-2 rounded-md border border-warn/40 bg-warn/10 px-3 py-2 text-[13px]"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warn" />A network usa {site.currency}, que ainda não tem os 200 degraus. A regra de preço funciona em USD, BRL, MXN, PEN, GBP, EUR, COP, CLP e BOB. Fale com a Groone para incluir a moeda.</div>}
         {!blocked && !site.keys && <div className="flex items-start gap-2 rounded-md border border-ochre/40 bg-ochre-soft px-3 py-2 text-[13px] text-ochre"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />A network ainda não tem as keys groone_prices e groone_group nem as Unified Pricing Rules. {staff ? 'Rode "Gerar key values" nas Ferramentas do GAM e crie as regras com o gerador.' : 'A Groone cria as duas antes de a regra valer.'}</div>}
         {!initial.active && config}
-        {initial.active && <PriceSiteSummary site={initial} ruleTotal={ruleTotal} controlTotal={controlTotal} showGain={showGain} activeRules={allRules.filter((rule) => rule.status === 'active').length} />}
+        {initial.active && <PriceSiteSummary site={initial} ruleTotal={ruleTotal} controlTotal={controlTotal} showGain={showGain} activeRules={allRules.filter((rule) => rule.status === 'active').length + cascades.filter((rule) => rule.status === 'active').length} />}
         {showGain && (
           <Card title="Com regra e controle por dia" desc={`Receita por mil requisições dos visitantes com regra e dos ${initial.control}% do controle, nos últimos 30 dias. Vem do key-value groone_group do GAM.`}>
             <PricePairChart labels={gain.map((day) => day.day)} main={gain.map((day) => day.rule)} second={gain.map((day) => day.control)} mainLabel="Com regra" secondLabel="Controle" mainColor={PRICE_METRIC_COLOR.revenue} secondColor={PRICE_METRIC_COLOR.control} format={(value) => priceMoney(value, initial.currency)} />
@@ -7084,7 +7166,7 @@ function PriceSiteScreen({ initial, staff, back, save, openRule }: { initial: Pr
         {initial.active && (
           <section className="grid gap-3">
             <div className="flex flex-wrap items-end justify-between gap-3">
-              <div><h2 className="text-[20px] font-semibold tracking-tight">Regras</h2><p className="mt-1 text-[14px] text-muted-foreground">Uma por página (content_hash), bloco e país. Entram todo dia as que passaram de 300 requisições elegíveis ontem.</p></div>
+              <div><h2 className="text-[20px] font-semibold tracking-tight">Automática</h2><p className="mt-1 text-[14px] text-muted-foreground">Uma por página (content_hash), bloco e país. Entram todo dia as que passaram de 300 requisições elegíveis ontem.</p></div>
               <div className="flex flex-wrap gap-2">
                 <div className="relative w-full sm:w-[200px]"><Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input aria-label="Buscar hash" className="h-9 pl-9 font-mono" placeholder="content_hash" value={hashQuery} onChange={(event) => { setHashQuery(event.target.value); setPage(1) }} /></div>
                 <Select value={country} onValueChange={(value) => { setCountry(value); setPage(1) }}><SelectTrigger aria-label="País" className="h-9 w-[140px]"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Todos os países</SelectItem>{PRICE_COUNTRIES.map((code) => <SelectItem key={code} value={code}>{code}</SelectItem>)}</SelectContent></Select>
@@ -7108,6 +7190,32 @@ function PriceSiteScreen({ initial, staff, back, save, openRule }: { initial: Pr
               </tbody>
             </Table>
             <PricePager page={page} total={rules.length} onPage={setPage} />
+          </section>
+        )}
+        {initial.active && cascades.length > 0 && (
+          <section className="grid gap-3">
+            <div><h2 className="text-[20px] font-semibold tracking-tight">Cascata</h2><p className="mt-1 max-w-[80ch] text-[14px] text-muted-foreground">Uma regra por bloco e país, para o site inteiro. Se ninguém compra, a tag dá um novo lance no mesmo bloco com o próximo floor da escada, até 4 tentativas em no máximo 3 segundos. A 4ª vai sem floor.</p></div>
+            <Table min={860}>
+              <thead><tr><th className={th}>Bloco</th><th className={th}>País</th><th className={th}>Escada</th><th className={cn(th, 'text-right')}>Compra na 1ª</th><th className={cn(th, 'text-right')}>Compra na escada</th><th className={th}>Situação</th><th className={th}><span className="sr-only">Ação</span></th></tr></thead>
+              <tbody>
+                {cascades.map((rule) => {
+                  const attempts = cascadeAttempts(rule, rule.config.drop)
+                  const first = attempts[0].filled / attempts[0].requests * 100
+                  const all = attempts.reduce((total, attempt) => total + attempt.filled, 0) / attempts[0].requests * 100
+                  return (
+                    <tr key={rule.id} className="hover:bg-muted">
+                      <td className={cn(td, 'font-mono text-[13px]')}>{rule.block}</td>
+                      <td className={td}>{rule.country}</td>
+                      <td className={cn(td, 'whitespace-nowrap text-[13px] tnum')}>{cascadeLadder(rule.start, rule.config.drop).map((floor, index) => <span key={index} className={index ? 'text-muted-foreground' : 'font-medium'}>{index ? ' → ' : ''}{floor === null ? 'sem floor' : priceMoney(floor, initial.currency)}</span>)}</td>
+                      <td className={cn(td, 'text-right tnum')}>{pct.format(first)}%</td>
+                      <td className={cn(td, 'text-right tnum')}>{pct.format(all)}%</td>
+                      <td className={td}><Status tone={PRICE_STATUS[rule.status][1]}>{PRICE_STATUS[rule.status][0]}</Status></td>
+                      <td className={cn(td, 'text-right')}><Button size="sm" variant="outline" onClick={() => openCascade(rule.id)}><History className="h-4 w-4" />Histórico</Button></td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </Table>
           </section>
         )}
         {initial.active && config}
@@ -7223,6 +7331,152 @@ function PriceRuleScreen({ initial, site, staff, back }: { initial: PriceRuleRow
               <PriceTierSelect id="manual-floor" value={floorTier} currency={site.currency} onChange={setFloorTier} />
             </Field>
             <DialogFooter><Button variant="outline" onClick={() => setFloorOpen(false)}>Cancelar</Button><Button disabled={floorTier === rule.floor} onClick={() => { setRule({ ...rule, floor: floorTier }); setFloorOpen(false); toast.success('Floor gravado') }}>Gravar floor</Button></DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </Body>
+    </>
+  )
+}
+
+/** Histórico de uma regra da Cascata: a escada, o funil por tentativa, o ponto de partida por hora, os limites e as decisões do motor. */
+function CascadeRuleScreen({ initial, site, staff, back }: { initial: CascadeRule; site: PriceSite; staff: boolean; back: () => void }) {
+  const [rule, setRule] = useState(initial)
+  const [period, setPeriod] = useState('2')
+  const [series, setSeries] = useState<'start' | 'fill' | 'revenue' | 'requests'>('start')
+  const [page, setPage] = useState(1)
+  const [savedConfig, setSavedConfig] = useState<CascadeConfig>(initial.config)
+  const [config, setConfig] = useState<CascadeConfig>(initial.config)
+  const [startOpen, setStartOpen] = useState(false)
+  const [startTier, setStartTier] = useState(initial.start)
+  const hours = useMemo(() => cascadeHours(rule, Number(period)), [rule, period])
+  const decisions = [...hours].reverse()
+  const money = (value: number) => priceMoney(value, site.currency)
+  const ladder = cascadeLadder(rule.start, savedConfig.drop)
+  const attempts = cascadeAttempts(rule, savedConfig.drop)
+  const offered = attempts[0].requests
+  const bought = attempts.reduce((total, attempt) => total + attempt.filled, 0)
+  const revenue = attempts.reduce((total, attempt) => total + attempt.revenue, 0)
+  const tiles: [string, string, string][] = [
+    ['Ponto de partida', money(rule.start), '1º floor da escada'],
+    ['Compra na 1ª', `${pct.format((attempts[0].filled / offered) * 100)}%`, 'Em 24 horas'],
+    ['Compra na escada', `${pct.format((bought / offered) * 100)}%`, 'Somando as 4 tentativas'],
+    ['Receita em 24 h', money(revenue), `${int.format(offered)} impressões oferecidas`],
+  ]
+  const chart = {
+    start: { main: hours.map((hour) => hour.start), second: hours.map((hour) => hour.ecpm), mainLabel: 'Ponto de partida', secondLabel: 'eCPM', mainColor: PRICE_METRIC_COLOR.floor, secondColor: PRICE_METRIC_COLOR.ecpm, format: money, step: true },
+    fill: { main: hours.map((hour) => hour.fillAll), second: hours.map((hour) => hour.fillFirst), mainLabel: 'Compra na escada', secondLabel: 'Compra na 1ª', mainColor: PRICE_METRIC_COLOR.fill, secondColor: PRICE_METRIC_COLOR.impressions, format: (value: number) => `${pct.format(value)}%`, step: false },
+    revenue: { main: hours.map((hour) => hour.revenue), second: undefined, mainLabel: 'Receita', secondLabel: undefined, mainColor: PRICE_METRIC_COLOR.revenue, secondColor: undefined, format: money, step: false },
+    requests: { main: hours.map((hour) => hour.requests), second: undefined, mainLabel: 'Impressões oferecidas', secondLabel: undefined, mainColor: PRICE_METRIC_COLOR.requests, secondColor: undefined, format: (value: number) => int.format(Math.round(value)), step: false },
+  }[series]
+  /** Muda a situação da regra: pausada não recebe floor nem é mexida pelo motor. */
+  const changeStatus = (status: CascadeStatus) => { setRule({ ...rule, status }); toast.success(`Cascata ${PRICE_STATUS[status][0].toLowerCase()}`) }
+  const limitsDirty = JSON.stringify(config) !== JSON.stringify(savedConfig)
+  const dropPercent = (drop: number) => pct.format((1 - Math.pow(PRICE_TIERS[1] / PRICE_TIERS[0], -drop)) * 100)
+  const limits: [string, string, string][] = [['Floor mínimo', money(config.floorMin), 'O ponto de partida nunca desce abaixo'], ['Floor máximo', money(config.floorMax), 'Nunca sobe acima'], ['Descida por tentativa', `${config.drop} ${config.drop === 1 ? 'degrau' : 'degraus'}`, `Cerca de ${dropPercent(config.drop)}% por lance`], ['Compra alta na 1ª', `${config.fillHigh}%`, 'Acima disso o ponto de partida sobe'], ['Volume mínimo', `${int.format(config.minRequests)}/h`, 'Impressões oferecidas']]
+  const maxFilled = Math.max(...attempts.map((attempt) => attempt.requests))
+  return (
+    <>
+      <PageHeader title={`${rule.block} · ${rule.country}`} sub={`${site.domain}${staff ? ` · ${site.client}` : ''} · Cascata no site inteiro · valores em ${site.currency}`}
+        back={<button onClick={back} className="inline-flex items-center gap-1 text-[13px] text-muted-foreground hover:text-foreground"><ArrowLeft className="h-3.5 w-3.5" />{site.domain}</button>}
+        actions={<>
+          <Select value={period} onValueChange={(value) => { setPeriod(value); setPage(1) }}><SelectTrigger aria-label="Período" className="h-9 w-[160px]"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="2">Últimas 48 horas</SelectItem><SelectItem value="7">Últimos 7 dias</SelectItem><SelectItem value="31">Últimos 31 dias</SelectItem></SelectContent></Select>
+          <Button variant="outline" onClick={() => { setStartTier(rule.start); setStartOpen(true) }}><Pencil className="h-4 w-4" />Ponto de partida à mão</Button>
+          <DropdownMenu><DropdownMenuTrigger asChild><Button variant="outline" aria-label="Mais ações"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end">
+            {rule.status !== 'active' && <DropdownMenuItem onClick={() => changeStatus('active')}>Ativar</DropdownMenuItem>}
+            {rule.status !== 'paused' && <DropdownMenuItem onClick={() => changeStatus('paused')}>Pausar</DropdownMenuItem>}
+            {rule.status !== 'disabled' && <DropdownMenuItem onClick={() => changeStatus('disabled')}>Desligar</DropdownMenuItem>}
+          </DropdownMenuContent></DropdownMenu>
+        </>} />
+      <Body>
+        {rule.status !== 'active' && <div className="flex items-start gap-2 rounded-md border border-ochre/40 bg-ochre-soft px-3 py-2 text-[13px] text-ochre"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />{rule.status === 'paused' ? 'Pausada: o bloco sai com uma tentativa só e sem floor, e o motor não mexe na escada.' : 'Desligada: fica fora do motor e da tag até alguém ativar de novo.'}</div>}
+        <div className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border bg-border lg:grid-cols-4">
+          {tiles.map(([label, value, hint]) => <div key={label} className="bg-card p-4"><div className="flex items-center gap-2 text-[13px] text-muted-foreground">{label}{label === 'Ponto de partida' && <Status tone={PRICE_STATUS[rule.status][1]}>{PRICE_STATUS[rule.status][0]}</Status>}</div><div className="mt-1 text-[24px] font-semibold tracking-[-0.03em] tnum max-sm:text-[20px]">{value}</div><div className="mt-1 text-[12px] text-muted-foreground">{hint}</div></div>)}
+        </div>
+        <Card title="Escada nas últimas 24 horas" desc={`Cada lance só acontece se ninguém comprou o anterior. A tag troca groone_prices e groone_try e pede o mesmo bloco de novo, em até ${CASCADE_MAX_MS / 1000} segundos no total.`}>
+          <div className="grid gap-3 md:grid-cols-4">
+            {attempts.map((attempt, index) => {
+              const share = attempt.requests ? (attempt.filled / attempt.requests) * 100 : 0
+              return (
+                <div key={attempt.attempt} className="rounded-lg border p-4">
+                  <div className="flex items-baseline justify-between gap-2"><div className="text-[13px] text-muted-foreground">{attempt.attempt}ª tentativa</div><div className="font-mono text-[12px] text-muted-foreground">groone_try={attempt.attempt}</div></div>
+                  <div className="mt-1 text-[22px] font-semibold tracking-[-0.03em] tnum">{attempt.floor === null ? 'Sem floor' : money(attempt.floor)}</div>
+                  <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted" aria-hidden="true"><div className="h-full rounded-full" style={{ width: `${(attempt.requests / maxFilled) * 100}%`, background: `${PRICE_METRIC_COLOR.requests}59` }}><div className="h-full rounded-full" style={{ width: `${share}%`, background: PRICE_METRIC_COLOR.impressions }} /></div></div>
+                  <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1 text-[13px]">
+                    <dt className="text-muted-foreground">Oferecidas</dt><dd className="text-right tnum">{int.format(attempt.requests)}</dd>
+                    <dt className="text-muted-foreground">Compradas</dt><dd className="text-right tnum">{int.format(attempt.filled)}</dd>
+                    <dt className="text-muted-foreground">Compra</dt><dd className="text-right tnum">{pct.format(share)}%</dd>
+                    <dt className="text-muted-foreground">Receita</dt><dd className="text-right tnum">{money(attempt.revenue)}</dd>
+                  </dl>
+                  {index === attempts.length - 1 && <p className="mt-3 text-[12px] text-muted-foreground">Sem floor, para não perder a impressão.</p>}
+                </div>
+              )
+            })}
+          </div>
+          <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-[12px] text-muted-foreground"><span className="inline-flex items-center gap-1.5"><span className="h-2 w-3 rounded-full" style={{ background: `${PRICE_METRIC_COLOR.requests}59` }} />Oferecidas</span><span className="inline-flex items-center gap-1.5"><span className="h-2 w-3 rounded-full" style={{ background: PRICE_METRIC_COLOR.impressions }} />Compradas</span><span>Escada agora: {ladder.map((floor) => (floor === null ? 'sem floor' : money(floor))).join(' → ')}</span></div>
+        </Card>
+        <Card title="Por hora">
+          <div className="mb-4 inline-flex flex-wrap rounded-md border bg-muted p-0.5" role="radiogroup" aria-label="Métrica do gráfico">
+            {([['start', 'Ponto de partida e eCPM'], ['fill', 'Compra'], ['revenue', 'Receita'], ['requests', 'Oferecidas']] as const).map(([value, label]) => <button key={value} role="radio" aria-checked={series === value} onClick={() => setSeries(value)} className={cn('h-8 rounded px-3 text-[13px] font-medium', series === value ? 'bg-background shadow-sm' : 'text-muted-foreground hover:text-foreground')}>{label}</button>)}
+          </div>
+          <PricePairChart key={series} labels={hours.map((hour) => hour.label)} {...chart} />
+          <p className="mt-3 text-[13px] text-muted-foreground">Compra: impressões compradas sobre as oferecidas na 1ª tentativa. Os números vêm do key-value groone_try do GAM, no horário de Brasília.</p>
+        </Card>
+        <section className="overflow-hidden rounded-lg border bg-card">
+          <div className="flex flex-wrap items-start justify-between gap-4 p-6">
+            <div><h2 className="text-[20px] font-semibold tracking-tight">Limites</h2><p className="mt-2 max-w-[70ch] text-[14px] text-muted-foreground">{config.automatic ? 'O motor move o ponto de partida a cada hora pelo jeito que o bloco compra. Estes são os limites de agora.' : 'Valem os limites gravados aqui, sem recálculo do motor.'}</p></div>
+            <div className="inline-flex shrink-0 rounded-md border bg-card p-0.5" role="radiogroup" aria-label="Quem define os limites">
+              {([[true, 'Calculados pelo motor'], [false, 'Definidos à mão']] as const).map(([automatic, label]) => (
+                <button key={label} type="button" role="radio" aria-checked={config.automatic === automatic} onClick={() => setConfig({ ...config, automatic })} className={cn('h-8 rounded-[4px] px-3 text-[13px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', config.automatic === automatic ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground')}>{label}</button>
+              ))}
+            </div>
+          </div>
+          {config.automatic ? (
+            <dl className="grid grid-cols-2 gap-px border-t bg-border sm:grid-cols-3 lg:grid-cols-5">
+              {limits.map(([label, value, hint]) => <div key={label} className="bg-card px-6 py-4"><dt className="text-[13px] text-muted-foreground">{label}</dt><dd className="mt-1 text-[18px] font-semibold tracking-[-0.02em] tnum">{value}</dd><dd className="mt-0.5 text-[12px] text-muted-foreground">{hint}</dd></div>)}
+            </dl>
+          ) : (
+            <div className="grid gap-4 border-t p-6 sm:grid-cols-2 lg:grid-cols-3">
+              <Field id="cas-floor-min" label={`Floor mínimo (${site.currency})`} hint="Um dos degraus da moeda. O ponto de partida nunca desce abaixo."><PriceTierSelect id="cas-floor-min" value={config.floorMin} currency={site.currency} max={PRICE_TIERS.indexOf(nearestTier(config.floorMax))} onChange={(floorMin) => setConfig({ ...config, floorMin })} /></Field>
+              <Field id="cas-floor-max" label={`Floor máximo (${site.currency})`} hint="Um dos degraus da moeda. O ponto de partida nunca sobe acima."><PriceTierSelect id="cas-floor-max" value={config.floorMax} currency={site.currency} min={PRICE_TIERS.indexOf(nearestTier(config.floorMin))} onChange={(floorMax) => setConfig({ ...config, floorMax })} /></Field>
+              <Field id="cas-drop" label="Descida por tentativa" hint={`Quantos degraus o floor desce a cada lance, de 1 a 3. Agora: cerca de ${dropPercent(config.drop)}%.`}>
+                <div id="cas-drop" className="inline-flex w-fit rounded-md border bg-card p-0.5" role="radiogroup" aria-label="Descida por tentativa">
+                  {[1, 2, 3].map((drop) => <button key={drop} type="button" role="radio" aria-checked={config.drop === drop} onClick={() => setConfig({ ...config, drop })} className={cn('h-8 w-12 rounded-[4px] text-[13px] font-medium tnum focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', config.drop === drop ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground')}>{drop}</button>)}
+                </div>
+              </Field>
+              <Field id="cas-fill-high" label="Compra alta na 1ª (%)" hint="Acima disso o ponto de partida sobe um degrau."><Input id="cas-fill-high" className="tnum" value={config.fillHigh} onChange={(event) => setConfig({ ...config, fillHigh: Number(event.target.value) || 0 })} /></Field>
+              <Field id="cas-min-requests" label="Volume mínimo por hora" hint="Impressões oferecidas para o motor mexer."><Input id="cas-min-requests" className="tnum" value={config.minRequests} onChange={(event) => setConfig({ ...config, minRequests: Number(event.target.value) || 0 })} /></Field>
+            </div>
+          )}
+          {limitsDirty && (
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t bg-muted px-6 py-3">
+              <div className="text-[13px] text-muted-foreground">{config.automatic ? 'O motor volta a calcular os limites na próxima hora.' : 'A escada nova chega na tag em até 1 hora.'}</div>
+              <div className="flex gap-2"><Button variant="outline" onClick={() => setConfig(savedConfig)}>Descartar</Button><Button onClick={() => { setSavedConfig(config); setRule({ ...rule, config }); toast.success('Limites salvos') }}>Salvar limites</Button></div>
+            </div>
+          )}
+        </section>
+        <section className="grid gap-3">
+          <div><h2 className="text-[20px] font-semibold tracking-tight">Decisões do motor</h2><p className="mt-1 text-[14px] text-muted-foreground">Uma linha por hora, da mais nova para a mais velha, com o ponto de partida antes e depois e o motivo.</p></div>
+          <Table min={720}>
+            <thead><tr><th className={th}>Hora</th><th className={th}>Ação</th><th className={cn(th, 'text-right')}>Ponto de partida</th><th className={cn(th, 'text-right')}>Compra na 1ª</th><th className={th}>Motivo</th></tr></thead>
+            <tbody>{decisions.slice((page - 1) * 10, page * 10).map((hour) => (
+              <tr key={hour.label}>
+                <td className={cn(td, 'whitespace-nowrap tnum')}>{hour.label}</td>
+                <td className={td}><span className="inline-flex items-center gap-1.5 whitespace-nowrap text-[13px]">{hour.action === 'up' ? <ChevronUp className="h-4 w-4 text-ok" /> : hour.action === 'down' ? <ChevronDown className="h-4 w-4 text-bad" /> : <span className="w-4 text-center text-muted-foreground">·</span>}{PRICE_ACTION[hour.action]}</span></td>
+                <td className={cn(td, 'whitespace-nowrap text-right tnum')}>{hour.before === hour.start ? money(hour.start) : <><span className="text-muted-foreground">{money(hour.before)} → </span>{money(hour.start)}</>}</td>
+                <td className={cn(td, 'text-right tnum')}>{pct.format(hour.fillFirst)}%</td>
+                <td className={cn(td, 'text-[13px] text-muted-foreground')}>{CASCADE_REASON[hour.reason]}</td>
+              </tr>
+            ))}</tbody>
+          </Table>
+          <PricePager page={page} total={decisions.length} onPage={setPage} />
+        </section>
+        <Dialog open={startOpen} onOpenChange={setStartOpen}>
+          <DialogContent className="max-w-[420px]">
+            <DialogHeader><DialogTitle>Ponto de partida à mão</DialogTitle><DialogDescription>O 1º floor da escada. Os outros descem {savedConfig.drop} {savedConfig.drop === 1 ? 'degrau' : 'degraus'} por tentativa, e a 4ª vai sem floor. Chega na tag em até 1 hora.</DialogDescription></DialogHeader>
+            <Field id="cas-start" label={`Ponto de partida (${site.currency})`} hint={`Um dos 200 degraus em ${site.currency}. Escada: ${cascadeLadder(startTier, savedConfig.drop).map((floor) => (floor === null ? 'sem floor' : money(floor))).join(' → ')}.`}>
+              <PriceTierSelect id="cas-start" value={startTier} currency={site.currency} onChange={setStartTier} />
+            </Field>
+            <DialogFooter><Button variant="outline" onClick={() => setStartOpen(false)}>Cancelar</Button><Button disabled={startTier === rule.start} onClick={() => { setRule({ ...rule, start: startTier }); setStartOpen(false); toast.success('Ponto de partida gravado') }}>Gravar</Button></DialogFooter>
           </DialogContent>
         </Dialog>
       </Body>
@@ -7364,7 +7618,8 @@ export default function App() {
       case 'loader': case 'loaderinterno': { const staff = screen === 'loaderinterno'; return <LoaderEditScreen key={`${loaderDraft.id}-${screen}`} initial={loaderDraft} tags={adTags} staff={staff} back={() => { go(loaderBack ?? (staff ? 'loadersinterno' : 'loaders')); setLoaderBack(null) }} save={saveLoader} remove={(id) => setLoaders((current) => current.filter((item) => item.id !== id))} /> }
       case 'adtagmetricas': case 'adtagmetricasinterno': { const staff = screen === 'adtagmetricasinterno'; const tag = adTags.find((item) => item.id === adTagId) ?? adTags[0]; return <AdTagMetricsScreen key={tag.id} tag={tag} staff={staff} back={() => go(staff ? 'adtagsinterno' : 'adtags')} edit={() => openAdTag(tag.id, staff)} /> }
       case 'regraspreco': case 'regrasprecointerno': { const staff = screen === 'regrasprecointerno'; return <PriceSitesScreen sites={priceSites} staff={staff} open={(domain) => { setPriceDomain(domain); go(staff ? 'regrasiteinterno' : 'regrasite') }} /> }
-      case 'regrasite': case 'regrasiteinterno': { const staff = screen === 'regrasiteinterno'; const site = priceSites.find((item) => item.domain === priceDomain) ?? priceSites[0]; return <PriceSiteScreen key={`${site.domain}-${JSON.stringify(site)}`} initial={site} staff={staff} back={() => go(staff ? 'regrasprecointerno' : 'regraspreco')} save={(next) => setPriceSites((current) => current.map((item) => (item.domain === next.domain ? next : item)))} openRule={(id) => { setPriceRuleId(id); go(staff ? 'regrainterno' : 'regra') }} /> }
+      case 'regrasite': case 'regrasiteinterno': { const staff = screen === 'regrasiteinterno'; const site = priceSites.find((item) => item.domain === priceDomain) ?? priceSites[0]; return <PriceSiteScreen key={`${site.domain}-${JSON.stringify(site)}`} initial={site} staff={staff} back={() => go(staff ? 'regrasprecointerno' : 'regraspreco')} save={(next) => setPriceSites((current) => current.map((item) => (item.domain === next.domain ? next : item)))} openRule={(id) => { setPriceRuleId(id); go(staff ? 'regrainterno' : 'regra') }} openCascade={(id) => { setPriceRuleId(id); go(staff ? 'cascatainterno' : 'cascata') }} /> }
+      case 'cascata': case 'cascatainterno': { const staff = screen === 'cascatainterno'; const site = priceSites.find((item) => item.domain === priceDomain && item.active) ?? priceSites[0]; const rules = priceCascades(site); const rule = rules.find((item) => item.id === priceRuleId) ?? rules[0]; return <CascadeRuleScreen key={rule.id} initial={rule} site={site} staff={staff} back={() => go(staff ? 'regrasiteinterno' : 'regrasite')} /> }
       case 'regra': case 'regrainterno': { const staff = screen === 'regrainterno'; const site = priceSites.find((item) => item.domain === priceDomain) ?? priceSites[0]; const rules = priceRules(site.active ? site : priceSites[0]); const rule = rules.find((item) => item.id === priceRuleId) ?? rules[0]; return <PriceRuleScreen key={rule.id} initial={rule} site={site.active ? site : priceSites[0]} staff={staff} back={() => go(staff ? 'regrasiteinterno' : 'regrasite')} /> }
       case 'tarefa': { const task = tasks.find((item) => item.id === taskId) ?? tasks[0]; return <TaskScreen key={task.id} task={task} update={(next) => setTasks(tasks.map((item) => (item.id === next.id ? next : item)))} back={() => go('tarefas')} /> }
     }
