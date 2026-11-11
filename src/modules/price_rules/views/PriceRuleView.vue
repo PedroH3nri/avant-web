@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** Histórico de uma regra de preço: floor contra eCPM, PMR, receita e requisições por hora, as decisões do motor, os limites e o floor à mão. */
+/** Histórico de uma regra de preço: números de 24 horas, gráfico por hora, os limites (do motor ou à mão, com floors nos degraus da moeda), as decisões do motor e o floor à mão. */
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { DropdownMenuRoot, DropdownMenuTrigger } from 'reka-ui'
@@ -12,7 +12,6 @@ import PageBody from '@/components/PageBody.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import Button from '@/components/ui/Button.vue'
 import Card from '@/components/ui/Card.vue'
-import Checkbox from '@/components/ui/Checkbox.vue'
 import DataTable from '@/components/ui/DataTable.vue'
 import Dialog from '@/components/ui/Dialog.vue'
 import Field from '@/components/ui/Field.vue'
@@ -21,10 +20,11 @@ import MenuContent from '@/components/ui/MenuContent.vue'
 import MenuItem from '@/components/ui/MenuItem.vue'
 import NativeSelect from '@/components/ui/NativeSelect.vue'
 import Pagination from '@/components/ui/Pagination.vue'
+import Segmented from '@/components/ui/Segmented.vue'
 import Status from '@/components/ui/Status.vue'
 import TableState from '@/components/ui/TableState.vue'
 import { ApiError } from '@/lib/api'
-import { errorText, lang, locale, t, type Key } from '@/lib/i18n'
+import { errorText, locale, t, type Key } from '@/lib/i18n'
 import { PAGE_SIZE } from '@/lib/pagination'
 import { td, th } from '@/lib/table'
 import {
@@ -34,21 +34,21 @@ import {
   hourPeriod,
   hourPoints,
   lastDayTotals,
-  MAX_STEP_SIZE,
-  moneyInput,
   moneyText,
-  parseMoney,
+  nearestTier,
   priceRulePermission,
   priceRulesPath,
   REASON_KEY,
   STATUS_TONE,
+  STEP_SIZES,
+  tierOptions,
   type HourSeries,
 } from '@/modules/price_rules/rules'
 import { priceRuleService } from '@/modules/price_rules/service'
 import type { PriceRuleConfigInput, PriceRuleDetails, PriceRuleHistoryEntry, PriceRuleHour, PriceRuleSite, PriceRuleStatus } from '@/modules/price_rules/types'
 import { useSession } from '@/stores/session'
 
-type LimitsForm = { automatic: boolean; pmrFloor: string; pmrEmergency: string; minRequests: string; floorMin: string; floorMax: string; step: string }
+type LimitsForm = { automatic: string; pmrFloor: string; pmrEmergency: string; minRequests: string; floorMin: string; floorMax: string; step: string }
 
 const route = useRoute()
 const session = useSession()
@@ -65,8 +65,9 @@ const period = ref<string>('2')
 const series = ref<HourSeries>('floor')
 const page = ref(1)
 const limits = ref<LimitsForm | null>(null)
+const savedLimits = ref<LimitsForm | null>(null)
 const floorOpen = ref(false)
-const floorText = ref('')
+const floorTier = ref('')
 const busy = ref(false)
 const loadError = ref<string | null>(null)
 
@@ -78,8 +79,36 @@ const points = computed(() => hourPoints(hours.value, history.value))
 const totals = computed(() => lastDayTotals(hours.value))
 const decisions = computed(() => history.value.slice((page.value - 1) * PAGE_SIZE, page.value * PAGE_SIZE))
 const decisionPages = computed(() => Math.ceil(history.value.length / PAGE_SIZE))
-const typedFloor = computed(() => parseMoney(floorText.value))
-const limitsError = computed(() => (limits.value && !limits.value.automatic ? limitsInput(limits.value) === null : false))
+const tiers = computed(() => rule.value?.tiers_micros ?? [])
+const floorOptions = computed(() => tierOptions(tiers.value, currency.value, locale.value))
+const minOptions = computed(() => tierOptions(tiers.value, currency.value, locale.value, 0, Number(limits.value?.floorMax ?? Number.POSITIVE_INFINITY)))
+const maxOptions = computed(() => tierOptions(tiers.value, currency.value, locale.value, Number(limits.value?.floorMin ?? 0)))
+const manual = computed(() => limits.value?.automatic === 'false')
+const limitsDirty = computed(() => JSON.stringify(limits.value) !== JSON.stringify(savedLimits.value))
+const limitsError = computed(() => (limits.value && manual.value ? limitsInput(limits.value) === null : false))
+const modeOptions = computed(() => [
+  { value: 'true', label: t('pr.automaticLabel') },
+  { value: 'false', label: t('pr.manualLabel') },
+])
+const stepOptions = STEP_SIZES.map((step) => ({ value: step, label: step }))
+const floorHint = computed(() => {
+  const first = tiers.value[0]
+  const last = tiers.value[tiers.value.length - 1]
+  if (first === undefined || last === undefined) return undefined
+  return t('pr.floorHint', { count: tiers.value.length, currency: currency.value ?? '', min: moneyText(first, currency.value, locale.value), max: moneyText(last, currency.value, locale.value) })
+})
+const limitList = computed(() => {
+  const config = rule.value?.config
+  if (!config) return []
+  return [
+    { label: t('pr.limit.pmrFloor'), value: `${decimal.value.format(config.pmr_floor)}%`, hint: t('pr.limit.pmrFloorHint') },
+    { label: t('pr.limit.pmrEmergency'), value: `${decimal.value.format(config.pmr_emergency)}%`, hint: t('pr.limit.pmrEmergencyHint') },
+    { label: t('pr.limit.minRequests'), value: t('pr.limit.minRequestsShort', { count: integer.value.format(config.min_eligible_requests) }), hint: t('pr.limit.minRequestsHint') },
+    { label: t('pr.limit.floorMin', { currency: currency.value ?? '' }), value: moneyText(config.floor_min_micros, currency.value, locale.value), hint: t('pr.limit.floorMinShort') },
+    { label: t('pr.limit.floorMax', { currency: currency.value ?? '' }), value: moneyText(config.floor_max_micros, currency.value, locale.value), hint: t('pr.limit.floorMaxShort') },
+    { label: t('pr.limit.step'), value: String(config.step_size), hint: t('pr.limit.stepShort') },
+  ]
+})
 const tiles = computed(() => {
   const current = rule.value
   if (!current) return []
@@ -114,29 +143,36 @@ function limitsInput(form: LimitsForm): PriceRuleConfigInput | null {
   const pmrEmergency = Number(form.pmrEmergency.replace(',', '.'))
   const minRequests = Number(form.minRequests)
   const step = Number(form.step)
-  const floorMin = parseMoney(form.floorMin)
-  const floorMax = parseMoney(form.floorMax)
+  const floorMin = Number(form.floorMin)
+  const floorMax = Number(form.floorMax)
   /** Diz se o número é uma porcentagem de 0 a 100. */
   const percent = (value: number) => Number.isFinite(value) && value >= 0 && value <= 100
   if (!percent(pmrFloor) || !percent(pmrEmergency) || !Number.isInteger(minRequests) || minRequests < 0) return null
-  if (!Number.isInteger(step) || step < 1 || step > MAX_STEP_SIZE || floorMin === null || floorMax === null || floorMin > floorMax) return null
-  return { automatic: form.automatic, pmr_floor: pmrFloor, pmr_emergency: pmrEmergency, min_eligible_requests: minRequests, floor_min_micros: floorMin, floor_max_micros: floorMax, step_size: step }
+  if (!STEP_SIZES.some((size) => Number(size) === step) || floorMin > floorMax) return null
+  return { automatic: false, pmr_floor: pmrFloor, pmr_emergency: pmrEmergency, min_eligible_requests: minRequests, floor_min_micros: floorMin, floor_max_micros: floorMax, step_size: step }
 }
 
 /** Copia os limites da regra para o formulário. */
 function fillLimits(details: PriceRuleDetails) {
   const config = details.config
-  limits.value = config
+  const form = config
     ? {
-        automatic: config.automatic,
+        automatic: String(config.automatic),
         pmrFloor: String(config.pmr_floor),
         pmrEmergency: String(config.pmr_emergency),
         minRequests: String(config.min_eligible_requests),
-        floorMin: moneyInput(config.floor_min_micros, lang.value),
-        floorMax: moneyInput(config.floor_max_micros, lang.value),
-        step: String(config.step_size),
+        floorMin: String(nearestTier(details.tiers_micros, config.floor_min_micros)),
+        floorMax: String(nearestTier(details.tiers_micros, config.floor_max_micros)),
+        step: String(Math.min(config.step_size, STEP_SIZES.length)),
       }
     : null
+  limits.value = form
+  savedLimits.value = form ? { ...form } : null
+}
+
+/** Volta os limites para os gravados. */
+function discardLimits() {
+  limits.value = savedLimits.value ? { ...savedLimits.value } : null
 }
 
 /** Carrega o site e a regra uma vez e o histórico e os números do período. */
@@ -170,18 +206,18 @@ async function changeStatus(status: PriceRuleStatus) {
   }
 }
 
-/** Abre o modal do floor à mão com o floor de agora. */
+/** Abre o modal do floor à mão com o degrau do floor de agora. */
 function openFloor() {
-  floorText.value = rule.value ? moneyInput(rule.value.floor_micros, lang.value) : ''
+  floorTier.value = rule.value ? String(nearestTier(rule.value.tiers_micros, rule.value.floor_micros)) : ''
   floorOpen.value = true
 }
 
-/** Grava o floor à mão; a API leva ao degrau mais perto. */
+/** Grava o floor à mão, sempre um dos degraus da moeda. */
 async function saveFloor() {
-  if (!rule.value || typedFloor.value === null) return
+  if (!rule.value || !floorTier.value) return
   busy.value = true
   try {
-    const updated = await service.setFloor(siteId, ruleId, typedFloor.value)
+    const updated = await service.setFloor(siteId, ruleId, Number(floorTier.value))
     rule.value = { ...rule.value, ...updated }
     floorOpen.value = false
     toast.success(t('pr.floorSaved', { floor: moneyText(updated.floor_micros, updated.currency, locale.value) }))
@@ -198,7 +234,7 @@ async function saveLimits() {
   const form = limits.value
   const current = rule.value?.config
   if (!form || !current) return
-  const input = form.automatic
+  const input = !manual.value
     ? { automatic: true, pmr_floor: current.pmr_floor, pmr_emergency: current.pmr_emergency, min_eligible_requests: current.min_eligible_requests, floor_min_micros: current.floor_min_micros, floor_max_micros: current.floor_max_micros, step_size: current.step_size }
     : limitsInput(form)
   if (!input) return
@@ -272,83 +308,99 @@ watch(period, load)
         <LineChart v-else :key="series" :labels="chart.labels" :series="chart.series" :format="chart.format" :description="t('pr.hourlyDesc')" :height="240" />
         <p class="mt-3 text-[13px] text-muted-foreground">{{ t('pr.hourlyNote') }}</p>
       </Card>
-      <div class="grid gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
-        <section class="grid content-start gap-3">
-          <h2 class="text-[20px] font-semibold tracking-[-0.025em]">{{ t('pr.decisions') }}</h2>
-          <DataTable :min="620">
-            <thead>
-              <tr>
-                <th :class="th">{{ t('pr.col.hour') }}</th>
-                <th :class="th">{{ t('pr.col.action') }}</th>
-                <th :class="[th, 'text-right']">{{ t('pr.col.floor') }}</th>
-                <th :class="th">{{ t('pr.col.reason') }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              <TableState v-if="!history.length" :cols="4" empty :desc="t('pr.noDecisions')" />
-              <tr v-for="entry in decisions" :key="`${entry.date}-${entry.hour}`">
-                <td :class="[td, 'whitespace-nowrap tnum']">{{ hourLabel(entry.date, entry.hour, locale) }}</td>
-                <td :class="td">
-                  <span class="inline-flex items-center gap-1.5 whitespace-nowrap text-[13px]">
-                    <ChevronUp v-if="entry.action === 'up'" class="size-4 text-ok" aria-hidden="true" />
-                    <ChevronDown v-else-if="entry.action === 'down'" class="size-4 text-bad" aria-hidden="true" />
-                    <span v-else class="w-4 text-center text-muted-foreground" aria-hidden="true">·</span>
-                    {{ t(ACTION_KEY[entry.action]) }}
-                  </span>
-                </td>
-                <td :class="[td, 'whitespace-nowrap text-right tnum']">
-                  <template v-if="entry.floor_before_micros !== entry.floor_applied_micros && entry.floor_before_micros > 0">
-                    <span class="text-muted-foreground">{{ moneyText(entry.floor_before_micros, currency, locale) }} → </span>
-                  </template>
-                  {{ moneyText(entry.floor_applied_micros, currency, locale) }}
-                </td>
-                <td :class="[td, 'text-[13px] text-muted-foreground']">{{ t(REASON_KEY[entry.reason]) }}</td>
-              </tr>
-            </tbody>
-          </DataTable>
-          <Pagination v-model:page="page" :total="history.length" :pages="decisionPages" />
-        </section>
-        <Card :title="t('pr.limits')" :desc="!limits ? t('pr.limitsPending') : limits.automatic ? t('pr.limitsAutomatic') : t('pr.limitsManual')">
-          <div v-if="limits" class="grid gap-4">
-            <Checkbox id="pr-automatic" v-model="limits.automatic" :label="t('pr.automaticLabel')" :disabled="!canManage" />
-            <div class="grid gap-4 sm:grid-cols-2">
-              <Field id="pr-pmr-floor" :label="t('pr.limit.pmrFloor')" :hint="t('pr.limit.pmrFloorHint')">
-                <Input id="pr-pmr-floor" v-model="limits.pmrFloor" class="tnum" inputmode="decimal" :disabled="limits.automatic || !canManage" />
-              </Field>
-              <Field id="pr-pmr-emergency" :label="t('pr.limit.pmrEmergency')" :hint="t('pr.limit.pmrEmergencyHint')">
-                <Input id="pr-pmr-emergency" v-model="limits.pmrEmergency" class="tnum" inputmode="decimal" :disabled="limits.automatic || !canManage" />
-              </Field>
-              <Field id="pr-floor-min" :label="t('pr.limit.floorMin', { currency: rule.currency })">
-                <Input id="pr-floor-min" v-model="limits.floorMin" class="tnum" inputmode="decimal" :disabled="limits.automatic || !canManage" />
-              </Field>
-              <Field id="pr-floor-max" :label="t('pr.limit.floorMax', { currency: rule.currency })">
-                <Input id="pr-floor-max" v-model="limits.floorMax" class="tnum" inputmode="decimal" :disabled="limits.automatic || !canManage" />
-              </Field>
-              <Field id="pr-min-requests" :label="t('pr.limit.minRequests')" :hint="t('pr.limit.minRequestsHint')">
-                <Input id="pr-min-requests" v-model="limits.minRequests" class="tnum" inputmode="numeric" :disabled="limits.automatic || !canManage" />
-              </Field>
-              <Field id="pr-step" :label="t('pr.limit.step')" :hint="t('pr.limit.stepHint', { max: MAX_STEP_SIZE })">
-                <Input id="pr-step" v-model="limits.step" class="tnum" inputmode="numeric" :disabled="limits.automatic || !canManage" />
-              </Field>
-            </div>
-            <p v-if="limitsError" class="text-[13px] text-bad">{{ t('pr.limitsInvalid') }}</p>
+      <section class="overflow-hidden rounded-lg border bg-card">
+        <div class="flex flex-wrap items-start justify-between gap-4 p-6">
+          <div>
+            <h2 class="text-[20px] font-semibold tracking-[-0.025em]">{{ t('pr.limits') }}</h2>
+            <p class="mt-2 max-w-[70ch] text-[14px] text-muted-foreground">{{ !limits ? t('pr.limitsPending') : manual ? t('pr.limitsManual') : t('pr.limitsAutomatic') }}</p>
           </div>
-          <template v-if="limits && canManage" #footer>
+          <Segmented v-if="limits" v-model="limits.automatic" :options="modeOptions" :label="t('pr.limitsMode')" :disabled="!canManage" />
+        </div>
+        <dl v-if="limits && !manual" class="grid grid-cols-2 gap-px border-t bg-border sm:grid-cols-3 lg:grid-cols-6">
+          <div v-for="item in limitList" :key="item.label" class="bg-card px-6 py-4">
+            <dt class="text-[13px] text-muted-foreground">{{ item.label }}</dt>
+            <dd class="mt-1 text-[18px] font-semibold tracking-[-0.02em] tnum">{{ item.value }}</dd>
+            <dd class="mt-0.5 text-[12px] text-muted-foreground">{{ item.hint }}</dd>
+          </div>
+        </dl>
+        <div v-else-if="limits" class="grid gap-4 border-t p-6 sm:grid-cols-2 lg:grid-cols-3">
+          <Field id="pr-pmr-floor" :label="t('pr.limit.pmrFloor')" :hint="t('pr.limit.pmrFloorHint')">
+            <Input id="pr-pmr-floor" v-model="limits.pmrFloor" class="tnum" inputmode="decimal" :disabled="!canManage" />
+          </Field>
+          <Field id="pr-pmr-emergency" :label="t('pr.limit.pmrEmergency')" :hint="t('pr.limit.pmrEmergencyHint')">
+            <Input id="pr-pmr-emergency" v-model="limits.pmrEmergency" class="tnum" inputmode="decimal" :disabled="!canManage" />
+          </Field>
+          <Field id="pr-min-requests" :label="t('pr.limit.minRequests')" :hint="t('pr.limit.minRequestsHint')">
+            <Input id="pr-min-requests" v-model="limits.minRequests" class="tnum" inputmode="numeric" :disabled="!canManage" />
+          </Field>
+          <Field id="pr-floor-min" :label="t('pr.limit.floorMin', { currency: rule.currency })" :hint="t('pr.limit.floorMinHint')">
+            <NativeSelect id="pr-floor-min" v-model="limits.floorMin" class="tnum" :options="minOptions" :disabled="!canManage" />
+          </Field>
+          <Field id="pr-floor-max" :label="t('pr.limit.floorMax', { currency: rule.currency })" :hint="t('pr.limit.floorMaxHint')">
+            <NativeSelect id="pr-floor-max" v-model="limits.floorMax" class="tnum" :options="maxOptions" :disabled="!canManage" />
+          </Field>
+          <Field id="pr-step" :label="t('pr.limit.step')" :hint="t('pr.limit.stepHint')">
+            <Segmented v-model="limits.step" :options="stepOptions" :label="t('pr.limit.step')" :disabled="!canManage" />
+          </Field>
+          <p v-if="limitsError" class="text-[13px] text-bad sm:col-span-2 lg:col-span-3">{{ t('pr.limitsInvalid') }}</p>
+        </div>
+        <div v-if="limits && limitsDirty && canManage" class="flex flex-wrap items-center justify-between gap-3 border-t bg-muted px-6 py-3">
+          <div class="text-[13px] text-muted-foreground">{{ manual ? t('pr.limitsNext.manual') : t('pr.limitsNext.automatic') }}</div>
+          <div class="flex gap-2">
+            <Button variant="outline" :disabled="busy" @click="discardLimits">{{ t('pr.discard') }}</Button>
             <Button :disabled="busy || limitsError" @click="saveLimits">{{ t('pr.saveLimits') }}</Button>
-          </template>
-        </Card>
-      </div>
+          </div>
+        </div>
+      </section>
+      <section class="grid gap-3">
+        <div>
+          <h2 class="text-[20px] font-semibold tracking-[-0.025em]">{{ t('pr.decisions') }}</h2>
+          <p class="mt-1 text-[14px] text-muted-foreground">{{ t('pr.decisionsDesc') }}</p>
+        </div>
+        <DataTable :min="720">
+          <thead>
+            <tr>
+              <th :class="th">{{ t('pr.col.hour') }}</th>
+              <th :class="th">{{ t('pr.col.action') }}</th>
+              <th :class="[th, 'text-right']">{{ t('pr.col.floor') }}</th>
+              <th :class="th">{{ t('pr.col.reason') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <TableState v-if="!history.length" :cols="4" empty :desc="t('pr.noDecisions')" />
+            <tr v-for="entry in decisions" :key="`${entry.date}-${entry.hour}`">
+              <td :class="[td, 'whitespace-nowrap tnum']">{{ hourLabel(entry.date, entry.hour, locale) }}</td>
+              <td :class="td">
+                <span class="inline-flex items-center gap-1.5 whitespace-nowrap text-[13px]">
+                  <ChevronUp v-if="entry.action === 'up'" class="size-4 text-ok" aria-hidden="true" />
+                  <ChevronDown v-else-if="entry.action === 'down'" class="size-4 text-bad" aria-hidden="true" />
+                  <span v-else class="w-4 text-center text-muted-foreground" aria-hidden="true">·</span>
+                  {{ t(ACTION_KEY[entry.action]) }}
+                </span>
+              </td>
+              <td :class="[td, 'whitespace-nowrap text-right tnum']">
+                <template v-if="entry.floor_before_micros !== entry.floor_applied_micros && entry.floor_before_micros > 0">
+                  <span class="text-muted-foreground">{{ moneyText(entry.floor_before_micros, currency, locale) }} → </span>
+                </template>
+                {{ moneyText(entry.floor_applied_micros, currency, locale) }}
+              </td>
+              <td :class="[td, 'text-[13px] text-muted-foreground']">{{ t(REASON_KEY[entry.reason]) }}</td>
+            </tr>
+          </tbody>
+        </DataTable>
+        <Pagination v-model:page="page" :total="history.length" :pages="decisionPages" />
+      </section>
     </template>
   </PageBody>
   <Dialog v-model:open="floorOpen" :title="t('pr.manualFloor')" :desc="t('pr.manualFloorDesc')">
     <form id="pr-floor" class="grid gap-4" @submit.prevent="saveFloor">
-      <Field id="pr-floor-value" :label="t('pr.floorLabel', { currency: rule?.currency ?? '' })" :hint="t('pr.floorHint')" :error="floorText.trim() !== '' && typedFloor === null && t('pr.floorInvalid')">
-        <Input id="pr-floor-value" v-model="floorText" class="tnum" inputmode="decimal" />
+      <Field id="pr-floor-value" :label="t('pr.floorLabel', { currency: rule?.currency ?? '' })" :hint="floorHint">
+        <NativeSelect id="pr-floor-value" v-model="floorTier" class="tnum" :options="floorOptions" />
       </Field>
     </form>
     <template #footer>
       <Button variant="outline" @click="floorOpen = false">{{ t('common.cancel') }}</Button>
-      <Button type="submit" form="pr-floor" :disabled="busy || typedFloor === null">{{ t('pr.saveFloor') }}</Button>
+      <Button type="submit" form="pr-floor" :disabled="busy || !floorTier || Number(floorTier) === rule?.floor_micros">{{ t('pr.saveFloor') }}</Button>
     </template>
   </Dialog>
 </template>

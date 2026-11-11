@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** Regra de preço de um site: ligar, percentual de controle, blocos com o modelo, ganho contra o controle e a lista de regras. */
+/** Regra de preço de um site: números do topo, ganho contra o controle por dia, lista de regras e a configuração (ligar, controle e o modelo de cada bloco). */
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useDebounceFn } from '@vueuse/core'
@@ -12,13 +12,13 @@ import PageBody from '@/components/PageBody.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import Button from '@/components/ui/Button.vue'
 import Card from '@/components/ui/Card.vue'
-import Checkbox from '@/components/ui/Checkbox.vue'
 import DataTable from '@/components/ui/DataTable.vue'
 import Field from '@/components/ui/Field.vue'
 import Input from '@/components/ui/Input.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
 import Pagination from '@/components/ui/Pagination.vue'
+import Segmented from '@/components/ui/Segmented.vue'
 import Status from '@/components/ui/Status.vue'
+import Switch from '@/components/ui/Switch.vue'
 import TableState from '@/components/ui/TableState.vue'
 import { ApiError } from '@/lib/api'
 import { errorText, formatDate, locale, t } from '@/lib/i18n'
@@ -46,6 +46,7 @@ const models = ref<Record<string, string>>({})
 const rules = ref<PriceRule[] | null>(null)
 const page = ref(1)
 const total = ref(0)
+const ruleCount = ref<number | null>(null)
 const pages = ref(0)
 const hash = ref('')
 const country = ref('')
@@ -58,6 +59,22 @@ const canManage = computed(() => session.can(priceRulePermission(internal, 'mana
 const blocked = computed(() => !site.value?.currency || !site.value.currency_supported)
 const automaticCount = computed(() => Object.values(models.value).filter((model) => model === 'automatic').length)
 const status = computed(() => (site.value ? siteStatus({ ...site.value, automatic_blocks: site.value.blocks.length }) : null))
+const showGain = computed(() => !!site.value?.active && site.value.blocks.length > 0)
+const summary = computed(() => {
+  const current = site.value
+  const found = gain.value
+  if (!current) return []
+  const currency = found?.currency ?? current.currency
+  /** Um valor por mil requisições no período, ou um traço sem os números dos dois grupos. */
+  const perThousand = (value: number | undefined) => (found && value !== undefined ? moneyText(value * 1_000_000, currency, locale.value) : '—')
+  const percent = found ? `${found.gain >= 0 ? '↑' : '↓'} ${new Intl.NumberFormat(locale.value, { maximumFractionDigits: 1 }).format(Math.abs(found.gain))}%` : '—'
+  return [
+    { label: t('pr.sum.gain'), value: percent, hint: found ? t('pr.sum.gainHint') : t('pr.sum.gainEmpty'), tone: found ? (found.gain >= 0 ? 'text-ok' : 'text-bad') : '' },
+    { label: t('pr.gain.rule'), value: perThousand(found?.ruleTotal), hint: t('pr.sum.ruleHint'), tone: '' },
+    { label: t('pr.gain.control'), value: perThousand(found?.controlTotal), hint: t('pr.sum.controlHint', { percent: current.control_percent }), tone: '' },
+    { label: t('pr.sum.rules'), value: ruleCount.value === null ? '—' : new Intl.NumberFormat(locale.value).format(ruleCount.value), hint: t('pr.sum.rulesHint'), tone: '' },
+  ]
+})
 const dirty = computed(() => {
   const current = site.value
   if (!current) return false
@@ -115,6 +132,7 @@ async function loadRules() {
     rules.value = found.items
     total.value = found.total
     pages.value = found.pages
+    if (!hash.value.trim() && !country.value.trim()) ruleCount.value = found.total
   } catch (error) {
     rulesError.value = errorText(error instanceof ApiError ? error.code : 'unknown')
   }
@@ -122,7 +140,7 @@ async function loadRules() {
 
 /** O ganho contra o controle pelo key-value groone_group; sem acesso aos relatórios, fica de fora. */
 async function loadGain() {
-  if (!site.value?.active) return
+  if (!showGain.value) return
   gain.value = await reportService
     .query(gainQuery(siteId))
     .then(gainSeries)
@@ -149,6 +167,11 @@ async function save() {
   } finally {
     busy.value = false
   }
+}
+
+/** Volta os campos para a configuração salva. */
+function discard() {
+  if (site.value) fill(site.value)
 }
 
 /** Volta para a primeira página quando um filtro muda. */
@@ -180,63 +203,14 @@ watch([hash, country], filterLater)
       <div v-else-if="!site.currency_supported" class="flex items-start gap-2 rounded-md border border-warn/40 bg-warn/10 px-3 py-2 text-[13px]">
         <AlertTriangle class="mt-0.5 size-4 shrink-0 text-warn" />{{ t('pr.unsupportedCurrency', { currency: site.currency }) }}
       </div>
-      <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
-        <Card :title="t('pr.settings')" :desc="t('pr.settingsDesc')" :footer-note="dirty ? t('pr.tagDelay') : undefined">
-          <div class="grid gap-5">
-            <Checkbox id="pr-active" v-model="active" :label="t('pr.activeLabel')" :disabled="blocked || !canManage" />
-            <Field id="pr-control" :label="t('pr.controlLabel', { percent: control })" :hint="t('pr.controlHint', { max: MAX_CONTROL_PERCENT })">
-              <input id="pr-control" v-model.number="control" type="range" min="0" :max="MAX_CONTROL_PERCENT" step="1" :disabled="blocked || !canManage" class="w-full accent-foreground" />
-            </Field>
-          </div>
-          <template v-if="canManage" #footer>
-            <Button :disabled="!dirty || busy" @click="save">{{ t('common.save') }}</Button>
-          </template>
-        </Card>
-        <Card :pad="false">
-          <div class="p-6">
-            <h2 class="text-[20px] font-semibold tracking-[-0.025em]">{{ t('pr.blocks') }}</h2>
-            <p class="mt-2 max-w-[70ch] text-[14px] text-muted-foreground">{{ t('pr.blocksDesc', { count: automaticCount }) }}</p>
-          </div>
-          <div class="max-h-[360px] overflow-y-auto border-t">
-            <table class="w-full text-left text-[14px] [&_tbody_tr:last-child_td]:border-b-0">
-              <thead class="sticky top-0 bg-card">
-                <tr>
-                  <th :class="th">{{ t('pr.col.block') }}</th>
-                  <th :class="th">{{ t('pr.col.model') }}</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="block in site.available_blocks" :key="block">
-                  <td :class="[td, 'py-2 font-mono text-[13px]']">{{ block }}</td>
-                  <td :class="[td, 'py-2']">
-                    <NativeSelect v-model="models[block]" :aria-label="t('pr.modelOf', { block })" class="w-full max-w-[200px]" :options="modelOptions" :disabled="blocked || !canManage" />
-                  </td>
-                </tr>
-                <tr v-if="!site.available_blocks.length">
-                  <td :class="[td, 'py-8 text-center text-muted-foreground']" colspan="2">{{ t('pr.noBlocks') }}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </Card>
+      <div v-if="site.active" class="grid grid-cols-2 gap-px overflow-hidden rounded-lg border bg-border lg:grid-cols-4">
+        <div v-for="tile in summary" :key="tile.label" class="bg-card p-4">
+          <div class="text-[13px] text-muted-foreground">{{ tile.label }}</div>
+          <div :class="['mt-1 text-[24px] font-semibold tracking-[-0.03em] tnum max-sm:text-[20px]', tile.tone]">{{ tile.value }}</div>
+          <div class="mt-1 text-[12px] text-muted-foreground">{{ tile.hint }}</div>
+        </div>
       </div>
       <Card v-if="gain && gainChart" :title="t('pr.gain.title')" :desc="t('pr.gain.desc', { percent: site.control_percent })">
-        <div class="mb-5 grid grid-cols-1 gap-px overflow-hidden rounded-lg border bg-border sm:grid-cols-3">
-          <div class="bg-card p-4">
-            <div class="text-[13px] text-muted-foreground">{{ t('pr.gain.rule') }}</div>
-            <div class="mt-1 text-[24px] font-semibold tracking-[-0.03em] tnum max-sm:text-[20px]">{{ moneyText(gain.ruleTotal * 1_000_000, gain.currency, locale) }}</div>
-          </div>
-          <div class="bg-card p-4">
-            <div class="text-[13px] text-muted-foreground">{{ t('pr.gain.control') }}</div>
-            <div class="mt-1 text-[24px] font-semibold tracking-[-0.03em] tnum max-sm:text-[20px]">{{ moneyText(gain.controlTotal * 1_000_000, gain.currency, locale) }}</div>
-          </div>
-          <div class="bg-card p-4">
-            <div class="text-[13px] text-muted-foreground">{{ t('pr.gain.gain') }}</div>
-            <div :class="['mt-1 text-[24px] font-semibold tracking-[-0.03em] tnum max-sm:text-[20px]', gain.gain >= 0 ? 'text-ok' : 'text-bad']">
-              <span aria-hidden="true">{{ gain.gain >= 0 ? '↑' : '↓' }}</span> {{ new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(Math.abs(gain.gain)) }}%
-            </div>
-          </div>
-        </div>
         <LineChart :labels="gainChart.labels" :series="gainChart.series" :format="(value) => (value === null ? '—' : moneyText(value * 1_000_000, gain?.currency ?? null, locale))" :description="t('pr.gain.chartDesc')" :height="240" />
       </Card>
       <section v-if="site.active" class="grid gap-3">
@@ -284,6 +258,45 @@ watch([hash, country], filterLater)
           </tbody>
         </DataTable>
         <Pagination v-if="!rulesError" v-model:page="page" :total="total" :pages="pages" />
+      </section>
+      <section class="overflow-hidden rounded-lg border bg-card">
+        <div class="px-6 pt-6">
+          <h2 class="text-[20px] font-semibold tracking-[-0.025em]">{{ t('pr.settings') }}</h2>
+          <p class="mt-2 max-w-[70ch] text-[14px] text-muted-foreground">{{ t('pr.settingsDesc') }}</p>
+        </div>
+        <div class="mt-6 grid gap-6 border-t p-6 md:grid-cols-2 md:gap-10">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <div class="text-[14px] font-medium">{{ t('pr.ruleOnSite') }}</div>
+              <p class="mt-1 text-[13px] text-muted-foreground">{{ active ? t('pr.activeHint.on') : t('pr.activeHint.off') }}</p>
+            </div>
+            <Switch id="pr-active" v-model="active" :label="t('pr.ruleOnSite')" :disabled="blocked || !canManage" />
+          </div>
+          <Field id="pr-control" :label="t('pr.controlLabel', { percent: control })" :hint="t('pr.controlHint', { max: MAX_CONTROL_PERCENT })">
+            <input id="pr-control" v-model.number="control" type="range" min="0" :max="MAX_CONTROL_PERCENT" step="1" :disabled="blocked || !canManage" class="w-full accent-foreground" />
+          </Field>
+        </div>
+        <div class="border-t p-6">
+          <div class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+            <div class="text-[14px] font-medium">{{ t('pr.blocks') }}</div>
+            <div class="text-[13px] text-muted-foreground tnum">{{ t('pr.blocksCount', { count: automaticCount, total: site.available_blocks.length }) }}</div>
+          </div>
+          <p class="mt-1 text-[13px] text-muted-foreground">{{ t('pr.blocksHint') }}</p>
+          <ul v-if="site.available_blocks.length" class="mt-4 grid gap-2 md:grid-cols-2">
+            <li v-for="block in site.available_blocks" :key="block" class="flex items-center justify-between gap-3 rounded-md border px-3 py-2">
+              <span class="min-w-0 truncate font-mono text-[13px]">{{ block }}</span>
+              <Segmented :model-value="models[block] ?? NO_MODEL" :options="modelOptions" :label="t('pr.modelOf', { block })" :disabled="blocked || !canManage" @update:model-value="(model) => (models[block] = model)" />
+            </li>
+          </ul>
+          <p v-else class="mt-4 rounded-md border px-3 py-6 text-center text-[13px] text-muted-foreground">{{ t('pr.noBlocks') }}</p>
+        </div>
+        <div v-if="dirty && canManage" class="flex flex-wrap items-center justify-between gap-3 border-t bg-muted px-6 py-3">
+          <div class="text-[13px] text-muted-foreground">{{ t('pr.unsaved') }}</div>
+          <div class="flex gap-2">
+            <Button variant="outline" :disabled="busy" @click="discard">{{ t('pr.discard') }}</Button>
+            <Button :disabled="busy" @click="save">{{ t('common.save') }}</Button>
+          </div>
+        </div>
       </section>
     </template>
   </PageBody>
