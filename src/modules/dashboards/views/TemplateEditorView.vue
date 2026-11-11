@@ -23,6 +23,7 @@ import type { Localized } from '@/lib/types'
 import AddWidgetDialog from '@/modules/dashboards/components/AddWidgetDialog.vue'
 import DashboardGrid from '@/modules/dashboards/components/DashboardGrid.vue'
 import { templateService } from '@/modules/dashboards/service'
+import { editableWidgets } from '@/modules/dashboards/rules'
 import { blankTemplate, canPreview, templateForm, templateInput, toggleRole, withAudience } from '@/modules/dashboards/template-rules'
 import type { ManagedTemplate, TemplateAudience, TemplateInput, TemplateRoles, Widget } from '@/modules/dashboards/types'
 import { reportService } from '@/modules/reports/service'
@@ -61,7 +62,7 @@ async function load() {
     if (found) {
       saved.value = found
       form.value = templateForm(found)
-      widgets.value = found.definition.widgets.map((widget) => ({ ...widget }))
+      widgets.value = editableWidgets(found.definition.widgets)
     }
   } catch (error) {
     loadError.value = apiMessage(error)
@@ -86,7 +87,7 @@ async function save() {
     const created = !saved.value
     saved.value = result
     form.value = templateForm(result)
-    widgets.value = result.definition.widgets.map((widget) => ({ ...widget }))
+    widgets.value = editableWidgets(result.definition.widgets)
     toast.success(created ? t('tpl.created') : t('tpl.saved'))
     if (created) await router.replace(`${LIST}/${result.id}`)
   } catch (error) {

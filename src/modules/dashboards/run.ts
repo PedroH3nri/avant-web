@@ -46,8 +46,8 @@ export function useDashboardRun(target: () => RunTarget) {
     const current = target()
     const ticket = ++latest
     loading.value = false
-    if (disposed || current.preview || !savedQueries(current).length || !(current.templateId || current.dashboardId)) return
     failure.value = null
+    if (disposed || current.preview || !savedQueries(current).length || !(current.templateId || current.dashboardId)) return
     loading.value = true
     try {
       const found = current.templateId
