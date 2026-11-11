@@ -7,6 +7,7 @@ import GroupedBarChart from '@/components/charts/GroupedBarChart.vue'
 import LineChart, { type LineSeries } from '@/components/charts/LineChart.vue'
 import PieChart from '@/components/charts/PieChart.vue'
 import { lang, locale, t } from '@/lib/i18n'
+import { metricColors } from '@/lib/metric-colors'
 import { change, formatMetric, toNumber } from '@/lib/metrics'
 import { axisSplit, comparing, dimensionText, metricInfo, scaleHue, seriesColor, splitSeries, SPLIT_COLORS, type ReportDraft } from '@/modules/reports/rules'
 import type { MetricCatalog, ReportResult } from '@/modules/reports/types'
@@ -19,7 +20,13 @@ const props = defineProps<{
   compact?: boolean
 }>()
 
-const metrics = computed(() => props.draft.metrics.map((key) => ({ key, ...metricInfo(key, props.catalog, lang.value), style: props.draft.styles[key] ?? {} })))
+const metrics = computed(() => {
+  const colors = metricColors(props.draft.metrics)
+  return props.draft.metrics.map((key, index) => {
+    const style = props.draft.styles[key] ?? {}
+    return { key, ...metricInfo(key, props.catalog, lang.value), style, color: seriesColor(style.color ?? colors[index]) }
+  })
+})
 const first = computed(() => metrics.value[0])
 const layout = computed(() => axisSplit(props.draft.dimensions))
 const empty = computed(() => props.result.rows.length === 0)
@@ -43,7 +50,7 @@ const kpi = computed(() => {
 })
 
 const funnel = computed<FunnelStep[]>(() =>
-  metrics.value.map((metric) => ({ key: metric.key, label: metric.label, value: toNumber(props.result.totals[metric.key]), color: seriesColor(metric.style.color) })),
+  metrics.value.map((metric) => ({ key: metric.key, label: metric.label, value: toNumber(props.result.totals[metric.key]), color: metric.color })),
 )
 
 const items = computed(() => {
@@ -70,12 +77,11 @@ const lines = computed(() => {
     }
   }
   const rows = props.result.rows
-  const series: LineSeries[] = metrics.value.map((metric, index) => ({
+  const series: LineSeries[] = metrics.value.map((metric) => ({
     key: metric.key,
     name: metric.label,
     values: rows.map((row) => toNumber(row.metrics[metric.key])),
-    color: seriesColor(metric.style.color),
-    dashed: index > 0 && !metric.style.color,
+    color: metric.color,
   }))
   if (comparing(props.draft) && first.value && rows.some((row) => row.previous)) {
     const key = first.value.key
@@ -96,9 +102,9 @@ const firstFormat = computed(() => formatter(first.value?.key ?? ''))
     </div>
   </div>
   <FunnelChart v-else-if="draft.chart === 'funnel'" :steps="funnel" :format="(step) => formatter(step.key)(step.value)" :description="description" />
-  <PieChart v-else-if="draft.chart === 'pie'" :items="items" :format="(value) => firstFormat(value)" :description="description" :color="seriesColor(first?.style.color)" />
+  <PieChart v-else-if="draft.chart === 'pie'" :items="items" :format="(value) => firstFormat(value)" :description="description" :color="first?.color" />
   <GroupedBarChart v-else-if="draft.chart === 'bar' && layout.split" :labels="lines.labels" :series="lines.series" :format="firstFormat" :description="description" />
-  <BarChart v-else-if="draft.chart === 'bar'" :items="items" :format="(value) => firstFormat(value)" :description="description" :color="seriesColor(first?.style.color)" />
+  <BarChart v-else-if="draft.chart === 'bar'" :items="items" :format="(value) => firstFormat(value)" :description="description" :color="first?.color" />
   <LineChart v-else-if="draft.chart === 'line' || draft.chart === 'area'" :labels="lines.labels" :series="lines.series" :format="firstFormat" :description="description" :area="draft.chart === 'area'" />
   <p v-if="lines.hidden > 0 && layout.split" class="mt-2 text-[13px] text-muted-foreground">{{ t('report.hiddenSeries', { shown: lines.series.length, total: lines.series.length + lines.hidden }) }}</p>
 </template>

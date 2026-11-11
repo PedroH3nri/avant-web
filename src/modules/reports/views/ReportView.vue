@@ -43,6 +43,7 @@ import {
   type ViewPeriod,
 } from '@/modules/reports/rules'
 import { exportUrl, reportService } from '@/modules/reports/service'
+import { metricColors } from '@/lib/metric-colors'
 import type { MetricCatalog, ReportResult, SavedReport } from '@/modules/reports/types'
 import type { UserRef } from '@/lib/types'
 import { teamService } from '@/modules/team/service'
@@ -83,7 +84,8 @@ const totals = computed(() => {
   const draft = shown.value
   const found = result.value
   if (!draft || !found || !catalog.value) return []
-  return draft.metrics.map((key) => {
+  const colors = metricColors(draft.metrics)
+  return draft.metrics.map((key, index) => {
     const info = metricInfo(key, catalog.value as MetricCatalog, lang.value)
     const value = toNumber(found.totals[key])
     const scale = draft.styles[key]?.scale
@@ -92,7 +94,7 @@ const totals = computed(() => {
       label: info.label,
       text: formatMetric(value, info.format, locale.value, false, found.currency),
       delta: comparing(draft) ? change(value, toNumber(found.previous_totals?.[key])) : null,
-      dot: seriesColor(draft.styles[key]?.color),
+      dot: seriesColor(draft.styles[key]?.color ?? colors[index]),
       color: scale && value !== null ? `hsl(${scaleHue(scale, value)} 75% 38%)` : undefined,
     }
   })

@@ -5,6 +5,7 @@ import { useDebounceFn } from '@vueuse/core'
 import { Eye } from 'lucide-vue-next'
 import BarChart from '@/components/charts/BarChart.vue'
 import KpiTile from '@/components/charts/KpiTile.vue'
+import { colorVar, metricColor } from '@/lib/metric-colors'
 import LineChart, { type LineSeries } from '@/components/charts/LineChart.vue'
 import PeriodPicker from '@/components/charts/PeriodPicker.vue'
 import LoadError from '@/components/LoadError.vue'
@@ -98,7 +99,7 @@ const peak = computed(() => peakHour(byHour.value?.rows ?? [], METRIC))
 const chart = computed(() => {
   if (!daily.value) return null
   const labels = daysOf(daily.value.period).map((day) => shortDay(day, locale.value))
-  const series: LineSeries[] = [{ key: 'current', name: t('perf.current'), values: dailySeries(daily.value.rows, daily.value.period, METRIC, 'sum') }]
+  const series: LineSeries[] = [{ key: 'current', name: t('perf.current'), values: dailySeries(daily.value.rows, daily.value.period, METRIC, 'sum'), color: colorVar(metricColor(METRIC)) }]
   if (compare.value && previousDaily.value) {
     const values = dailySeries(previousDaily.value.rows, previousDaily.value.period, METRIC, 'sum')
     series.push({ key: 'previous', name: t('perf.previous'), values: values.slice(0, labels.length), tone: 'muted', dashed: true })
@@ -161,7 +162,7 @@ const siteRows = computed(() =>
       <section class="grid content-start gap-3">
         <h2 class="text-[16px] font-semibold tracking-[-0.015em]">{{ t('pv.byHour') }}</h2>
         <Card>
-          <BarChart v-if="hourBars.length" :items="hourBars" :format="show" :description="t('pv.byHour')" />
+          <BarChart v-if="hourBars.length" :items="hourBars" :color="colorVar(metricColor(METRIC))" :format="show" :description="t('pv.byHour')" />
           <p v-else-if="!loading" class="text-[13px] text-muted-foreground">{{ t('pv.empty') }}</p>
           <div v-else class="h-40 animate-pulse rounded-md bg-muted" aria-hidden="true" />
         </Card>
@@ -169,7 +170,7 @@ const siteRows = computed(() =>
       <section class="grid content-start gap-3">
         <h2 class="text-[16px] font-semibold tracking-[-0.015em]">{{ t('pv.byCountry') }}</h2>
         <Card>
-          <BarChart v-if="countryBars.length" :items="countryBars" :format="show" :description="t('pv.byCountry')" />
+          <BarChart v-if="countryBars.length" :items="countryBars" :color="colorVar(metricColor(METRIC))" :format="show" :description="t('pv.byCountry')" />
           <p v-else-if="!loading" class="text-[13px] text-muted-foreground">{{ t('pv.empty') }}</p>
           <div v-else class="h-40 animate-pulse rounded-md bg-muted" aria-hidden="true" />
         </Card>

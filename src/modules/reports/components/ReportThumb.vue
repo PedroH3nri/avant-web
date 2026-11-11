@@ -7,6 +7,7 @@ import { computed } from 'vue'
 import { lang, locale, t } from '@/lib/i18n'
 import { change, formatMetric, toNumber } from '@/lib/metrics'
 import { comparisonOf, dimensionText, metricInfo, seriesColor, thumbPath, thumbShape } from '@/modules/reports/rules'
+import { metricColor } from '@/lib/metric-colors'
 import type { MetricCatalog, MetricFormat, SavedReport } from '@/modules/reports/types'
 
 const props = defineProps<{ report: SavedReport; catalog: MetricCatalog | null; compact?: boolean }>()
@@ -24,7 +25,7 @@ const label = computed(() => (props.catalog ? metricInfo(metricKey.value, props.
 const format = computed<MetricFormat>(() =>
   props.catalog ? metricInfo(metricKey.value, props.catalog, lang.value).format : preview.value?.money ? 'currency' : 'number',
 )
-const color = computed(() => seriesColor(props.report.chart_options.metrics?.[metricKey.value]?.color))
+const color = computed(() => seriesColor(props.report.chart_options.metrics?.[metricKey.value]?.color ?? metricColor(metricKey.value)))
 const values = computed(() => (preview.value ? preview.value.points.map((point) => toNumber(point.value)) : SKETCH))
 const path = computed(() => thumbPath(values.value, WIDTH, HEIGHT))
 const highest = computed(() => Math.max(...values.value.map((value) => value ?? 0), 0) || 1)

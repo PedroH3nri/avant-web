@@ -5,6 +5,7 @@ import { useRoute } from 'vue-router'
 import { DropdownMenuRoot, DropdownMenuTrigger } from 'reka-ui'
 import { AlertTriangle, ArrowLeft, ChevronDown, ChevronUp, MoreHorizontal, Pencil } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
+import { colorVar, metricColor } from '@/lib/metric-colors'
 import LineChart from '@/components/charts/LineChart.vue'
 import LoadError from '@/components/LoadError.vue'
 import PageBody from '@/components/PageBody.vue'
@@ -96,15 +97,15 @@ const chart = computed(() => {
     return {
       labels,
       series: [
-        { key: 'floor', name: t('pr.series.floor'), values: points.value.map((point) => point.floor) },
-        { key: 'ecpm', name: t('pr.series.ecpm'), values: points.value.map((point) => point.ecpm), tone: 'muted' as const, dashed: true },
+        { key: 'floor', name: t('pr.series.floor'), values: points.value.map((point) => point.floor), color: colorVar(metricColor('floor')) },
+        { key: 'ecpm', name: t('pr.series.ecpm'), values: points.value.map((point) => point.ecpm), color: colorVar(metricColor('ecpm')) },
       ],
       format: (value: number | null) => (value === null ? '—' : moneyText(value, currency.value, locale.value)),
     }
-  if (series.value === 'pmr') return { labels, series: [{ key: 'pmr', name: t('pr.series.pmr'), values: points.value.map((point) => point.pmr) }], format: (value: number | null) => (value === null ? '—' : `${decimal.value.format(value)}%`) }
+  if (series.value === 'pmr') return { labels, series: [{ key: 'pmr', name: t('pr.series.pmr'), values: points.value.map((point) => point.pmr), color: colorVar(metricColor('pmr')) }], format: (value: number | null) => (value === null ? '—' : `${decimal.value.format(value)}%`) }
   if (series.value === 'revenue')
-    return { labels, series: [{ key: 'revenue', name: t('pr.series.revenue'), values: points.value.map((point) => point.revenue) }], format: (value: number | null) => (value === null ? '—' : moneyText(value, currency.value, locale.value)) }
-  return { labels, series: [{ key: 'requests', name: t('pr.series.requests'), values: points.value.map((point) => point.requests) }], format: (value: number | null) => (value === null ? '—' : integer.value.format(value)) }
+    return { labels, series: [{ key: 'revenue', name: t('pr.series.revenue'), values: points.value.map((point) => point.revenue), color: colorVar(metricColor('revenue')) }], format: (value: number | null) => (value === null ? '—' : moneyText(value, currency.value, locale.value)) }
+  return { labels, series: [{ key: 'requests', name: t('pr.series.requests'), values: points.value.map((point) => point.requests), color: colorVar(metricColor('requests')) }], format: (value: number | null) => (value === null ? '—' : integer.value.format(value)) }
 })
 
 /** Os limites do formulário no formato da API; null quando algum campo não vale. */
