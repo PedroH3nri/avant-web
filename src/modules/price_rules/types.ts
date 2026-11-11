@@ -62,9 +62,10 @@ export interface PriceRuleConfig {
   updated_at: string
 }
 
-/** A regra com os limites; `config` vazio até a primeira hora do motor. */
+/** A regra com os limites; `config` vazio até a primeira hora do motor. `tiers_micros` são os degraus da moeda, os únicos floors aceitos. */
 export interface PriceRuleDetails extends PriceRule {
   config: PriceRuleConfig | null
+  tiers_micros: number[]
 }
 
 export type PriceRuleConfigInput = Omit<PriceRuleConfig, 'updated_at'>

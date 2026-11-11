@@ -8,7 +8,7 @@ export type StatusTone = 'ok' | 'warn' | 'bad' | 'ochre' | 'neutral'
 export type HourSeries = 'floor' | 'pmr' | 'revenue' | 'requests'
 
 export const MAX_CONTROL_PERCENT = 50
-export const MAX_STEP_SIZE = 10
+export const STEP_SIZES = ['1', '2', '3'] as const
 export const HOUR_PERIODS = ['2', '7', '31'] as const
 export const STATUS_TONE: Record<PriceRuleStatus, StatusTone> = { active: 'ok', paused: 'ochre', disabled: 'neutral' }
 export const ACTION_KEY: Record<PriceRuleAction, Key> = { up: 'pr.action.up', down: 'pr.action.down', hold: 'pr.action.hold', initial: 'pr.action.initial' }
@@ -52,17 +52,14 @@ export function moneyText(micros: number, currency: string | null, locale: strin
   return new Intl.NumberFormat(locale, { style: 'currency', currency, minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value)
 }
 
-/** Um valor digitado ("1,25" ou "1.25") em micros; vazio ou inválido vira null. */
-export function parseMoney(text: string): number | null {
-  const normalized = text.trim().replace(/\s/g, '').replace(',', '.')
-  if (!/^\d+(\.\d{1,6})?$/.test(normalized)) return null
-  return Math.round(Number(normalized) * MICROS)
+/** O degrau da moeda mais perto do valor (em micros); sem degraus, o próprio valor. */
+export function nearestTier(tiers: number[], micros: number): number {
+  return tiers.reduce((best, tier) => (Math.abs(tier - micros) < Math.abs(best - micros) ? tier : best), tiers[0] ?? micros)
 }
 
-/** Um valor em micros como texto para o campo, com vírgula no português e no espanhol. */
-export function moneyInput(micros: number, lang: string): string {
-  const text = (micros / MICROS).toFixed(2)
-  return lang === 'en' ? text : text.replace('.', ',')
+/** Os degraus entre `min` e `max` (inclusive) como opções de seleção, com o valor em micros. */
+export function tierOptions(tiers: number[], currency: string | null, locale: string, min = 0, max = Number.POSITIVE_INFINITY): { value: string; label: string }[] {
+  return tiers.filter((tier) => tier >= min && tier <= max).map((tier) => ({ value: String(tier), label: moneyText(tier, currency, locale) }))
 }
 
 /** O dia `AAAA-MM-DD` em São Paulo, o fuso dos números do GAM. */
