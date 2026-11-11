@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** Regra de preço de um site: números do topo, ganho contra o controle por dia, lista de regras e a configuração (ligar, controle e o modelo de cada bloco). */
+/** Regra de preço de um site: números do topo, ganho contra o controle por dia, as regras da Automática e da Cascata e a configuração (ligar, controle e o modelo de cada bloco). */
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useDebounceFn } from '@vueuse/core'
@@ -25,12 +25,31 @@ import { errorText, formatDate, locale, t } from '@/lib/i18n'
 import { td, th } from '@/lib/table'
 import { dayText } from '@/modules/rewards/rules'
 import { reportService } from '@/modules/reports/service'
-import { gainQuery, gainSeries, MAX_CONTROL_PERCENT, moneyText, priceRulePermission, priceRulesPath, siteStatus, STATUS_TONE, type GainSeries } from '@/modules/price_rules/rules'
+import {
+  blockKind,
+  cascadeFunnel,
+  cascadeLadder,
+  DEFAULT_DROP_TIERS,
+  gainQuery,
+  gainSeries,
+  hourPeriod,
+  MAX_CONTROL_PERCENT,
+  moneyText,
+  percentText,
+  priceRulePermission,
+  priceRulesPath,
+  siteStatus,
+  STATUS_TONE,
+  type GainSeries,
+} from '@/modules/price_rules/rules'
 import { priceRuleService } from '@/modules/price_rules/service'
 import type { PriceRule, PriceRuleModel, PriceRuleSite } from '@/modules/price_rules/types'
 import { useSession } from '@/stores/session'
 
 const NO_MODEL = 'none'
+const LADDER_PERIOD_DAYS = 2
+
+type CascadeRow = { rule: PriceRule; ladder: (number | null)[]; firstFill: number | null; ladderFill: number | null }
 
 const route = useRoute()
 const router = useRouter()
@@ -46,8 +65,13 @@ const models = ref<Record<string, string>>({})
 const rules = ref<PriceRule[] | null>(null)
 const page = ref(1)
 const total = ref(0)
-const ruleCount = ref<number | null>(null)
+const automaticRuleCount = ref<number | null>(null)
 const pages = ref(0)
+const cascades = ref<CascadeRow[] | null>(null)
+const cascadePage = ref(1)
+const cascadeTotal = ref(0)
+const cascadePages = ref(0)
+const cascadeError = ref<string | null>(null)
 const hash = ref('')
 const country = ref('')
 const gain = ref<GainSeries | null>(null)
@@ -58,6 +82,8 @@ const rulesError = ref<string | null>(null)
 const canManage = computed(() => session.can(priceRulePermission(internal, 'manage')))
 const blocked = computed(() => !site.value?.currency || !site.value.currency_supported)
 const automaticCount = computed(() => Object.values(models.value).filter((model) => model === 'automatic').length)
+const cascadeCount = computed(() => Object.values(models.value).filter((model) => model === 'cascade').length)
+const ruleCount = computed(() => (automaticRuleCount.value === null ? null : automaticRuleCount.value + cascadeTotal.value))
 const status = computed(() => (site.value ? siteStatus({ ...site.value, automatic_blocks: site.value.blocks.length }) : null))
 const showGain = computed(() => !!site.value?.active && site.value.blocks.length > 0)
 const summary = computed(() => {
@@ -80,12 +106,18 @@ const dirty = computed(() => {
   if (!current) return false
   const saved = Object.fromEntries(current.blocks.map((block) => [block.block, block.model]))
   const chosen = Object.fromEntries(Object.entries(models.value).filter(([, model]) => model !== NO_MODEL))
-  return current.active !== active.value || current.control_percent !== control.value || JSON.stringify(saved) !== JSON.stringify(sortKeys(chosen))
+  return current.active !== active.value || current.control_percent !== control.value || JSON.stringify(sortKeys(saved)) !== JSON.stringify(sortKeys(chosen))
 })
-const modelOptions = computed(() => [
-  { value: 'automatic', label: t('pr.model.automatic') },
-  { value: NO_MODEL, label: t('pr.model.none') },
-])
+const modelOptions = computed(() => ({
+  content: [
+    { value: 'automatic', label: t('pr.model.automatic') },
+    { value: NO_MODEL, label: t('pr.model.none') },
+  ],
+  cascade: [
+    { value: 'cascade', label: t('pr.model.cascade') },
+    { value: NO_MODEL, label: t('pr.model.none') },
+  ],
+}))
 const gainChart = computed(() => {
   const series = gain.value
   if (!series) return null
@@ -118,6 +150,7 @@ async function load() {
   try {
     fill(await service.settings(siteId))
     void loadRules()
+    void loadCascades()
     void loadGain()
   } catch (error) {
     loadError.value = errorText(error instanceof ApiError ? error.code : 'unknown')
@@ -128,13 +161,35 @@ async function load() {
 async function loadRules() {
   rulesError.value = null
   try {
-    const found = await service.rules(siteId, { page: page.value, content_hash: hash.value.trim(), country: country.value.trim().toUpperCase() })
+    const found = await service.rules(siteId, { page: page.value, content_hash: hash.value.trim(), country: country.value.trim().toUpperCase(), model: 'automatic' })
     rules.value = found.items
     total.value = found.total
     pages.value = found.pages
-    if (!hash.value.trim() && !country.value.trim()) ruleCount.value = found.total
+    if (!hash.value.trim() && !country.value.trim()) automaticRuleCount.value = found.total
   } catch (error) {
     rulesError.value = errorText(error instanceof ApiError ? error.code : 'unknown')
+  }
+}
+
+/** A escada e as compras de 24 horas de uma regra da Cascata. */
+async function cascadeRow(rule: PriceRule, start: string, end: string): Promise<CascadeRow> {
+  const [details, hours] = await Promise.all([service.rule(siteId, rule.id), service.cascadeHours(siteId, rule.id, start, end)])
+  const funnel = cascadeFunnel(hours)
+  const ladder = cascadeLadder(details.tiers_micros, rule.floor_micros, details.config?.drop_tiers ?? DEFAULT_DROP_TIERS)
+  return { rule, ladder, firstFill: funnel.firstFill, ladderFill: funnel.ladderFill }
+}
+
+/** Carrega a página das regras da Cascata com a escada e as compras de cada uma. */
+async function loadCascades() {
+  cascadeError.value = null
+  try {
+    const found = await service.rules(siteId, { page: cascadePage.value, model: 'cascade' })
+    const { start, end } = hourPeriod(LADDER_PERIOD_DAYS)
+    cascades.value = await Promise.all(found.items.map((rule) => cascadeRow(rule, start, end)))
+    cascadeTotal.value = found.total
+    cascadePages.value = found.pages
+  } catch (error) {
+    cascadeError.value = errorText(error instanceof ApiError ? error.code : 'unknown')
   }
 }
 
@@ -161,6 +216,7 @@ async function save() {
     fill(saved)
     toast.success(t('pr.saved'))
     void loadRules()
+    void loadCascades()
     void loadGain()
   } catch (error) {
     toast.error(errorText(error instanceof ApiError ? error.code : 'unknown'))
@@ -184,6 +240,7 @@ const filterLater = useDebounceFn(refilter, 300)
 
 onMounted(load)
 watch(page, loadRules)
+watch(cascadePage, loadCascades)
 watch([hash, country], filterLater)
 </script>
 
@@ -216,7 +273,7 @@ watch([hash, country], filterLater)
       <section v-if="site.active" class="grid gap-3">
         <div class="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h2 class="text-[20px] font-semibold tracking-[-0.025em]">{{ t('pr.rules') }}</h2>
+            <h2 class="text-[20px] font-semibold tracking-[-0.025em]">{{ t('pr.model.automatic') }}</h2>
             <p class="mt-1 text-[14px] text-muted-foreground">{{ t('pr.rulesDesc') }}</p>
           </div>
           <div class="flex flex-wrap gap-2">
@@ -259,6 +316,45 @@ watch([hash, country], filterLater)
         </DataTable>
         <Pagination v-if="!rulesError" v-model:page="page" :total="total" :pages="pages" />
       </section>
+      <section v-if="site.active && (cascadeError || cascadeTotal > 0)" class="grid gap-3">
+        <div>
+          <h2 class="text-[20px] font-semibold tracking-[-0.025em]">{{ t('pr.model.cascade') }}</h2>
+          <p class="mt-1 max-w-[80ch] text-[14px] text-muted-foreground">{{ t('pr.cascade.desc') }}</p>
+        </div>
+        <LoadError v-if="cascadeError" :message="cascadeError" @retry="loadCascades" />
+        <DataTable v-else :min="860">
+          <thead>
+            <tr>
+              <th :class="th">{{ t('pr.col.block') }}</th>
+              <th :class="th">{{ t('pr.col.country') }}</th>
+              <th :class="th">{{ t('pr.col.ladder') }}</th>
+              <th :class="[th, 'text-right']">{{ t('pr.col.firstFill') }}</th>
+              <th :class="[th, 'text-right']">{{ t('pr.col.ladderFill') }}</th>
+              <th :class="th">{{ t('pr.col.status') }}</th>
+              <th :class="th"><span class="sr-only">{{ t('pr.col.actions') }}</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <TableState v-if="!cascades" :cols="7" loading />
+            <tr v-for="row in cascades ?? []" :key="row.rule.id" class="hover:bg-muted">
+              <td :class="[td, 'font-mono text-[13px]']">{{ row.rule.block }}</td>
+              <td :class="td">{{ row.rule.country_code }}</td>
+              <td :class="[td, 'whitespace-nowrap text-[13px] tnum']">
+                <span v-for="(floor, index) in row.ladder" :key="index" :class="index ? 'text-muted-foreground' : 'font-medium'">{{ index ? ' → ' : '' }}{{ floor === null ? t('pr.noFloor') : moneyText(floor, row.rule.currency, locale) }}</span>
+              </td>
+              <td :class="[td, 'text-right tnum']">{{ percentText(row.firstFill, locale) }}</td>
+              <td :class="[td, 'text-right tnum']">{{ percentText(row.ladderFill, locale) }}</td>
+              <td :class="td">
+                <Status :tone="STATUS_TONE[row.rule.status]">{{ t(`pr.ruleStatus.${row.rule.status}`) }}</Status>
+              </td>
+              <td :class="[td, 'text-right']">
+                <Button size="sm" variant="outline" @click="router.push(`${base}/${siteId}/cascata/${row.rule.id}`)"><History />{{ t('pr.history') }}</Button>
+              </td>
+            </tr>
+          </tbody>
+        </DataTable>
+        <Pagination v-if="!cascadeError && cascadePages > 1" v-model:page="cascadePage" :total="cascadeTotal" :pages="cascadePages" />
+      </section>
       <section class="overflow-hidden rounded-lg border bg-card">
         <div class="px-6 pt-6">
           <h2 class="text-[20px] font-semibold tracking-[-0.025em]">{{ t('pr.settings') }}</h2>
@@ -279,13 +375,21 @@ watch([hash, country], filterLater)
         <div class="border-t p-6">
           <div class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
             <div class="text-[14px] font-medium">{{ t('pr.blocks') }}</div>
-            <div class="text-[13px] text-muted-foreground tnum">{{ t('pr.blocksCount', { count: automaticCount, total: site.available_blocks.length }) }}</div>
+            <div class="text-[13px] text-muted-foreground tnum">{{ t('pr.blocksCount', { automatic: automaticCount, cascade: cascadeCount }) }}</div>
           </div>
           <p class="mt-1 text-[13px] text-muted-foreground">{{ t('pr.blocksHint') }}</p>
           <ul v-if="site.available_blocks.length" class="mt-4 grid gap-2 md:grid-cols-2">
             <li v-for="block in site.available_blocks" :key="block" class="flex items-center justify-between gap-3 rounded-md border px-3 py-2">
               <span class="min-w-0 truncate font-mono text-[13px]">{{ block }}</span>
-              <Segmented :model-value="models[block] ?? NO_MODEL" :options="modelOptions" :label="t('pr.modelOf', { block })" :disabled="blocked || !canManage" @update:model-value="(model) => (models[block] = model)" />
+              <span v-if="blockKind(block) === 'offerwall'" class="shrink-0 text-[13px] text-muted-foreground">{{ t('pr.offerwall') }}</span>
+              <Segmented
+                v-else
+                :model-value="models[block] ?? NO_MODEL"
+                :options="blockKind(block) === 'cascade' ? modelOptions.cascade : modelOptions.content"
+                :label="t('pr.modelOf', { block })"
+                :disabled="blocked || !canManage"
+                @update:model-value="(model) => (models[block] = model)"
+              />
             </li>
           </ul>
           <p v-else class="mt-4 rounded-md border px-3 py-6 text-center text-[13px] text-muted-foreground">{{ t('pr.noBlocks') }}</p>

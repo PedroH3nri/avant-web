@@ -1,9 +1,19 @@
 /** Formatos da API das regras de preço (iguais ao dto.py de modules/price_rules no avant-api). Valores em micros, na moeda da network do site. Datas em ISO 8601 UTC. */
 
-export type PriceRuleModel = 'automatic'
+export type PriceRuleModel = 'automatic' | 'cascade'
 export type PriceRuleStatus = 'active' | 'paused' | 'disabled'
 export type PriceRuleAction = 'up' | 'down' | 'hold' | 'initial'
-export type PriceRuleReason = 'manual' | 'stable' | 'pmr_down_floor' | 'pmr_up_over_roof' | 'insufficient_volume' | 'responses_server_drop' | 'initial_rule_creation'
+export type PriceRuleReason =
+  | 'manual'
+  | 'stable'
+  | 'pmr_down_floor'
+  | 'pmr_up_over_roof'
+  | 'insufficient_volume'
+  | 'responses_server_drop'
+  | 'initial_rule_creation'
+  | 'fills_first'
+  | 'fills_late'
+  | 'no_new_data'
 export type BlockKind = 'offerwall' | 'reward' | 'interstitial' | 'content' | 'anchor' | 'fixed'
 
 /** Uma linha da lista de sites; `client` só no interno. */
@@ -43,6 +53,7 @@ export interface PriceRule {
   content_hash: string
   block: string
   kind: BlockKind
+  model: PriceRuleModel
   country_code: string
   currency: string
   floor_micros: number
@@ -58,6 +69,7 @@ export interface PriceRuleConfig {
   floor_min_micros: number
   floor_max_micros: number
   step_size: number
+  drop_tiers: number
   automatic: boolean
   updated_at: string
 }
@@ -68,7 +80,8 @@ export interface PriceRuleDetails extends PriceRule {
   tiers_micros: number[]
 }
 
-export type PriceRuleConfigInput = Omit<PriceRuleConfig, 'updated_at'>
+/** Os limites para gravar; sem `drop_tiers`, a API mantém a descida guardada (a Automática ignora). */
+export type PriceRuleConfigInput = Omit<PriceRuleConfig, 'updated_at' | 'drop_tiers'> & { drop_tiers?: number }
 
 export interface PriceRuleHistoryEntry {
   date: string
@@ -90,4 +103,20 @@ export interface PriceRuleHour {
   revenue_micros: number
   pmr: number
   ecpm_micros: number
+}
+
+/** Os números de uma tentativa da Cascata numa hora (key `groone_try`). */
+export interface CascadeTry {
+  eligible_requests: number
+  responses_served: number
+  impressions: number
+  revenue_micros: number
+}
+
+/** Uma hora da regra Cascata: o ponto de partida e as quatro tentativas, da 1ª à 4ª. */
+export interface CascadeHour {
+  date: string
+  hour: number
+  floor_micros: number
+  tries: CascadeTry[]
 }

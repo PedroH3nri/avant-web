@@ -54,6 +54,11 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/modules/price_rules/views/PriceRuleView.vue'),
         meta: { permission: 'price_rules.view' },
       },
+      {
+        path: 'regras-de-preco/:siteId/cascata/:ruleId',
+        component: () => import('@/modules/price_rules/views/CascadeRuleView.vue'),
+        meta: { permission: 'price_rules.view' },
+      },
       { path: 'loaders', component: () => import('@/modules/loaders/views/LoadersView.vue'), meta: { permission: 'ad_tags.view' } },
       { path: 'loaders/novo', component: () => import('@/modules/loaders/views/LoaderEditView.vue'), meta: { permission: 'ad_tags.manage' } },
       { path: 'loaders/:id', component: () => import('@/modules/loaders/views/LoaderEditView.vue'), meta: { permission: 'ad_tags.view' } },
@@ -112,6 +117,11 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'interno/regras-de-preco/:siteId/regras/:ruleId',
         component: () => import('@/modules/price_rules/views/PriceRuleView.vue'),
+        meta: { internal: true, permission: 'internal.price_rules.view' },
+      },
+      {
+        path: 'interno/regras-de-preco/:siteId/cascata/:ruleId',
+        component: () => import('@/modules/price_rules/views/CascadeRuleView.vue'),
         meta: { internal: true, permission: 'internal.price_rules.view' },
       },
       { path: 'interno/loaders', component: () => import('@/modules/loaders/views/LoadersView.vue'), meta: { internal: true, permission: 'internal.ad_tags.view' } },

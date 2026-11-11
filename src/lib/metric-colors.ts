@@ -8,7 +8,8 @@ const FALLBACK: SeriesColor[] = ['lime', 'cyan', 'magenta', 'violet', 'orange', 
 /** A cor fixa de cada métrica do catálogo, por família:
  * receita verde, valor por mil (eCPM e RPM) dourado, impressões violeta, requisições laranja,
  * taxas ciano, cliques, page views e floor magenta, o que falta vermelho. Inclui as séries de
- * rewards, tag e regras de preço, que não estão no catálogo. */
+ * rewards, tag e regras de preço, que não estão no catálogo; na Cascata, a compra na escada fica
+ * ciano e a compra na 1ª violeta, para as duas não se confundirem no mesmo gráfico. */
 export const METRIC_COLOR: Record<string, SeriesColor> = {
   revenue: 'lime',
   revenue_gross: 'lime',
@@ -31,6 +32,8 @@ export const METRIC_COLOR: Record<string, SeriesColor> = {
   clicks: 'magenta',
   page_views: 'magenta',
   floor: 'magenta',
+  fill: 'cyan',
+  fill_first: 'violet',
   requests: 'orange',
   opens: 'violet',
   completed: 'lime',

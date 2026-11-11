@@ -2,6 +2,13 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { api } from '@/lib/api'
 import type { ReportResult } from '@/modules/reports/types'
 import {
+  blockKind,
+  cascadeFunnel,
+  cascadeLadder,
+  cascadePoints,
+  CASCADE_REASON_KEY,
+  DROP_TIERS,
+  dropPercent,
   gainQuery,
   gainSeries,
   hourPeriod,
@@ -10,13 +17,15 @@ import {
   lastDayTotals,
   moneyText,
   nearestTier,
+  percentText,
   tierOptions,
   priceRulePermission,
   priceRulesPath,
+  REASON_KEY,
   siteStatus,
 } from '@/modules/price_rules/rules'
 import { priceRuleService } from '@/modules/price_rules/service'
-import type { PriceRuleHistoryEntry, PriceRuleHour } from '@/modules/price_rules/types'
+import type { CascadeHour, PriceRuleHistoryEntry, PriceRuleHour } from '@/modules/price_rules/types'
 
 /** Uma hora do GAM com 200 requisições, 150 respostas e 100 impressões. */
 function hour(date: string, at: number, revenue = 400_000): PriceRuleHour {
@@ -26,6 +35,23 @@ function hour(date: string, at: number, revenue = 400_000): PriceRuleHour {
 /** Uma decisão do motor que levou o floor ao valor dado. */
 function decision(date: string, at: number, floor: number): PriceRuleHistoryEntry {
   return { date, hour: at, action: 'up', reason: 'pmr_up_over_roof', floor_before_micros: floor - 10_000, floor_applied_micros: floor, created_at: `${date}T00:00:00Z` }
+}
+
+const USD_TIERS = [1_010_000, 1_050_000, 1_090_000, 1_130_000, 1_170_000, 1_220_000, 1_260_000]
+
+/** Uma hora da Cascata: a 1ª com 100 pedidos e 40 compras, as outras com o que sobrou. */
+function cascadeHour(date: string, at: number, floor = 1_220_000): CascadeHour {
+  return {
+    date,
+    hour: at,
+    floor_micros: floor,
+    tries: [
+      { eligible_requests: 100, responses_served: 40, impressions: 40, revenue_micros: 60_000 },
+      { eligible_requests: 60, responses_served: 20, impressions: 20, revenue_micros: 25_000 },
+      { eligible_requests: 40, responses_served: 10, impressions: 10, revenue_micros: 10_000 },
+      { eligible_requests: 30, responses_served: 20, impressions: 20, revenue_micros: 5_000 },
+    ],
+  }
 }
 
 /** O resultado de uma consulta de relatório com as linhas por dia e grupo. */
@@ -117,6 +143,66 @@ describe('regras de tela das regras de preço', () => {
   })
 })
 
+describe('regras de tela da Cascata', () => {
+  it('blockKind', () => {
+    expect(blockKind('Content3_Mobile')).toBe('content')
+    expect(blockKind('Fixed_Desktop')).toBe('cascade')
+    expect(blockKind('Anchor_Mobile')).toBe('cascade')
+    expect(blockKind('Interstitial_Mobile')).toBe('cascade')
+    expect(blockKind('Rewards')).toBe('cascade')
+    expect(blockKind('Reward_Mobile')).toBe('cascade')
+    expect(blockKind('Offerwall')).toBe('offerwall')
+  })
+
+  it('cascadeLadder', () => {
+    expect(cascadeLadder(USD_TIERS, 1_220_000, 2)).toEqual([1_220_000, 1_130_000, 1_050_000, null])
+    expect(cascadeLadder(USD_TIERS, 1_090_000, 3)).toEqual([1_090_000, 1_010_000, 1_010_000, null])
+    expect(DROP_TIERS).toEqual(['1', '2', '3'])
+    expect(percentText(40, 'pt-BR')).toBe('40,00%')
+    expect(percentText(null, 'pt-BR')).toBe('—')
+  })
+
+  it('dá a queda aproximada de cada lance pelos degraus', () => {
+    expect(dropPercent([1_000_000, 1_037_000], 2)).toBeCloseTo(7.01, 1)
+    expect(dropPercent([], 2)).toBe(0)
+  })
+
+  it('soma o funil das últimas 24 horas por tentativa', () => {
+    const rows = Array.from({ length: 30 }, (_item, index) => cascadeHour(index < 24 ? '2026-11-10' : '2026-11-09', index % 24))
+    const funnel = cascadeFunnel(rows)
+    expect(funnel.tries.map((step) => [step.requests, step.filled, step.revenue])).toEqual([
+      [2400, 960, 1_440_000],
+      [1440, 480, 600_000],
+      [960, 240, 240_000],
+      [720, 480, 120_000],
+    ])
+    expect(funnel.firstFill).toBeCloseTo(40)
+    expect(funnel.ladderFill).toBeCloseTo(90)
+    expect(funnel.revenue).toBe(2_400_000)
+    expect(cascadeFunnel([]).firstFill).toBeNull()
+  })
+
+  it('monta os pontos por hora da mais velha à mais nova', () => {
+    const points = cascadePoints([cascadeHour('2026-11-10', 9, 1_260_000), cascadeHour('2026-11-10', 8)])
+    expect(points.map((point) => [point.hour, point.start, point.requests, point.revenue])).toEqual([
+      [8, 1_220_000, 100, 100_000],
+      [9, 1_260_000, 100, 100_000],
+    ])
+    expect(points[0]!.firstFill).toBeCloseTo(40)
+    expect(points[0]!.ladderFill).toBeCloseTo(90)
+    expect(points[0]!.ecpm).toBe(1_111_111)
+  })
+
+  it('tem texto para os motivos novos e os da Cascata', () => {
+    expect(REASON_KEY.fills_first).toBe('pr.reason.fillsFirst')
+    expect(REASON_KEY.fills_late).toBe('pr.reason.fillsLate')
+    expect(REASON_KEY.no_new_data).toBe('pr.reason.noNewData')
+    expect(CASCADE_REASON_KEY.stable).toBe('pr.cascadeReason.stable')
+    expect(CASCADE_REASON_KEY.initial_rule_creation).toBe('pr.cascadeReason.initial')
+    expect(CASCADE_REASON_KEY.manual).toBe('pr.reason.manual')
+  })
+})
+
 describe('service das regras de preço', () => {
   afterEach(() => vi.restoreAllMocks())
 
@@ -132,5 +218,13 @@ describe('service das regras de preço', () => {
     expect(get).toHaveBeenCalledWith('/internal/sites/s1/price-rules/r1/hours', { start: '2026-11-01', end: '2026-11-02' })
     expect(put).toHaveBeenCalledWith('/sites/s1/price-rules/settings', { active: true, control_percent: 10 })
     expect(patch).toHaveBeenCalledWith('/internal/sites/s1/price-rules/r1', { status: 'paused' })
+  })
+
+  it('pede as horas da Cascata e filtra as regras pelo modelo', async () => {
+    const get = vi.spyOn(api, 'get').mockResolvedValue([])
+    await priceRuleService(true).cascadeHours('s1', 'r1', '2026-11-01', '2026-11-02')
+    await priceRuleService(false).rules('s1', { page: 1, model: 'cascade' })
+    expect(get).toHaveBeenCalledWith('/internal/sites/s1/price-rules/r1/cascade-hours', { start: '2026-11-01', end: '2026-11-02' })
+    expect(get).toHaveBeenCalledWith('/sites/s1/price-rules', { page: 1, model: 'cascade' })
   })
 })
