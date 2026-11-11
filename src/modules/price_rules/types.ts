@@ -34,7 +34,8 @@ export interface PriceRuleBlock {
   model: PriceRuleModel
 }
 
-/** A configuração do site; `currency` vem vazia até a primeira sincronia do GAM. */
+/** A configuração do site; `currency` vem vazia até a primeira sincronia do GAM e
+ * `recommended_models` traz o modelo recomendado de cada bloco (sem o offerwall). */
 export interface PriceRuleSite {
   site_id: string
   domain: string
@@ -44,6 +45,7 @@ export interface PriceRuleSite {
   currency_supported: boolean
   blocks: PriceRuleBlock[]
   available_blocks: string[]
+  recommended_models?: Record<string, PriceRuleModel>
   updated_at: string
 }
 

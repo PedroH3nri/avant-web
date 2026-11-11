@@ -1,9 +1,9 @@
 <script setup lang="ts">
-/** Escolha entre poucas opções lado a lado (grupo de rádio), como "Automática | Sem regra" ou os degraus 1, 2 e 3. */
+/** Escolha entre poucas opções lado a lado (grupo de rádio), como "Automática | Cascata | Sem regra" ou os degraus 1, 2 e 3; `note` marca uma opção com um texto curto. */
 import { cn } from '@/lib/utils'
 
 const model = defineModel<string>({ required: true })
-defineProps<{ options: { value: string; label: string }[]; label: string; disabled?: boolean; class?: string }>()
+defineProps<{ options: { value: string; label: string; note?: string }[]; label: string; disabled?: boolean; class?: string }>()
 </script>
 
 <template>
@@ -22,6 +22,7 @@ defineProps<{ options: { value: string; label: string }[]; label: string; disabl
       @click="model = option.value"
     >
       {{ option.label }}
+      <span v-if="option.note" class="ml-1 text-[11px] font-normal text-muted-foreground">{{ option.note }}</span>
     </button>
   </div>
 </template>

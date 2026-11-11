@@ -26,7 +26,6 @@ import { td, th } from '@/lib/table'
 import { dayText } from '@/modules/rewards/rules'
 import { reportService } from '@/modules/reports/service'
 import {
-  blockKind,
   cascadeFunnel,
   cascadeLadder,
   DEFAULT_DROP_TIERS,
@@ -34,10 +33,14 @@ import {
   gainSeries,
   hourPeriod,
   MAX_CONTROL_PERCENT,
+  modelChoices,
+  modelCounts,
   moneyText,
+  NO_MODEL,
   percentText,
   priceRulePermission,
   priceRulesPath,
+  recommendedModel,
   siteStatus,
   STATUS_TONE,
   type GainSeries,
@@ -46,7 +49,6 @@ import { priceRuleService } from '@/modules/price_rules/service'
 import type { PriceRule, PriceRuleModel, PriceRuleSite } from '@/modules/price_rules/types'
 import { useSession } from '@/stores/session'
 
-const NO_MODEL = 'none'
 const LADDER_PERIOD_DAYS = 2
 
 type CascadeRow = { rule: PriceRule; ladder: (number | null)[]; firstFill: number | null; ladderFill: number | null }
@@ -81,8 +83,7 @@ const rulesError = ref<string | null>(null)
 
 const canManage = computed(() => session.can(priceRulePermission(internal, 'manage')))
 const blocked = computed(() => !site.value?.currency || !site.value.currency_supported)
-const automaticCount = computed(() => Object.values(models.value).filter((model) => model === 'automatic').length)
-const cascadeCount = computed(() => Object.values(models.value).filter((model) => model === 'cascade').length)
+const counts = computed(() => modelCounts(models.value))
 const hasCascadeBlocks = computed(() => !!site.value?.blocks.some((block) => block.model === 'cascade'))
 const ruleCount = computed(() => (automaticRuleCount.value === null ? null : automaticRuleCount.value + cascadeTotal.value))
 const status = computed(() => (site.value ? siteStatus({ ...site.value, automatic_blocks: site.value.blocks.length }) : null))
@@ -109,16 +110,11 @@ const dirty = computed(() => {
   const chosen = Object.fromEntries(Object.entries(models.value).filter(([, model]) => model !== NO_MODEL))
   return current.active !== active.value || current.control_percent !== control.value || JSON.stringify(sortKeys(saved)) !== JSON.stringify(sortKeys(chosen))
 })
-const modelOptions = computed(() => ({
-  content: [
-    { value: 'automatic', label: t('pr.model.automatic') },
-    { value: NO_MODEL, label: t('pr.model.none') },
-  ],
-  cascade: [
-    { value: 'cascade', label: t('pr.model.cascade') },
-    { value: NO_MODEL, label: t('pr.model.none') },
-  ],
-}))
+const blockOptions = computed(() => {
+  const current = site.value
+  if (!current) return {}
+  return Object.fromEntries(current.available_blocks.map((block) => [block, blockOptionList(current, block)]))
+})
 const gainChart = computed(() => {
   const series = gain.value
   if (!series) return null
@@ -130,6 +126,13 @@ const gainChart = computed(() => {
     ],
   }
 })
+
+/** As opções do bloco com a recomendada marcada; vazio no offerwall, que fica com o Google. */
+function blockOptionList(current: PriceRuleSite, block: string) {
+  const recommended = recommendedModel(current, block)
+  if (!recommended) return []
+  return modelChoices(recommended).map((choice) => ({ value: choice.value, label: t(choice.key), note: choice.recommended ? t('pr.recommended') : undefined }))
+}
 
 /** Um objeto com as chaves em ordem, para comparar os blocos. */
 function sortKeys(record: Record<string, string>): Record<string, string> {
@@ -376,17 +379,17 @@ watch([hash, country], filterLater)
         <div class="border-t p-6">
           <div class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
             <div class="text-[14px] font-medium">{{ t('pr.blocks') }}</div>
-            <div class="text-[13px] text-muted-foreground tnum">{{ t('pr.blocksCount', { automatic: automaticCount, cascade: cascadeCount }) }}</div>
+            <div class="text-[13px] text-muted-foreground tnum">{{ t('pr.blocksCount', { automatic: counts.automatic, cascade: counts.cascade }) }}</div>
           </div>
           <p class="mt-1 text-[13px] text-muted-foreground">{{ t('pr.blocksHint') }}</p>
           <ul v-if="site.available_blocks.length" class="mt-4 grid gap-2 md:grid-cols-2">
-            <li v-for="block in site.available_blocks" :key="block" class="flex items-center justify-between gap-3 rounded-md border px-3 py-2">
+            <li v-for="block in site.available_blocks" :key="block" class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 rounded-md border px-3 py-2">
               <span class="min-w-0 truncate font-mono text-[13px]">{{ block }}</span>
-              <span v-if="blockKind(block) === 'offerwall'" class="shrink-0 text-[13px] text-muted-foreground">{{ t('pr.offerwall') }}</span>
+              <span v-if="!blockOptions[block]?.length" class="shrink-0 text-[13px] text-muted-foreground">{{ t('pr.offerwall') }}</span>
               <Segmented
                 v-else
                 :model-value="models[block] ?? NO_MODEL"
-                :options="blockKind(block) === 'cascade' ? modelOptions.cascade : modelOptions.content"
+                :options="blockOptions[block] ?? []"
                 :label="t('pr.modelOf', { block })"
                 :disabled="blocked || !canManage"
                 @update:model-value="(model) => (models[block] = model)"
