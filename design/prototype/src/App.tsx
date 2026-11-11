@@ -6826,7 +6826,7 @@ function PriceTierSelect({ id, value, currency, onChange, min = 0, max = 199 }: 
 function priceMoney(value: number, currency: string | null) { return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: currency ?? 'USD', minimumFractionDigits: 2 }).format(value) }
 
 const INITIAL_PRICE_SITES: PriceSite[] = [
-  { domain: 'acai.com.br', client: 'Açaí Mídia', network: 'Açaí Mídia MCM', currency: 'BRL', supported: true, keys: true, active: true, control: 10, available: PRICE_BLOCKS, blocks: { Content1_Desktop: 'automatic', Content1_Mobile: 'automatic', Content2_Desktop: 'automatic', Content2_Mobile: 'automatic', Content3_Mobile: 'automatic', Anchor_Mobile: 'cascade', Interstitial_Mobile: 'cascade', Rewards_Mobile: 'cascade' } },
+  { domain: 'acai.com.br', client: 'Açaí Mídia', network: 'Açaí Mídia MCM', currency: 'BRL', supported: true, keys: true, active: true, control: 10, available: PRICE_BLOCKS, blocks: { Content1_Desktop: 'automatic', Content1_Mobile: 'automatic', Content2_Desktop: 'automatic', Content2_Mobile: 'automatic', Content3_Mobile: 'automatic', Anchor_Mobile: 'cascade', Interstitial_Mobile: 'cascade', Fixed_Desktop: 'cascade', Rewards_Mobile: 'cascade' } },
   { domain: 'receitasdaacai.com.br', client: 'Açaí Mídia', network: 'Açaí Mídia MCM', currency: 'BRL', supported: true, keys: true, active: false, control: 10, available: PRICE_BLOCKS.slice(0, 7), blocks: {} },
   { domain: 'technoticias.com.br', client: 'Tech Notícias', network: 'Tech Notícias MCM', currency: 'USD', supported: true, keys: false, active: false, control: 10, available: PRICE_BLOCKS, blocks: { Content1_Mobile: 'automatic' } },
   { domain: 'viagemfacil.com', client: 'Viagem Fácil', network: 'Viagem Fácil', currency: 'ARS', supported: false, keys: false, active: false, control: 10, available: PRICE_BLOCKS.slice(0, 6), blocks: {} },
@@ -6891,10 +6891,10 @@ const CASCADE_REASON: Record<CascadeReason, string> = {
 }
 const CASCADE_ATTEMPTS = 4
 const CASCADE_MAX_MS = 3000
-/** O tipo do bloco para a regra: conteúdo usa a Automática, âncora, intersticial e reward a Cascata, e o offerwall é do Google. */
+/** O tipo do bloco para a regra: conteúdo usa a Automática, âncora, intersticial, fixo e reward a Cascata, e o offerwall é do Google. */
 function priceBlockKind(block: string): 'content' | 'cascade' | 'offerwall' {
   if (block.startsWith('Offerwall')) return 'offerwall'
-  return /^(Anchor|Interstitial|Rewards)/.test(block) ? 'cascade' : 'content'
+  return /^(Anchor|Interstitial|Fixed|Rewards)/.test(block) ? 'cascade' : 'content'
 }
 /** A escada da cascata: os 3 floors com floor, descendo `drop` degraus por tentativa, e a 4ª sem floor. */
 function cascadeLadder(start: number, drop: number): (number | null)[] {
@@ -7057,7 +7057,7 @@ function PriceSitesScreen({ sites, staff, open }: { sites: PriceSite[]; staff: b
   )
 }
 
-/** Escolha do modelo de um bloco: conteúdo usa a Automática, âncora, intersticial e reward a Cascata; o offerwall é do Google e fica sem regra. */
+/** Escolha do modelo de um bloco: conteúdo usa a Automática, âncora, intersticial, fixo e reward a Cascata; o offerwall é do Google e fica sem regra. */
 function PriceBlockToggle({ block, value, disabled, onChange }: { block: string; value: PriceBlockModel; disabled: boolean; onChange: (model: PriceBlockModel) => void }) {
   const kind = priceBlockKind(block)
   if (kind === 'offerwall') return <span className="shrink-0 text-[13px] text-muted-foreground">Do Google, sem floor</span>
@@ -7093,7 +7093,7 @@ function PriceSiteConfig({ site, initial, blocked, setSite, save }: { site: Pric
       </div>
       <div className="border-t p-6">
         <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1"><div className="text-[14px] font-medium">Blocos</div><div className="text-[13px] text-muted-foreground tnum">{automatic} com a Automática · {cascade} com a Cascata</div></div>
-        <p className="mt-1 text-[13px] text-muted-foreground">Cada bloco roda um modelo só. Conteúdo usa a Automática. Âncora, intersticial e reward usam a Cascata: se ninguém compra, a tag dá um novo lance com floor menor, até 4 tentativas, a última sem floor. O offerwall é do Google e fica sem regra.</p>
+        <p className="mt-1 text-[13px] text-muted-foreground">Cada bloco roda um modelo só. Conteúdo usa a Automática. Âncora, intersticial, fixo e reward usam a Cascata: se ninguém compra, a tag dá um novo lance com floor menor, até 4 tentativas, a última sem floor. O offerwall é do Google e fica sem regra.</p>
         <ul className="mt-4 grid gap-2 md:grid-cols-2">
           {site.available.map((block) => (
             <li key={block} className="flex items-center justify-between gap-3 rounded-md border px-3 py-2">
