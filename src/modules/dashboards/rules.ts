@@ -12,6 +12,9 @@ const CHART_SIZE = { w: 6, h: 4 }
 const TEXT_SIZE = { w: 4, h: 2 }
 const ACCOUNT_SIZE = { w: 12, h: 4 }
 
+/** Cópia funda dos widgets para editar: a consulta e as opções não ficam divididas com o gravado. */
+export const editableWidgets = (widgets: Widget[]): Widget[] => JSON.parse(JSON.stringify(widgets)) as Widget[]
+
 /** Os widgets na ordem de leitura (linha, depois coluna), que é a do celular, em uma coluna. */
 export function readingOrder(widgets: Widget[]): Widget[] {
   return [...widgets].sort((first, second) => first.y - second.y || first.x - second.x)

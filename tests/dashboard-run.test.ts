@@ -1,7 +1,11 @@
 /** Testes da execução do dashboard inteiro numa requisição. */
 
-import { describe, expect, it } from 'vitest'
-import { runKey, runsQuery, widgetErrorText } from '@/modules/dashboards/run'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { defineComponent, nextTick, ref } from 'vue'
+import { flushPromises, mount } from '@vue/test-utils'
+import { ApiError } from '@/lib/api'
+import { runKey, runsQuery, useDashboardRun, widgetErrorText, type RunTarget } from '@/modules/dashboards/run'
+import { dashboardService } from '@/modules/dashboards/service'
 import type { Widget } from '@/modules/dashboards/types'
 
 /** Um widget mínimo do tipo pedido. */
@@ -34,5 +38,50 @@ describe('runKey', () => {
     const edited = [{ ...widgetOf('query'), query: { metrics: ['impressions'] } }] as Widget[]
     expect(runKey({ dashboardId: 'd1', saved: edited, filters: null })).not.toBe(key)
     expect(runKey({ dashboardId: 'd1', saved: [...saved, { ...widgetOf('text'), id: 'w2' }], filters: null })).toBe(key)
+  })
+})
+
+afterEach(() => vi.restoreAllMocks())
+
+/** Monta a execução num componente de teste e devolve o alvo e o estado. */
+function mountRun(initial: RunTarget) {
+  const target = ref(initial)
+  let state: ReturnType<typeof useDashboardRun> | null = null
+  mount(
+    defineComponent({
+      /** Componente vazio que só usa a execução. */
+      setup() {
+        state = useDashboardRun(() => target.value)
+        return () => null
+      },
+    }),
+  )
+  return { target, state: state as unknown as ReturnType<typeof useDashboardRun> }
+}
+
+describe('useDashboardRun', () => {
+  const saved = [{ ...widgetOf('query'), query: { metrics: ['revenue'] } }] as Widget[]
+
+  it('na execução pulada limpa a falha e ignora a resposta que ainda estava no caminho', async () => {
+    let reject: (error: unknown) => void = () => undefined
+    vi.spyOn(dashboardService, 'runAll').mockReturnValue(new Promise((_, failWith) => (reject = failWith)))
+    const { target, state } = mountRun({ dashboardId: 'd1', saved, filters: null })
+    expect(state.loading.value).toBe(true)
+    target.value = { ...target.value, preview: true }
+    await nextTick()
+    reject(new ApiError(500, 'unknown', 'falhou'))
+    await flushPromises()
+    expect(state.failure.value).toBeNull()
+    expect(state.loading.value).toBe(false)
+  })
+
+  it('na execução pulada apaga a falha da execução anterior', async () => {
+    vi.spyOn(dashboardService, 'runAll').mockRejectedValue(new ApiError(500, 'unknown', 'falhou'))
+    const { target, state } = mountRun({ dashboardId: 'd1', saved, filters: null })
+    await flushPromises()
+    expect(state.failure.value).not.toBeNull()
+    target.value = { ...target.value, saved: [] }
+    await flushPromises()
+    expect(state.failure.value).toBeNull()
   })
 })
