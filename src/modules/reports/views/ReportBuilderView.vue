@@ -43,6 +43,7 @@ import {
   type ReportDraft,
 } from '@/modules/reports/rules'
 import { customMetricService, exportUrl, reportService } from '@/modules/reports/service'
+import { metricColors } from '@/lib/metric-colors'
 import type { CustomMetric, MetricCatalog, MetricStyle, ReportResult, SavedReport, SavedReportInput } from '@/modules/reports/types'
 import { SITE_CATEGORIES, categoryLabel } from '@/modules/sites/rules'
 import { siteService } from '@/modules/sites/service'
@@ -404,8 +405,8 @@ onBeforeUnmount(() => {
       <main class="order-3 min-w-0 bg-muted lg:order-2">
         <div class="grid gap-4 p-4 sm:p-6">
           <div class="flex flex-wrap items-center gap-1.5">
-            <span v-for="key in draft.metrics" :key="key" class="inline-flex h-7 items-center gap-1 rounded-full border bg-card pl-1 pr-1 text-[13px]">
-              <MetricStylePopover :label="metricInfo(key, catalog, lang).label" :metric-style="draft.styles[key] ?? {}" :disabled="!editable" @change="(style) => setStyle(key, style)" />
+            <span v-for="(key, index) in draft.metrics" :key="key" class="inline-flex h-7 items-center gap-1 rounded-full border bg-card pl-1 pr-1 text-[13px]">
+              <MetricStylePopover :label="metricInfo(key, catalog, lang).label" :metric-style="draft.styles[key] ?? {}" :default-color="metricColors(draft.metrics)[index]" :disabled="!editable" @change="(style) => setStyle(key, style)" />
               <button v-if="editable" type="button" class="rounded-full p-1 hover:bg-accent" :aria-label="t('report.removeField', { name: metricInfo(key, catalog, lang).label })" @click="toggleMetric(key)"><X class="size-3" /></button>
             </span>
             <span v-if="draft.dimensions.length" class="px-1 text-[13px] text-muted-foreground">{{ t('report.by') }}</span>

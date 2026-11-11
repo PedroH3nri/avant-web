@@ -5,6 +5,7 @@ import { useDebounceFn } from '@vueuse/core'
 import { ChartLine } from 'lucide-vue-next'
 import BarChart from '@/components/charts/BarChart.vue'
 import KpiTile from '@/components/charts/KpiTile.vue'
+import { colorVar, metricColor } from '@/lib/metric-colors'
 import LineChart, { type LineSeries } from '@/components/charts/LineChart.vue'
 import PeriodPicker from '@/components/charts/PeriodPicker.vue'
 import LoadError from '@/components/LoadError.vue'
@@ -106,7 +107,7 @@ const chart = computed(() => {
   const metric = chosenMetric.value
   if (!daily.value || !metric) return null
   const labels = daysOf(daily.value.period).map((day) => shortDay(day, locale.value))
-  const series: LineSeries[] = [{ key: 'current', name: t('perf.current'), values: dailySeries(daily.value.rows, daily.value.period, metric.key, metric.kind) }]
+  const series: LineSeries[] = [{ key: 'current', name: t('perf.current'), values: dailySeries(daily.value.rows, daily.value.period, metric.key, metric.kind), color: colorVar(metricColor(metric.key)) }]
   if (compare.value && previousDaily.value) {
     const values = dailySeries(previousDaily.value.rows, previousDaily.value.period, metric.key, metric.kind)
     series.push({ key: 'previous', name: t('perf.previous'), values: values.slice(0, labels.length), tone: 'muted', dashed: true })
@@ -226,7 +227,7 @@ const barFormat = (value: number | null) => show(revenue.value, value)
       <section class="grid content-start gap-3">
         <h2 class="text-[16px] font-semibold tracking-[-0.015em]">{{ t('perf.byCountry') }}</h2>
         <Card>
-          <BarChart v-if="countryBars.length" :items="countryBars" :format="barFormat" :description="t('perf.byCountry')" />
+          <BarChart v-if="countryBars.length" :items="countryBars" :color="colorVar(metricColor('revenue'))" :format="barFormat" :description="t('perf.byCountry')" />
           <p v-else-if="!loading" class="text-[13px] text-muted-foreground">{{ t('perf.empty') }}</p>
           <div v-else class="h-40 animate-pulse rounded-md bg-muted" aria-hidden="true" />
         </Card>

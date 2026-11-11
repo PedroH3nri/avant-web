@@ -10,7 +10,7 @@ export interface LineSeries {
   values: (number | null)[]
   tone?: 'primary' | 'muted'
   dashed?: boolean
-  /** Cor viva escolhida pela pessoa (variável CSS); sem ela, o preto do painel. */
+  /** Cor viva da métrica (variável CSS, ver `lib/metric-colors.ts`); sem ela, o preto do painel. */
   color?: string
 }
 

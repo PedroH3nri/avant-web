@@ -8,9 +8,9 @@ import {
   hourLabel,
   hourPoints,
   lastDayTotals,
-  moneyInput,
   moneyText,
-  parseMoney,
+  nearestTier,
+  tierOptions,
   priceRulePermission,
   priceRulesPath,
   siteStatus,
@@ -62,15 +62,13 @@ describe('regras de tela das regras de preço', () => {
     expect(siteStatus(site)).toEqual({ tone: 'ok', key: 'pr.status.on' })
   })
 
-  it('formata e lê dinheiro em micros na moeda da network', () => {
+  it('formata dinheiro em micros e acha o degrau da moeda', () => {
     expect(moneyText(1_250_000, 'BRL', 'pt-BR')).toBe('R$ 1,25')
     expect(moneyText(1_250_000, null, 'en')).toBe('1.25')
-    expect(parseMoney('1,25')).toBe(1_250_000)
-    expect(parseMoney(' 0.5 ')).toBe(500_000)
-    expect(parseMoney('abc')).toBeNull()
-    expect(parseMoney('-1')).toBeNull()
-    expect(moneyInput(840_000, 'pt')).toBe('0,84')
-    expect(moneyInput(840_000, 'en')).toBe('0.84')
+    expect(nearestTier([500_000, 520_000, 540_000], 528_000)).toBe(520_000)
+    expect(nearestTier([], 528_000)).toBe(528_000)
+    expect(tierOptions([500_000, 520_000, 540_000], 'USD', 'en-US', 520_000).map((option) => option.label)).toEqual(['$0.52', '$0.54'])
+    expect(tierOptions([500_000, 520_000], 'USD', 'en-US', 0, 500_000)).toEqual([{ value: '500000', label: '$0.50' }])
   })
 
   it('monta o período no fuso de São Paulo', () => {
