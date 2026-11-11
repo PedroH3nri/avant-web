@@ -3741,7 +3741,7 @@ export const dict = {
   'pr.model.automatic': ['Automática', 'Automatic', 'Automática'],
   'pr.model.none': ['Sem regra', 'No rule', 'Sin regla'],
   'pr.model.cascade': ['Cascata', 'Cascade', 'Cascada'],
-  'pr.recommended': ['recomendado', 'recommended', 'recomendado'],
+  'pr.recommended': ['recomendada', 'recommended', 'recomendada'],
   'pr.offerwall': ['Do Google, sem floor', 'Google owned, no floor', 'De Google, sin floor'],
   'pr.modelOf': ['Modelo de {block}', 'Model of {block}', 'Modelo de {block}'],
   'pr.noBlocks': ['O site ainda não tem blocos no GAM.', 'The site has no GAM blocks yet.', 'El sitio aún no tiene bloques en GAM.'],

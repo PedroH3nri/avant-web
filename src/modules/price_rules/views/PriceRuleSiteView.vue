@@ -128,7 +128,7 @@ const gainChart = computed(() => {
 })
 
 /** As opções do bloco com a recomendada marcada; vazio no offerwall, que fica com o Google. */
-function blockOptionList(current: PriceRuleSite, block: string) {
+function blockOptionList(current: PriceRuleSite, block: string): { value: string; label: string; note?: string }[] {
   const recommended = recommendedModel(current, block)
   if (!recommended) return []
   return modelChoices(recommended).map((choice) => ({ value: choice.value, label: t(choice.key), note: choice.recommended ? t('pr.recommended') : undefined }))
