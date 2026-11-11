@@ -86,7 +86,6 @@ const savedDrop = computed(() => rule.value?.config?.drop_tiers ?? DEFAULT_DROP_
 const funnel = computed(() => cascadeFunnel(hours.value))
 const points = computed(() => cascadePoints(hours.value))
 const ladder = computed(() => (rule.value ? cascadeLadder(tiers.value, rule.value.floor_micros, savedDrop.value) : []))
-const firstFillByHour = computed(() => new Map(points.value.map((point) => [`${point.date} ${point.hour}`, point.firstFill])))
 const decisions = computed(() => history.value.slice((page.value - 1) * PAGE_SIZE, page.value * PAGE_SIZE))
 const decisionPages = computed(() => Math.ceil(history.value.length / PAGE_SIZE))
 const startOptions = computed(() => tierOptions(tiers.value, currency.value, locale.value))
@@ -440,12 +439,11 @@ watch(period, load)
               <th :class="th">{{ t('pr.col.hour') }}</th>
               <th :class="th">{{ t('pr.col.action') }}</th>
               <th :class="[th, 'text-right']">{{ t('pr.col.start') }}</th>
-              <th :class="[th, 'text-right']">{{ t('pr.col.firstFill') }}</th>
               <th :class="th">{{ t('pr.col.reason') }}</th>
             </tr>
           </thead>
           <tbody>
-            <TableState v-if="!history.length" :cols="5" empty :desc="t('pr.noDecisions')" />
+            <TableState v-if="!history.length" :cols="4" empty :desc="t('pr.noDecisions')" />
             <tr v-for="entry in decisions" :key="`${entry.date}-${entry.hour}`">
               <td :class="[td, 'whitespace-nowrap tnum']">{{ hourLabel(entry.date, entry.hour, locale) }}</td>
               <td :class="td">
@@ -462,7 +460,6 @@ watch(period, load)
                 </template>
                 {{ moneyText(entry.floor_applied_micros, currency, locale) }}
               </td>
-              <td :class="[td, 'text-right tnum']">{{ percentText(firstFillByHour.get(`${entry.date} ${entry.hour}`) ?? null, locale) }}</td>
               <td :class="[td, 'text-[13px] text-muted-foreground']">{{ t(CASCADE_REASON_KEY[entry.reason]) }}</td>
             </tr>
           </tbody>

@@ -83,6 +83,7 @@ const canManage = computed(() => session.can(priceRulePermission(internal, 'mana
 const blocked = computed(() => !site.value?.currency || !site.value.currency_supported)
 const automaticCount = computed(() => Object.values(models.value).filter((model) => model === 'automatic').length)
 const cascadeCount = computed(() => Object.values(models.value).filter((model) => model === 'cascade').length)
+const hasCascadeBlocks = computed(() => !!site.value?.blocks.some((block) => block.model === 'cascade'))
 const ruleCount = computed(() => (automaticRuleCount.value === null ? null : automaticRuleCount.value + cascadeTotal.value))
 const status = computed(() => (site.value ? siteStatus({ ...site.value, automatic_blocks: site.value.blocks.length }) : null))
 const showGain = computed(() => !!site.value?.active && site.value.blocks.length > 0)
@@ -316,7 +317,7 @@ watch([hash, country], filterLater)
         </DataTable>
         <Pagination v-if="!rulesError" v-model:page="page" :total="total" :pages="pages" />
       </section>
-      <section v-if="site.active && (cascadeError || cascadeTotal > 0)" class="grid gap-3">
+      <section v-if="site.active && (cascadeError || cascadeTotal > 0 || hasCascadeBlocks)" class="grid gap-3">
         <div>
           <h2 class="text-[20px] font-semibold tracking-[-0.025em]">{{ t('pr.model.cascade') }}</h2>
           <p class="mt-1 max-w-[80ch] text-[14px] text-muted-foreground">{{ t('pr.cascade.desc') }}</p>
@@ -335,7 +336,7 @@ watch([hash, country], filterLater)
             </tr>
           </thead>
           <tbody>
-            <TableState v-if="!cascades" :cols="7" loading />
+            <TableState v-if="!cascades || cascades.length === 0" :cols="7" :loading="!cascades" :empty="cascades?.length === 0" :title="t('pr.noRulesTitle')" :desc="t('pr.noCascadeRules')" />
             <tr v-for="row in cascades ?? []" :key="row.rule.id" class="hover:bg-muted">
               <td :class="[td, 'font-mono text-[13px]']">{{ row.rule.block }}</td>
               <td :class="td">{{ row.rule.country_code }}</td>
