@@ -2,13 +2,15 @@
 
 import type { Key } from '@/lib/i18n'
 import type { ReportQuery, ReportResult } from '@/modules/reports/types'
-import type { CascadeHour, PriceRuleAction, PriceRuleHistoryEntry, PriceRuleHour, PriceRuleReason, PriceRuleSiteSummary, PriceRuleStatus } from '@/modules/price_rules/types'
+import type { CascadeHour, PriceRuleAction, PriceRuleHistoryEntry, PriceRuleHour, PriceRuleModel, PriceRuleReason, PriceRuleSite, PriceRuleSiteSummary, PriceRuleStatus } from '@/modules/price_rules/types'
 
 export type StatusTone = 'ok' | 'warn' | 'bad' | 'ochre' | 'neutral'
 export type HourSeries = 'floor' | 'pmr' | 'revenue' | 'requests'
 export type CascadeSeries = 'start' | 'fill' | 'revenue' | 'requests'
 export type BlockModelKind = 'content' | 'cascade' | 'offerwall'
+export type ModelChoice = { value: PriceRuleModel | typeof NO_MODEL; key: Key; recommended: boolean }
 
+export const NO_MODEL = 'none'
 export const MAX_CONTROL_PERCENT = 50
 export const STEP_SIZES = ['1', '2', '3'] as const
 export const DROP_TIERS = ['1', '2', '3'] as const
@@ -208,11 +210,33 @@ export function gainSeries(result: ReportResult): GainSeries | null {
   }
 }
 
-/** O tipo do bloco para a regra pelo começo do nome: conteúdo usa a Automática; âncora,
+/** O tipo do bloco pelo começo do nome: conteúdo recomenda a Automática; âncora,
  * intersticial, fixo e reward a Cascata; o offerwall é do Google. */
 export function blockKind(block: string): BlockModelKind {
   if (block.startsWith('Offerwall')) return 'offerwall'
   return CASCADE_PREFIX.test(block) ? 'cascade' : 'content'
+}
+
+/** O modelo recomendado do bloco: o que a api manda ou, sem ele, o do tipo; nada no offerwall. */
+export function recommendedModel(site: Pick<PriceRuleSite, 'recommended_models'>, block: string): PriceRuleModel | null {
+  const kind = blockKind(block)
+  if (kind === 'offerwall') return null
+  return site.recommended_models?.[block] ?? (kind === 'cascade' ? 'cascade' : 'automatic')
+}
+
+/** As opções de todo bloco fora o offerwall (Automática, Cascata e Sem regra), com a recomendada marcada. */
+export function modelChoices(recommended: PriceRuleModel): ModelChoice[] {
+  return [
+    { value: 'automatic', key: 'pr.model.automatic', recommended: recommended === 'automatic' },
+    { value: 'cascade', key: 'pr.model.cascade', recommended: recommended === 'cascade' },
+    { value: NO_MODEL, key: 'pr.model.none', recommended: false },
+  ]
+}
+
+/** Quantos blocos estão com a Automática e quantos com a Cascata. */
+export function modelCounts(models: Record<string, string>): Record<PriceRuleModel, number> {
+  const chosen = Object.values(models)
+  return { automatic: chosen.filter((model) => model === 'automatic').length, cascade: chosen.filter((model) => model === 'cascade').length }
 }
 
 /** A escada da Cascata: 3 floors descendo `drop` degraus por tentativa a partir do degrau

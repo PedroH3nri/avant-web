@@ -15,6 +15,8 @@ import {
   hourLabel,
   hourPoints,
   lastDayTotals,
+  modelChoices,
+  modelCounts,
   moneyText,
   nearestTier,
   percentText,
@@ -22,6 +24,7 @@ import {
   priceRulePermission,
   priceRulesPath,
   REASON_KEY,
+  recommendedModel,
   siteStatus,
 } from '@/modules/price_rules/rules'
 import { priceRuleService } from '@/modules/price_rules/service'
@@ -152,6 +155,29 @@ describe('regras de tela da Cascata', () => {
     expect(blockKind('Rewards')).toBe('cascade')
     expect(blockKind('Reward_Mobile')).toBe('cascade')
     expect(blockKind('Offerwall')).toBe('offerwall')
+  })
+
+  it('recomenda o modelo pela api e, sem ela, pelo tipo do bloco', () => {
+    const site = { recommended_models: { Content3_Mobile: 'cascade' as const } }
+    expect(recommendedModel(site, 'Content3_Mobile')).toBe('cascade')
+    expect(recommendedModel(site, 'Content1_Desktop')).toBe('automatic')
+    expect(recommendedModel({}, 'Interstitial_Mobile')).toBe('cascade')
+    expect(recommendedModel({}, 'Reward_Mobile')).toBe('cascade')
+    expect(recommendedModel({}, 'Offerwall')).toBeNull()
+  })
+
+  it('oferece Automática, Cascata e Sem regra em todo bloco e marca a recomendada', () => {
+    expect(modelChoices('cascade')).toEqual([
+      { value: 'automatic', key: 'pr.model.automatic', recommended: false },
+      { value: 'cascade', key: 'pr.model.cascade', recommended: true },
+      { value: 'none', key: 'pr.model.none', recommended: false },
+    ])
+    expect(modelChoices('automatic').filter((choice) => choice.recommended).map((choice) => choice.value)).toEqual(['automatic'])
+  })
+
+  it('conta os blocos de cada modelo com qualquer combinação', () => {
+    expect(modelCounts({ Content1: 'cascade', Anchor: 'automatic', Fixed: 'cascade', Reward: 'none' })).toEqual({ automatic: 1, cascade: 2 })
+    expect(modelCounts({})).toEqual({ automatic: 0, cascade: 0 })
   })
 
   it('cascadeLadder', () => {
