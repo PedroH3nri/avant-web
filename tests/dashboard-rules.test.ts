@@ -3,6 +3,7 @@ import {
   accountWidget,
   cleanFilters,
   compactLayout,
+  editableWidgets,
   filtersChanged,
   goalWidget,
   gridArea,
@@ -107,5 +108,14 @@ describe('regras dos dashboards', () => {
       filters: { period: period.period, client: ['c1'] },
       widgets: [kpi],
     })
+  })
+})
+
+describe('editableWidgets', () => {
+  it('copia os widgets sem dividir a consulta com o gravado', () => {
+    const saved = [{ id: 'w1', type: 'query', x: 0, y: 0, w: 4, h: 3, title: null, query: { metrics: ['revenue'], schema_version: 1 } }] as Widget[]
+    const copies = editableWidgets(saved)
+    copies[0]?.query?.metrics.push('impressions')
+    expect(saved[0]?.query?.metrics).toEqual(['revenue'])
   })
 })

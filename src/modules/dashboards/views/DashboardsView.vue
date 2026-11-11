@@ -27,7 +27,7 @@ import AddWidgetDialog from '@/modules/dashboards/components/AddWidgetDialog.vue
 import DashboardFiltersBar from '@/modules/dashboards/components/DashboardFiltersBar.vue'
 import DashboardGrid from '@/modules/dashboards/components/DashboardGrid.vue'
 import NewDashboardDialog from '@/modules/dashboards/components/NewDashboardDialog.vue'
-import { emptyDefinition, filtersChanged, withLayout } from '@/modules/dashboards/rules'
+import { editableWidgets, emptyDefinition, filtersChanged, withLayout } from '@/modules/dashboards/rules'
 import { dashboardService, templateService } from '@/modules/dashboards/service'
 import type { Dashboard, DashboardFilters, DashboardTemplate, FilterDimension, Widget } from '@/modules/dashboards/types'
 import { clientService } from '@/modules/internal/clients/service'
@@ -146,7 +146,7 @@ const switchTo = (id: string) => router.push(`/dashboards/${id}`)
 function startEditing() {
   const found = dashboard.value
   if (!found) return
-  draftWidgets.value = found.definition.widgets.map((widget) => ({ ...widget }))
+  draftWidgets.value = editableWidgets(found.definition.widgets)
   draftName.value = found.name
   draftVisibility.value = found.visibility
   editing.value = true
