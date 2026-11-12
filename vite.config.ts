@@ -23,6 +23,7 @@ export default defineConfig({
   },
   resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
   server: {
+    host: process.env.AVANT_DEV_HOST ?? '127.0.0.1',
     proxy: { '/api': { target: process.env.AVANT_API_URL ?? 'http://127.0.0.1:8000', changeOrigin: false } },
   },
   test: { environment: 'jsdom', include: ['tests/**/*.test.ts'], setupFiles: ['tests/setup-i18n.ts'] },
