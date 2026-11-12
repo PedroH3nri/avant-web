@@ -13,6 +13,11 @@ describe('imagem do painel', () => {
     const installed = rootFile('Dockerfile').match(/npm install -g (pnpm@[\w.-]+)/)?.[1]
     expect(installed).toBe(packageManager.split('+')[0])
   })
+
+  it('as versões forçadas do pnpm têm teto na versão maior', () => {
+    const overrides = JSON.parse(rootFile('package.json')).pnpm.overrides as Record<string, string>
+    expect(Object.values(overrides).every((range) => range.startsWith('^'))).toBe(true)
+  })
 })
 
 describe('nginx do painel', () => {

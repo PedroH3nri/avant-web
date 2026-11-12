@@ -51,7 +51,7 @@ import { useSession } from '@/stores/session'
 
 const LADDER_PERIOD_DAYS = 2
 
-type CascadeRow = { rule: PriceRule; ladder: (number | null)[]; firstFill: number | null; ladderFill: number | null }
+type CascadeRow = { rule: PriceRule; ladder: (number | null)[] | null; firstFill: number | null; ladderFill: number | null }
 
 const route = useRoute()
 const router = useRouter()
@@ -80,6 +80,7 @@ const gain = ref<GainSeries | null>(null)
 const busy = ref(false)
 const loadError = ref<string | null>(null)
 const rulesError = ref<string | null>(null)
+let latestCascades = 0
 
 const canManage = computed(() => session.can(priceRulePermission(internal, 'manage')))
 const blocked = computed(() => !site.value?.currency || !site.value.currency_supported)
@@ -183,17 +184,29 @@ async function cascadeRow(rule: PriceRule, start: string, end: string): Promise<
   return { rule, ladder, firstFill: funnel.firstFill, ladderFill: funnel.ladderFill }
 }
 
-/** Carrega a página das regras da Cascata com a escada e as compras de cada uma. */
+/** A linha de uma regra cuja escada ou compras não vieram: só a regra, com traço no resto. */
+function cascadeFallback(rule: PriceRule): CascadeRow {
+  return { rule, ladder: null, firstFill: null, ladderFill: null }
+}
+
+/** Carrega a página das regras da Cascata com a escada e as compras de cada uma; a linha que
+ * falha fica com traço e só a resposta mais nova vale. */
 async function loadCascades() {
+  const ticket = ++latestCascades
   cascadeError.value = null
   try {
     const found = await service.rules(siteId, { page: cascadePage.value, model: 'cascade' })
     const { start, end } = hourPeriod(LADDER_PERIOD_DAYS)
-    cascades.value = await Promise.all(found.items.map((rule) => cascadeRow(rule, start, end)))
+    const settled = await Promise.allSettled(found.items.map((rule) => cascadeRow(rule, start, end)))
+    if (ticket !== latestCascades) return
+    cascades.value = found.items.map((rule, index) => {
+      const outcome = settled[index]
+      return outcome?.status === 'fulfilled' ? outcome.value : cascadeFallback(rule)
+    })
     cascadeTotal.value = found.total
     cascadePages.value = found.pages
   } catch (error) {
-    cascadeError.value = errorText(error instanceof ApiError ? error.code : 'unknown')
+    if (ticket === latestCascades) cascadeError.value = errorText(error instanceof ApiError ? error.code : 'unknown')
   }
 }
 
@@ -343,7 +356,8 @@ watch([hash, country], filterLater)
             <tr v-for="row in cascades ?? []" :key="row.rule.id" class="hover:bg-muted">
               <td :class="[td, 'font-mono text-[13px]']">{{ row.rule.block }}</td>
               <td :class="td">{{ row.rule.country_code }}</td>
-              <td :class="[td, 'whitespace-nowrap text-[13px] tnum']">
+              <td v-if="!row.ladder" :class="[td, 'text-[13px] text-muted-foreground']">—</td>
+              <td v-else :class="[td, 'whitespace-nowrap text-[13px] tnum']">
                 <span v-for="(floor, index) in row.ladder" :key="index" :class="index ? 'text-muted-foreground' : 'font-medium'">{{ index ? ' → ' : '' }}{{ floor === null ? t('pr.noFloor') : moneyText(floor, row.rule.currency, locale) }}</span>
               </td>
               <td :class="[td, 'text-right tnum']">{{ percentText(row.firstFill, locale) }}</td>

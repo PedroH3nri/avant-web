@@ -42,6 +42,7 @@ const site: PriceRuleSite = {
     { block: 'Content1_Mobile', model: 'automatic' },
   ],
   available_blocks: ['Anchor_Mobile', 'Content1_Mobile', 'Fixed_Desktop', 'Offerwall'],
+  recommended_models: { Anchor_Mobile: 'cascade', Content1_Mobile: 'automatic', Fixed_Desktop: 'cascade' },
   updated_at: '2026-11-10T12:00:00Z',
 }
 
@@ -133,8 +134,8 @@ describe('tela do site com a Cascata', () => {
     expect(view.text()).toContain('No conteúdo, no intersticial e no reward, as tentativas começam depois do teste em página real.')
   })
 
-  it('usa o recomendado da api e, sem ele, o do tipo do bloco', async () => {
-    service.settings.mockResolvedValue({ ...site, recommended_models: { Content1_Mobile: 'cascade' } })
+  it('usa o recomendado que a api manda', async () => {
+    service.settings.mockResolvedValue({ ...site, recommended_models: { ...site.recommended_models, Content1_Mobile: 'cascade' } })
     const view = mount(PriceRuleSiteView, { attachTo: document.body })
     await flushPromises()
     /** O rótulo da opção marcada como recomendada no bloco. */
@@ -197,6 +198,44 @@ describe('tela do site com a Cascata', () => {
     await flushPromises()
     expect(service.saveBlocks).toHaveBeenCalledWith('s1', { Anchor_Mobile: 'cascade', Content1_Mobile: 'automatic', Fixed_Desktop: 'cascade' })
   })
+
+  it('com uma regra que falha, a tabela da Cascata mostra as outras e um traço na que falhou', async () => {
+    const broken = { ...cascadeRule, id: 'r2', block: 'Fixed_Desktop' }
+    service.rules.mockImplementation((_siteId: string, query: { model?: string }) => Promise.resolve(page(query.model === 'cascade' ? [cascadeRule, broken] : [])))
+    service.rule.mockImplementation((_siteId: string, ruleId: string) => (ruleId === 'r2' ? Promise.reject(new Error('falhou')) : Promise.resolve(details)))
+    const view = mount(PriceRuleSiteView, { attachTo: document.body })
+    await flushPromises()
+    const cascadeTable = view.findAll('table').find((table) => table.text().includes('Escada'))!
+    const rows = cascadeTable.findAll('tbody tr')
+    expect(rows).toHaveLength(2)
+    expect(plain(rows[0]!)).toContain('R$ 1,22 → R$ 1,13 → R$ 1,05 → sem floor')
+    expect(rows[1]!.text()).toContain('Fixed_Desktop')
+    expect(rows[1]!.findAll('td').slice(2, 5).map((cell) => cell.text())).toEqual(['—', '—', '—'])
+  })
+
+  it('descarta a página da Cascata que chega depois de uma mais nova', async () => {
+    const stale = { ...cascadeRule, id: 'velha', block: 'Fixed_Desktop' }
+    let resolveStale: (found: ReturnType<typeof page>) => void = () => undefined
+    let cascadeCalls = 0
+    service.rules.mockImplementation((_siteId: string, query: { model?: string }) => {
+      if (query.model !== 'cascade') return Promise.resolve(page([]))
+      cascadeCalls += 1
+      if (cascadeCalls === 1) return new Promise((resolve) => (resolveStale = resolve))
+      return Promise.resolve(page([cascadeRule]))
+    })
+    service.saveBlocks.mockResolvedValue(site)
+    const view = mount(PriceRuleSiteView, { attachTo: document.body })
+    await flushPromises()
+    const fixed = view.find('[aria-label="Modelo de Fixed_Desktop"]').findAll('[role="radio"]')
+    await fixed[1]!.trigger('click')
+    await view.findAll('button').find((button) => button.text() === 'Salvar')!.trigger('click')
+    await flushPromises()
+    resolveStale(page([stale]))
+    await flushPromises()
+    const cascadeTable = view.findAll('table').find((table) => table.text().includes('Escada'))!
+    expect(cascadeTable.text()).toContain('Anchor_Mobile')
+    expect(cascadeTable.text()).not.toContain('Fixed_Desktop')
+  })
 })
 
 describe('tela da regra Cascata', () => {
@@ -219,6 +258,41 @@ describe('tela da regra Cascata', () => {
     await flushPromises()
     const decisions = view.findAll('table').find((table) => table.text().includes('Motivo'))!
     expect(decisions.findAll('th').map((header) => header.text())).toEqual(['Hora', 'Ação', 'Ponto de partida', 'Motivo'])
+  })
+
+  it('com os limites calculados pelo motor, muda a descida e grava com automatic', async () => {
+    const view = mount(CascadeRuleView, { attachTo: document.body })
+    await flushPromises()
+    const drop = view.find('[aria-label="Descida por tentativa"]').findAll('[role="radio"]')
+    await drop[2]!.trigger('click')
+    await view.findAll('button').find((button) => button.text() === 'Salvar limites')!.trigger('click')
+    await flushPromises()
+    expect(service.saveConfig).toHaveBeenCalledWith('s1', 'r1', expect.objectContaining({ automatic: true, drop_tiers: 3, min_eligible_requests: 200 }))
+  })
+
+  it('não perde a descida escolhida ao trocar de modo', async () => {
+    const view = mount(CascadeRuleView, { attachTo: document.body })
+    await flushPromises()
+    /** Clica na opção do modo dos limites. */
+    const pickMode = (label: string) => view.findAll('[role="radio"]').find((option) => option.text() === label)!.trigger('click')
+    await pickMode('Definidos à mão')
+    await view.find('[aria-label="Descida por tentativa"]').findAll('[role="radio"]')[2]!.trigger('click')
+    await pickMode('Calculados pelo motor')
+    expect(view.find('[aria-label="Descida por tentativa"]').find('[aria-checked="true"]').text()).toBe('3')
+    await view.findAll('button').find((button) => button.text() === 'Salvar limites')!.trigger('click')
+    await flushPromises()
+    expect(service.saveConfig).toHaveBeenCalledWith('s1', 'r1', expect.objectContaining({ automatic: true, drop_tiers: 3 }))
+  })
+
+  it('aceita 0 no mínimo de requisições, como a api', async () => {
+    const view = mount(CascadeRuleView, { attachTo: document.body })
+    await flushPromises()
+    await view.findAll('[role="radio"]').find((option) => option.text() === 'Definidos à mão')!.trigger('click')
+    await view.find('#cas-min-requests').setValue('0')
+    expect(view.text()).not.toContain('Confira os campos')
+    await view.findAll('button').find((button) => button.text() === 'Salvar limites')!.trigger('click')
+    await flushPromises()
+    expect(service.saveConfig).toHaveBeenCalledWith('s1', 'r1', expect.objectContaining({ automatic: false, min_eligible_requests: 0 }))
   })
 
   it('salvar limites manda drop_tiers', async () => {

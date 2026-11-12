@@ -45,7 +45,7 @@ export interface PriceRuleSite {
   currency_supported: boolean
   blocks: PriceRuleBlock[]
   available_blocks: string[]
-  recommended_models?: Record<string, PriceRuleModel>
+  recommended_models: Record<string, PriceRuleModel>
   updated_at: string
 }
 
