@@ -59,12 +59,14 @@ results, costs e rewards.
 
 Para subir o Avant inteiro na máquina (banco, API, worker e painel), siga o [guia de desenvolvimento](https://github.com/PedroH3nri/avant-infra/blob/develop/docs/desenvolvimento.md) do avant-infra.
 
-O painel abre em `https://avant.localhost` (nginx local com certificado do mkcert, conforme o guia). Não use
-`http://localhost:5173`: sem HTTPS o login não funciona, porque os cookies da API são `Secure` e `__Host-`.
+O painel abre em `http://localhost:5173`, e o Vite repassa `/api` para a API (`AVANT_API_URL`, padrão
+`http://127.0.0.1:8000`). Os cookies da API são sempre `Secure` e `__Host-`: o Chrome e o Firefox aceitam
+esses cookies em `http://localhost`, que conta como contexto seguro. O Safari não aceita; para testar nele,
+ou para reproduzir o caminho da VM, ligue o HTTPS local opcional (`https://avant.localhost`, nginx do
+compose com certificado do mkcert, seção "HTTPS local (opcional)" do guia).
 
-O Vite escuta em `127.0.0.1` (IPv4), o único endereço que o Docker Desktop alcança; no Linux, ajuste com
-`AVANT_DEV_HOST` (por exemplo `172.17.0.1`). O `AVANT_API_URL` (proxy do Vite para `/api`, padrão
-`http://127.0.0.1:8000`) só serve para quem não usa o nginx local.
+O Vite escuta em `127.0.0.1` (IPv4), o endereço que o nginx do HTTPS local alcança pelo Docker Desktop; no
+Linux, ajuste com `AVANT_DEV_HOST` (por exemplo `172.17.0.1`).
 
 ```bash
 pnpm install
