@@ -9,3 +9,12 @@ updates:
       imagens:
         patterns: ["*"]
         update-types: ["minor", "patch"]
+  - package-ecosystem: npm
+    directory: /
+    target-branch: pre-develop
+    schedule:
+      interval: weekly
+    groups:
+      dependencias:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
