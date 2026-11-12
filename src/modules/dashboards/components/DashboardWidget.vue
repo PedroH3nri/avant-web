@@ -152,8 +152,8 @@ function grabTitle(event: PointerEvent) {
       <p v-else-if="widget.type === 'account'" class="text-[13px] text-muted-foreground">{{ t('dash.add.accountHint') }}</p>
       <p v-else-if="!stored" class="text-[13px] text-muted-foreground">{{ t('dash.widget.saveToSee') }}</p>
       <p v-else-if="failure" class="text-[13px] text-bad">{{ failure }}</p>
-      <GoalBar v-else-if="widget.type === 'goal' && goal" :progress="goal" :month="month" :today="today" :label="title" />
       <p v-else-if="loading" class="text-[13px] text-muted-foreground">{{ t('dash.widget.loading') }}</p>
+      <GoalBar v-else-if="widget.type === 'goal' && goal" :progress="goal" :month="month" :today="today" :label="title" />
       <template v-else-if="draft && result">
         <ReportTable v-if="draft.chart === 'table'" :draft="draft" :result="result" :catalog="catalog" />
         <ReportChart v-else :draft="draft" :result="result" :catalog="catalog" compact />

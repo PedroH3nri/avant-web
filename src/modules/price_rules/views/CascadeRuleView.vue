@@ -120,7 +120,7 @@ const limitList = computed(() => {
   return [
     { label: t('pr.cascadeLimit.floorMin'), value: moneyText(config.floor_min_micros, currency.value, locale.value), hint: t('pr.cascadeLimit.floorMinShort') },
     { label: t('pr.cascadeLimit.floorMax'), value: moneyText(config.floor_max_micros, currency.value, locale.value), hint: t('pr.limit.floorMaxShort') },
-    { label: t('pr.cascadeLimit.drop'), value: dropText(config.drop_tiers), hint: t('pr.cascadeLimit.dropShort', { percent: dropPercentText(config.drop_tiers) }) },
+    { label: t('pr.cascadeLimit.drop'), value: dropText(formDrop.value), hint: t('pr.cascadeLimit.dropShort', { percent: dropPercentText(formDrop.value) }), drop: true },
     { label: t('pr.cascadeLimit.fillHigh'), value: percentText(config.pmr_floor, locale.value), hint: t('pr.cascadeLimit.fillHighShort') },
     { label: t('pr.cascadeLimit.minRequests'), value: t('pr.limit.minRequestsShort', { count: integer.value.format(config.min_eligible_requests) }), hint: t('pr.cascadeLimit.minRequestsShort') },
   ]
@@ -176,7 +176,7 @@ function limitsInput(form: LimitsForm): PriceRuleConfigInput | null {
   const floorMax = Number(form.floorMax)
   const drop = Number(form.drop)
   if (!Number.isFinite(fillHigh) || fillHigh < 0 || fillHigh > 100) return null
-  if (!Number.isInteger(minRequests) || minRequests <= 0 || floorMin > floorMax) return null
+  if (!Number.isInteger(minRequests) || minRequests < 0 || floorMin > floorMax) return null
   if (!DROP_TIERS.some((size) => Number(size) === drop)) return null
   return {
     automatic: false,
@@ -266,7 +266,7 @@ async function saveStart() {
   }
 }
 
-/** Grava os limites, sempre com a descida (`drop_tiers`); com "calculados pelo motor", vale o que ele recalcula. */
+/** Grava os limites, sempre com a descida (`drop_tiers`) do formulário; com "calculados pelo motor", o resto vale o que ele recalcula. */
 async function saveLimits() {
   const form = limits.value
   const current = rule.value?.config
@@ -280,7 +280,7 @@ async function saveLimits() {
         floor_min_micros: current.floor_min_micros,
         floor_max_micros: current.floor_max_micros,
         step_size: current.step_size,
-        drop_tiers: current.drop_tiers,
+        drop_tiers: formDrop.value,
       }
     : limitsInput(form)
   if (!input) return
@@ -398,7 +398,8 @@ watch(period, load)
         <dl v-if="limits && !manual" class="grid grid-cols-2 gap-px border-t bg-border sm:grid-cols-3 lg:grid-cols-5">
           <div v-for="item in limitList" :key="item.label" class="bg-card px-6 py-4">
             <dt class="text-[13px] text-muted-foreground">{{ item.label }}</dt>
-            <dd class="mt-1 text-[18px] font-semibold tracking-[-0.02em] tnum">{{ item.value }}</dd>
+            <dd v-if="item.drop && canManage" class="mt-1"><Segmented v-model="limits.drop" :options="dropOptions" :label="t('pr.cascadeLimit.drop')" /></dd>
+            <dd v-else class="mt-1 text-[18px] font-semibold tracking-[-0.02em] tnum">{{ item.value }}</dd>
             <dd class="mt-0.5 text-[12px] text-muted-foreground">{{ item.hint }}</dd>
           </div>
         </dl>
