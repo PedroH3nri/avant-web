@@ -36,7 +36,7 @@ function hour(date: string, at: number, revenue = 400_000): PriceRuleHour {
 
 /** Uma decisão do motor que levou o floor ao valor dado. */
 function decision(date: string, at: number, floor: number): PriceRuleHistoryEntry {
-  return { date, hour: at, action: 'up', reason: 'pmr_up_over_roof', floor_before_micros: floor - 10_000, floor_applied_micros: floor, created_at: `${date}T00:00:00Z` }
+  return { date, hour: at, action: 'up', reason: 'pmr_up_over_roof', floor_before_micros: floor - 10_000, floor_applied_micros: floor, created_at: `${date}T00:00:00Z`, data_date: date, data_hour: at }
 }
 
 const USD_TIERS = [1_010_000, 1_050_000, 1_090_000, 1_130_000, 1_170_000, 1_220_000, 1_260_000]

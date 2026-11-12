@@ -105,7 +105,7 @@ beforeEach(() => {
   service.rules.mockImplementation((_siteId: string, query: { model?: string }) => Promise.resolve(page(query.model === 'cascade' ? [cascadeRule] : [])))
   service.rule.mockResolvedValue(details)
   service.history.mockResolvedValue([
-    { date: '2026-11-10', hour: 14, action: 'up', reason: 'fills_first', floor_before_micros: 1_170_000, floor_applied_micros: 1_220_000, created_at: '2026-11-10T17:58:00Z' },
+    { date: '2026-11-10', hour: 14, action: 'up', reason: 'fills_first', floor_before_micros: 1_170_000, floor_applied_micros: 1_220_000, created_at: '2026-11-10T17:58:00Z', data_date: '2026-11-10', data_hour: 13 },
   ])
   service.cascadeHours.mockResolvedValue([cascadeHour('2026-11-10', 14), cascadeHour('2026-11-10', 13)])
   service.saveConfig.mockResolvedValue(details)
@@ -253,11 +253,21 @@ describe('tela da regra Cascata', () => {
     expect(view.text()).toContain('A 1ª tentativa encheu acima do limite: dá para começar mais alto.')
   })
 
-  it('a tabela de decisões não mostra a compra na 1ª, que vem em outro fuso', async () => {
+  it('a tabela de decisões mostra a compra na 1ª da hora do GAM que o motor usou', async () => {
+    const usedHour = cascadeHour('2026-11-10', 13)
+    usedHour.tries[0] = { ...usedHour.tries[0]!, responses_served: 25 }
+    service.cascadeHours.mockResolvedValue([cascadeHour('2026-11-10', 14), usedHour])
+    service.history.mockResolvedValue([
+      { date: '2026-11-10', hour: 14, action: 'up', reason: 'fills_first', floor_before_micros: 1_170_000, floor_applied_micros: 1_220_000, created_at: '2026-11-10T17:58:00Z', data_date: '2026-11-10', data_hour: 13 },
+      { date: '2026-11-10', hour: 13, action: 'hold', reason: 'stable', floor_before_micros: 1_170_000, floor_applied_micros: 1_170_000, created_at: '2026-11-10T16:58:00Z', data_date: null, data_hour: null },
+    ])
     const view = mount(CascadeRuleView, { attachTo: document.body })
     await flushPromises()
     const decisions = view.findAll('table').find((table) => table.text().includes('Motivo'))!
-    expect(decisions.findAll('th').map((header) => header.text())).toEqual(['Hora', 'Ação', 'Ponto de partida', 'Motivo'])
+    expect(decisions.findAll('th').map((header) => header.text())).toEqual(['Hora', 'Ação', 'Ponto de partida', 'Compra na 1ª', 'Motivo'])
+    const rows = decisions.findAll('tbody tr')
+    expect(rows[0]!.findAll('td')[3]!.text()).toBe('25,00%')
+    expect(rows[1]!.findAll('td')[3]!.text()).toBe('—')
   })
 
   it('com os limites calculados pelo motor, muda a descida e grava com automatic', async () => {
