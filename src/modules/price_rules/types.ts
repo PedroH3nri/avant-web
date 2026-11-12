@@ -85,6 +85,7 @@ export interface PriceRuleDetails extends PriceRule {
 /** Os limites para gravar; sem `drop_tiers`, a API mantém a descida guardada (a Automática ignora). */
 export type PriceRuleConfigInput = Omit<PriceRuleConfig, 'updated_at' | 'drop_tiers'> & { drop_tiers?: number }
 
+/** Uma decisão do motor; `data_date` e `data_hour` são a hora do GAM que ela usou, vazias nas decisões antigas. */
 export interface PriceRuleHistoryEntry {
   date: string
   hour: number
@@ -93,6 +94,8 @@ export interface PriceRuleHistoryEntry {
   floor_before_micros: number
   floor_applied_micros: number
   created_at: string
+  data_date: string | null
+  data_hour: number | null
 }
 
 /** Os números do GAM de uma hora da regra. */
