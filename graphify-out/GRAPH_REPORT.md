@@ -1,23 +1,23 @@
-# Graph Report - wt-avant-web-readme  (2026-11-12)
+# Graph Report - avant-web  (2026-11-12)
 
 ## Corpus Check
-- 383 files · ~250,263 words
+- 383 files · ~251,648 words
 - Verdict: corpus is large enough that graph structure adds value.
-- Unclassified: 12 file(s) not represented in the graph (top: (none) 7, .conf 2, .toml 1)
+- Unclassified: 11 file(s) not represented in the graph (top: (none) 6, .conf 2, .toml 1)
 
 ## Summary
-- 4444 nodes · 11625 edges · 176 communities (169 shown, 7 thin omitted)
-- Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 139 edges (avg confidence: 0.87)
+- 4450 nodes · 11641 edges · 180 communities (172 shown, 8 thin omitted)
+- Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 140 edges (avg confidence: 0.87)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `2d53cf55`
+- Built from commit: `6069935e`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
 - StaffRolesView.vue
-- DashboardsView.vue
+- SessionsCard.vue
 - ClientView.vue
 - ReportBuilderView.vue
 - MemberView.vue
@@ -34,166 +34,170 @@
 - clean-code.mjs
 - Groone Avant: contexto do projeto
 - Avant: endpoints da API do MVP
-- @vueuse/core
-- errorText
+- dependencies
+- StaffView.vue
 - GoalTemplatesDialog.vue
 - steps
 - ServiceLineDialog.vue
-- SavedViewsBar.vue
-- ApiKeysCard.vue
+- SidebarNav.vue
+- ApiKeyDialog.vue
 - SiteDetailView.vue
 - CostsView.vue
 - Arquitetura do MVP do Avant
-- RewardEditView.vue
+- GroupsView.vue
 - ClientsView.vue
 - InvoiceView.vue
-- vue
-- loaders/rules.ts
-- ClientsResultsView.vue
+- checklists/types.ts
+- @vueuse/core
+- ResultsView.vue
 - Product
 - Requisitos do novo SaaS AdTech Groone
 - Avant: fluxos de login e convite
-- TeamTabs.vue
+- invoices/types.ts
 - GroupsView.vue
-- dashboards/types.ts
-- pick
+- DashboardGrid.vue
+- ClassifySitesDialog.vue
 - TeamCommissionsView.vue
 - compilerOptions
+- InviteView.vue
 - ClientDocumentsCard.vue
-- vue-sonner
-- ReportView.vue
+- session.ts
 - ConnectView.vue
 - Avant: conexão com o GAM
 - NetworksView.vue
 - Avant: repositório e plano do MVP
-- MyInvoicesView.vue
-- SettingsView.vue
+- contracts/types.ts
+- Button.vue
 - clients/rules.ts
 - toNumber
 - avant-web
 - PeopleView.vue
 - scripts
-- ClassifySitesDialog.vue
+- Pagination.vue
 - .oxlintrc.json
-- t
+- CompanyImageCard.vue
 - avant-web
-- ClientNotesCard.vue
+- load
 - tsconfig.json
 - session-start.sh
 - ReportsView.vue
-- TaskView.vue
-- SchedulesView.vue
-- package.json
+- costs/rules.ts
+- GoogleCard.vue
+- devDependencies
 - avant-tag
-- InvoicesView.vue
+- views/rules.ts
 - InviteView.vue
-- FiscalDataCard.vue
+- ad-tags.test.ts
 - GoalsView.vue
 - InvoiceDocument.vue
-- AlertsView.vue
+- commission-components.test.ts
 - TasksView.vue
-- ContractsView.vue
+- errorText
 - AdTagEditView.vue
-- invoices/types.ts
+- ClientNetworksView.vue
 - index.ts
-- ResetView.vue
-- ChecklistsView.vue
-- MfaCard.vue
-- alerts/types.ts
-- contracts/types.ts
-- MyCommissionView.vue
-- api.ts
-- RolesView.vue
-- RoleDialog.vue
-- CurrencyCard.vue
-- sites/types.ts
-- GamToolsView.vue
-- SidebarRail.vue
-- Avant: grupos na Empresa e imagem da Empresa
-- cn
-- table.ts
-- AccountManagerCard.vue
-- rewards/rules.ts
-- ApiKeyDialog.vue
-- FieldsPanel.vue
-- SaveViewDialog.vue
-- AlertDialog.vue
-- dashboards/rules.ts
-- CascadeRuleView.vue
-- MetricStylePopover.vue
+- useSession
+- reports/rules.ts
 - GAM
-- RewardMetricsView.vue
+- pick
+- session.ts
+- MyCommissionView.vue
+- lib/types.ts
+- RolesView.vue
+- inviteTaken
+- locale
+- CompanyGoalCard.vue
+- ConfigPanel.vue
+- networks/service.ts
+- FieldsPanel.vue
+- PageBody.vue
+- ClientSitesView.vue
+- AccountManagerCard.vue
 - GamRunView.vue
 - ApiError
+- InvoicesView.vue
+- vitest
+- AlertDialog.vue
+- FieldsPanel.vue
+- CascadeRuleView.vue
+- MetricStylePopover.vue
+- ClientsResultsView.vue
+- ClientSitesView.vue
+- GamRunView.vue
+- router.ts
 - ad-tags.test.ts
-- Field.vue
+- NetworkReviewActions.vue
 - updates
-- RewardsView.vue
-- inputOf
+- useSession
+- TemplatesView.vue
 - TemplateEditorView.vue
 - alerts/rules.ts
-- RewardLeadsCard.vue
-- Construtor de relatórios e métricas personalizadas no painel (web#13, web#12)
-- session.ts
+- commission-components.test.ts
+- Review Focus
+- Key
 - drag.ts
 - checklists/rules.ts
-- rewards/types.ts
+- formatDate
 - reports/rules.ts
 - RevenueStatusBadge.vue
 - gam_tools/types.ts
-- InvoiceServicesView.vue
+- errorText
 - ClientTeamsView.vue
 - ChecklistNotesCard.vue
 - i18n-plugin.ts
-- PasswordCard.vue
-- BarChart.vue
-- ClientSitesView.vue
-- NewTaskDialog.vue
-- Button.vue
+- Field.vue
+- priorityLabel
+- GoogleCard.vue
+- pick
+- dashboards/rules.ts
 - reports/types.ts
 - PriceRuleView.vue
-- events.ts
+- invoices/types.ts
 - PriceRuleSiteView.vue
-- priceRulePermission
-- NativeSelect.vue
+- NewDashboardDialog.vue
+- PayeeDialog.vue
 - ChecklistView.vue
-- SaveReportDialog.vue
-- LoadError.vue
+- Input.vue
+- priorityLabel
 - ChecklistItemDialog.vue
-- ChecklistItemsView.vue
+- Status.vue
 - price_rules/rules.ts
 - LoaderEditView.vue
-- clients/types.ts
-- ClientNetworksView.vue
+- loadReports
+- AdjustmentDialog.vue
 - tasks/types.ts
 - ad_tags/rules.ts
-- ad_tags/types.ts
+- Field.vue
 - virtual-i18n.d.ts
 - AdTagsView.vue
-- Review Focus
+- ReportTable.vue
+- errorToast
 - price_rules/types.ts
+- loaders.test.ts
 - ClientNetworksCard.vue
-- navigation.ts
+- errorText
+- exportUrl
 - AdTagMetricsView.vue
-- NetworkReviewActions.vue
+- formatMonth
 - LoadersView.vue
-- RecoveryCodes.vue
+- ownerName
 - gam_tools/rules.ts
 - AdTagPreview.vue
-- priorityLabel
+- reka-ui
+- priceRulePermission
 - PriceRuleSitesView.vue
+- dayText
 - metricColor
-- tasks/rules.ts
 - lang
-- Input.vue
-- router.ts
-- FakeSource
+- loadMembers
+- costs/rules.ts
+- results/types.ts
 - overrides
 - vite.embed.config.ts
 - LoaderPreview.vue
 
 ## God Nodes (most connected - your core abstractions)
-1. `t()` - 511 edges
+1. `t()` - 512 edges
 2. `errorText()` - 312 edges
 3. `vue` - 165 edges
 4. `ApiError` - 117 edges
@@ -207,71 +211,71 @@
 ## Surprising Connections (you probably didn't know these)
 - `Painel` --references--> `errorText()`  [INFERRED]
   docs/superpowers/specs/2026-10-28-construtor-de-relatorios-design.md → src/lib/i18n/index.ts
+- `Task 3: Web — tipos, serviço e regras do construtor` --references--> `hour()`  [INFERRED]
+  docs/superpowers/plans/2026-10-28-construtor-de-relatorios.md → tests/price-rules.test.ts
 - `Task 6: Web — construtor` --references--> `errorText()`  [INFERRED]
   docs/superpowers/plans/2026-10-28-construtor-de-relatorios.md → src/lib/i18n/index.ts
 - `Task 7: Web — modal de métrica personalizada e "Minhas métricas"` --references--> `errorText()`  [INFERRED]
   docs/superpowers/plans/2026-10-28-construtor-de-relatorios.md → src/lib/i18n/index.ts
 - `Task 4: Web — cores das séries e gráficos do construtor` --references--> `shortDay()`  [INFERRED]
   docs/superpowers/plans/2026-10-28-construtor-de-relatorios.md → src/lib/metrics.ts
-- `Task 6: Web — construtor` --references--> `update()`  [INFERRED]
-  docs/superpowers/plans/2026-10-28-construtor-de-relatorios.md → src/modules/internal/people/views/PeopleView.vue
 
 ## Import Cycles
 - None detected.
 
-## Communities (176 total, 7 thin omitted)
+## Communities (180 total, 8 thin omitted)
 
 ### Community 0 - "StaffRolesView.vue"
 Cohesion: 0.05
-Nodes (44): tn(), activeByRole(), personGoalAmount(), active, allRoles(), busy, canManage, canRoles (+36 more)
+Nodes (46): tn(), activeByRole(), personGoalAmount(), active, allRoles(), busy, canManage, canRoles (+38 more)
 
-### Community 1 - "DashboardsView.vue"
+### Community 1 - "SessionsCard.vue"
 Cohesion: 0.05
-Nodes (44): emptyDefinition(), withLayout(), adding, apiMessage(), canManage, canTemplate, catalog, chooseMine() (+36 more)
+Nodes (48): cleanFilters(), emptyDefinition(), filtersChanged(), withLayout(), adding, apiMessage(), canManage, canTemplate (+40 more)
 
 ### Community 2 - "ClientView.vue"
-Cohesion: 0.05
-Nodes (55): audit, auditChanged(), auditPage, auditPages, auditTotal, candidates, canDocuments, canManage (+47 more)
+Cohesion: 0.04
+Nodes (58): profileOk(), formOk, audit, auditChanged(), auditPage, auditPages, auditTotal, candidates (+50 more)
 
 ### Community 3 - "ReportBuilderView.vue"
-Cohesion: 0.05
-Nodes (62): loadDraft(), builderState, canExport(), chartAllowed(), draftOf(), emptyDraft(), fittingChart(), fromQuery() (+54 more)
+Cohesion: 0.06
+Nodes (46): builderState, toInput(), toQuery(), apiMessage(), askRemoveMetric(), busy, canManage, canManageMetrics (+38 more)
 
 ### Community 4 - "MemberView.vue"
-Cohesion: 0.07
-Nodes (34): DirectPermission, allSites, assigned, canAssign, canGrant, canSeeGroups, canSeeSites, catalog (+26 more)
+Cohesion: 0.05
+Nodes (43): pick(), options, roleName(), roleOptions, names, DirectPermission, allSites, assigned (+35 more)
 
 ### Community 5 - "Avant: models do MVP"
 Cohesion: 0.07
 Nodes (27): Acesso, AdUnit, ApiKey, AuditLog, Avant: models do MVP, Company, Decisões de Pedro (22/10/2026), Empresa e equipe (+19 more)
 
 ### Community 6 - "CustomMetricDialog.vue"
-Cohesion: 0.07
-Nodes (31): Task 7: Web — modal de métrica personalizada e "Minhas métricas", busy, canSave, check, complete(), cursor, decimals, emit (+23 more)
+Cohesion: 0.08
+Nodes (30): Task 7: Web — modal de métrica personalizada e "Minhas métricas", busy, canSave, check, complete(), cursor, decimals, emit (+22 more)
 
 ### Community 7 - "GroupView.vue"
 Cohesion: 0.08
-Nodes (28): adding, addMember(), busy, canManage, deleteDesc, deleteGroup(), deleting, errorToast() (+20 more)
+Nodes (29): adding, addMember(), busy, canManage, deleteDesc, deleteGroup(), deleting, errorToast() (+21 more)
 
 ### Community 8 - "RuleDialog.vue"
-Cohesion: 0.07
-Nodes (48): changeLines, amount, amountError, busy, emit, open, props, reason (+40 more)
+Cohesion: 0.10
+Nodes (38): changeLines, busy, canTransfer, duplicate, emit, errors, form, open (+30 more)
 
 ### Community 9 - "TeamView.vue"
 Cohesion: 0.05
-Nodes (48): busy, cancel(), canEditCompany, canInvite, canManage, canRoles, company, email (+40 more)
+Nodes (38): busy, canEditCompany, canInvite, canManage, canRoles, company, email, emailOk (+30 more)
 
 ### Community 10 - "SitesView.vue"
 Cohesion: 0.04
 Nodes (47): networkName(), adding, addSite(), allChosen, allSites, archived, assignedOnly, canAssign (+39 more)
 
 ### Community 11 - "LineChart.vue"
-Cohesion: 0.06
-Nodes (32): BarSeries, barWidth, box, chartWidth, group, hovered, labelStep, padding (+24 more)
+Cohesion: 0.05
+Nodes (33): BarSeries, barWidth, box, chartWidth, group, hovered, labelStep, padding (+25 more)
 
 ### Community 12 - "PerformanceView.vue"
 Cohesion: 0.05
-Nodes (67): props, up, compare, options, period, selected, countryName(), dailySeries() (+59 more)
+Nodes (61): countryName(), dailySeries(), daysOf(), hourLabel(), hourlyItems(), peakHour(), shortDay(), dimensionText() (+53 more)
 
 ### Community 13 - "Design System: Avant"
 Cohesion: 0.09
@@ -282,7 +286,7 @@ Cohesion: 0.11
 Nodes (18): compilerOptions, isolatedModules, jsx, lib, module, moduleResolution, noEmit, noFallthroughCasesInSwitch (+10 more)
 
 ### Community 15 - "clean-code.mjs"
-Cohesion: 0.16
+Cohesion: 0.21
 Nodes (14): allComments(), ALLOWED_SIDE_COMMENTS, checkFile(), checkScript(), visit(), checkTemplate(), visit(), commentLines() (+6 more)
 
 ### Community 16 - "Groone Avant: contexto do projeto"
@@ -290,72 +294,72 @@ Cohesion: 0.12
 Nodes (15): Arquitetura, Como trabalhar nos repositórios, Dicas de ambiente para o agente, Documentos de decisão, GAM, Groone Avant: contexto do projeto, Identidade visual, Infraestrutura e operação (+7 more)
 
 ### Community 17 - "Avant: endpoints da API do MVP"
-Cohesion: 0.15
-Nodes (12): API first e chaves de API, Avant: endpoints da API do MVP, Catálogo de permissões, Convenções, Convites, Decisões de Pedro (23/10/2026), Empresa, Empresa e equipe (+4 more)
+Cohesion: 0.11
+Nodes (18): API first e chaves de API, Atribuição de sites, Avant: endpoints da API do MVP, Catálogo de permissões, Convenções, Convites, Decisões de Pedro (23/10/2026), Empresa (+10 more)
 
-### Community 18 - "@vueuse/core"
+### Community 18 - "dependencies"
 Cohesion: 0.11
 Nodes (19): dependencies, class-variance-authority@^0.7.1, clsx@^2.1.1, @fontsource-variable/geist@^5.3.0, @fontsource-variable/geist-mono@^5.3.0, lucide-vue-next@^1.0.0, pinia@^4.1.0, reka-ui@^2.11.0 (+11 more)
 
-### Community 19 - "errorText"
-Cohesion: 0.07
-Nodes (36): errorText(), submit(), loadGroups(), load(), confirmEnd(), confirmRemove(), create(), load() (+28 more)
+### Community 19 - "StaffView.vue"
+Cohesion: 0.08
+Nodes (28): assign(), busy, canEditGroone, canManageTeam, canSeeGoal, canSeeInvites, editable(), email (+20 more)
 
 ### Community 20 - "GoalTemplatesDialog.vue"
-Cohesion: 0.05
-Nodes (56): locale, busy, canManage, changed, current, load(), monthNames, months (+48 more)
+Cohesion: 0.10
+Nodes (24): valid, busy, changed(), close(), creating, editing, emit, formOpen (+16 more)
 
 ### Community 21 - "steps"
 Cohesion: 0.09
 Nodes (24): GITLEAKS_SHA256, GITLEAKS_VERSION, jobs, segredos, test, name, on, pull_request (+16 more)
 
 ### Community 22 - "ServiceLineDialog.vue"
-Cohesion: 0.13
-Nodes (17): amount, amountError, busy, chosen, description, emit, open, options (+9 more)
+Cohesion: 0.12
+Nodes (20): amount, amountError, busy, chosen, description, emit, open, options (+12 more)
 
-### Community 23 - "SavedViewsBar.vue"
-Cohesion: 0.09
-Nodes (25): active, activeView, busy, canUpdate, choose(), dialogOpen, editing, emit (+17 more)
+### Community 23 - "SidebarNav.vue"
+Cohesion: 0.08
+Nodes (31): active, activeView, busy, canUpdate, choose(), dialogOpen, dirty, editing (+23 more)
 
-### Community 24 - "ApiKeysCard.vue"
+### Community 24 - "ApiKeyDialog.vue"
 Cohesion: 0.07
-Nodes (39): Theme, UserRef, busy, canManage, created(), creating, keys, load() (+31 more)
+Nodes (39): UserRef, busy, canManage, created(), creating, keys, load(), loadError (+31 more)
 
 ### Community 25 - "SiteDetailView.vue"
-Cohesion: 0.08
-Nodes (27): tree(), busy, canAssign, canManage, classifying, errorToast(), id, load() (+19 more)
+Cohesion: 0.07
+Nodes (34): approval(), tree(), AdUnit, Site, SiteDetail, SiteListItem, SiteMember, SitePatch (+26 more)
 
 ### Community 26 - "CostsView.vue"
-Cohesion: 0.07
-Nodes (41): COST_KINDS, costBody(), costForm(), currentMonthInput(), formatMonth(), FORMULA_CHIPS, fromMonthInput(), parseAmount() (+33 more)
+Cohesion: 0.08
+Nodes (26): amountText(), busy, canManage, check, checkFormula, confirmRemove(), costs, currencies (+18 more)
 
 ### Community 27 - "Arquitetura do MVP do Avant"
 Cohesion: 0.13
 Nodes (14): Ambientes, deploy e backup, Arquitetura do MVP do Avant, Controle de acesso no estilo do Defender, Decisões e perguntas em aberto, Endpoints da API REST, Estrutura do repositório, Fluxos, Isolamento, autenticação e permissões (+6 more)
 
-### Community 28 - "RewardEditView.vue"
-Cohesion: 0.05
-Nodes (32): adUnitNames(), previewReward(), adUnitHint, base, busy, device, domain, groups (+24 more)
+### Community 28 - "GroupsView.vue"
+Cohesion: 0.04
+Nodes (44): t(), adUnitNames(), adUnitHint, adUnitOptions, base, busy, buttonColorLabel(), chooseImage() (+36 more)
 
 ### Community 29 - "ClientsView.vue"
 Cohesion: 0.04
-Nodes (50): adding, busy, canceling, cancelInvite(), cancelOpen, canManage, canSearchPeople, clientNames (+42 more)
+Nodes (55): emptyProfile(), profileBody(), adding, busy, canceling, cancelInvite(), cancelOpen, canManage (+47 more)
 
 ### Community 30 - "InvoiceView.vue"
-Cohesion: 0.07
-Nodes (26): invoiceActions(), invoicePdfUrl(), act(), actions, backTo, busy, Confirm, confirmOpen (+18 more)
+Cohesion: 0.08
+Nodes (24): invoicePdfUrl(), act(), backTo, busy, Confirm, confirmOpen, confirmText, downloadPdf() (+16 more)
 
-### Community 31 - "vue"
-Cohesion: 0.11
-Nodes (14): vue, props, seats, company, error, hasSeats, load(), lost (+6 more)
+### Community 31 - "checklists/types.ts"
+Cohesion: 0.19
+Nodes (13): checklistItemService, checklistService, CheckKind, ChecklistFilters, ChecklistItemInput, ChecklistMonth, ChecklistNote, ChecklistPerson (+5 more)
 
-### Community 32 - "loaders/rules.ts"
+### Community 32 - "@vueuse/core"
 Cohesion: 0.13
-Nodes (18): ADBLOCK_HINT, ADBLOCK_TITLE, BLUR_LEVELS, BLUR_PIXELS, LIMITS, MAX_SECONDS, previewLoader, STYLES (+10 more)
+Nodes (19): ADBLOCK_HINT, ADBLOCK_TITLE, BLUR_LEVELS, BLUR_PIXELS, LIMITS, MAX_SECONDS, previewLoader, STYLES (+11 more)
 
-### Community 33 - "ClientsResultsView.vue"
-Cohesion: 0.06
-Nodes (43): CostKind, clients, columnLabel(), COLUMNS, currency, DEFAULT_VIEW, load(), loadError (+35 more)
+### Community 33 - "ResultsView.vue"
+Cohesion: 0.12
+Nodes (22): monthChoices, margin(), monthIso(), negative(), RESULT_PERIODS, ResultPeriod, resultRange(), currency (+14 more)
 
 ### Community 34 - "Product"
 Cohesion: 0.17
@@ -369,45 +373,45 @@ Nodes (11): Conta e equipe, Escopo herdado do Genius, Integrações e onboarding
 Cohesion: 0.17
 Nodes (11): 2FA, Avant: fluxos de login e convite, Com Google, Com senha, Convite e primeiro acesso, Decisões de Pedro (23/10/2026), Endpoints de autenticação, Escolha da Empresa ativa (+3 more)
 
-### Community 37 - "TeamTabs.vue"
-Cohesion: 0.25
-Nodes (6): emit, props, session, tabClass(), tabs, TeamTab
+### Community 37 - "invoices/types.ts"
+Cohesion: 0.26
+Nodes (12): FiscalData, invoiceService, AvailableMonth, Invoice, InvoiceFilters, InvoiceItemKind, InvoiceReturn, InvoiceServiceInput (+4 more)
 
 ### Community 38 - "GroupsView.vue"
-Cohesion: 0.05
-Nodes (43): broken, hue, initials, props, busy, create(), description, duplicate (+35 more)
+Cohesion: 0.06
+Nodes (41): busy, create(), description, duplicate, emit, name, open, people (+33 more)
 
-### Community 39 - "dashboards/types.ts"
-Cohesion: 0.10
-Nodes (35): drag, emit, grid, props, { run, failure, loading }, source, stored, widgetFailure() (+27 more)
+### Community 39 - "DashboardGrid.vue"
+Cohesion: 0.16
+Nodes (21): drag, emit, grid, props, { run, failure, loading }, source, stored, widgetFailure() (+13 more)
 
-### Community 40 - "pick"
-Cohesion: 0.08
-Nodes (27): pick(), metricOptions, ruleText(), options, ruleEnd(), setGoal(), roleName(), roleOptions (+19 more)
+### Community 40 - "ClassifySitesDialog.vue"
+Cohesion: 0.12
+Nodes (23): loadExtras(), category, categoryOptions, changed, emit, keep, open, props (+15 more)
 
 ### Community 41 - "TeamCommissionsView.vue"
 Cohesion: 0.07
-Nodes (34): discount(), toIssue(), adjusting, adjustOpen, canManage, columnLabel(), COLUMNS, DEFAULT_VIEW (+26 more)
+Nodes (29): discount(), adjusting, adjustOpen, canManage, columnLabel(), COLUMNS, DEFAULT_VIEW, detail (+21 more)
 
 ### Community 42 - "compilerOptions"
 Cohesion: 0.17
 Nodes (11): compilerOptions, lib, module, moduleResolution, noEmit, skipLibCheck, strict, target (+3 more)
 
-### Community 43 - "ClientDocumentsCard.vue"
-Cohesion: 0.08
-Nodes (40): setTabCompany(), fetchFile(), load(), overview, picker, picking, rows, send() (+32 more)
+### Community 43 - "InviteView.vue"
+Cohesion: 0.10
+Nodes (28): setTabCompany(), fetchFile(), load(), overview, picker, picking, rows, send() (+20 more)
 
-### Community 44 - "vue-sonner"
-Cohesion: 0.11
-Nodes (22): vue-sonner, toasterTheme, Accent, accentCss(), accentFor(), ACCENTS, applyAccent(), shownTheme() (+14 more)
+### Community 44 - "ClientDocumentsCard.vue"
+Cohesion: 0.23
+Nodes (12): approve(), busy, downloadFile(), emit, fail(), load(), overview, props (+4 more)
 
-### Community 45 - "ReportView.vue"
-Cohesion: 0.08
-Nodes (36): sameComparison(), savedPeriod(), viewChanged(), viewDraft(), ViewPeriod, label(), apiMessage(), canManage (+28 more)
+### Community 45 - "session.ts"
+Cohesion: 0.07
+Nodes (37): NO_COMPARISON, sameComparison(), savedPeriod(), viewChanged(), viewDraft(), ViewPeriod, ReportPreview, apiMessage() (+29 more)
 
 ### Community 46 - "ConnectView.vue"
-Cohesion: 0.08
-Nodes (28): FIRST_POLL_MS, LONGEST_POLL_MS, nextPollDelay(), POLL_LIMIT_MS, McmCandidate, Network, NetworkStatus, NetworkSummary (+20 more)
+Cohesion: 0.10
+Nodes (23): FIRST_POLL_MS, LONGEST_POLL_MS, nextPollDelay(), POLL_LIMIT_MS, awaiting, busy, Check, checks (+15 more)
 
 ### Community 47 - "Avant: conexão com o GAM"
 Cohesion: 0.20
@@ -421,63 +425,63 @@ Nodes (28): busy, canConnect, canDisconnect, canSync, disconnect(), disconnectin
 Cohesion: 0.22
 Nodes (8): Avant: repositório e plano do MVP, Decisões de Pedro (23/10/2026), Estrutura de pastas, Pipeline, Plano até 31/12, Primeira semana (23/10 a 02/11), Resumo, Serviços e ferramentas
 
-### Community 50 - "MyInvoicesView.vue"
+### Community 50 - "contracts/types.ts"
 Cohesion: 0.11
 Nodes (21): monthKey(), available, chosen, create(), createBusy, createMonth, creating, editingPayee (+13 more)
 
-### Community 51 - "SettingsView.vue"
-Cohesion: 0.15
-Nodes (11): canEdit, company, isGroone, load(), loadError, name, nameInvalid, save() (+3 more)
+### Community 51 - "Button.vue"
+Cohesion: 0.06
+Nodes (36): lucide-vue-next, button, classes, Props, props, seats, busy, complete (+28 more)
 
 ### Community 52 - "clients/rules.ts"
-Cohesion: 0.09
-Nodes (24): ddi, localeOptions, notes, percentage, percentageBad, phone, profile, props (+16 more)
+Cohesion: 0.12
+Nodes (17): ddi, localeOptions, notes, percentage, percentageBad, phone, profile, props (+9 more)
 
 ### Community 53 - "toNumber"
-Cohesion: 0.06
-Nodes (62): Task 4: Web — cores das séries e gráficos do construtor, first, FunnelStep, props, LineSeries, change(), formatMetric(), toNumber() (+54 more)
+Cohesion: 0.05
+Nodes (69): FALLBACK, METRIC_COLOR, metricColors(), change(), formatMetric(), toNumber(), pageSlice(), metricText() (+61 more)
 
 ### Community 54 - "avant-web"
 Cohesion: 0.25
 Nodes (7): avant-web, Desenvolvimento, Estrutura, Imagem, Regras de tela, Stack, tag.js e reward.js
 
 ### Community 55 - "PeopleView.vue"
-Cohesion: 0.12
-Nodes (19): Action, busy, confirm(), enable(), fail(), firstPage(), loadError, open (+11 more)
+Cohesion: 0.11
+Nodes (21): Task 6: Web — construtor, Person, Action, busy, confirm(), enable(), fail(), firstPage() (+13 more)
 
 ### Community 56 - "scripts"
 Cohesion: 0.25
 Nodes (8): scripts, build, clean-code, dev, lint, preview, test, typecheck
 
-### Community 57 - "ClassifySitesDialog.vue"
-Cohesion: 0.14
-Nodes (20): category, categoryOptions, changed, emit, keep, open, props, responsible (+12 more)
+### Community 57 - "Pagination.vue"
+Cohesion: 0.23
+Nodes (8): first, last, numbers, page, props, PAGE_SIZE, pageCount(), pageNumbers()
 
 ### Community 58 - ".oxlintrc.json"
 Cohesion: 0.50
 Nodes (3): plugins, rules, $schema
 
-### Community 59 - "t"
-Cohesion: 0.09
-Nodes (31): busy, drop(), input, pick(), problem, props, run(), t() (+23 more)
+### Community 59 - "CompanyImageCard.vue"
+Cohesion: 0.13
+Nodes (19): busy, drop(), input, pick(), problem, props, run(), ACCEPTED_IMAGES (+11 more)
 
-### Community 61 - "ClientNotesCard.vue"
-Cohesion: 0.12
-Nodes (21): add(), adding, deleteOpen, deleting, draft, editing, editOpen, editText (+13 more)
+### Community 61 - "load"
+Cohesion: 0.11
+Nodes (22): add(), adding, deleteOpen, deleting, draft, editing, editOpen, editText (+14 more)
 
 ### Community 65 - "ReportsView.vue"
-Cohesion: 0.06
-Nodes (40): exportUrl(), download(), busy, canManage, catalog, counts, download(), duplicate() (+32 more)
+Cohesion: 0.07
+Nodes (26): busy, canManage, catalog, counts, empty, Layout, layouts, loadError (+18 more)
 
-### Community 66 - "TaskView.vue"
+### Community 66 - "costs/rules.ts"
 Cohesion: 0.12
 Nodes (20): commentRecipients(), personName(), assigneeOptions, change(), changeAssignee(), changePriority(), changeStatus(), comment (+12 more)
 
-### Community 67 - "SchedulesView.vue"
+### Community 67 - "GoogleCard.vue"
 Cohesion: 0.05
 Nodes (56): body, busy, emit, form, frequencyOptions, hourOptions, itemOptions, monthDayOptions (+48 more)
 
-### Community 68 - "package.json"
+### Community 68 - "devDependencies"
 Cohesion: 0.09
 Nodes (30): devDependencies, autoprefixer@^10.6.1, jsdom@^30.1.3, oxlint@^1.89.0, postcss@^8.5.31, tailwindcss@3.4.19, tailwindcss-animate@^1.0.7, @types/node@^24.19.2 (+22 more)
 
@@ -485,201 +489,201 @@ Nodes (30): devDependencies, autoprefixer@^10.6.1, jsdom@^30.1.3, oxlint@^1.89.0
 Cohesion: 0.29
 Nodes (7): avant-tag@github:PedroH3nri/avant-tag#v0.2.0, avant-tag, draw(), emit, host, LINES, props
 
-### Community 70 - "InvoicesView.vue"
-Cohesion: 0.07
-Nodes (44): applyView(), current, sortOptions, applyView(), current, rows, sortOptions, current (+36 more)
+### Community 70 - "views/rules.ts"
+Cohesion: 0.17
+Nodes (21): applyView(), current, sortOptions, applyView(), current, rows, sortOptions, current (+13 more)
 
 ### Community 71 - "InviteView.vue"
 Cohesion: 0.09
 Nodes (20): accept(), busy, error, formOk, gone, invite, load(), loadError (+12 more)
 
-### Community 72 - "FiscalDataCard.vue"
-Cohesion: 0.17
-Nodes (12): busy, complete, documentLabel, form, load(), loaded, options, save() (+4 more)
+### Community 72 - "ad-tags.test.ts"
+Cohesion: 0.18
+Nodes (12): adTagsPath(), blankSettings(), newBlock(), settingsProblem(), tagStatus(), AdTagDraft, addBlock(), integrationProblem (+4 more)
 
 ### Community 73 - "GoalsView.vue"
-Cohesion: 0.07
-Nodes (37): draft, draftKey, emit, failure, goal, goalFailure, goalLoading, grabTitle() (+29 more)
+Cohesion: 0.09
+Nodes (33): mark, percent, props, share, tone, companyGoalYears(), goalTone(), paceMark() (+25 more)
 
 ### Community 74 - "InvoiceDocument.vue"
-Cohesion: 0.22
-Nodes (12): countryName(), TAX_TYPES, taxTypeLabel(), taxTypeOptions(), dates, monthName(), payee, PAYER (+4 more)
+Cohesion: 0.29
+Nodes (7): dates, monthName(), payee, PAYER, props, STATUS_TONE, InvoiceItem
 
-### Community 75 - "AlertsView.vue"
+### Community 75 - "commission-components.test.ts"
 Cohesion: 0.07
-Nodes (26): alerts, busy, canManage, clientNames, clients, confirmRemove(), editing, eventsOpen (+18 more)
+Nodes (27): muteUntil(), alerts, busy, canManage, clientNames, clients, confirmRemove(), editing (+19 more)
 
 ### Community 76 - "TasksView.vue"
 Cohesion: 0.10
 Nodes (19): statusesFor(), canSeeAll, clients, creating, load(), loadError, page, pages (+11 more)
 
-### Community 77 - "ContractsView.vue"
-Cohesion: 0.05
-Nodes (40): applyView(), busy, canCreate, canDelete, canUpdate, choose(), chosenNetwork, client (+32 more)
+### Community 77 - "errorText"
+Cohesion: 0.04
+Nodes (52): contractActions(), formatRevshare(), manualNetworks(), parseRevshare(), Contract, ContractClientRef, ContractNetwork, ContractNetworkRef (+44 more)
 
 ### Community 78 - "AdTagEditView.vue"
 Cohesion: 0.03
-Nodes (65): model, settingsProblem(), toPayload(), absentUnits, armed, base, blocking, blocks (+57 more)
+Nodes (65): model, chosenDay(), toPayload(), absentUnits, armed, base, blocking, blocks (+57 more)
 
-### Community 79 - "invoices/types.ts"
-Cohesion: 0.27
-Nodes (12): FiscalData, AvailableMonth, Invoice, InvoiceFilters, InvoiceItemKind, InvoiceReturn, InvoiceServiceInput, InvoiceServiceItem (+4 more)
+### Community 79 - "ClientNetworksView.vue"
+Cohesion: 0.14
+Nodes (14): latestCall(), awaitingOnly, canAssign, firstPage(), load(), loadError, networks, networksCall (+6 more)
 
 ### Community 80 - "index.ts"
-Cohesion: 0.11
-Nodes (13): fill(), loaded, loaders, loadLang(), Messages, startLang(), busy, email (+5 more)
+Cohesion: 0.07
+Nodes (25): vue, first, FunnelStep, props, choose(), langs, session, open (+17 more)
 
-### Community 81 - "ResetView.vue"
-Cohesion: 0.17
-Nodes (11): busy, error, mfa, mismatch, password, password2, route, router (+3 more)
+### Community 81 - "useSession"
+Cohesion: 0.07
+Nodes (27): vue-sonner, toasterTheme, announceCompany(), CompanyMessage, onCompanyAnnounced(), route, router, session (+19 more)
 
-### Community 82 - "ChecklistsView.vue"
+### Community 82 - "reports/rules.ts"
 Cohesion: 0.11
 Nodes (25): monthName(), previousMonth(), stateLabel(), checklists, fail(), firstPage(), listCall, load() (+17 more)
 
-### Community 83 - "MfaCard.vue"
+### Community 83 - "GAM"
 Cohesion: 0.11
 Nodes (18): qrcode@1.5.4, qrcode, busy, code, codeError, codeOk, codes, desc (+10 more)
 
-### Community 84 - "alerts/types.ts"
-Cohesion: 0.31
-Nodes (9): alertService, Alert, AlertCheck, AlertDefinition, AlertEvent, AlertInput, AlertPage, AlertPreview (+1 more)
+### Community 84 - "pick"
+Cohesion: 0.16
+Nodes (16): events, load(), loadError, open, page, pages, props, total (+8 more)
 
-### Community 85 - "contracts/types.ts"
-Cohesion: 0.18
-Nodes (14): contractActions(), formatRevshare(), manualNetworks(), parseRevshare(), Contract, ContractClientRef, ContractNetwork, ContractNetworkRef (+6 more)
+### Community 85 - "session.ts"
+Cohesion: 0.06
+Nodes (35): pinia, vue-router, RouteMeta, vue-router, Accent, accentCss(), accentFor(), ACCENTS (+27 more)
 
 ### Community 86 - "MyCommissionView.vue"
-Cohesion: 0.09
-Nodes (24): auditActions, dict, errors, fallbackError, Key, formatDay(), localToday(), STATUS_TONE (+16 more)
-
-### Community 87 - "api.ts"
 Cohesion: 0.12
+Nodes (19): locale, formatDay(), STATUS_TONE, windowState, data, endText(), kpis, load() (+11 more)
+
+### Community 87 - "lib/types.ts"
+Cohesion: 0.11
 Nodes (31): api, baseHeaders(), companyChanged(), CSRF_COOKIES, csrfToken(), download(), Query, readCookie() (+23 more)
 
 ### Community 88 - "RolesView.vue"
-Cohesion: 0.10
-Nodes (22): assign(), canManage, canTeam, editable(), isMe(), load(), loaded, loadError (+14 more)
-
-### Community 89 - "RoleDialog.vue"
 Cohesion: 0.08
-Nodes (36): Localized, SiteScope, busy, category, chipClass(), chosen, emit, groups (+28 more)
+Nodes (26): broken, hue, initials, props, assign(), canManage, canTeam, editable() (+18 more)
 
-### Community 90 - "CurrencyCard.vue"
+### Community 89 - "inviteTaken"
+Cohesion: 0.06
+Nodes (47): Localized, SiteScope, busy, category, chipClass(), chosen, emit, groups (+39 more)
+
+### Community 90 - "locale"
 Cohesion: 0.20
 Nodes (10): busy, chosen, currencies, currencyLabel(), missing, options, save(), session (+2 more)
 
-### Community 91 - "sites/types.ts"
-Cohesion: 0.24
-Nodes (8): approval(), AdUnit, Site, SiteCategory, SiteDetail, SiteListItem, SiteMember, SitePatch
+### Community 91 - "CompanyGoalCard.vue"
+Cohesion: 0.12
+Nodes (19): busy, canManage, changed, current, load(), monthNames, months, save() (+11 more)
 
-### Community 92 - "GamToolsView.vue"
+### Community 92 - "ConfigPanel.vue"
 Cohesion: 0.06
-Nodes (41): saveFile(), defaultSites(), languageLabel(), adsLines, adsOpen, busy, choose(), chosen (+33 more)
+Nodes (40): defaultSites(), installable(), languageLabel(), adsLines, adsOpen, busy, choose(), chosen (+32 more)
 
-### Community 93 - "SidebarRail.vue"
-Cohesion: 0.14
-Nodes (15): cancel(), container, drawerGroup, emit, focusGroup(), hover(), hovered, lastShown (+7 more)
+### Community 93 - "networks/service.ts"
+Cohesion: 0.08
+Nodes (29): cancel(), container, drawerGroup, emit, focusGroup(), hover(), hovered, lastShown (+21 more)
 
-### Community 94 - "Avant: grupos na Empresa e imagem da Empresa"
+### Community 94 - "FieldsPanel.vue"
 Cohesion: 0.20
 Nodes (9): Avant: grupos na Empresa e imagem da Empresa, Decisões do Pedro (26/10), Herança de comissão e meta, Imagem da Empresa, Issues, Modelo de dados, Regras, Resumo (+1 more)
 
-### Community 95 - "cn"
-Cohesion: 0.13
-Nodes (18): reka-ui, pick(), route, router, session, panelItem(), railItem(), open (+10 more)
+### Community 95 - "PageBody.vue"
+Cohesion: 0.08
+Nodes (21): props, up, pick(), route, router, session, cn(), choose() (+13 more)
 
-### Community 96 - "table.ts"
-Cohesion: 0.09
-Nodes (24): first, last, numbers, page, props, PAGE_SIZE, pageCount(), pageNumbers() (+16 more)
+### Community 96 - "ClientSitesView.vue"
+Cohesion: 0.12
+Nodes (16): box, failed, initial, props, canSeeChecklists, firstPage(), load(), loadError (+8 more)
 
 ### Community 97 - "AccountManagerCard.vue"
-Cohesion: 0.10
-Nodes (19): profileInput(), openEdit(), busy, canChange, emit, manager, managerId, next (+11 more)
+Cohesion: 0.07
+Nodes (38): CompanyStatus, profileInput(), AuditEntry, Client, ClientDetail, ClientMember, ClientNote, ClientOption (+30 more)
 
-### Community 98 - "rewards/rules.ts"
+### Community 98 - "GamRunView.vue"
 Cohesion: 0.09
-Nodes (29): answerCounts(), blankInput(), cleanPath(), contrast(), contrastWarning(), COOLDOWN_RANGE, defaultStyle(), EMOJIS (+21 more)
+Nodes (31): answerCounts(), blankInput(), cleanPath(), contrast(), contrastWarning(), COOLDOWN_RANGE, defaultStyle(), EMOJIS (+23 more)
 
-### Community 99 - "ApiKeyDialog.vue"
-Cohesion: 0.09
-Nodes (20): model, auditText(), formatAgo(), permissionGroupLabel(), busy, catalog, chosen, copied (+12 more)
+### Community 99 - "ApiError"
+Cohesion: 0.07
+Nodes (32): busy, catalog, chosen, copied, copyToken(), create(), DAYS, emit (+24 more)
 
-### Community 100 - "FieldsPanel.vue"
+### Community 100 - "InvoicesView.vue"
+Cohesion: 0.11
+Nodes (15): columnLabel(), COLUMNS, DEFAULT_VIEW, invoices, loadError, month, page, pages (+7 more)
+
+### Community 102 - "AlertDialog.vue"
+Cohesion: 0.12
+Nodes (15): baselineOptions, busy, checking, checks, clientOptions, conditionOptions, emit, firing (+7 more)
+
+### Community 103 - "FieldsPanel.vue"
 Cohesion: 0.33
 Nodes (9): customs, dimensions, emit, itemClass(), matches(), metrics, props, search (+1 more)
 
-### Community 101 - "SaveViewDialog.vue"
-Cohesion: 0.20
-Nodes (8): choices, emit, invalid, name, open, props, roleIds, visibility
-
-### Community 102 - "AlertDialog.vue"
-Cohesion: 0.10
-Nodes (19): baselineOptions, body, busy, checking, checks, clientOptions, conditionOptions, emit (+11 more)
-
-### Community 103 - "dashboards/rules.ts"
-Cohesion: 0.06
-Nodes (59): add(), emit, kind, kinds, metric, metrics, open, props (+51 more)
-
 ### Community 104 - "CascadeRuleView.vue"
 Cohesion: 0.05
-Nodes (48): cascadeLadder(), dropPercent(), nearestTier(), base, busy, changeStatus(), currency, decisionPages (+40 more)
+Nodes (49): model, dropPercent(), percentText(), base, busy, changeStatus(), currency, decisionFirstFill() (+41 more)
 
 ### Community 105 - "MetricStylePopover.vue"
-Cohesion: 0.17
-Nodes (15): applyScale(), emit, error, from, gradient(), mode, MODES, number() (+7 more)
+Cohesion: 0.15
+Nodes (17): applyScale(), emit, error, from, gradient(), mode, MODES, number() (+9 more)
 
-### Community 106 - "GAM"
-Cohesion: 0.33
-Nodes (6): Atribuição de sites, GAM, Networks, Sites e ad units, network(), site()
+### Community 106 - "ClientsResultsView.vue"
+Cohesion: 0.11
+Nodes (16): clients, columnLabel(), COLUMNS, currency, DEFAULT_VIEW, loadError, money(), month (+8 more)
 
-### Community 107 - "RewardMetricsView.vue"
+### Community 107 - "ClientSitesView.vue"
 Cohesion: 0.09
-Nodes (29): FunnelRow, funnelRows(), lastDays(), rewardPermission(), share(), canManage, base, canLeads (+21 more)
+Nodes (28): FunnelRow, funnelRows(), lastDays(), rewardPermission(), share(), canManage, base, canLeads (+20 more)
 
 ### Community 108 - "GamRunView.vue"
-Cohesion: 0.14
-Nodes (14): finishedSteps(), RUN_TONE, runStateLabel(), STEP_TONE, stepStateLabel(), toolName(), gamToolService, done (+6 more)
+Cohesion: 0.13
+Nodes (15): finishedSteps(), RUN_TONE, runStateLabel(), STEP_TONE, stepStateLabel(), toolName(), writes(), done (+7 more)
 
-### Community 109 - "ApiError"
-Cohesion: 0.10
-Nodes (20): vue-router, RouteMeta, vue-router, ApiError, safeNext(), busy, email, error (+12 more)
+### Community 109 - "router.ts"
+Cohesion: 0.08
+Nodes (23): ApiError, safeNext(), busy, email, error, sent, submit(), busy (+15 more)
 
 ### Community 110 - "ad-tags.test.ts"
-Cohesion: 0.15
-Nodes (14): adTagsPath(), blankSettings(), chosenDay(), newBlock(), tagStatus(), AdTagService, AdTagDraft, AdTagUnitDay (+6 more)
+Cohesion: 0.20
+Nodes (12): AdTagService, AdTag, AdTagDevice, AdTagEdge, AdTagHealth, AdTagHealthDay, AdTagRuleMode, AdTagSettings (+4 more)
+
+### Community 111 - "NetworkReviewActions.vue"
+Cohesion: 0.33
+Nodes (8): busy, confirm(), emit, props, reject(), rejectOpen, showError(), clientInventoryService
 
 ### Community 112 - "updates"
 Cohesion: 0.11
 Nodes (17): patterns, update-types, patterns, update-types, actions, dependencias, imagens, patterns (+9 more)
 
-### Community 113 - "RewardsView.vue"
-Cohesion: 0.09
-Nodes (22): installSnippet(), base, columns, copied, deleted, load(), loadError, page (+14 more)
+### Community 113 - "useSession"
+Cohesion: 0.08
+Nodes (22): model, installSnippet(), base, columns, copied, deleted, load(), loadError (+14 more)
 
-### Community 114 - "inputOf"
-Cohesion: 0.40
-Nodes (5): blankInput(), inputOf(), toPayload(), load(), save()
+### Community 114 - "TemplatesView.vue"
+Cohesion: 0.15
+Nodes (17): roleNames(), apiMessage(), audience, AUDIENCES, audienceText(), busy, counts, load() (+9 more)
 
 ### Community 115 - "TemplateEditorView.vue"
-Cohesion: 0.06
-Nodes (49): editableWidgets(), templateService, blankTemplate(), canPreview(), roleNames(), templateForm(), templateInput(), toggleRole() (+41 more)
+Cohesion: 0.09
+Nodes (40): editableWidgets(), templateService, blankTemplate(), canPreview(), templateForm(), templateInput(), toggleRole(), withAudience() (+32 more)
 
 ### Community 116 - "alerts/rules.ts"
-Cohesion: 0.31
-Nodes (12): alertDefinition(), alertForm, AlertGroup, alertInput(), alertState(), compares(), conditionText(), muteUntil() (+4 more)
+Cohesion: 0.17
+Nodes (18): body, runPreview, ALERT_BASELINES, ALERT_CONDITIONS, ALERT_GROUPS, alertDefinition(), alertForm, AlertGroup (+10 more)
 
-### Community 117 - "RewardLeadsCard.vue"
+### Community 117 - "commission-components.test.ts"
 Cohesion: 0.10
 Nodes (19): answer, answerOptions, busy, columns, confirmRemove(), exportLeads(), filters, languageText() (+11 more)
 
-### Community 118 - "Construtor de relatórios e métricas personalizadas no painel (web#13, web#12)"
+### Community 118 - "Review Focus"
 Cohesion: 0.17
 Nodes (11): Abordagens consideradas, Anti-objetivos, Backend (core, pequena), Construtor de relatórios e métricas personalizadas no painel (web#13, web#12), Decisões, Fora do escopo, Intenção, O que fica para quem constrói (+3 more)
 
-### Community 119 - "session.ts"
-Cohesion: 0.13
-Nodes (14): pinia, choose(), langs, session, open, session, reconnectEvents(), chooseLang() (+6 more)
+### Community 119 - "Key"
+Cohesion: 0.10
+Nodes (22): compare, options, period, selected, Key, PERIOD_PRESETS, addFilter(), addTyped() (+14 more)
 
 ### Community 120 - "drag.ts"
 Cohesion: 0.36
@@ -687,189 +691,197 @@ Nodes (10): cellSize(), DragMode, useWidgetDrag(), begin(), cancel(), escape(), 
 
 ### Community 121 - "checklists/rules.ts"
 Cohesion: 0.18
-Nodes (12): dollars(), evidenceText(), kindDesc(), LANGUAGE_NAMES, NOTE_MIN, progressPercent(), rowState, STATES (+4 more)
+Nodes (12): dollars(), evidenceText(), kindDesc(), LANGUAGE_NAMES, NOTE_MAX, progressPercent(), rowState, rowStateLabel() (+4 more)
 
-### Community 122 - "rewards/types.ts"
-Cohesion: 0.15
-Nodes (12): RewardAdUnit, RewardAdUnitGroup, RewardAnswerCount, RewardDay, RewardInput, RewardLead, RewardLeadRequest, RewardMetrics (+4 more)
+### Community 122 - "formatDate"
+Cohesion: 0.16
+Nodes (15): saveFile(), downloadInstall(), RewardService, Reward, RewardAdUnit, RewardAdUnitGroup, RewardAnswerCount, RewardDay (+7 more)
 
 ### Community 123 - "reports/rules.ts"
-Cohesion: 0.06
-Nodes (45): emit, missingDates, options, props, setDate(), setMode(), addFilter(), addTyped() (+37 more)
+Cohesion: 0.09
+Nodes (37): loadDraft(), emit, missingDates, options, props, setDate(), setMode(), filterable (+29 more)
 
 ### Community 124 - "RevenueStatusBadge.vue"
-Cohesion: 0.25
-Nodes (12): REPORT_CURRENCY, ClientNetwork, ClientRef, ClientSite, detail, props, changeText(), perDayText() (+4 more)
+Cohesion: 0.35
+Nodes (9): REPORT_CURRENCY, detail, props, changeText(), perDayText(), TREND_CLASS, RevenueStatus, RevenueTrend (+1 more)
 
 ### Community 125 - "gam_tools/types.ts"
-Cohesion: 0.16
-Nodes (15): GamFormat, GamStepState, GamToolKind, GamToolNetwork, GamToolNetworkDetail, GamToolRun, GamToolRunInput, Language (+7 more)
+Cohesion: 0.15
+Nodes (13): gamToolService, GamToolNetwork, GamToolNetworkDetail, GamToolRun, GamToolRunInput, Language, detail, network (+5 more)
 
-### Community 126 - "InvoiceServicesView.vue"
-Cohesion: 0.12
-Nodes (17): busy, canManage, description, editing, editingOpen, load(), loadError, page (+9 more)
+### Community 126 - "errorText"
+Cohesion: 0.11
+Nodes (16): open, open, busy, canManage, description, editing, editingOpen, loadError (+8 more)
 
 ### Community 127 - "ClientTeamsView.vue"
-Cohesion: 0.12
-Nodes (18): dot, ClientMember, ClientOption, clientId, clientOptions, clients, firstPage(), load() (+10 more)
+Cohesion: 0.13
+Nodes (17): td, th, clientId, clientOptions, clients, firstPage(), load(), loadError (+9 more)
 
 ### Community 128 - "ChecklistNotesCard.vue"
-Cohesion: 0.12
-Nodes (19): add(), adding, deleteOpen, deleting, desc, draft, editing, editOpen (+11 more)
+Cohesion: 0.13
+Nodes (18): add(), adding, deleteOpen, deleting, desc, draft, editing, editOpen (+10 more)
 
 ### Community 129 - "i18n-plugin.ts"
-Cohesion: 0.31
-Nodes (7): COLUMN, Lang, languageMessages, Source, Texts, i18nByLanguage(), LANGS
+Cohesion: 0.19
+Nodes (11): auditActions, dict, errors, fallbackError, COLUMN, Lang, languageMessages, Source (+3 more)
 
-### Community 130 - "PasswordCard.vue"
+### Community 130 - "Field.vue"
 Cohesion: 0.20
 Nodes (10): busy, current, emit, mismatch, password, password2, ready, short (+2 more)
 
-### Community 131 - "BarChart.vue"
+### Community 131 - "priorityLabel"
 Cohesion: 0.24
 Nodes (8): BarItem, largest, props, opacity(), point(), props, slices, total
 
-### Community 132 - "ClientSitesView.vue"
-Cohesion: 0.15
-Nodes (13): latestCall(), canSeeChecklists, firstPage(), load(), loadError, page, pages, searchSites (+5 more)
+### Community 132 - "GoogleCard.vue"
+Cohesion: 0.29
+Nodes (6): busy, confirm, load(), session, status, unlink()
 
-### Community 133 - "NewTaskDialog.vue"
-Cohesion: 0.12
-Nodes (16): assignee, client, clientOptions, create(), description, domain, emit, open (+8 more)
+### Community 133 - "pick"
+Cohesion: 0.11
+Nodes (17): model, assignee, client, clientOptions, create(), description, domain, emit (+9 more)
 
-### Community 134 - "Button.vue"
-Cohesion: 0.24
-Nodes (7): lucide-vue-next, open, button, classes, Props, props, shown
+### Community 134 - "dashboards/rules.ts"
+Cohesion: 0.06
+Nodes (55): add(), emit, kind, kinds, metric, metrics, open, props (+47 more)
 
 ### Community 135 - "reports/types.ts"
-Cohesion: 0.06
-Nodes (44): Task 3: Web — tipos, serviço e regras do construtor, vitest, @vue/test-utils, Lang, emit, period, props, emit (+36 more)
+Cohesion: 0.07
+Nodes (47): Task 3: Web — tipos, serviço e regras do construtor, @vue/test-utils, Lang, draft, draftKey, emit, failure, goal (+39 more)
 
 ### Community 136 - "PriceRuleView.vue"
 Cohesion: 0.05
-Nodes (52): lastDayTotals(), moneyText(), tierOptions(), ladderText(), maxOptions, minOptions, startOptions, summary (+44 more)
+Nodes (54): hourPoints(), moneyText(), nearestTier(), tierOptions(), ladderText(), maxOptions, minOptions, startOptions (+46 more)
 
-### Community 137 - "events.ts"
-Cohesion: 0.18
-Nodes (13): close(), EventMap, GamToolRunUpdated, Handler, handlers, listen(), listening, MetricsUpdated (+5 more)
+### Community 137 - "invoices/types.ts"
+Cohesion: 0.12
+Nodes (15): close(), EventMap, GamToolRunUpdated, Handler, handlers, listen(), listening, MetricsUpdated (+7 more)
 
 ### Community 138 - "PriceRuleSiteView.vue"
 Cohesion: 0.05
-Nodes (51): model, model, gainQuery(), modelChoices(), modelCounts(), siteStatus(), active, automaticRuleCount (+43 more)
+Nodes (52): model, gainQuery(), modelChoices(), modelCounts(), recommendedModel(), siteStatus(), active, automaticRuleCount (+44 more)
 
-### Community 139 - "priceRulePermission"
-Cohesion: 0.50
-Nodes (4): priceRulePermission(), canManage, canManage, canManage
+### Community 139 - "NewDashboardDialog.vue"
+Cohesion: 0.29
+Nodes (7): chosen, create(), emit, name, open, templates, DashboardTemplate
 
-### Community 140 - "NativeSelect.vue"
+### Community 140 - "PayeeDialog.vue"
 Cohesion: 0.15
-Nodes (12): model, busy, complete, documentLabel, emit, form, open, options (+4 more)
+Nodes (16): options, countryName(), TAX_TYPES, taxTypeLabel(), taxTypeOptions(), busy, complete, documentLabel (+8 more)
 
 ### Community 141 - "ChecklistView.vue"
-Cohesion: 0.13
-Nodes (18): personName(), ROW_TONE, rowStateLabel(), splitRows(), checking, checklist, checklistId, checkNow() (+10 more)
+Cohesion: 0.15
+Nodes (16): ROW_TONE, splitRows(), checking, checklist, checklistId, checkNow(), fail(), groups (+8 more)
 
-### Community 142 - "SaveReportDialog.vue"
-Cohesion: 0.17
-Nodes (10): choices, description, emit, invalid, name, open, props, roleIds (+2 more)
+### Community 142 - "Input.vue"
+Cohesion: 0.08
+Nodes (24): model, Dashboard, DashboardInput, choices, description, emit, invalid, name (+16 more)
 
-### Community 143 - "LoadError.vue"
-Cohesion: 0.24
-Nodes (8): end(), ending, endingOthers, endOthers(), fail(), load(), loadError, sessions
+### Community 143 - "priorityLabel"
+Cohesion: 0.25
+Nodes (8): priorityOptions, eventText(), priorityLabel(), statusLabel(), priorityOptions, statusOptions, priorityOptions, statusOptions
 
 ### Community 144 - "ChecklistItemDialog.vue"
-Cohesion: 0.15
-Nodes (16): active, emit, kind, kindOptions, name, open, props, save() (+8 more)
+Cohesion: 0.16
+Nodes (15): active, emit, kind, kindOptions, name, open, props, save() (+7 more)
 
-### Community 145 - "ChecklistItemsView.vue"
-Cohesion: 0.13
-Nodes (18): checklistItemService, ChecklistFilters, ChecklistItem, ChecklistItemInput, ChecklistMonth, ChecklistProgress, CheckOutcome, SiteChecklist (+10 more)
+### Community 145 - "Status.vue"
+Cohesion: 0.15
+Nodes (10): dot, canManage, dialogOpen, editing, items, load(), loadError, move() (+2 more)
 
 ### Community 146 - "price_rules/rules.ts"
 Cohesion: 0.07
-Nodes (33): ACTION_KEY, blockKind(), BlockModelKind, CASCADE_REASON_KEY, CASCADE_SERIES, cascadeFunnel, CascadePoint, cascadePoints() (+25 more)
+Nodes (37): ACTION_KEY, CASCADE_REASON_KEY, CASCADE_SERIES, cascadeFunnel, cascadeLadder(), CascadePoint, cascadePoints(), CascadeSeries (+29 more)
 
 ### Community 147 - "LoaderEditView.vue"
 Cohesion: 0.07
-Nodes (31): formProblems(), previewDomain(), withTemplate(), base, busy, clientOptions, clients, device (+23 more)
+Nodes (27): withTemplate(), base, busy, clientOptions, clients, device, exiting, input (+19 more)
 
-### Community 148 - "clients/types.ts"
-Cohesion: 0.13
-Nodes (16): CompanyStatus, AuditEntry, Client, ClientDetail, ClientNote, ManagerChange, NotePerson, OwnerInvitation (+8 more)
+### Community 148 - "loadReports"
+Cohesion: 0.32
+Nodes (8): duplicate(), firstPage(), load(), loadPinned(), loadReports(), remove(), reportsCall, togglePin()
 
-### Community 149 - "ClientNetworksView.vue"
-Cohesion: 0.12
-Nodes (17): box, failed, initial, props, awaitingOnly, canAssign, firstPage(), load() (+9 more)
+### Community 149 - "AdjustmentDialog.vue"
+Cohesion: 0.18
+Nodes (14): amount, amountError, busy, emit, open, props, reason, reasonTouched (+6 more)
 
 ### Community 150 - "tasks/types.ts"
 Cohesion: 0.23
 Nodes (11): taskService, SupportTask, SupportTaskDetail, TaskEventKind, TaskFilters, TaskInput, TaskPatch, TaskPerson (+3 more)
 
 ### Community 151 - "ad_tags/rules.ts"
-Cohesion: 0.10
-Nodes (30): addPath(), emit, icon, ICONS, name, pages, pathText, problemText (+22 more)
-
-### Community 152 - "ad_tags/types.ts"
-Cohesion: 0.18
-Nodes (10): AdTagBlock, AdTagDevice, AdTagEdge, AdTagHealth, AdTagHealthDay, AdTagRuleMode, AdTagSettings, AdTagSide (+2 more)
+Cohesion: 0.09
+Nodes (31): addPath(), emit, icon, ICONS, name, pages, pathText, problemText (+23 more)
 
 ### Community 154 - "AdTagsView.vue"
 Cohesion: 0.07
 Nodes (32): adTagPermission(), canManage, base, busy, canManage, columns, create(), groups (+24 more)
 
-### Community 155 - "Review Focus"
+### Community 155 - "ReportTable.vue"
 Cohesion: 0.22
-Nodes (8): Construtor de relatórios no painel — plano de implementação, Global Constraints, Review Focus, Task 1: Core — duas dimensões nos gráficos de eixo e cor/aparência por métrica em `check_chart` (v0.33.0), Task 2: API — core v0.33.0, Task 5: Web — lista de relatórios, rota e menu, Task 6: Web — construtor, Task 8: Web — fechamento
+Nodes (8): Construtor de relatórios no painel — plano de implementação, Global Constraints, Review Focus, Task 1: Core — duas dimensões nos gráficos de eixo e cor/aparência por métrica em `check_chart` (v0.33.0), Task 2: API — core v0.33.0, Task 4: Web — cores das séries e gráficos do construtor, Task 5: Web — lista de relatórios, rota e menu, Task 8: Web — fechamento
+
+### Community 156 - "errorToast"
+Cohesion: 0.32
+Nodes (8): cancel(), errorToast(), load(), loadInvites(), patchMember(), resend(), sendInvite(), showInvites()
 
 ### Community 157 - "price_rules/types.ts"
-Cohesion: 0.11
-Nodes (23): PriceRuleService, BlockKind, CascadeHour, CascadeTry, PriceRule, PriceRuleAction, PriceRuleBlock, PriceRuleConfig (+15 more)
+Cohesion: 0.12
+Nodes (20): BlockKind, CascadeHour, CascadeTry, PriceRule, PriceRuleBlock, PriceRuleConfig, PriceRuleConfigInput, PriceRuleDetails (+12 more)
+
+### Community 158 - "loaders.test.ts"
+Cohesion: 0.20
+Nodes (10): blankInput(), formProblems(), inputOf(), previewDomain(), toPayload(), LoaderService, domain, load() (+2 more)
 
 ### Community 159 - "ClientNetworksCard.vue"
 Cohesion: 0.11
 Nodes (21): add(), addBusy, addError, addOpen, canAssign, code, load(), loadError (+13 more)
 
-### Community 161 - "navigation.ts"
-Cohesion: 0.22
-Nodes (12): linkActive(), NAV_GROUPS, NavGroup, NavItem, SIBLINGS, useNavigation(), logout(), openLink() (+4 more)
+### Community 160 - "errorText"
+Cohesion: 0.17
+Nodes (16): errorText(), load(), loadStart(), openDetail(), saveStart(), confirmEnd(), confirmRemove(), create() (+8 more)
+
+### Community 161 - "exportUrl"
+Cohesion: 0.50
+Nodes (4): exportUrl(), download(), download(), download()
 
 ### Community 162 - "AdTagMetricsView.vue"
 Cohesion: 0.10
-Nodes (24): formatDate(), healthSummary(), share(), AdTag, base, decimal, filled, health (+16 more)
+Nodes (23): formatDate(), healthSummary(), share(), base, decimal, filled, health, integer (+15 more)
 
-### Community 163 - "NetworkReviewActions.vue"
-Cohesion: 0.39
-Nodes (7): busy, confirm(), emit, props, reject(), rejectOpen, showError()
+### Community 163 - "formatMonth"
+Cohesion: 0.67
+Nodes (3): formatMonth(), periodText(), monthOptions
 
 ### Community 164 - "LoadersView.vue"
 Cohesion: 0.10
 Nodes (21): ADBLOCK_SHORT, loaderPermission(), STYLE_LABEL, canManage, base, canManage, columns, load() (+13 more)
 
-### Community 165 - "RecoveryCodes.vue"
-Cohesion: 0.14
-Nodes (16): copyToken(), copied, copyAll(), download(), manual, props, session, text() (+8 more)
-
 ### Community 166 - "gam_tools/rules.ts"
-Cohesion: 0.11
-Nodes (23): chosen, BLOCK_COUNT, delegationLabel(), formatDesc(), formatName(), FORMATS, installable(), KEY_NAMES (+15 more)
+Cohesion: 0.13
+Nodes (22): chosen, BLOCK_COUNT, delegationLabel(), formatDesc(), formatName(), FORMATS, KEY_NAMES, siteSummary() (+14 more)
 
 ### Community 167 - "AdTagPreview.vue"
 Cohesion: 0.12
 Nodes (17): anchor, choose(), drawLoader(), ElementKind, ELEMENTS, emit, fixed, host (+9 more)
 
-### Community 169 - "priorityLabel"
-Cohesion: 0.25
-Nodes (8): priorityOptions, eventText(), priorityLabel(), statusLabel(), priorityOptions, statusOptions, priorityOptions, statusOptions
+### Community 168 - "reka-ui"
+Cohesion: 0.24
+Nodes (7): reka-ui, emit, props, shown, active, emit, tabClass()
+
+### Community 169 - "priceRulePermission"
+Cohesion: 0.50
+Nodes (4): priceRulePermission(), canManage, canManage, canManage
 
 ### Community 170 - "PriceRuleSitesView.vue"
 Cohesion: 0.12
-Nodes (16): priceRulesPath(), base, columns, integer, load(), loadError, page, pages (+8 more)
+Nodes (17): priceRulesPath(), PriceRuleService, base, columns, integer, load(), loadError, page (+9 more)
 
-### Community 171 - "metricColor"
-Cohesion: 0.17
-Nodes (18): colorVar(), FALLBACK, METRIC_COLOR, metricColor(), metricColors(), dayLabel, dayOptions, chart (+10 more)
+### Community 171 - "dayText"
+Cohesion: 0.27
+Nodes (13): colorVar(), metricColor(), dayLabel, dayOptions, chart, hourLabel(), boughtColor, chart (+5 more)
 
-### Community 172 - "tasks/rules.ts"
+### Community 172 - "metricColor"
 Cohesion: 0.25
 Nodes (7): COMMENT_MAX, COMMENT_MIN, PRIORITIES, STATUS_TONE, STATUSES, StatusFilter, SUBJECT_MIN
 
@@ -877,13 +889,17 @@ Nodes (7): COMMENT_MAX, COMMENT_MIN, PRIORITIES, STATUS_TONE, STATUSES, StatusFi
 Cohesion: 0.22
 Nodes (7): lang, taskPlace(), TaskEvent, place, ana, bruno, task
 
-### Community 174 - "Input.vue"
-Cohesion: 0.22
-Nodes (8): model, chosen, create(), emit, name, open, templates, DashboardTemplate
+### Community 174 - "loadMembers"
+Cohesion: 0.50
+Nodes (4): loadMembers(), membersCall, removeMember(), searchMembers
 
-### Community 175 - "router.ts"
-Cohesion: 0.16
-Nodes (10): LINES, showBootFailure(), announceCompany(), CompanyMessage, onCompanyAnnounced(), boot(), followOtherTab(), router (+2 more)
+### Community 176 - "costs/rules.ts"
+Cohesion: 0.35
+Nodes (9): COST_KINDS, costBody(), costForm(), currentMonthInput(), FORMULA_CHIPS, fromMonthInput(), parseAmount(), toMonthInput() (+1 more)
+
+### Community 177 - "results/types.ts"
+Cohesion: 0.24
+Nodes (8): Cost, CostInput, CostKind, FormulaCheck, CompanyResults, CostLine, MonthResult, ResultTotals
 
 ### Community 180 - "overrides"
 Cohesion: 0.50
@@ -898,22 +914,22 @@ Cohesion: 0.40
 Nodes (5): draw(), emit, host, LINES, props
 
 ## Knowledge Gaps
-- **7 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **8 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `t()` connect `t` to `StaffRolesView.vue`, `DashboardsView.vue`, `ClientView.vue`, `ReportBuilderView.vue`, `MemberView.vue`, `CustomMetricDialog.vue`, `GroupView.vue`, `RuleDialog.vue`, `TeamView.vue`, `SitesView.vue`, `PerformanceView.vue`, `errorText`, `GoalTemplatesDialog.vue`, `ServiceLineDialog.vue`, `SavedViewsBar.vue`, `ApiKeysCard.vue`, `SiteDetailView.vue`, `CostsView.vue`, `RewardEditView.vue`, `ClientsView.vue`, `InvoiceView.vue`, `vue`, `ClientsResultsView.vue`, `TeamTabs.vue`, `GroupsView.vue`, `pick`, `TeamCommissionsView.vue`, `ClientDocumentsCard.vue`, `vue-sonner`, `ReportView.vue`, `ConnectView.vue`, `NetworksView.vue`, `MyInvoicesView.vue`, `SettingsView.vue`, `clients/rules.ts`, `toNumber`, `PeopleView.vue`, `ClassifySitesDialog.vue`, `ClientNotesCard.vue`, `ReportsView.vue`, `TaskView.vue`, `SchedulesView.vue`, `InvoicesView.vue`, `InviteView.vue`, `FiscalDataCard.vue`, `GoalsView.vue`, `InvoiceDocument.vue`, `AlertsView.vue`, `TasksView.vue`, `ContractsView.vue`, `AdTagEditView.vue`, `index.ts`, `ResetView.vue`, `ChecklistsView.vue`, `MfaCard.vue`, `contracts/types.ts`, `MyCommissionView.vue`, `RolesView.vue`, `RoleDialog.vue`, `CurrencyCard.vue`, `sites/types.ts`, `GamToolsView.vue`, `SidebarRail.vue`, `cn`, `table.ts`, `AccountManagerCard.vue`, `rewards/rules.ts`, `ApiKeyDialog.vue`, `FieldsPanel.vue`, `SaveViewDialog.vue`, `AlertDialog.vue`, `dashboards/rules.ts`, `CascadeRuleView.vue`, `MetricStylePopover.vue`, `RewardMetricsView.vue`, `GamRunView.vue`, `ApiError`, `ad-tags.test.ts`, `Field.vue`, `RewardsView.vue`, `inputOf`, `TemplateEditorView.vue`, `alerts/rules.ts`, `RewardLeadsCard.vue`, `session.ts`, `checklists/rules.ts`, `reports/rules.ts`, `RevenueStatusBadge.vue`, `InvoiceServicesView.vue`, `ClientTeamsView.vue`, `ChecklistNotesCard.vue`, `PasswordCard.vue`, `ClientSitesView.vue`, `NewTaskDialog.vue`, `Button.vue`, `reports/types.ts`, `PriceRuleView.vue`, `PriceRuleSiteView.vue`, `NativeSelect.vue`, `ChecklistView.vue`, `SaveReportDialog.vue`, `LoadError.vue`, `ChecklistItemDialog.vue`, `ChecklistItemsView.vue`, `LoaderEditView.vue`, `ClientNetworksView.vue`, `ad_tags/rules.ts`, `AdTagsView.vue`, `ClientNetworksCard.vue`, `navigation.ts`, `AdTagMetricsView.vue`, `NetworkReviewActions.vue`, `LoadersView.vue`, `RecoveryCodes.vue`, `gam_tools/rules.ts`, `AdTagPreview.vue`, `priorityLabel`, `PriceRuleSitesView.vue`, `metricColor`, `tasks/rules.ts`, `Input.vue`, `LoaderPreview.vue`?**
-  _High betweenness centrality (0.188) - this node is a cross-community bridge._
+- **Why does `t()` connect `GroupsView.vue` to `StaffRolesView.vue`, `SessionsCard.vue`, `ClientView.vue`, `ReportBuilderView.vue`, `MemberView.vue`, `CustomMetricDialog.vue`, `GroupView.vue`, `RuleDialog.vue`, `TeamView.vue`, `SitesView.vue`, `PerformanceView.vue`, `StaffView.vue`, `GoalTemplatesDialog.vue`, `ServiceLineDialog.vue`, `SidebarNav.vue`, `ApiKeyDialog.vue`, `SiteDetailView.vue`, `CostsView.vue`, `ClientsView.vue`, `InvoiceView.vue`, `ResultsView.vue`, `GroupsView.vue`, `ClassifySitesDialog.vue`, `TeamCommissionsView.vue`, `InviteView.vue`, `ClientDocumentsCard.vue`, `session.ts`, `ConnectView.vue`, `NetworksView.vue`, `contracts/types.ts`, `Button.vue`, `clients/rules.ts`, `toNumber`, `PeopleView.vue`, `Pagination.vue`, `CompanyImageCard.vue`, `load`, `ReportsView.vue`, `costs/rules.ts`, `GoogleCard.vue`, `views/rules.ts`, `InviteView.vue`, `ad-tags.test.ts`, `GoalsView.vue`, `InvoiceDocument.vue`, `commission-components.test.ts`, `TasksView.vue`, `errorText`, `AdTagEditView.vue`, `ClientNetworksView.vue`, `index.ts`, `useSession`, `reports/rules.ts`, `GAM`, `pick`, `session.ts`, `MyCommissionView.vue`, `RolesView.vue`, `inviteTaken`, `locale`, `CompanyGoalCard.vue`, `ConfigPanel.vue`, `networks/service.ts`, `PageBody.vue`, `ClientSitesView.vue`, `AccountManagerCard.vue`, `GamRunView.vue`, `ApiError`, `InvoicesView.vue`, `AlertDialog.vue`, `FieldsPanel.vue`, `CascadeRuleView.vue`, `MetricStylePopover.vue`, `ClientsResultsView.vue`, `ClientSitesView.vue`, `GamRunView.vue`, `router.ts`, `NetworkReviewActions.vue`, `useSession`, `TemplatesView.vue`, `TemplateEditorView.vue`, `alerts/rules.ts`, `commission-components.test.ts`, `Key`, `checklists/rules.ts`, `formatDate`, `reports/rules.ts`, `RevenueStatusBadge.vue`, `errorText`, `ClientTeamsView.vue`, `ChecklistNotesCard.vue`, `Field.vue`, `GoogleCard.vue`, `pick`, `dashboards/rules.ts`, `reports/types.ts`, `PriceRuleView.vue`, `PriceRuleSiteView.vue`, `NewDashboardDialog.vue`, `PayeeDialog.vue`, `ChecklistView.vue`, `Input.vue`, `priorityLabel`, `ChecklistItemDialog.vue`, `Status.vue`, `LoaderEditView.vue`, `loadReports`, `AdjustmentDialog.vue`, `ad_tags/rules.ts`, `Field.vue`, `AdTagsView.vue`, `errorToast`, `loaders.test.ts`, `ClientNetworksCard.vue`, `errorText`, `AdTagMetricsView.vue`, `formatMonth`, `LoadersView.vue`, `ownerName`, `gam_tools/rules.ts`, `AdTagPreview.vue`, `reka-ui`, `PriceRuleSitesView.vue`, `dayText`, `metricColor`, `loadMembers`, `LoaderPreview.vue`?**
+  _High betweenness centrality (0.179) - this node is a cross-community bridge._
 - **Are the 3 inferred relationships involving `errorText()` (e.g. with `Task 6: Web — construtor` and `Task 7: Web — modal de métrica personalizada e "Minhas métricas"`) actually correct?**
   _`errorText()` has 3 INFERRED edges - model-reasoned connections that need verification._
 - **Should `StaffRolesView.vue` be split into smaller, more focused modules?**
-  _Cohesion score 0.051418439716312055 - nodes in this community are weakly interconnected._
-- **Why does `vue` connect `vue` to `StaffRolesView.vue`, `DashboardsView.vue`, `ClientView.vue`, `ReportBuilderView.vue`, `MemberView.vue`, `CustomMetricDialog.vue`, `GroupView.vue`, `RuleDialog.vue`, `TeamView.vue`, `SitesView.vue`, `LineChart.vue`, `PerformanceView.vue`, `clean-code.mjs`, `@vueuse/core`, `errorText`, `GoalTemplatesDialog.vue`, `ServiceLineDialog.vue`, `SavedViewsBar.vue`, `ApiKeysCard.vue`, `SiteDetailView.vue`, `CostsView.vue`, `RewardEditView.vue`, `ClientsView.vue`, `InvoiceView.vue`, `ClientsResultsView.vue`, `TeamTabs.vue`, `GroupsView.vue`, `dashboards/types.ts`, `pick`, `TeamCommissionsView.vue`, `ClientDocumentsCard.vue`, `vue-sonner`, `ReportView.vue`, `ConnectView.vue`, `NetworksView.vue`, `MyInvoicesView.vue`, `SettingsView.vue`, `clients/rules.ts`, `toNumber`, `PeopleView.vue`, `ClassifySitesDialog.vue`, `t`, `ClientNotesCard.vue`, `ReportsView.vue`, `TaskView.vue`, `SchedulesView.vue`, `package.json`, `avant-tag`, `InvoicesView.vue`, `InviteView.vue`, `FiscalDataCard.vue`, `GoalsView.vue`, `InvoiceDocument.vue`, `AlertsView.vue`, `TasksView.vue`, `ContractsView.vue`, `AdTagEditView.vue`, `index.ts`, `ResetView.vue`, `ChecklistsView.vue`, `MfaCard.vue`, `MyCommissionView.vue`, `RolesView.vue`, `RoleDialog.vue`, `CurrencyCard.vue`, `GamToolsView.vue`, `SidebarRail.vue`, `table.ts`, `AccountManagerCard.vue`, `ApiKeyDialog.vue`, `FieldsPanel.vue`, `SaveViewDialog.vue`, `AlertDialog.vue`, `dashboards/rules.ts`, `CascadeRuleView.vue`, `MetricStylePopover.vue`, `RewardMetricsView.vue`, `GamRunView.vue`, `ApiError`, `Field.vue`, `RewardsView.vue`, `TemplateEditorView.vue`, `RewardLeadsCard.vue`, `session.ts`, `drag.ts`, `reports/rules.ts`, `RevenueStatusBadge.vue`, `InvoiceServicesView.vue`, `ClientTeamsView.vue`, `ChecklistNotesCard.vue`, `PasswordCard.vue`, `BarChart.vue`, `ClientSitesView.vue`, `NewTaskDialog.vue`, `Button.vue`, `reports/types.ts`, `PriceRuleView.vue`, `events.ts`, `PriceRuleSiteView.vue`, `NativeSelect.vue`, `ChecklistView.vue`, `SaveReportDialog.vue`, `LoadError.vue`, `ChecklistItemDialog.vue`, `ChecklistItemsView.vue`, `LoaderEditView.vue`, `ClientNetworksView.vue`, `ad_tags/rules.ts`, `AdTagsView.vue`, `ClientNetworksCard.vue`, `navigation.ts`, `AdTagMetricsView.vue`, `NetworkReviewActions.vue`, `LoadersView.vue`, `RecoveryCodes.vue`, `AdTagPreview.vue`, `PriceRuleSitesView.vue`, `Input.vue`, `router.ts`, `LoaderPreview.vue`?**
-  _High betweenness centrality (0.109) - this node is a cross-community bridge._
-- **Should `DashboardsView.vue` be split into smaller, more focused modules?**
-  _Cohesion score 0.05319148936170213 - nodes in this community are weakly interconnected._
-- **Why does `errorText()` connect `errorText` to `StaffRolesView.vue`, `DashboardsView.vue`, `ClientView.vue`, `ReportBuilderView.vue`, `MemberView.vue`, `CustomMetricDialog.vue`, `GroupView.vue`, `RuleDialog.vue`, `TeamView.vue`, `SitesView.vue`, `PerformanceView.vue`, `GoalTemplatesDialog.vue`, `ServiceLineDialog.vue`, `SavedViewsBar.vue`, `ApiKeysCard.vue`, `SiteDetailView.vue`, `CostsView.vue`, `RewardEditView.vue`, `ClientsView.vue`, `InvoiceView.vue`, `vue`, `ClientsResultsView.vue`, `GroupsView.vue`, `dashboards/types.ts`, `pick`, `TeamCommissionsView.vue`, `ClientDocumentsCard.vue`, `vue-sonner`, `ReportView.vue`, `ConnectView.vue`, `NetworksView.vue`, `MyInvoicesView.vue`, `SettingsView.vue`, `PeopleView.vue`, `ClassifySitesDialog.vue`, `t`, `ClientNotesCard.vue`, `ReportsView.vue`, `TaskView.vue`, `SchedulesView.vue`, `InvoicesView.vue`, `InviteView.vue`, `FiscalDataCard.vue`, `GoalsView.vue`, `AlertsView.vue`, `TasksView.vue`, `ContractsView.vue`, `AdTagEditView.vue`, `index.ts`, `ResetView.vue`, `ChecklistsView.vue`, `MfaCard.vue`, `MyCommissionView.vue`, `RolesView.vue`, `RoleDialog.vue`, `CurrencyCard.vue`, `GamToolsView.vue`, `cn`, `table.ts`, `AccountManagerCard.vue`, `rewards/rules.ts`, `ApiKeyDialog.vue`, `AlertDialog.vue`, `CascadeRuleView.vue`, `RewardMetricsView.vue`, `GamRunView.vue`, `ApiError`, `RewardsView.vue`, `inputOf`, `TemplateEditorView.vue`, `RewardLeadsCard.vue`, `Construtor de relatórios e métricas personalizadas no painel (web#13, web#12)`, `session.ts`, `InvoiceServicesView.vue`, `ClientTeamsView.vue`, `ChecklistNotesCard.vue`, `PasswordCard.vue`, `ClientSitesView.vue`, `NewTaskDialog.vue`, `PriceRuleView.vue`, `PriceRuleSiteView.vue`, `NativeSelect.vue`, `ChecklistView.vue`, `LoadError.vue`, `ChecklistItemDialog.vue`, `ChecklistItemsView.vue`, `LoaderEditView.vue`, `ClientNetworksView.vue`, `AdTagsView.vue`, `Review Focus`, `ClientNetworksCard.vue`, `navigation.ts`, `AdTagMetricsView.vue`, `NetworkReviewActions.vue`, `LoadersView.vue`, `PriceRuleSitesView.vue`, `router.ts`?**
-  _High betweenness centrality (0.089) - this node is a cross-community bridge._
+  _Cohesion score 0.04897959183673469 - nodes in this community are weakly interconnected._
+- **Why does `vue` connect `index.ts` to `StaffRolesView.vue`, `SessionsCard.vue`, `ClientView.vue`, `ReportBuilderView.vue`, `MemberView.vue`, `CustomMetricDialog.vue`, `GroupView.vue`, `RuleDialog.vue`, `TeamView.vue`, `SitesView.vue`, `LineChart.vue`, `PerformanceView.vue`, `clean-code.mjs`, `dependencies`, `StaffView.vue`, `GoalTemplatesDialog.vue`, `ServiceLineDialog.vue`, `SidebarNav.vue`, `ApiKeyDialog.vue`, `SiteDetailView.vue`, `CostsView.vue`, `GroupsView.vue`, `ClientsView.vue`, `InvoiceView.vue`, `ResultsView.vue`, `GroupsView.vue`, `DashboardGrid.vue`, `ClassifySitesDialog.vue`, `TeamCommissionsView.vue`, `InviteView.vue`, `ClientDocumentsCard.vue`, `session.ts`, `ConnectView.vue`, `NetworksView.vue`, `contracts/types.ts`, `Button.vue`, `clients/rules.ts`, `toNumber`, `PeopleView.vue`, `Pagination.vue`, `CompanyImageCard.vue`, `load`, `ReportsView.vue`, `costs/rules.ts`, `GoogleCard.vue`, `devDependencies`, `avant-tag`, `InviteView.vue`, `GoalsView.vue`, `InvoiceDocument.vue`, `commission-components.test.ts`, `TasksView.vue`, `errorText`, `AdTagEditView.vue`, `ClientNetworksView.vue`, `useSession`, `reports/rules.ts`, `GAM`, `pick`, `session.ts`, `MyCommissionView.vue`, `RolesView.vue`, `inviteTaken`, `locale`, `CompanyGoalCard.vue`, `ConfigPanel.vue`, `networks/service.ts`, `PageBody.vue`, `ClientSitesView.vue`, `AccountManagerCard.vue`, `ApiError`, `InvoicesView.vue`, `AlertDialog.vue`, `FieldsPanel.vue`, `CascadeRuleView.vue`, `MetricStylePopover.vue`, `ClientsResultsView.vue`, `ClientSitesView.vue`, `GamRunView.vue`, `router.ts`, `NetworkReviewActions.vue`, `useSession`, `TemplatesView.vue`, `TemplateEditorView.vue`, `commission-components.test.ts`, `Key`, `drag.ts`, `reports/rules.ts`, `RevenueStatusBadge.vue`, `errorText`, `ClientTeamsView.vue`, `ChecklistNotesCard.vue`, `Field.vue`, `priorityLabel`, `GoogleCard.vue`, `pick`, `dashboards/rules.ts`, `reports/types.ts`, `PriceRuleView.vue`, `invoices/types.ts`, `PriceRuleSiteView.vue`, `NewDashboardDialog.vue`, `PayeeDialog.vue`, `ChecklistView.vue`, `Input.vue`, `ChecklistItemDialog.vue`, `Status.vue`, `LoaderEditView.vue`, `AdjustmentDialog.vue`, `ad_tags/rules.ts`, `Field.vue`, `AdTagsView.vue`, `ClientNetworksCard.vue`, `AdTagMetricsView.vue`, `LoadersView.vue`, `AdTagPreview.vue`, `PriceRuleSitesView.vue`, `LoaderPreview.vue`?**
+  _High betweenness centrality (0.108) - this node is a cross-community bridge._
+- **Should `SessionsCard.vue` be split into smaller, more focused modules?**
+  _Cohesion score 0.05052790346907994 - nodes in this community are weakly interconnected._
+- **Why does `errorText()` connect `errorText` to `StaffRolesView.vue`, `SessionsCard.vue`, `ClientView.vue`, `ReportBuilderView.vue`, `MemberView.vue`, `CustomMetricDialog.vue`, `GroupView.vue`, `RuleDialog.vue`, `TeamView.vue`, `SitesView.vue`, `PerformanceView.vue`, `StaffView.vue`, `GoalTemplatesDialog.vue`, `ServiceLineDialog.vue`, `SidebarNav.vue`, `ApiKeyDialog.vue`, `SiteDetailView.vue`, `CostsView.vue`, `GroupsView.vue`, `ClientsView.vue`, `InvoiceView.vue`, `ResultsView.vue`, `GroupsView.vue`, `DashboardGrid.vue`, `ClassifySitesDialog.vue`, `TeamCommissionsView.vue`, `InviteView.vue`, `ClientDocumentsCard.vue`, `session.ts`, `ConnectView.vue`, `NetworksView.vue`, `contracts/types.ts`, `Button.vue`, `PeopleView.vue`, `CompanyImageCard.vue`, `load`, `ReportsView.vue`, `costs/rules.ts`, `GoogleCard.vue`, `InviteView.vue`, `GoalsView.vue`, `commission-components.test.ts`, `TasksView.vue`, `errorText`, `AdTagEditView.vue`, `ClientNetworksView.vue`, `index.ts`, `useSession`, `reports/rules.ts`, `GAM`, `pick`, `session.ts`, `MyCommissionView.vue`, `RolesView.vue`, `inviteTaken`, `locale`, `CompanyGoalCard.vue`, `ConfigPanel.vue`, `networks/service.ts`, `PageBody.vue`, `ClientSitesView.vue`, `AccountManagerCard.vue`, `GamRunView.vue`, `ApiError`, `InvoicesView.vue`, `AlertDialog.vue`, `CascadeRuleView.vue`, `ClientsResultsView.vue`, `ClientSitesView.vue`, `GamRunView.vue`, `router.ts`, `NetworkReviewActions.vue`, `useSession`, `TemplatesView.vue`, `TemplateEditorView.vue`, `commission-components.test.ts`, `Review Focus`, `errorText`, `ClientTeamsView.vue`, `ChecklistNotesCard.vue`, `Field.vue`, `GoogleCard.vue`, `pick`, `reports/types.ts`, `PriceRuleView.vue`, `PriceRuleSiteView.vue`, `PayeeDialog.vue`, `ChecklistView.vue`, `ChecklistItemDialog.vue`, `Status.vue`, `LoaderEditView.vue`, `loadReports`, `AdjustmentDialog.vue`, `AdTagsView.vue`, `errorToast`, `loaders.test.ts`, `ClientNetworksCard.vue`, `AdTagMetricsView.vue`, `LoadersView.vue`, `PriceRuleSitesView.vue`?**
+  _High betweenness centrality (0.077) - this node is a cross-community bridge._
 - **Should `ClientView.vue` be split into smaller, more focused modules?**
-  _Cohesion score 0.045739348370927316 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.04463276836158192 - nodes in this community are weakly interconnected._

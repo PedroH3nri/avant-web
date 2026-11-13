@@ -22,6 +22,9 @@ export const runsQuery = (widget: Widget) => widget.type === 'query' || widget.t
 /** O texto do erro de um widget: o da API quando já explica, senão o do código. */
 export const widgetErrorText = (error: WidgetError) => (error.code === 'invalid_input' && error.message ? error.message : errorText(error.code))
 
+/** A execução sem resultado nem erro, de antes da primeira resposta ou de quando nada roda. */
+const emptyRun = (): DashboardRun => ({ results: {}, errors: {} })
+
 /** Os widgets gravados que rodam na API, com o que muda o resultado deles. */
 const savedQueries = (target: RunTarget) =>
   target.saved.filter(runsQuery).map((widget) => [widget.id, widget.query ?? null, widget.report_id ?? null])
@@ -33,7 +36,7 @@ export function runKey(target: RunTarget) {
 
 /** Roda o dashboard (ou o modelo) inteiro; só a última resposta vale e o limite de taxa agenda nova tentativa. */
 export function useDashboardRun(target: () => RunTarget) {
-  const run = ref<DashboardRun>({ results: {}, errors: {} })
+  const run = ref<DashboardRun>(emptyRun())
   const failure = ref<string | null>(null)
   const loading = ref(false)
   let latest = 0
@@ -47,7 +50,10 @@ export function useDashboardRun(target: () => RunTarget) {
     const ticket = ++latest
     loading.value = false
     failure.value = null
-    if (disposed || current.preview || !savedQueries(current).length || !(current.templateId || current.dashboardId)) return
+    if (disposed || current.preview || !savedQueries(current).length || !(current.templateId || current.dashboardId)) {
+      run.value = emptyRun()
+      return
+    }
     loading.value = true
     try {
       const found = current.templateId

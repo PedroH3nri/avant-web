@@ -3897,9 +3897,9 @@ export const dict = {
   'pr.cascadeLimit.minRequestsShort': ['Impressões oferecidas', 'Impressions offered', 'Impresiones ofrecidas'],
   'pr.cascadeLimit.minRequestsHint': ['Impressões oferecidas para o motor mexer.', 'Impressions offered before the engine moves.', 'Impresiones ofrecidas para que el motor se mueva.'],
   'pr.cascadeDecisionsDesc': [
-    'Uma linha por hora, da mais nova para a mais velha, com o ponto de partida antes e depois e o motivo.',
-    'One row per hour, newest first, with the starting point before and after and the reason.',
-    'Una fila por hora, de la más nueva a la más vieja, con el punto de partida antes y después y el motivo.',
+    'Uma linha por hora, da mais nova para a mais velha, com o ponto de partida antes e depois, a compra na 1ª da hora do GAM que o motor usou e o motivo.',
+    'One row per hour, newest first, with the starting point before and after, the 1st-try fill of the GAM hour the engine used and the reason.',
+    'Una fila por hora, de la más nueva a la más vieja, con el punto de partida antes y después, la compra en el 1.º intento de la hora de GAM que usó el motor y el motivo.',
   ],
   'pr.manualStart': ['Ponto de partida à mão', 'Manual starting point', 'Punto de partida manual'],
   'pr.manualStartDesc': [

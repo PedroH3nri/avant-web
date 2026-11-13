@@ -2,7 +2,6 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { api } from '@/lib/api'
 import type { ReportResult } from '@/modules/reports/types'
 import {
-  blockKind,
   cascadeFunnel,
   cascadeLadder,
   cascadePoints,
@@ -37,7 +36,7 @@ function hour(date: string, at: number, revenue = 400_000): PriceRuleHour {
 
 /** Uma decisão do motor que levou o floor ao valor dado. */
 function decision(date: string, at: number, floor: number): PriceRuleHistoryEntry {
-  return { date, hour: at, action: 'up', reason: 'pmr_up_over_roof', floor_before_micros: floor - 10_000, floor_applied_micros: floor, created_at: `${date}T00:00:00Z` }
+  return { date, hour: at, action: 'up', reason: 'pmr_up_over_roof', floor_before_micros: floor - 10_000, floor_applied_micros: floor, created_at: `${date}T00:00:00Z`, data_date: date, data_hour: at }
 }
 
 const USD_TIERS = [1_010_000, 1_050_000, 1_090_000, 1_130_000, 1_170_000, 1_220_000, 1_260_000]
@@ -126,6 +125,11 @@ describe('regras de tela das regras de preço', () => {
     expect(lastDayTotals([])).toBeNull()
   })
 
+  it('soma as 24 horas do relógio até a hora mais nova, não as últimas 24 linhas', () => {
+    const rows = [hour('2026-11-10', 14), hour('2026-11-10', 2), hour('2026-11-09', 15), hour('2026-11-09', 14), hour('2026-11-08', 20)]
+    expect(lastDayTotals(rows)?.requests).toBe(3 * 200)
+  })
+
   it('calcula o ganho da regra sobre o controle pela receita somada', () => {
     const series = gainSeries(
       report([
@@ -147,23 +151,12 @@ describe('regras de tela das regras de preço', () => {
 })
 
 describe('regras de tela da Cascata', () => {
-  it('blockKind', () => {
-    expect(blockKind('Content3_Mobile')).toBe('content')
-    expect(blockKind('Fixed_Desktop')).toBe('cascade')
-    expect(blockKind('Anchor_Mobile')).toBe('cascade')
-    expect(blockKind('Interstitial_Mobile')).toBe('cascade')
-    expect(blockKind('Rewards')).toBe('cascade')
-    expect(blockKind('Reward_Mobile')).toBe('cascade')
-    expect(blockKind('Offerwall')).toBe('offerwall')
-  })
-
-  it('recomenda o modelo pela api e, sem ela, pelo tipo do bloco', () => {
-    const site = { recommended_models: { Content3_Mobile: 'cascade' as const } }
+  it('recomenda o modelo que a api manda; bloco fora da lista (como o offerwall) fica sem modelo', () => {
+    const site = { recommended_models: { Content3_Mobile: 'cascade' as const, Interstitial_Mobile: 'cascade' as const } }
     expect(recommendedModel(site, 'Content3_Mobile')).toBe('cascade')
-    expect(recommendedModel(site, 'Content1_Desktop')).toBe('automatic')
-    expect(recommendedModel({}, 'Interstitial_Mobile')).toBe('cascade')
-    expect(recommendedModel({}, 'Reward_Mobile')).toBe('cascade')
-    expect(recommendedModel({}, 'Offerwall')).toBeNull()
+    expect(recommendedModel(site, 'Interstitial_Mobile')).toBe('cascade')
+    expect(recommendedModel(site, 'Offerwall')).toBeNull()
+    expect(recommendedModel(site, 'Content1_Desktop')).toBeNull()
   })
 
   it('oferece Automática, Cascata e Sem regra em todo bloco e marca a recomendada', () => {
@@ -206,6 +199,11 @@ describe('regras de tela da Cascata', () => {
     expect(funnel.ladderFill).toBeCloseTo(90)
     expect(funnel.revenue).toBe(2_400_000)
     expect(cascadeFunnel([]).firstFill).toBeNull()
+  })
+
+  it('soma o funil das 24 horas do relógio até a hora mais nova, com horas sem número no meio', () => {
+    const rows = [cascadeHour('2026-11-10', 14), cascadeHour('2026-11-10', 0), cascadeHour('2026-11-09', 15), cascadeHour('2026-11-09', 14), cascadeHour('2026-11-07', 3)]
+    expect(cascadeFunnel(rows).offered).toBe(3 * 100)
   })
 
   it('monta os pontos por hora da mais velha à mais nova', () => {

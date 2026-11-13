@@ -86,6 +86,7 @@ const savedDrop = computed(() => rule.value?.config?.drop_tiers ?? DEFAULT_DROP_
 const funnel = computed(() => cascadeFunnel(hours.value))
 const points = computed(() => cascadePoints(hours.value))
 const ladder = computed(() => (rule.value ? cascadeLadder(tiers.value, rule.value.floor_micros, savedDrop.value) : []))
+const firstFillByHour = computed(() => new Map(points.value.map((point) => [`${point.date} ${point.hour}`, point.firstFill])))
 const decisions = computed(() => history.value.slice((page.value - 1) * PAGE_SIZE, page.value * PAGE_SIZE))
 const decisionPages = computed(() => Math.ceil(history.value.length / PAGE_SIZE))
 const startOptions = computed(() => tierOptions(tiers.value, currency.value, locale.value))
@@ -120,7 +121,7 @@ const limitList = computed(() => {
   return [
     { label: t('pr.cascadeLimit.floorMin'), value: moneyText(config.floor_min_micros, currency.value, locale.value), hint: t('pr.cascadeLimit.floorMinShort') },
     { label: t('pr.cascadeLimit.floorMax'), value: moneyText(config.floor_max_micros, currency.value, locale.value), hint: t('pr.limit.floorMaxShort') },
-    { label: t('pr.cascadeLimit.drop'), value: dropText(config.drop_tiers), hint: t('pr.cascadeLimit.dropShort', { percent: dropPercentText(config.drop_tiers) }) },
+    { label: t('pr.cascadeLimit.drop'), value: dropText(formDrop.value), hint: t('pr.cascadeLimit.dropShort', { percent: dropPercentText(formDrop.value) }), drop: true },
     { label: t('pr.cascadeLimit.fillHigh'), value: percentText(config.pmr_floor, locale.value), hint: t('pr.cascadeLimit.fillHighShort') },
     { label: t('pr.cascadeLimit.minRequests'), value: t('pr.limit.minRequestsShort', { count: integer.value.format(config.min_eligible_requests) }), hint: t('pr.cascadeLimit.minRequestsShort') },
   ]
@@ -161,6 +162,12 @@ function dropPercentText(drop: number): string {
   return new Intl.NumberFormat(locale.value, { maximumFractionDigits: 1 }).format(dropPercent(tiers.value, drop))
 }
 
+/** A compra na 1ª da hora do GAM que a decisão usou; sem essa hora no período, um traço. */
+function decisionFirstFill(entry: PriceRuleHistoryEntry): string {
+  if (entry.data_date === null || entry.data_hour === null) return percentText(null, locale.value)
+  return percentText(firstFillByHour.value.get(`${entry.data_date} ${entry.data_hour}`) ?? null, locale.value)
+}
+
 /** A escada em texto, do 1º floor ao "sem floor". */
 function ladderText(steps: (number | null)[]): string {
   return steps.map((floor) => (floor === null ? t('pr.noFloor') : moneyText(floor, currency.value, locale.value))).join(' → ')
@@ -176,7 +183,7 @@ function limitsInput(form: LimitsForm): PriceRuleConfigInput | null {
   const floorMax = Number(form.floorMax)
   const drop = Number(form.drop)
   if (!Number.isFinite(fillHigh) || fillHigh < 0 || fillHigh > 100) return null
-  if (!Number.isInteger(minRequests) || minRequests <= 0 || floorMin > floorMax) return null
+  if (!Number.isInteger(minRequests) || minRequests < 0 || floorMin > floorMax) return null
   if (!DROP_TIERS.some((size) => Number(size) === drop)) return null
   return {
     automatic: false,
@@ -266,7 +273,7 @@ async function saveStart() {
   }
 }
 
-/** Grava os limites, sempre com a descida (`drop_tiers`); com "calculados pelo motor", vale o que ele recalcula. */
+/** Grava os limites, sempre com a descida (`drop_tiers`) do formulário; com "calculados pelo motor", o resto vale o que ele recalcula. */
 async function saveLimits() {
   const form = limits.value
   const current = rule.value?.config
@@ -280,7 +287,7 @@ async function saveLimits() {
         floor_min_micros: current.floor_min_micros,
         floor_max_micros: current.floor_max_micros,
         step_size: current.step_size,
-        drop_tiers: current.drop_tiers,
+        drop_tiers: formDrop.value,
       }
     : limitsInput(form)
   if (!input) return
@@ -398,7 +405,8 @@ watch(period, load)
         <dl v-if="limits && !manual" class="grid grid-cols-2 gap-px border-t bg-border sm:grid-cols-3 lg:grid-cols-5">
           <div v-for="item in limitList" :key="item.label" class="bg-card px-6 py-4">
             <dt class="text-[13px] text-muted-foreground">{{ item.label }}</dt>
-            <dd class="mt-1 text-[18px] font-semibold tracking-[-0.02em] tnum">{{ item.value }}</dd>
+            <dd v-if="item.drop && canManage" class="mt-1"><Segmented v-model="limits.drop" :options="dropOptions" :label="t('pr.cascadeLimit.drop')" /></dd>
+            <dd v-else class="mt-1 text-[18px] font-semibold tracking-[-0.02em] tnum">{{ item.value }}</dd>
             <dd class="mt-0.5 text-[12px] text-muted-foreground">{{ item.hint }}</dd>
           </div>
         </dl>
@@ -439,11 +447,12 @@ watch(period, load)
               <th :class="th">{{ t('pr.col.hour') }}</th>
               <th :class="th">{{ t('pr.col.action') }}</th>
               <th :class="[th, 'text-right']">{{ t('pr.col.start') }}</th>
+              <th :class="[th, 'text-right']">{{ t('pr.col.firstFill') }}</th>
               <th :class="th">{{ t('pr.col.reason') }}</th>
             </tr>
           </thead>
           <tbody>
-            <TableState v-if="!history.length" :cols="4" empty :desc="t('pr.noDecisions')" />
+            <TableState v-if="!history.length" :cols="5" empty :desc="t('pr.noDecisions')" />
             <tr v-for="entry in decisions" :key="`${entry.date}-${entry.hour}`">
               <td :class="[td, 'whitespace-nowrap tnum']">{{ hourLabel(entry.date, entry.hour, locale) }}</td>
               <td :class="td">
@@ -460,6 +469,7 @@ watch(period, load)
                 </template>
                 {{ moneyText(entry.floor_applied_micros, currency, locale) }}
               </td>
+              <td :class="[td, 'text-right tnum']">{{ decisionFirstFill(entry) }}</td>
               <td :class="[td, 'text-[13px] text-muted-foreground']">{{ t(CASCADE_REASON_KEY[entry.reason]) }}</td>
             </tr>
           </tbody>

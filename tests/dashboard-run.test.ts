@@ -84,4 +84,14 @@ describe('useDashboardRun', () => {
     await flushPromises()
     expect(state.failure.value).toBeNull()
   })
+
+  it('na execução pulada apaga os resultados da execução anterior', async () => {
+    vi.spyOn(dashboardService, 'runAll').mockResolvedValue({ results: { w1: { rows: [] } }, errors: {} } as never)
+    const { target, state } = mountRun({ dashboardId: 'd1', saved, filters: null })
+    await flushPromises()
+    expect(Object.keys(state.run.value.results)).toEqual(['w1'])
+    target.value = { ...target.value, saved: [] }
+    await flushPromises()
+    expect(state.run.value).toEqual({ results: {}, errors: {} })
+  })
 })
