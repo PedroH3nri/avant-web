@@ -7871,33 +7871,26 @@ const fbLimitOf = (text: string) => (text === '' ? null : Number(text))
 
 /** Configuração de uma conta pelo dono: quem pode usar, limite diário e mensal e o que fazer no limite. */
 function FbAccountDialog({ account, members, onClose, onSave }: { account: FbAccount | null; members: FbMember[]; onClose: () => void; onSave: (account: FbAccount, people: string[]) => void }) {
-  const [people, setPeople] = useState<string[]>([])
+  const [person, setPerson] = useState('none')
   const [daily, setDaily] = useState('')
   const [monthly, setMonthly] = useState('')
   const [onLimit, setOnLimit] = useState<FbOnLimit>('warn')
   useEffect(() => {
     if (!account) return
-    setPeople(members.filter((member) => member.accounts.includes(account.id)).map((member) => member.email))
+    setPerson(members.find((member) => member.accounts.includes(account.id))?.email ?? 'none')
     setDaily(account.dailyLimit === null ? '' : String(account.dailyLimit))
     setMonthly(account.monthlyLimit === null ? '' : String(account.monthlyLimit))
     setOnLimit(account.onLimit)
   }, [account, members])
-  /** Marca ou desmarca a pessoa na conta. */
-  const toggle = (email: string) => setPeople(people.includes(email) ? people.filter((item) => item !== email) : [...people, email])
   return (
     <Dialog open={!!account} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-[560px]">
-        <DialogHeader><DialogTitle>{account?.name}</DialogTitle><DialogDescription>Conta de anúncio <span className="font-mono">{account?.id}</span>, da {account?.business}. Quem você marcar recebe só esta conta, nunca a BM inteira. Você, como dono, sempre vê todas.</DialogDescription></DialogHeader>
+        <DialogHeader><DialogTitle>{account?.name}</DialogTitle><DialogDescription>Conta de anúncio <span className="font-mono">{account?.id}</span>, da {account?.business}. Quem você escolher recebe só esta conta, nunca a BM inteira. Você, como dono, sempre vê todas.</DialogDescription></DialogHeader>
         <div className="grid gap-5">
-          <div>
-            <div className="text-[13px] font-medium text-muted-foreground">Quem pode usar</div>
-            <ul className="scroll-thin mt-2 grid max-h-[30vh] gap-1 overflow-y-auto rounded-md border p-2">
-              {members.map((member) => (
-                <li key={member.email}><label className="flex items-center gap-3 rounded-md px-2 py-1.5 hover:bg-muted"><input type="checkbox" className="size-4 accent-[hsl(var(--foreground))]" checked={people.includes(member.email)} onChange={() => toggle(member.email)} /><Avatar name={member.name} size={24} /><span className="min-w-0 flex-1 text-[14px]">{member.name}</span><span className="text-[12px] text-muted-foreground">{member.role}</span></label></li>
-              ))}
-            </ul>
-            <p className="mt-2 text-[13px] text-muted-foreground">Quem não está marcado não vê a conta, as campanhas dela nem os números.</p>
-          </div>
+          <Field id="fb-acc-person" label="Quem usa a conta">
+            <Select value={person} onValueChange={setPerson}><SelectTrigger id="fb-acc-person" className="h-10"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="none">Ninguém, só o dono</SelectItem>{members.map((member) => <SelectItem key={member.email} value={member.email}>{member.name} · {member.role}</SelectItem>)}</SelectContent></Select>
+          </Field>
+          <p className="-mt-3 text-[13px] text-muted-foreground">Uma conta fica com uma pessoa só. Trocar a pessoa tira a conta de quem usava antes. Os outros não veem a conta, as campanhas dela nem os números.</p>
           <div className="grid items-start gap-4 sm:grid-cols-2">
             <FbMoneyField id="fb-acc-daily" label="Limite diário" value={daily} hint="Soma dos orçamentos diários ativos" onChange={setDaily} />
             <FbMoneyField id="fb-acc-monthly" label="Limite mensal" value={monthly} hint="Gasto do mês, do dia 1 até hoje" onChange={setMonthly} />
@@ -7906,14 +7899,14 @@ function FbAccountDialog({ account, members, onClose, onSave }: { account: FbAcc
             <Select value={onLimit} onValueChange={(value) => setOnLimit(value as FbOnLimit)}><SelectTrigger id="fb-acc-on-limit" className="h-10"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="warn">Avisar por email o dono e quem usa a conta</SelectItem><SelectItem value="pause">Avisar e pausar as campanhas ativas da conta</SelectItem></SelectContent></Select>
           </Field>
         </div>
-        <DialogFooter><Button variant="outline" onClick={onClose}>Cancelar</Button><Button onClick={() => account && onSave({ ...account, dailyLimit: fbLimitOf(daily), monthlyLimit: fbLimitOf(monthly), onLimit }, people)}>Salvar</Button></DialogFooter>
+        <DialogFooter><Button variant="outline" onClick={onClose}>Cancelar</Button><Button onClick={() => account && onSave({ ...account, dailyLimit: fbLimitOf(daily), monthlyLimit: fbLimitOf(monthly), onLimit }, person === 'none' ? [] : [person])}>Salvar</Button></DialogFooter>
       </DialogContent>
     </Dialog>
   )
 }
 
 /** Limites de uma pessoa: diário e mensal, somando todas as contas que ela usa. */
-function FbMemberDialog({ member, accounts, onClose, onSave }: { member: FbMember | null; accounts: FbAccount[]; onClose: () => void; onSave: (member: FbMember) => void }) {
+function FbMemberDialog({ member, accounts, members, onClose, onSave }: { member: FbMember | null; accounts: FbAccount[]; members: FbMember[]; onClose: () => void; onSave: (member: FbMember) => void }) {
   const [chosen, setChosen] = useState<string[]>([])
   const [daily, setDaily] = useState('')
   const [monthly, setMonthly] = useState('')
@@ -7925,6 +7918,8 @@ function FbMemberDialog({ member, accounts, onClose, onSave }: { member: FbMembe
   }, [member])
   /** Marca ou desmarca a conta para a pessoa. */
   const toggle = (id: string) => setChosen(chosen.includes(id) ? chosen.filter((item) => item !== id) : [...chosen, id])
+  /** Quem usa a conta hoje, se for outra pessoa. */
+  const holderOf = (id: string) => members.find((item) => item.email !== member?.email && item.accounts.includes(id))
   return (
     <Dialog open={!!member} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-[560px]">
@@ -7938,13 +7933,13 @@ function FbMemberDialog({ member, accounts, onClose, onSave }: { member: FbMembe
                   <div className="px-2 pb-1 text-[12px] text-muted-foreground">{business}</div>
                   <ul className="grid gap-1">
                     {accounts.filter((account) => account.state !== 'disabled' && account.business === business).map((account) => (
-                      <li key={account.id}><label className="flex items-center gap-3 rounded-md px-2 py-1.5 hover:bg-muted"><input type="checkbox" className="size-4 accent-[hsl(var(--foreground))]" checked={chosen.includes(account.id)} onChange={() => toggle(account.id)} /><span className="min-w-0 flex-1 text-[14px]">{account.name}</span><Code>{account.id}</Code></label></li>
+                      <li key={account.id}><label className="flex items-center gap-3 rounded-md px-2 py-1.5 hover:bg-muted"><input type="checkbox" className="size-4 accent-[hsl(var(--foreground))]" checked={chosen.includes(account.id)} onChange={() => toggle(account.id)} /><span className="min-w-0 flex-1 text-[14px]">{account.name}{holderOf(account.id) && <span className="ml-2 text-[12px] text-muted-foreground">{chosen.includes(account.id) ? `sai de ${holderOf(account.id)!.name}` : `hoje com ${holderOf(account.id)!.name}`}</span>}</span><Code>{account.id}</Code></label></li>
                     ))}
                   </ul>
                 </div>
               ))}
             </div>
-            <p className="mt-2 text-[13px] text-muted-foreground">Você libera conta por conta. A pessoa não recebe a BM: só vê e usa as contas marcadas, mesmo que a BM tenha outras.</p>
+            <p className="mt-2 text-[13px] text-muted-foreground">Você libera conta por conta. A pessoa não recebe a BM: só vê e usa as contas marcadas, mesmo que a BM tenha outras. Cada conta fica com uma pessoa só: marcar uma conta que está com outra pessoa passa a conta para esta.</p>
           </div>
           <div className="grid items-start gap-4 sm:grid-cols-2">
             <FbMoneyField id="fb-mem-daily" label="Limite diário" value={daily} hint="Orçamentos diários ativos que ela criou ou mudou" onChange={setDaily} />
@@ -8083,7 +8078,7 @@ function FacebookScreen({ accounts, setAccounts, members, setMembers, viewer, se
                 <thead><tr><th className={th}>Conta de anúncio</th>{staff && <th className={th}>Cliente</th>}<th className={th}>Situação no Facebook</th><th className={th}>Gasto no mês</th><th className={th}>Site</th>{!staff && <th className={th}>Quem usa</th>}<th className={th}><span className="sr-only">Ações</span></th></tr></thead>
                 <tbody>
                   {shown.map((account) => {
-                    const users = members.filter((member) => member.accounts.includes(account.id))
+                    const holder = members.find((member) => member.accounts.includes(account.id))
                     return (
                       <tr key={account.id} className="hover:bg-muted">
                         <td className={td}><div className="font-medium">{account.name}</div><div className="text-[13px] text-muted-foreground"><Code>{account.id}</Code> · {account.currency} · {account.business}</div></td>
@@ -8091,7 +8086,7 @@ function FacebookScreen({ accounts, setAccounts, members, setMembers, viewer, se
                         <td className={td}><Status tone={FB_ACCOUNT_STATE[account.state][1]}>{FB_ACCOUNT_STATE[account.state][0]}</Status></td>
                         <td className={td}><FbLimitBar used={account.spentMonth} limit={account.monthlyLimit} currency={account.currency} /></td>
                         <td className={td}>{staff ? (account.site ? <span className="font-mono text-[13px]">{account.site}</span> : <span className="text-[13px] text-muted-foreground">Sem site</span>) : <FbSitePicker account={account} disabled={!owner} onPick={(site) => link(account.id, site)} />}</td>
-                        {!staff && <td className={td}>{users.length ? <div className="flex -space-x-1.5">{users.map((member) => <span key={member.email} title={member.name} className="rounded-full ring-2 ring-card"><Avatar name={member.name} size={26} /></span>)}</div> : <span className="text-[13px] text-muted-foreground">Só o dono</span>}</td>}
+                        {!staff && <td className={td}>{holder ? <span className="flex items-center gap-2"><Avatar name={holder.name} size={24} /><span className="whitespace-nowrap text-[14px]">{holder.name}</span></span> : <span className="text-[13px] text-muted-foreground">Só o dono</span>}</td>}
                         <td className={cn(td, 'text-right')}><div className="flex justify-end gap-2">{owner && <Button size="sm" variant="ghost" disabled={account.state === 'disabled'} onClick={() => setEditing(account)}>Configurar</Button>}<Button size="sm" variant="outline" disabled={account.state === 'disabled'} onClick={() => openAccount(account.id)}>Campanhas</Button></div></td>
                       </tr>
                     )
@@ -8105,7 +8100,7 @@ function FacebookScreen({ accounts, setAccounts, members, setMembers, viewer, se
         )}
       </Body>
       <FbAccountDialog account={editing} members={members} onClose={() => setEditing(null)} onSave={saveAccount} />
-      <FbMemberDialog member={editingMember} accounts={fbVisibleAccounts(accounts, { kind: 'owner' }, members)} onClose={() => setEditingMember(null)} onSave={(saved) => { setMembers(members.map((member) => (member.email === saved.email ? saved : member))); setEditingMember(null); toast.success(`Limites de ${saved.name} salvos`) }} />
+      <FbMemberDialog member={editingMember} accounts={fbVisibleAccounts(accounts, { kind: 'owner' }, members)} members={members} onClose={() => setEditingMember(null)} onSave={(saved) => { setMembers(members.map((member) => (member.email === saved.email ? saved : { ...member, accounts: member.accounts.filter((id) => !saved.accounts.includes(id)) }))); setEditingMember(null); toast.success(`Limites de ${saved.name} salvos`) }} />
       <Dialog open={guide} onOpenChange={setGuide}>
         <DialogContent className="max-w-[560px]">
           <DialogHeader><DialogTitle>Como funciona a integração</DialogTitle><DialogDescription>Três coisas para o Avant mostrar a receita certa de cada campanha.</DialogDescription></DialogHeader>
