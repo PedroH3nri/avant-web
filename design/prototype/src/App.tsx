@@ -8187,118 +8187,347 @@ function fbRoomFor(viewer: FbViewer, account: FbAccount | undefined, members: Fb
   return options.sort((first, second) => first.limit - first.used - (second.limit - second.used))[0] ?? null
 }
 
-/** Criar campanha pelo Avant: conta, objetivo, orçamento, público e anúncio, com os UTMs postos sozinhos e o limite checado antes. */
-function FbCreateScreen({ accounts, members, viewer, setViewer, entities, setEntities, back }: { accounts: FbAccount[]; members: FbMember[]; viewer: FbViewer; setViewer: (viewer: FbViewer) => void; entities: FbEntity[]; setEntities: (entities: FbEntity[]) => void; back: () => void }) {
+type FbObjective = 'awareness' | 'traffic' | 'engagement' | 'leads' | 'app' | 'sales'
+type FbAdFormat = 'image' | 'video' | 'carousel'
+type FbDraftCard = { id: string; title: string; path: string; media: boolean }
+type FbDraftAd = { id: string; name: string; format: FbAdFormat; page: string; instagram: string; texts: string[]; titles: string[]; description: string; path: string; displayLink: string; cta: string; media: boolean; cards: FbDraftCard[]; advantageCreative: boolean }
+type FbDraftAdset = { id: string; name: string; budget: string; start: string; end: string; schedule: boolean; hours: [string, string]; locations: string[]; locationExtra: string[]; ageMin: string; ageMax: string; gender: string; languages: string[]; advantageAudience: boolean; interests: string[]; custom: string[]; lookalikes: string[]; exclusions: string[]; placements: 'auto' | 'manual'; manualPlacements: string[]; optimization: string; pixel: string; event: string; ads: FbDraftAd[] }
+type FbDraftCampaign = { accountId: string; name: string; objective: FbObjective; special: string[]; budgetAt: 'campaign' | 'adset'; budgetKind: 'daily' | 'lifetime'; budget: string; bid: 'volume' | 'cost_cap' | 'bid_cap'; bidValue: string; spendCap: string; startOn: 'paused' | 'active'; adsets: FbDraftAdset[] }
+type FbSelection = { kind: 'campaign' } | { kind: 'adset'; adset: number } | { kind: 'ad'; adset: number; ad: number }
+
+const FB_OBJECTIVES: [FbObjective, string, string][] = [
+  ['awareness', 'Reconhecimento', 'Mostrar o anúncio para o maior número de pessoas.'],
+  ['traffic', 'Tráfego', 'Levar pessoas para o site. O mais usado para monetizar com anúncios.'],
+  ['engagement', 'Engajamento', 'Curtidas, comentários, visualizações de vídeo e mensagens.'],
+  ['leads', 'Cadastros', 'Coletar contatos por formulário ou no site.'],
+  ['app', 'Promoção do app', 'Instalações e ações dentro de um app.'],
+  ['sales', 'Vendas', 'Conversões no site com o pixel.'],
+]
+const FB_SPECIAL: [string, string][] = [['credit', 'Crédito e serviços financeiros'], ['employment', 'Emprego'], ['housing', 'Moradia'], ['politics', 'Temas sociais, eleições ou política']]
+const FB_PAGES = ['Blog Exemplo', 'Receitas do Blog Exemplo', 'Viagens Blog Exemplo']
+const FB_PLACEMENTS = ['Feed do Facebook', 'Feed do Instagram', 'Stories do Facebook', 'Stories do Instagram', 'Reels do Facebook', 'Reels do Instagram', 'Marketplace', 'Audience Network']
+const FB_OPTIMIZATION: Record<FbObjective, string[]> = {
+  awareness: ['Alcance', 'Impressões'],
+  traffic: ['Visualizações da página de destino', 'Cliques no link', 'Impressões'],
+  engagement: ['Engajamento com a publicação', 'Visualizações de vídeo (ThruPlay)'],
+  leads: ['Cadastros', 'Conversões no site'],
+  app: ['Instalações do app', 'Eventos do app'],
+  sales: ['Conversões no site', 'Valor das conversões'],
+}
+const FB_EVENTS = ['PageView', 'ViewContent', 'Lead', 'CompleteRegistration', 'Purchase']
+const FB_INTEREST_SUGGESTIONS = ['Culinária', 'Receitas', 'Confeitaria', 'Air fryer', 'Comida caseira', 'Doces']
+const FB_CUSTOM_AUDIENCES = ['Visitantes do site · 30 dias', 'Visitantes do site · 180 dias', 'Engajou com a Página · 90 dias', 'Viu 50% dos vídeos · 30 dias']
+const FB_LOOKALIKES = ['LAL 1% · Visitantes 30 dias · BR', 'LAL 2% · Visitantes 180 dias · BR', 'LAL 1% · Engajou com a Página · BR']
+
+/** Um id curto para itens novos do rascunho. */
+const fbDraftId = () => Math.random().toString(36).slice(2, 9)
+/** Um anúncio novo com os valores de exemplo do protótipo. */
+function fbBlankAd(name: string): FbDraftAd {
+  return { id: fbDraftId(), name, format: 'image', page: FB_PAGES[1], instagram: '@receitasblogexemplo', texts: ['O pudim de leite mais lisinho, sem furinhos, com 4 ingredientes. A receita completa está no link.'], titles: ['Pudim de leite sem furinhos'], description: 'Receita fácil, pronta em 1 hora', path: '/pudim-de-leite', displayLink: '', cta: 'learn_more', media: false, cards: [], advantageCreative: true }
+}
+/** Um conjunto novo com o público padrão do Brasil. */
+function fbBlankAdset(name: string): FbDraftAdset {
+  return { id: fbDraftId(), name, budget: '60', start: '19/11/2026 00:00', end: '', schedule: false, hours: ['06:00', '23:59'], locations: ['Brasil'], locationExtra: [], ageMin: '25', ageMax: '65', gender: 'all', languages: ['Português (Brasil)'], advantageAudience: true, interests: ['Culinária', 'Receitas'], custom: [], lookalikes: [], exclusions: [], placements: 'auto', manualPlacements: ['Feed do Facebook', 'Feed do Instagram', 'Reels do Instagram'], optimization: 'Visualizações da página de destino', pixel: 'Pixel Blog Exemplo · 8812736450', event: 'PageView', ads: [fbBlankAd('Anúncio 1')] }
+}
+/** O rascunho inicial; quando vem de uma campanha existente, copia o nome, a conta e o orçamento dela. */
+function fbStartDraft(accountId: string, from?: FbEntity): FbDraftCampaign {
+  return { accountId: from?.account ?? accountId, name: from ? `${from.name} · cópia` : '[RCT] Pudim de leite · BR', objective: 'traffic', special: from?.name.includes('Cartão') || from?.name.includes('INSS') ? ['credit'] : [], budgetAt: from && from.budget === null ? 'adset' : 'campaign', budgetKind: 'daily', budget: String(from?.budget ?? 120), bid: 'volume', bidValue: '', spendCap: '', startOn: 'paused', adsets: [fbBlankAdset(from ? FB_ADSET_NAMES[0] : 'Brasil · 25-65 · Advantage+')] }
+}
+
+/** Lista de valores em chips, com um campo para incluir e sugestões para tocar. */
+function FbChips({ id, label, values, suggestions = [], placeholder, hint, onChange }: { id: string; label: string; values: string[]; suggestions?: string[]; placeholder: string; hint?: string; onChange: (values: string[]) => void }) {
+  const [text, setText] = useState('')
+  /** Inclui o valor digitado ou tocado, sem repetir. */
+  const add = (value: string) => { const clean = value.trim(); if (clean && !values.includes(clean)) onChange([...values, clean]); setText('') }
+  const left = suggestions.filter((item) => !values.includes(item))
+  return (
+    <Field id={id} label={label} hint={hint}>
+      <div className="flex min-h-10 flex-wrap items-center gap-1.5 rounded-md border bg-background px-2 py-1.5 focus-within:ring-2 focus-within:ring-ring">
+        {values.map((value) => <span key={value} className="inline-flex h-6 items-center gap-1 rounded-full bg-secondary pl-2.5 pr-1 text-[13px]">{value}<button type="button" aria-label={`Tirar ${value}`} onClick={() => onChange(values.filter((item) => item !== value))} className="rounded-full p-0.5 hover:bg-background"><X className="h-3 w-3" /></button></span>)}
+        <input id={id} className="h-6 min-w-[140px] flex-1 bg-transparent text-[14px] outline-none" placeholder={values.length ? '' : placeholder} value={text} onChange={(event) => setText(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); add(text) } }} />
+      </div>
+      {left.length > 0 && <div className="flex flex-wrap gap-1.5">{left.map((item) => <button key={item} type="button" onClick={() => add(item)} className="h-6 rounded-full border border-dashed px-2.5 text-[12px] text-muted-foreground hover:text-foreground">+ {item}</button>)}</div>}
+    </Field>
+  )
+}
+
+/** Escolha em botões lado a lado, como os filtros de status do painel. */
+function FbSegment<Value extends string>({ label, value, options, onChange }: { label: string; value: Value; options: [Value, string][]; onChange: (value: Value) => void }) {
+  return (
+    <div className="grid gap-2">
+      <div className="text-[13px] font-medium text-muted-foreground">{label}</div>
+      <div className="flex w-fit flex-wrap rounded-md border bg-card p-0.5" role="radiogroup" aria-label={label}>
+        {options.map(([key, text]) => <button key={key} type="button" role="radio" aria-checked={value === key} onClick={() => onChange(key)} className={cn('h-8 rounded-[4px] px-3 text-[13px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', value === key ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground')}>{text}</button>)}
+      </div>
+    </div>
+  )
+}
+
+/** Um bloco de campos dentro do card, com título pequeno e linha acima. */
+function FbFormBlock({ title, desc, children }: { title: string; desc?: string; children: React.ReactNode }) {
+  return <div className="border-t p-6"><div className="text-[14px] font-medium">{title}</div>{desc && <p className="mt-1 max-w-[70ch] text-[13px] text-muted-foreground">{desc}</p>}<div className="mt-4 grid gap-4">{children}</div></div>
+}
+
+/** Botão de mídia: simula a escolha do arquivo no protótipo. */
+function FbMediaPick({ chosen, label, onPick }: { chosen: boolean; label: string; onPick: () => void }) {
+  return chosen
+    ? <div className="flex items-center justify-between gap-3 rounded-md border px-3 py-2 text-[13px]"><span className="flex items-center gap-2"><span className="flex h-10 w-10 items-center justify-center rounded bg-secondary text-[11px] text-muted-foreground">1:1</span>{label}</span><Button size="sm" variant="ghost" onClick={onPick}>Trocar</Button></div>
+    : <button type="button" onClick={onPick} className="flex h-24 w-full flex-col items-center justify-center gap-1 rounded-md border border-dashed text-[13px] text-muted-foreground hover:bg-muted"><Plus className="h-4 w-4" />Escolher arquivo<span className="text-[12px]">JPG, PNG ou MP4, até 30 MB. Quadrado ou 4:5.</span></button>
+}
+
+/** Criar campanha pelo Avant no formato do Gerenciador de Anúncios: campanha, conjuntos e anúncios, com a checagem de tudo que o Facebook exige e do limite de gasto. */
+function FbCreateScreen({ accounts, members, viewer, setViewer, entities, setEntities, from, back }: { accounts: FbAccount[]; members: FbMember[]; viewer: FbViewer; setViewer: (viewer: FbViewer) => void; entities: FbEntity[]; setEntities: (entities: FbEntity[]) => void; from?: FbEntity; back: () => void }) {
   const usable = fbVisibleAccounts(accounts, viewer, members).filter((account) => account.state === 'active')
-  const [accountId, setAccountId] = useState(usable[0]?.id ?? '')
-  const [name, setName] = useState('[RCT] Pudim de leite · BR')
-  const [goal, setGoal] = useState('landing')
-  const [budgetAt, setBudgetAt] = useState<'campaign' | 'adset'>('campaign')
-  const [budget, setBudget] = useState('120')
-  const [countries, setCountries] = useState(['BR'])
-  const [age, setAge] = useState<[string, string]>(['25', '65'])
-  const [gender, setGender] = useState('all')
-  const [placements, setPlacements] = useState('auto')
-  const [path, setPath] = useState('/pudim-de-leite')
-  const [text, setText] = useState('O pudim de leite mais lisinho, sem furinhos, com 4 ingredientes. A receita completa está no link.')
-  const [title, setTitle] = useState('Pudim de leite sem furinhos')
-  const [cta, setCta] = useState('learn_more')
-  const [startOn, setStartOn] = useState('paused')
-  const account = usable.find((item) => item.id === accountId)
-  const room = fbRoomFor(viewer, account, members, entities)
-  const value = Number(budget || 0)
-  const over = room !== null && room.used + value > room.limit
+  const [draft, setDraft] = useState<FbDraftCampaign>(() => fbStartDraft(usable[0]?.id ?? '', from))
+  const [selection, setSelection] = useState<FbSelection>({ kind: 'campaign' })
+  const account = usable.find((item) => item.id === draft.accountId)
   const domain = account?.site ?? null
-  const ready = !!account && !!domain && name.trim() !== '' && value >= 6 && !over && text.trim() !== '' && title.trim() !== ''
-  /** Cria a campanha de exemplo pausada ou ativa e volta para a lista. */
+  const room = fbRoomFor(viewer, account, members, entities)
+  const dailyTotal = draft.budgetAt === 'campaign' ? (draft.budgetKind === 'daily' ? Number(draft.budget || 0) : Number(draft.budget || 0) / 30) : draft.adsets.reduce((total, adset) => total + Number(adset.budget || 0), 0)
+  const over = room !== null && room.used + dailyTotal > room.limit
+  const adset = selection.kind !== 'campaign' ? draft.adsets[selection.adset] : null
+  const ad = selection.kind === 'ad' && adset ? adset.ads[selection.ad] : null
+  /** Muda campos da campanha. */
+  const setCampaign = (patch: Partial<FbDraftCampaign>) => setDraft({ ...draft, ...patch })
+  /** Muda campos de um conjunto. */
+  const setAdset = (index: number, patch: Partial<FbDraftAdset>) => setDraft({ ...draft, adsets: draft.adsets.map((item, position) => (position === index ? { ...item, ...patch } : item)) })
+  /** Muda campos de um anúncio. */
+  const setAd = (adsetIndex: number, adIndex: number, patch: Partial<FbDraftAd>) => setAdset(adsetIndex, { ads: draft.adsets[adsetIndex].ads.map((item, position) => (position === adIndex ? { ...item, ...patch } : item)) })
+  /** Copia o conjunto (com os anúncios) para testar outro público. */
+  const copyAdset = (index: number) => { const source = draft.adsets[index]; setDraft({ ...draft, adsets: [...draft.adsets, { ...source, id: fbDraftId(), name: `${source.name} · cópia`, ads: source.ads.map((item) => ({ ...item, id: fbDraftId() })) }] }); setSelection({ kind: 'adset', adset: draft.adsets.length }) }
+  /** Inclui um conjunto novo. */
+  const addAdset = () => { setDraft({ ...draft, adsets: [...draft.adsets, fbBlankAdset(`Conjunto ${draft.adsets.length + 1}`)] }); setSelection({ kind: 'adset', adset: draft.adsets.length }) }
+  /** Inclui um anúncio novo no conjunto. */
+  const addAd = (index: number) => { setAdset(index, { ads: [...draft.adsets[index].ads, fbBlankAd(`Anúncio ${draft.adsets[index].ads.length + 1}`)] }); setSelection({ kind: 'ad', adset: index, ad: draft.adsets[index].ads.length }) }
+  /** Tira um conjunto ou anúncio do rascunho (sempre fica pelo menos um). */
+  const remove = (target: FbSelection) => {
+    if (target.kind === 'adset' && draft.adsets.length > 1) { setDraft({ ...draft, adsets: draft.adsets.filter((_, position) => position !== target.adset) }); setSelection({ kind: 'campaign' }) }
+    if (target.kind === 'ad' && draft.adsets[target.adset].ads.length > 1) { setAdset(target.adset, { ads: draft.adsets[target.adset].ads.filter((_, position) => position !== target.ad) }); setSelection({ kind: 'adset', adset: target.adset }) }
+  }
+  const allAds = draft.adsets.flatMap((item) => item.ads)
+  const checks: [string, boolean][] = [
+    ['Conta com site vinculado', !!domain],
+    ['Orçamento mínimo de R$ 6,00 por dia', draft.budgetAt === 'campaign' ? dailyTotal >= 6 : draft.adsets.every((item) => Number(item.budget || 0) >= 6)],
+    ['Dentro do limite de gasto', !over],
+    ['Categoria especial respondida', true],
+    ['Lance com valor', draft.bid === 'volume' || Number(draft.bidValue || 0) > 0],
+    ['Todo conjunto com país ou região', draft.adsets.every((item) => item.locations.length + item.locationExtra.length > 0)],
+    ['Pixel e evento (vendas ou cadastros)', !['sales', 'leads'].includes(draft.objective) || draft.adsets.every((item) => !!item.pixel && !!item.event)],
+    ['Todo anúncio com Página do Facebook', allAds.every((item) => !!item.page)],
+    ['Todo anúncio com mídia', allAds.every((item) => (item.format === 'carousel' ? item.cards.length >= 2 && item.cards.every((card) => card.media) : item.media))],
+    ['Todo anúncio com texto e título', allAds.every((item) => item.texts.some((text) => text.trim()) && item.titles.some((title) => title.trim()))],
+  ]
+  const ready = checks.every(([, passed]) => passed)
+  /** Cria a campanha de exemplo e volta para a lista. */
   const submit = () => {
     const id = `2385${Date.now().toString().slice(-7)}`
-    setEntities([{ id, level: 'campaign', name, parent: null, campaign: id, account: accountId, on: startOn === 'active', budget: budgetAt === 'campaign' ? value : null, spend: 0, roi: 0, cpc: 0.25, utm: null }, ...entities])
-    toast.success('Campanha criada no Facebook', { description: startOn === 'active' ? 'Entra em revisão no Facebook e começa a rodar quando for aprovada.' : 'Criada pausada. Ative quando quiser.' })
+    setEntities([{ id, level: 'campaign', name: draft.name, parent: null, campaign: id, account: draft.accountId, on: draft.startOn === 'active', budget: draft.budgetAt === 'campaign' ? Number(draft.budget) : null, spend: 0, roi: 0, cpc: 0.25, utm: null }, ...entities])
+    toast.success('Campanha criada no Facebook', { description: `${draft.adsets.length} conjunto(s) e ${allAds.length} anúncio(s). ${draft.startOn === 'active' ? 'Entram em revisão e rodam quando aprovados.' : 'Criada pausada.'}` })
     back()
   }
-  /** Tira ou põe o país no público. */
-  const toggleCountry = (code: string) => setCountries(countries.includes(code) ? countries.filter((item) => item !== code) : [...countries, code])
+  const treeButton = (target: FbSelection, label: string, depth: number, active: boolean) => (
+    <button type="button" onClick={() => setSelection(target)} aria-current={active ? 'true' : undefined} className={cn('flex h-8 w-full items-center gap-2 truncate rounded-md pr-2 text-left text-[13px]', active ? 'bg-secondary font-medium text-foreground' : 'text-muted-foreground hover:bg-accent hover:text-foreground')} style={{ paddingLeft: 8 + depth * 14 }}>{label}</button>
+  )
   return (
     <>
-      <PageHeader back={<button onClick={back} className="mb-3 flex items-center gap-1.5 text-[14px] text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4" />Campanhas</button>} title="Nova campanha" sub="Cria a campanha, um conjunto e um anúncio no Facebook. Depois você duplica e ajusta pelo Avant ou pelo Gerenciador de Anúncios." />
-      <Body className="lg:grid-cols-[minmax(0,1fr)_340px]">
+      <PageHeader back={<button onClick={back} className="mb-3 flex items-center gap-1.5 text-[14px] text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4" />Campanhas</button>} title={from ? 'Duplicar campanha' : 'Nova campanha'}
+        sub={from ? `Cópia de ${from.name}. Mude o que quiser antes de criar.` : 'No mesmo formato do Gerenciador de Anúncios: a campanha, os conjuntos e os anúncios de cada conjunto.'}
+        actions={<a className="inline-flex items-center gap-1 text-[14px] text-link hover:underline" href="#" onClick={(event) => event.preventDefault()}>Abrir no Gerenciador de Anúncios<ExternalLink className="h-3.5 w-3.5" /></a>} />
+      <Body className="lg:grid-cols-[240px_minmax(0,1fr)_300px]">
+        <nav className="grid content-start gap-1 lg:sticky lg:top-[136px]" aria-label="Estrutura da campanha">
+          <div className="px-2 pb-1 text-[12px] font-medium text-muted-foreground">Estrutura</div>
+          {treeButton({ kind: 'campaign' }, draft.name || 'Campanha', 0, selection.kind === 'campaign')}
+          {draft.adsets.map((item, adsetIndex) => (
+            <div key={item.id} className="grid gap-1">
+              {treeButton({ kind: 'adset', adset: adsetIndex }, item.name, 1, selection.kind === 'adset' && selection.adset === adsetIndex)}
+              {item.ads.map((child, adIndex) => <div key={child.id}>{treeButton({ kind: 'ad', adset: adsetIndex, ad: adIndex }, child.name, 2, selection.kind === 'ad' && selection.adset === adsetIndex && selection.ad === adIndex)}</div>)}
+              <button type="button" onClick={() => addAd(adsetIndex)} className="flex h-7 items-center gap-1 rounded-md text-[12px] text-muted-foreground hover:text-foreground" style={{ paddingLeft: 36 }}><Plus className="h-3.5 w-3.5" />Anúncio</button>
+            </div>
+          ))}
+          <button type="button" onClick={addAdset} className="flex h-7 items-center gap-1 rounded-md text-[12px] text-muted-foreground hover:text-foreground" style={{ paddingLeft: 22 }}><Plus className="h-3.5 w-3.5" />Conjunto</button>
+          <div className="mt-3"><FbViewerSwitchCompact viewer={viewer} setViewer={setViewer} members={members} /></div>
+        </nav>
+
         <div className="grid content-start gap-6">
-          <FbViewerSwitch viewer={viewer} setViewer={setViewer} members={members} />
-          <Card title="Campanha">
-            <div className="grid items-start gap-4 sm:grid-cols-2">
-              <Field id="fb-new-account" label="Conta de anúncio" hint={viewer.kind === 'member' ? 'Só as contas que o dono liberou para você.' : undefined} error={account && !domain && 'Essa conta não tem site. Vincule um site na tela Facebook antes de criar.'}>
-                <Select value={accountId} onValueChange={setAccountId}><SelectTrigger id="fb-new-account" className="h-10"><SelectValue placeholder="Escolha a conta" /></SelectTrigger><SelectContent>{usable.map((item) => <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>)}</SelectContent></Select>
-              </Field>
-              <Field id="fb-new-name" label="Nome"><Input id="fb-new-name" className="h-10" value={name} onChange={(event) => setName(event.target.value)} /></Field>
-              <Field id="fb-new-goal" label="Otimizar para" hint="Visualizações da página de destino contam só quem carregou o site.">
-                <Select value={goal} onValueChange={setGoal}><SelectTrigger id="fb-new-goal" className="h-10"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="landing">Visualizações da página de destino</SelectItem><SelectItem value="clicks">Cliques no link</SelectItem></SelectContent></Select>
-              </Field>
-              <Field id="fb-new-start" label="Ao criar">
-                <Select value={startOn} onValueChange={setStartOn}><SelectTrigger id="fb-new-start" className="h-10"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="paused">Criar pausada</SelectItem><SelectItem value="active">Criar e ativar</SelectItem></SelectContent></Select>
-              </Field>
-            </div>
-          </Card>
-          <Card title="Orçamento">
-            <div className="grid items-start gap-4 sm:grid-cols-2">
-              <Field id="fb-new-budget-at" label="Onde fica o orçamento">
-                <Select value={budgetAt} onValueChange={(next) => setBudgetAt(next as 'campaign' | 'adset')}><SelectTrigger id="fb-new-budget-at" className="h-10"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="campaign">Na campanha (Advantage+)</SelectItem><SelectItem value="adset">No conjunto</SelectItem></SelectContent></Select>
-              </Field>
-              <Field id="fb-new-budget" label="Orçamento diário" error={(value < 6 && 'O Facebook pede pelo menos R$ 6,00 por dia.') || (over && room && `Passa do ${room.label.charAt(0).toLowerCase()}${room.label.slice(1)}: sobram ${fbMoney(Math.max(0, room.limit - room.used))} por dia.`)}>
-                <div className="relative"><span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[13px] text-muted-foreground">R$</span><Input id="fb-new-budget" inputMode="decimal" aria-invalid={over || value < 6} className="h-10 pl-9 tnum" value={budget} onChange={(event) => setBudget(event.target.value.replace(/[^\d]/g, ''))} /></div>
-              </Field>
-            </div>
-          </Card>
-          <Card title="Público">
-            <div className="grid gap-4">
-              <div>
-                <div className="text-[13px] font-medium text-muted-foreground">Países</div>
-                <div className="mt-2 flex flex-wrap gap-2">{[['BR', 'Brasil'], ['PT', 'Portugal'], ['US', 'Estados Unidos'], ['MX', 'México'], ['AO', 'Angola']].map(([code, label]) => <button key={code} type="button" aria-pressed={countries.includes(code)} onClick={() => toggleCountry(code)} className={cn('h-7 rounded-full border px-3 text-[13px] font-medium', countries.includes(code) ? 'border-foreground bg-foreground text-background' : 'text-muted-foreground hover:text-foreground')}>{label}</button>)}</div>
-              </div>
-              <div className="grid items-start gap-4 sm:grid-cols-3">
-                <Field id="fb-new-age-min" label="Idade mínima"><Input id="fb-new-age-min" inputMode="numeric" className="h-10 tnum" value={age[0]} onChange={(event) => setAge([event.target.value.replace(/\D/g, ''), age[1]])} /></Field>
-                <Field id="fb-new-age-max" label="Idade máxima"><Input id="fb-new-age-max" inputMode="numeric" className="h-10 tnum" value={age[1]} onChange={(event) => setAge([age[0], event.target.value.replace(/\D/g, '')])} /></Field>
-                <Field id="fb-new-gender" label="Gênero"><Select value={gender} onValueChange={setGender}><SelectTrigger id="fb-new-gender" className="h-10"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Todos</SelectItem><SelectItem value="women">Mulheres</SelectItem><SelectItem value="men">Homens</SelectItem></SelectContent></Select></Field>
-              </div>
-              <Field id="fb-new-placements" label="Posicionamentos"><Select value={placements} onValueChange={setPlacements}><SelectTrigger id="fb-new-placements" className="h-10"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="auto">Advantage+ (o Facebook escolhe)</SelectItem><SelectItem value="feeds">Só feed do Facebook e do Instagram</SelectItem></SelectContent></Select></Field>
-            </div>
-          </Card>
-          <Card title="Anúncio">
-            <div className="grid gap-4">
-              <Field id="fb-new-link" label="Link" hint="O domínio é o site vinculado à conta. Os UTMs entram sozinhos.">
-                <div className="flex"><span className="inline-flex h-10 items-center rounded-l-md border border-r-0 bg-muted px-3 font-mono text-[13px] text-muted-foreground">{domain ?? 'sem site'}</span><Input id="fb-new-link" className="h-10 rounded-l-none font-mono text-[13px]" value={path} onChange={(event) => setPath(event.target.value)} /></div>
-              </Field>
-              <div className="rounded-md border bg-muted p-3 text-[13px]"><div className="text-muted-foreground">Parâmetros de URL que o Avant coloca</div><code className="mt-1 block break-all font-mono">{FB_UTMS}</code></div>
-              <Field id="fb-new-text" label="Texto principal"><Textarea id="fb-new-text" rows={3} value={text} onChange={(event) => setText(event.target.value)} /></Field>
-              <div className="grid items-start gap-4 sm:grid-cols-2">
-                <Field id="fb-new-title" label="Título"><Input id="fb-new-title" className="h-10" value={title} onChange={(event) => setTitle(event.target.value)} /></Field>
-                <Field id="fb-new-cta" label="Botão"><Select value={cta} onValueChange={setCta}><SelectTrigger id="fb-new-cta" className="h-10"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="learn_more">Saiba mais</SelectItem><SelectItem value="see_more">Ver mais</SelectItem><SelectItem value="watch_more">Assistir mais</SelectItem></SelectContent></Select></Field>
-              </div>
-              <div><div className="text-[13px] font-medium text-muted-foreground">Imagem ou vídeo</div><button type="button" className="mt-2 flex h-28 w-full flex-col items-center justify-center gap-1 rounded-md border border-dashed text-[13px] text-muted-foreground hover:bg-muted"><Plus className="h-4 w-4" />Escolher arquivo<span className="text-[12px]">JPG, PNG ou MP4, até 30 MB. Quadrado ou 4:5.</span></button></div>
-            </div>
-          </Card>
+          {selection.kind === 'campaign' && (
+            <section className="overflow-hidden rounded-lg border bg-card">
+              <div className="p-6"><h2 className="text-[20px] font-semibold tracking-tight">Campanha</h2><p className="mt-2 text-[14px] text-muted-foreground">Objetivo, categoria, orçamento e lance valem para todos os conjuntos.</p></div>
+              <FbFormBlock title="Conta e nome">
+                <div className="grid items-start gap-4 sm:grid-cols-2">
+                  <Field id="fb-new-account" label="Conta de anúncio" hint={viewer.kind === 'member' ? 'Só as contas que o dono liberou para você.' : account ? account.business : undefined} error={account && !domain && 'Essa conta não tem site. Vincule um site na tela Facebook antes de criar.'}>
+                    <Select value={draft.accountId} onValueChange={(accountId) => setCampaign({ accountId })}><SelectTrigger id="fb-new-account" className="h-10"><SelectValue placeholder="Escolha a conta" /></SelectTrigger><SelectContent>{usable.map((item) => <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>)}</SelectContent></Select>
+                  </Field>
+                  <Field id="fb-new-name" label="Nome da campanha"><Input id="fb-new-name" className="h-10" value={draft.name} onChange={(event) => setCampaign({ name: event.target.value })} /></Field>
+                </div>
+              </FbFormBlock>
+              <FbFormBlock title="Objetivo" desc="O mesmo do Gerenciador de Anúncios. Ele muda as opções de otimização dos conjuntos.">
+                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3" role="radiogroup" aria-label="Objetivo">
+                  {FB_OBJECTIVES.map(([key, label, text]) => (
+                    <button key={key} type="button" role="radio" aria-checked={draft.objective === key} onClick={() => setDraft({ ...draft, objective: key, adsets: draft.adsets.map((item) => ({ ...item, optimization: FB_OPTIMIZATION[key][0] })) })} className={cn('rounded-md border p-3 text-left', draft.objective === key ? 'border-foreground ring-1 ring-foreground' : 'hover:bg-muted')}>
+                      <div className="text-[14px] font-medium">{label}</div><div className="mt-1 text-[12px] text-muted-foreground">{text}</div>
+                    </button>
+                  ))}
+                </div>
+              </FbFormBlock>
+              <FbFormBlock title="Categoria especial de anúncio" desc="Obrigatória quando o anúncio fala de crédito, emprego, moradia ou política. Sem ela, o Facebook reprova o anúncio, e alguns públicos (idade, gênero, CEP) ficam travados.">
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {FB_SPECIAL.map(([key, label]) => <label key={key} className="flex items-center gap-2.5 rounded-md border px-3 py-2 text-[14px]"><input type="checkbox" className="size-4 accent-[hsl(var(--foreground))]" checked={draft.special.includes(key)} onChange={() => setCampaign({ special: draft.special.includes(key) ? draft.special.filter((item) => item !== key) : [...draft.special, key] })} />{label}</label>)}
+                </div>
+                <p className="text-[13px] text-muted-foreground">{draft.special.length ? 'Com categoria especial, a idade fica de 18 a 65+, sem gênero e sem semelhantes.' : 'Nenhuma marcada: o anúncio não fala desses temas.'}</p>
+              </FbFormBlock>
+              <FbFormBlock title="Orçamento e lance">
+                <div className="grid items-start gap-4 sm:grid-cols-2">
+                  <FbSegment label="Onde fica o orçamento" value={draft.budgetAt} options={[['campaign', 'Na campanha'], ['adset', 'Nos conjuntos']]} onChange={(budgetAt) => setCampaign({ budgetAt })} />
+                  {draft.budgetAt === 'campaign' && <FbSegment label="Tipo" value={draft.budgetKind} options={[['daily', 'Diário'], ['lifetime', 'Vitalício']]} onChange={(budgetKind) => setCampaign({ budgetKind })} />}
+                  {draft.budgetAt === 'campaign' && (
+                    <Field id="fb-new-budget" label={draft.budgetKind === 'daily' ? 'Orçamento diário' : 'Orçamento vitalício'} hint={draft.budgetKind === 'lifetime' ? 'Precisa de data de fim nos conjuntos. Conta no limite como o valor dividido pelos dias.' : undefined} error={(dailyTotal < 6 && 'O Facebook pede pelo menos R$ 6,00 por dia.') || (over && room && `Passa do ${room.label.charAt(0).toLowerCase()}${room.label.slice(1)}: sobram ${fbMoney(Math.max(0, room.limit - room.used))} por dia.`)}>
+                      <div className="relative"><span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[13px] text-muted-foreground">R$</span><Input id="fb-new-budget" inputMode="decimal" aria-invalid={over || dailyTotal < 6} className="h-10 pl-9 tnum" value={draft.budget} onChange={(event) => setCampaign({ budget: event.target.value.replace(/[^\d]/g, '') })} /></div>
+                    </Field>
+                  )}
+                  <Field id="fb-new-bid" label="Estratégia de lance">
+                    <Select value={draft.bid} onValueChange={(bid) => setCampaign({ bid: bid as FbDraftCampaign['bid'] })}><SelectTrigger id="fb-new-bid" className="h-10"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="volume">Maior volume</SelectItem><SelectItem value="cost_cap">Limite de custo por resultado</SelectItem><SelectItem value="bid_cap">Limite de lance</SelectItem></SelectContent></Select>
+                  </Field>
+                  {draft.bid !== 'volume' && <FbMoneyField id="fb-new-bid-value" label={draft.bid === 'cost_cap' ? 'Custo máximo por resultado' : 'Lance máximo'} value={draft.bidValue} hint="Ex.: R$ 0,30 por visualização da página de destino" onChange={(bidValue) => setCampaign({ bidValue })} />}
+                  <FbMoneyField id="fb-new-spend-cap" label="Limite de gasto da campanha (opcional)" value={draft.spendCap} hint="A campanha para quando gastar esse total" onChange={(spendCap) => setCampaign({ spendCap })} />
+                  <FbSegment label="Ao criar" value={draft.startOn} options={[['paused', 'Criar pausada'], ['active', 'Criar e ativar']]} onChange={(startOn) => setCampaign({ startOn })} />
+                </div>
+              </FbFormBlock>
+            </section>
+          )}
+
+          {adset && selection.kind === 'adset' && (
+            <section className="overflow-hidden rounded-lg border bg-card">
+              <div className="flex flex-wrap items-start justify-between gap-3 p-6"><div><h2 className="text-[20px] font-semibold tracking-tight">Conjunto de anúncios</h2><p className="mt-2 text-[14px] text-muted-foreground">Público, posicionamentos, datas e otimização deste conjunto.</p></div><div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => copyAdset(selection.adset)}><Copy className="h-4 w-4" />Duplicar conjunto</Button>{draft.adsets.length > 1 && <Button size="sm" variant="ghost" onClick={() => remove(selection)}><Trash2 className="h-4 w-4" />Tirar</Button>}</div></div>
+              <FbFormBlock title="Nome e otimização">
+                <div className="grid items-start gap-4 sm:grid-cols-2">
+                  <Field id="fb-set-name" label="Nome do conjunto"><Input id="fb-set-name" className="h-10" value={adset.name} onChange={(event) => setAdset(selection.adset, { name: event.target.value })} /></Field>
+                  <Field id="fb-set-opt" label="Otimizar para"><Select value={adset.optimization} onValueChange={(optimization) => setAdset(selection.adset, { optimization })}><SelectTrigger id="fb-set-opt" className="h-10"><SelectValue /></SelectTrigger><SelectContent>{FB_OPTIMIZATION[draft.objective].map((option) => <SelectItem key={option} value={option}>{option}</SelectItem>)}</SelectContent></Select></Field>
+                  {draft.budgetAt === 'adset' && <Field id="fb-set-budget" label="Orçamento diário do conjunto" error={(Number(adset.budget || 0) < 6 && 'O Facebook pede pelo menos R$ 6,00 por dia.') || (over && room && `A soma dos conjuntos passa do limite: sobram ${fbMoney(Math.max(0, room.limit - room.used))} por dia.`)}><div className="relative"><span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[13px] text-muted-foreground">R$</span><Input id="fb-set-budget" inputMode="decimal" className="h-10 pl-9 tnum" value={adset.budget} onChange={(event) => setAdset(selection.adset, { budget: event.target.value.replace(/[^\d]/g, '') })} /></div></Field>}
+                </div>
+              </FbFormBlock>
+              <FbFormBlock title="Conversão" desc={['sales', 'leads'].includes(draft.objective) ? 'Obrigatório para este objetivo.' : 'Opcional no tráfego. Ajuda o Facebook a achar quem fica no site.'}>
+                <div className="grid items-start gap-4 sm:grid-cols-2">
+                  <Field id="fb-set-pixel" label="Pixel ou conjunto de dados"><Select value={adset.pixel || 'none'} onValueChange={(pixel) => setAdset(selection.adset, { pixel: pixel === 'none' ? '' : pixel })}><SelectTrigger id="fb-set-pixel" className="h-10"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="none">Sem pixel</SelectItem><SelectItem value="Pixel Blog Exemplo · 8812736450">Pixel Blog Exemplo · 8812736450</SelectItem><SelectItem value="Pixel Receitas · 7731029384">Pixel Receitas · 7731029384</SelectItem></SelectContent></Select></Field>
+                  <Field id="fb-set-event" label="Evento"><Select value={adset.event} onValueChange={(event) => setAdset(selection.adset, { event })} disabled={!adset.pixel}><SelectTrigger id="fb-set-event" className="h-10"><SelectValue /></SelectTrigger><SelectContent>{FB_EVENTS.map((event) => <SelectItem key={event} value={event}>{event}</SelectItem>)}</SelectContent></Select></Field>
+                </div>
+              </FbFormBlock>
+              <FbFormBlock title="Datas e horários" desc="Horário de Brasília.">
+                <div className="grid items-start gap-4 sm:grid-cols-2">
+                  <Field id="fb-set-start" label="Início"><Input id="fb-set-start" className="h-10 tnum" value={adset.start} onChange={(event) => setAdset(selection.adset, { start: event.target.value })} /></Field>
+                  <Field id="fb-set-end" label="Fim (opcional)" hint={draft.budgetKind === 'lifetime' && draft.budgetAt === 'campaign' ? 'Obrigatório com orçamento vitalício.' : 'Sem fim, roda até alguém pausar.'} error={draft.budgetKind === 'lifetime' && draft.budgetAt === 'campaign' && !adset.end && 'Coloque a data de fim.'}><Input id="fb-set-end" className="h-10 tnum" placeholder="dd/mm/aaaa hh:mm" value={adset.end} onChange={(event) => setAdset(selection.adset, { end: event.target.value })} /></Field>
+                </div>
+                <label className="flex items-start gap-3"><Switch className="mt-0.5" checked={adset.schedule} disabled={!(draft.budgetKind === 'lifetime' && draft.budgetAt === 'campaign')} onCheckedChange={(schedule) => setAdset(selection.adset, { schedule })} /><span><span className="text-[14px] font-medium">Rodar só em alguns horários</span><span className="block text-[13px] text-muted-foreground">O Facebook só deixa com orçamento vitalício na campanha.</span></span></label>
+                {adset.schedule && <div className="grid items-start gap-4 sm:grid-cols-2"><Field id="fb-set-from" label="Das"><Input id="fb-set-from" className="h-10 tnum" value={adset.hours[0]} onChange={(event) => setAdset(selection.adset, { hours: [event.target.value, adset.hours[1]] })} /></Field><Field id="fb-set-to" label="Até"><Input id="fb-set-to" className="h-10 tnum" value={adset.hours[1]} onChange={(event) => setAdset(selection.adset, { hours: [adset.hours[0], event.target.value] })} /></Field></div>}
+              </FbFormBlock>
+              <FbFormBlock title="Público">
+                <div className="grid items-start gap-4 sm:grid-cols-2">
+                  <FbChips id="fb-set-countries" label="Países" values={adset.locations} suggestions={['Brasil', 'Portugal', 'Estados Unidos', 'México', 'Angola']} placeholder="Digite um país" onChange={(locations) => setAdset(selection.adset, { locations })} />
+                  <FbChips id="fb-set-regions" label="Estados, cidades ou CEP (opcional)" values={adset.locationExtra} suggestions={['São Paulo (estado)', 'Rio de Janeiro (cidade) + 25 km']} placeholder="Digite um lugar" onChange={(locationExtra) => setAdset(selection.adset, { locationExtra })} />
+                </div>
+                <div className="grid items-start gap-4 sm:grid-cols-3">
+                  <Field id="fb-set-age-min" label="Idade mínima"><Input id="fb-set-age-min" inputMode="numeric" className="h-10 tnum" disabled={draft.special.length > 0} value={draft.special.length ? '18' : adset.ageMin} onChange={(event) => setAdset(selection.adset, { ageMin: event.target.value.replace(/\D/g, '') })} /></Field>
+                  <Field id="fb-set-age-max" label="Idade máxima"><Input id="fb-set-age-max" inputMode="numeric" className="h-10 tnum" disabled={draft.special.length > 0} value={draft.special.length ? '65+' : adset.ageMax} onChange={(event) => setAdset(selection.adset, { ageMax: event.target.value.replace(/\D/g, '') })} /></Field>
+                  <Field id="fb-set-gender" label="Gênero"><Select value={draft.special.length ? 'all' : adset.gender} disabled={draft.special.length > 0} onValueChange={(gender) => setAdset(selection.adset, { gender })}><SelectTrigger id="fb-set-gender" className="h-10"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Todos</SelectItem><SelectItem value="women">Mulheres</SelectItem><SelectItem value="men">Homens</SelectItem></SelectContent></Select></Field>
+                </div>
+                <FbChips id="fb-set-languages" label="Idiomas" values={adset.languages} suggestions={['Português (Brasil)', 'Português (Portugal)', 'Espanhol']} placeholder="Todos os idiomas" onChange={(languages) => setAdset(selection.adset, { languages })} />
+                <label className="flex items-start gap-3 rounded-md border px-3 py-2"><Switch className="mt-0.5" checked={adset.advantageAudience} onCheckedChange={(advantageAudience) => setAdset(selection.adset, { advantageAudience })} /><span><span className="text-[14px] font-medium">Público Advantage+</span><span className="block text-[13px] text-muted-foreground">O Facebook usa os interesses abaixo como sugestão e pode ir além deles quando achar gente com mais chance de clicar.</span></span></label>
+                <FbChips id="fb-set-interests" label="Interesses e comportamentos" values={adset.interests} suggestions={FB_INTEREST_SUGGESTIONS} placeholder="Digite um interesse" onChange={(interests) => setAdset(selection.adset, { interests })} />
+                <div className="grid items-start gap-4 sm:grid-cols-2">
+                  <FbChips id="fb-set-custom" label="Públicos personalizados" values={adset.custom} suggestions={FB_CUSTOM_AUDIENCES} placeholder="Escolha um público" onChange={(custom) => setAdset(selection.adset, { custom })} />
+                  <FbChips id="fb-set-lal" label="Semelhantes (LAL)" values={draft.special.length ? [] : adset.lookalikes} suggestions={draft.special.length ? [] : FB_LOOKALIKES} placeholder={draft.special.length ? 'Travado pela categoria especial' : 'Escolha um semelhante'} onChange={(lookalikes) => setAdset(selection.adset, { lookalikes })} />
+                </div>
+                <FbChips id="fb-set-exclude" label="Excluir" values={adset.exclusions} suggestions={['Visitantes do site · 7 dias', 'Já clicou nesta campanha']} placeholder="Público para não mostrar" hint="Bom para não pagar de novo por quem já entrou no site." onChange={(exclusions) => setAdset(selection.adset, { exclusions })} />
+              </FbFormBlock>
+              <FbFormBlock title="Posicionamentos">
+                <FbSegment label="Onde o anúncio aparece" value={adset.placements} options={[['auto', 'Advantage+ (o Facebook escolhe)'], ['manual', 'Escolher à mão']]} onChange={(placements) => setAdset(selection.adset, { placements })} />
+                {adset.placements === 'manual' && <div className="grid gap-2 sm:grid-cols-2">{FB_PLACEMENTS.map((place) => <label key={place} className="flex items-center gap-2.5 text-[14px]"><input type="checkbox" className="size-4 accent-[hsl(var(--foreground))]" checked={adset.manualPlacements.includes(place)} onChange={() => setAdset(selection.adset, { manualPlacements: adset.manualPlacements.includes(place) ? adset.manualPlacements.filter((item) => item !== place) : [...adset.manualPlacements, place] })} />{place}</label>)}</div>}
+                {adset.placements === 'manual' && adset.manualPlacements.includes('Audience Network') && <p className="text-[13px] text-ochre">Audience Network costuma trazer clique de app com pouca visita real no site.</p>}
+              </FbFormBlock>
+            </section>
+          )}
+
+          {ad && adset && selection.kind === 'ad' && (
+            <section className="overflow-hidden rounded-lg border bg-card">
+              <div className="flex flex-wrap items-start justify-between gap-3 p-6"><div><h2 className="text-[20px] font-semibold tracking-tight">Anúncio</h2><p className="mt-2 text-[14px] text-muted-foreground">No conjunto {adset.name}.</p></div>{adset.ads.length > 1 && <Button size="sm" variant="ghost" onClick={() => remove(selection)}><Trash2 className="h-4 w-4" />Tirar</Button>}</div>
+              <FbFormBlock title="Identidade" desc="Quem publica o anúncio. A Página é obrigatória.">
+                <div className="grid items-start gap-4 sm:grid-cols-2">
+                  <Field id="fb-ad-name" label="Nome do anúncio"><Input id="fb-ad-name" className="h-10" value={ad.name} onChange={(event) => setAd(selection.adset, selection.ad, { name: event.target.value })} /></Field>
+                  <Field id="fb-ad-page" label="Página do Facebook" error={!ad.page && 'Escolha a Página.'}><Select value={ad.page || undefined} onValueChange={(page) => setAd(selection.adset, selection.ad, { page })}><SelectTrigger id="fb-ad-page" className="h-10"><SelectValue placeholder="Escolha a Página" /></SelectTrigger><SelectContent>{FB_PAGES.map((page) => <SelectItem key={page} value={page}>{page}</SelectItem>)}</SelectContent></Select></Field>
+                  <Field id="fb-ad-ig" label="Conta do Instagram"><Select value={ad.instagram} onValueChange={(instagram) => setAd(selection.adset, selection.ad, { instagram })}><SelectTrigger id="fb-ad-ig" className="h-10"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="@receitasblogexemplo">@receitasblogexemplo</SelectItem><SelectItem value="@blogexemplo">@blogexemplo</SelectItem><SelectItem value="page">Usar a Página do Facebook</SelectItem></SelectContent></Select></Field>
+                </div>
+              </FbFormBlock>
+              <FbFormBlock title="Formato e mídia">
+                <FbSegment label="Formato" value={ad.format} options={[['image', 'Imagem'], ['video', 'Vídeo'], ['carousel', 'Carrossel']]} onChange={(format) => setAd(selection.adset, selection.ad, { format, cards: format === 'carousel' && !ad.cards.length ? [{ id: fbDraftId(), title: 'Passo 1', path: '/pudim-de-leite#passo-1', media: false }, { id: fbDraftId(), title: 'Passo 2', path: '/pudim-de-leite#passo-2', media: false }] : ad.cards })} />
+                {ad.format !== 'carousel' ? <FbMediaPick chosen={ad.media} label={ad.format === 'video' ? 'pudim-15s.mp4 · 0:15' : 'pudim-1080.jpg · 1080 × 1080'} onPick={() => setAd(selection.adset, selection.ad, { media: true })} /> : (
+                  <div className="grid gap-3">
+                    {ad.cards.map((card, cardIndex) => (
+                      <div key={card.id} className="grid gap-3 rounded-md border p-3">
+                        <div className="flex items-center justify-between text-[13px] font-medium">Cartão {cardIndex + 1}{ad.cards.length > 2 && <Button size="sm" variant="ghost" onClick={() => setAd(selection.adset, selection.ad, { cards: ad.cards.filter((item) => item.id !== card.id) })}><Trash2 className="h-4 w-4" /></Button>}</div>
+                        <FbMediaPick chosen={card.media} label={`passo-${cardIndex + 1}.jpg · 1080 × 1080`} onPick={() => setAd(selection.adset, selection.ad, { cards: ad.cards.map((item) => (item.id === card.id ? { ...item, media: true } : item)) })} />
+                        <div className="grid items-start gap-3 sm:grid-cols-2"><Input aria-label={`Título do cartão ${cardIndex + 1}`} className="h-10" value={card.title} onChange={(event) => setAd(selection.adset, selection.ad, { cards: ad.cards.map((item) => (item.id === card.id ? { ...item, title: event.target.value } : item)) })} /><Input aria-label={`Caminho do cartão ${cardIndex + 1}`} className="h-10 font-mono text-[13px]" value={card.path} onChange={(event) => setAd(selection.adset, selection.ad, { cards: ad.cards.map((item) => (item.id === card.id ? { ...item, path: event.target.value } : item)) })} /></div>
+                      </div>
+                    ))}
+                    {ad.cards.length < 10 && <Button size="sm" variant="outline" className="w-fit" onClick={() => setAd(selection.adset, selection.ad, { cards: [...ad.cards, { id: fbDraftId(), title: `Passo ${ad.cards.length + 1}`, path: `/pudim-de-leite#passo-${ad.cards.length + 1}`, media: false }] })}><Plus className="h-4 w-4" />Cartão</Button>}
+                    <p className="text-[13px] text-muted-foreground">De 2 a 10 cartões. Cada um pode levar para uma parte do post.</p>
+                  </div>
+                )}
+              </FbFormBlock>
+              <FbFormBlock title="Textos" desc="Até 5 textos e 5 títulos. O Facebook testa as combinações e mostra a que funciona melhor.">
+                {ad.texts.map((text, index) => <Field key={`text-${index}`} id={`fb-ad-text-${index}`} label={`Texto principal ${index + 1}`}><Textarea id={`fb-ad-text-${index}`} rows={2} value={text} onChange={(event) => setAd(selection.adset, selection.ad, { texts: ad.texts.map((item, position) => (position === index ? event.target.value : item)) })} /></Field>)}
+                {ad.texts.length < 5 && <Button size="sm" variant="outline" className="w-fit" onClick={() => setAd(selection.adset, selection.ad, { texts: [...ad.texts, ''] })}><Plus className="h-4 w-4" />Outro texto</Button>}
+                <div className="grid items-start gap-4 sm:grid-cols-2">
+                  <div className="grid gap-2">
+                    {ad.titles.map((title, index) => <Field key={`title-${index}`} id={`fb-ad-title-${index}`} label={`Título ${index + 1}`}><Input id={`fb-ad-title-${index}`} className="h-10" value={title} onChange={(event) => setAd(selection.adset, selection.ad, { titles: ad.titles.map((item, position) => (position === index ? event.target.value : item)) })} /></Field>)}
+                    {ad.titles.length < 5 && <Button size="sm" variant="outline" className="w-fit" onClick={() => setAd(selection.adset, selection.ad, { titles: [...ad.titles, ''] })}><Plus className="h-4 w-4" />Outro título</Button>}
+                  </div>
+                  <Field id="fb-ad-desc" label="Descrição (opcional)"><Input id="fb-ad-desc" className="h-10" value={ad.description} onChange={(event) => setAd(selection.adset, selection.ad, { description: event.target.value })} /></Field>
+                </div>
+                <label className="flex items-start gap-3 rounded-md border px-3 py-2"><Switch className="mt-0.5" checked={ad.advantageCreative} onCheckedChange={(advantageCreative) => setAd(selection.adset, selection.ad, { advantageCreative })} /><span><span className="text-[14px] font-medium">Melhorias do Advantage+ criativo</span><span className="block text-[13px] text-muted-foreground">O Facebook ajusta brilho, corte e música por posicionamento.</span></span></label>
+              </FbFormBlock>
+              <FbFormBlock title="Destino">
+                <Field id="fb-ad-link" label="Link" hint="O domínio é o site vinculado à conta.">
+                    <div className="flex"><span className="inline-flex h-10 items-center rounded-l-md border border-r-0 bg-muted px-3 font-mono text-[13px] text-muted-foreground">{domain ?? 'sem site'}</span><Input id="fb-ad-link" className="h-10 rounded-l-none font-mono text-[13px]" value={ad.path} onChange={(event) => setAd(selection.adset, selection.ad, { path: event.target.value })} /></div>
+                </Field>
+                <div className="grid items-start gap-4 sm:grid-cols-2">
+                  <Field id="fb-ad-display" label="Link de exibição (opcional)"><Input id="fb-ad-display" className="h-10" placeholder={domain ?? ''} value={ad.displayLink} onChange={(event) => setAd(selection.adset, selection.ad, { displayLink: event.target.value })} /></Field>
+                  <Field id="fb-ad-cta" label="Botão"><Select value={ad.cta} onValueChange={(cta) => setAd(selection.adset, selection.ad, { cta })}><SelectTrigger id="fb-ad-cta" className="h-10"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="learn_more">Saiba mais</SelectItem><SelectItem value="see_more">Ver mais</SelectItem><SelectItem value="watch_more">Assistir mais</SelectItem><SelectItem value="none">Sem botão</SelectItem></SelectContent></Select></Field>
+                </div>
+                <div className="rounded-md border bg-muted p-3 text-[13px]"><div className="text-muted-foreground">Parâmetros de URL que o Avant coloca sozinho (não dá para tirar)</div><code className="mt-1 block break-all font-mono">{FB_UTMS}</code></div>
+              </FbFormBlock>
+            </section>
+          )}
         </div>
+
         <div className="grid content-start gap-6 lg:sticky lg:top-[136px]">
           <Card pad>
             <h2 className="text-[14px] font-medium">Resumo</h2>
             <dl className="mt-3 grid gap-2 text-[13px]">
-              {([['Conta', account?.name ?? '—'], ['Site', domain ?? '—'], ['Orçamento', `${fbMoney(value)} por dia, ${budgetAt === 'campaign' ? 'na campanha' : 'no conjunto'}`], ['Público', `${countries.join(', ') || '—'} · ${age[0]}-${age[1]} anos`], ['Ao criar', startOn === 'active' ? 'Ativa, depois da revisão do Facebook' : 'Pausada']] as const).map(([label, shown]) => <div key={label} className="flex justify-between gap-3"><dt className="text-muted-foreground">{label}</dt><dd className="text-right">{shown}</dd></div>)}
+              {([['Conta', account ? `${account.name} · ${account.business}` : '—'], ['Objetivo', FB_OBJECTIVES.find(([key]) => key === draft.objective)?.[1] ?? ''], ['Orçamento', draft.budgetAt === 'campaign' ? `${fbMoney(Number(draft.budget || 0))} ${draft.budgetKind === 'daily' ? 'por dia' : 'no total'}` : `${fbMoney(dailyTotal)} por dia nos conjuntos`], ['Estrutura', `${draft.adsets.length} conjunto(s), ${allAds.length} anúncio(s)`], ['Ao criar', draft.startOn === 'active' ? 'Ativa, depois da revisão' : 'Pausada']] as const).map(([label, shown]) => <div key={label} className="flex justify-between gap-3"><dt className="text-muted-foreground">{label}</dt><dd className="text-right">{shown}</dd></div>)}
             </dl>
+            {room && <div className="mt-4 grid gap-2 border-t pt-4"><div className="text-[13px] text-muted-foreground">{room.label}</div><FbLimitBar used={room.used + dailyTotal} limit={room.limit} /></div>}
           </Card>
           <Card pad>
-            <h2 className="text-[14px] font-medium">Limite</h2>
-            {room ? (
-              <div className="mt-3 grid gap-2">
-                <div className="text-[13px] text-muted-foreground">{room.label}</div>
-                <FbLimitBar used={room.used + value} limit={room.limit} />
-                <p className={cn('text-[13px]', over ? 'text-bad' : 'text-muted-foreground')}>{over ? 'Com esta campanha passa do limite. Baixe o orçamento ou peça ao dono para subir o limite.' : `Já em uso ${fbMoney(room.used, true)} em orçamentos ativos. Sobram ${fbMoney(room.limit - room.used - value, true)} por dia.`}</p>
-              </div>
-            ) : <p className="mt-2 text-[13px] text-muted-foreground">Sem limite diário para esta conta.</p>}
+            <h2 className="text-[14px] font-medium">Para criar</h2>
+            <ul className="mt-3 grid gap-1.5">{checks.map(([label, passed]) => <li key={label}><Status tone={passed ? 'ok' : 'bad'}>{label}</Status></li>)}</ul>
           </Card>
           <Button disabled={!ready} onClick={submit}>Criar no Facebook</Button>
         </div>
       </Body>
     </>
+  )
+}
+
+/** Versão compacta do "ver como" do protótipo, para a coluna da estrutura. */
+function FbViewerSwitchCompact({ viewer, setViewer, members }: { viewer: FbViewer; setViewer: (viewer: FbViewer) => void; members: FbMember[] }) {
+  const value = viewer.kind === 'member' ? viewer.email : 'owner'
+  return (
+    <div className="grid gap-1.5 rounded-md border border-dashed p-2 text-[12px]">
+      <span className="text-muted-foreground">Protótipo, ver como</span>
+      <Select value={value} onValueChange={(next) => setViewer(next === 'owner' ? { kind: 'owner' } : { kind: 'member', email: next })}>
+        <SelectTrigger aria-label="Ver como" className="h-8 text-[12px]"><SelectValue /></SelectTrigger>
+        <SelectContent><SelectItem value="owner">Pedro · Dono</SelectItem>{members.filter((member) => member.accounts.length).map((member) => <SelectItem key={member.email} value={member.email}>{member.name}</SelectItem>)}</SelectContent>
+      </Select>
+    </div>
   )
 }
 
@@ -8482,7 +8711,7 @@ function FbAdPreview({ entity, site }: { entity: FbEntity; site: string | null }
 }
 
 /** Página de uma campanha, conjunto ou anúncio: números, gráfico, métricas, filhos, orçamento, regras e decisões. */
-function FbEntityScreen({ entity, entities, setEntities, accounts, staff, open, back }: { entity: FbEntity; entities: FbEntity[]; setEntities: (entities: FbEntity[]) => void; accounts: FbAccount[]; staff: boolean; open: (entity: FbEntity) => void; back: () => void }) {
+function FbEntityScreen({ entity, entities, setEntities, accounts, staff, open, duplicate, back }: { entity: FbEntity; entities: FbEntity[]; setEntities: (entities: FbEntity[]) => void; accounts: FbAccount[]; staff: boolean; open: (entity: FbEntity) => void; duplicate: (entity: FbEntity) => void; back: () => void }) {
   const [period, setPeriod] = useState('30')
   const [asking, setAsking] = useState<FbEntity | null>(null)
   const factor = Number(period) / 30
@@ -8498,7 +8727,7 @@ function FbEntityScreen({ entity, entities, setEntities, accounts, staff, open, 
     <>
       <PageHeader title={entity.name} sub={`${FB_LEVEL[entity.level].one} · ${staff ? `${account.client} · ` : ''}${account.name}${site ? ` · ${site}` : ' · sem site'}`}
         back={<button onClick={back} className="mb-3 flex items-center gap-1.5 text-[14px] text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4" />{parent ? parent.name : 'Campanhas'}</button>}
-        actions={<div className="flex flex-wrap items-center gap-3"><Status tone={entity.on ? 'ok' : 'neutral'}>{entity.on ? 'Ativa' : 'Pausada'}</Status>{!staff && <Button variant="outline" onClick={() => setAsking(entity)}>{entity.on ? 'Pausar' : 'Ativar'}</Button>}<Select value={period} onValueChange={setPeriod}><SelectTrigger aria-label="Período" className="h-9 w-[160px]"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="7">Últimos 7 dias</SelectItem><SelectItem value="30">Últimos 30 dias</SelectItem></SelectContent></Select></div>} />
+        actions={<div className="flex flex-wrap items-center gap-3"><Status tone={entity.on ? 'ok' : 'neutral'}>{entity.on ? 'Ativa' : 'Pausada'}</Status>{!staff && <Button variant="outline" onClick={() => setAsking(entity)}>{entity.on ? 'Pausar' : 'Ativar'}</Button>}{!staff && entity.level === 'campaign' && <Button variant="outline" onClick={() => duplicate(entity)}><Copy className="h-4 w-4" />Duplicar</Button>}<Select value={period} onValueChange={setPeriod}><SelectTrigger aria-label="Período" className="h-9 w-[160px]"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="7">Últimos 7 dias</SelectItem><SelectItem value="30">Últimos 30 dias</SelectItem></SelectContent></Select></div>} />
       <Body>
         {staff && <FbStaffNote />}
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-muted-foreground"><span>ID <Code>{entity.id}</Code></span><a className="inline-flex items-center gap-1 text-link hover:underline" href="#" onClick={(event) => event.preventDefault()}>Abrir no Gerenciador de Anúncios<ExternalLink className="h-3.5 w-3.5" /></a></div>
@@ -8585,6 +8814,7 @@ export default function App() {
   const [fbAccountFilter, setFbAccountFilter] = useState('all')
   const [fbMembers, setFbMembers] = useState(FB_INITIAL_MEMBERS)
   const [fbViewer, setFbViewer] = useState<FbViewer>({ kind: 'owner' })
+  const [fbDraftFrom, setFbDraftFrom] = useState<FbEntity | null>(null)
   /** Abre a página da campanha, do conjunto ou do anúncio. */
   const openFbEntity = (entity: FbEntity, staff = INTERNAL_SCREENS.includes(screen)) => { setFbEntityId(entity.id); go(`${entity.level === 'campaign' ? 'fbcampanha' : entity.level === 'adset' ? 'fbconjunto' : 'fbanuncio'}${staff ? 'interno' : ''}` as Screen) }
   /** Abre a ad tag do site (ou começa uma) no painel do cliente ou no interno. */
@@ -8678,14 +8908,14 @@ export default function App() {
       case 'fbvazio': return <FbEmptyState go={go} />
       case 'facebook': case 'fbpessoas': case 'fbinterno': { const staff = screen === 'fbinterno'; return <FacebookScreen key={screen} accounts={fbAccounts} setAccounts={setFbAccounts} members={fbMembers} setMembers={setFbMembers} viewer={staff ? { kind: 'staff' } : fbViewer} setViewer={setFbViewer} startTab={screen === 'fbpessoas' ? 'people' : 'accounts'} go={go} openAccount={(id) => { setFbAccountFilter(id); go(staff ? 'fbcampanhasinterno' : 'fbcampanhas') }} /> }
       case 'fbconectar': return <FbConnectScreen go={go} accounts={fbAccounts} setAccounts={setFbAccounts} />
-      case 'fbcampanhas': case 'fbcampanhasinterno': { const staff = screen === 'fbcampanhasinterno'; return <FbCampaignsScreen key={screen} entities={fbEntities} setEntities={setFbEntities} accounts={fbAccounts} members={fbMembers} viewer={staff ? { kind: 'staff' } : fbViewer} setViewer={setFbViewer} accountFilter={fbAccountFilter} setAccountFilter={setFbAccountFilter} open={(entity) => openFbEntity(entity, staff)} create={() => go('fbnovacampanha')} /> }
-      case 'fbnovacampanha': return <FbCreateScreen accounts={fbAccounts} members={fbMembers} viewer={fbViewer} setViewer={setFbViewer} entities={fbEntities} setEntities={setFbEntities} back={() => go('fbcampanhas')} />
+      case 'fbcampanhas': case 'fbcampanhasinterno': { const staff = screen === 'fbcampanhasinterno'; return <FbCampaignsScreen key={screen} entities={fbEntities} setEntities={setFbEntities} accounts={fbAccounts} members={fbMembers} viewer={staff ? { kind: 'staff' } : fbViewer} setViewer={setFbViewer} accountFilter={fbAccountFilter} setAccountFilter={setFbAccountFilter} open={(entity) => openFbEntity(entity, staff)} create={() => { setFbDraftFrom(null); go('fbnovacampanha') }} /> }
+      case 'fbnovacampanha': return <FbCreateScreen key={fbDraftFrom?.id ?? 'new'} accounts={fbAccounts} members={fbMembers} viewer={fbViewer} setViewer={setFbViewer} entities={fbEntities} setEntities={setFbEntities} from={fbDraftFrom ?? undefined} back={() => go('fbcampanhas')} />
       case 'fbcampanha': case 'fbconjunto': case 'fbanuncio': case 'fbcampanhainterno': case 'fbconjuntointerno': case 'fbanunciointerno': {
         const staff = screen.endsWith('interno')
         const level: FbLevel = screen.startsWith('fbcampanha') ? 'campaign' : screen.startsWith('fbconjunto') ? 'adset' : 'ad'
         const entity = fbEntities.find((item) => item.id === fbEntityId && item.level === level) ?? fbEntities.find((item) => item.level === level)!
         const parent = fbEntities.find((item) => item.id === entity.parent)
-        return <FbEntityScreen key={entity.id} entity={entity} entities={fbEntities} setEntities={setFbEntities} accounts={fbAccounts} staff={staff} open={(item) => openFbEntity(item, staff)} back={() => (parent ? openFbEntity(parent, staff) : go(staff ? 'fbcampanhasinterno' : 'fbcampanhas'))} />
+        return <FbEntityScreen key={entity.id} entity={entity} entities={fbEntities} setEntities={setFbEntities} accounts={fbAccounts} staff={staff} open={(item) => openFbEntity(item, staff)} duplicate={(item) => { setFbDraftFrom(item); go('fbnovacampanha') }} back={() => (parent ? openFbEntity(parent, staff) : go(staff ? 'fbcampanhasinterno' : 'fbcampanhas'))} />
       }
       case 'tarefa': { const task = tasks.find((item) => item.id === taskId) ?? tasks[0]; return <TaskScreen key={task.id} task={task} update={(next) => setTasks(tasks.map((item) => (item.id === next.id ? next : item)))} back={() => go('tarefas')} /> }
     }
