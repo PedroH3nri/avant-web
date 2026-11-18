@@ -7507,7 +7507,7 @@ type FbAccess = 'ok' | 'expired' | 'checkpoint'
 type FbProfile = { id: string; name: string; client: string; since: string; access: FbAccess; synced: string }
 type FbAccountState = 'active' | 'unsettled' | 'disabled'
 type FbOnLimit = 'warn' | 'pause'
-type FbAccount = { id: string; name: string; client: string; profile: string; state: FbAccountState; currency: 'BRL' | 'USD'; spend30: number; site: string | null; dailyLimit: number | null; monthlyLimit: number | null; spentMonth: number; onLimit: FbOnLimit }
+type FbAccount = { id: string; name: string; business: string; client: string; profile: string; state: FbAccountState; currency: 'BRL' | 'USD'; spend30: number; site: string | null; dailyLimit: number | null; monthlyLimit: number | null; spentMonth: number; onLimit: FbOnLimit }
 type FbEntity = { id: string; level: FbLevel; name: string; parent: string | null; campaign: string; account: string; on: boolean; budget: number | null; spend: number; roi: number; cpc: number; utm: 'ok' | 'missing' | null }
 type FbMember = { email: string; name: string; role: string; accounts: string[]; daily: number | null; monthly: number | null; spentMonth: number }
 /** Quem está olhando a tela no protótipo: o dono da Empresa, um funcionário ou a equipe Groone. */
@@ -7522,13 +7522,13 @@ const FB_PROFILES: FbProfile[] = [
   { id: 'p5', name: 'Lucas Prado', client: 'Viagem Fácil', since: '19/10/2026', access: 'checkpoint', synced: 'Hoje, 09:02' },
 ]
 const FB_INITIAL_ACCOUNTS: FbAccount[] = [
-  { id: 'act_1029384756', name: 'Blog Exemplo · Principal', client: FB_MY_CLIENT, profile: 'p1', state: 'active', currency: 'BRL', spend30: 18420, site: 'blogexemplo.com', dailyLimit: 800, monthlyLimit: 20000, spentMonth: 11240, onLimit: 'pause' },
-  { id: 'act_5566778899', name: 'Receitas · Tráfego', client: FB_MY_CLIENT, profile: 'p2', state: 'active', currency: 'BRL', spend30: 9310, site: 'receitas.blogexemplo.com', dailyLimit: 400, monthlyLimit: 10000, spentMonth: 9120, onLimit: 'warn' },
-  { id: 'act_1122334455', name: 'Viagens · Teste', client: FB_MY_CLIENT, profile: 'p2', state: 'active', currency: 'BRL', spend30: 2140, site: null, dailyLimit: 100, monthlyLimit: 3000, spentMonth: 1310, onLimit: 'pause' },
-  { id: 'act_9988776655', name: 'Agência Dias · Blog', client: FB_MY_CLIENT, profile: 'p3', state: 'unsettled', currency: 'BRL', spend30: 4870, site: 'blogexemplo.com', dailyLimit: null, monthlyLimit: null, spentMonth: 2980, onLimit: 'warn' },
-  { id: 'act_3344556677', name: 'Conta antiga', client: FB_MY_CLIENT, profile: 'p1', state: 'disabled', currency: 'USD', spend30: 0, site: null, dailyLimit: null, monthlyLimit: null, spentMonth: 0, onLimit: 'warn' },
-  { id: 'act_4455667788', name: 'Tech Notícias · Gadgets', client: 'Tech Notícias', profile: 'p4', state: 'active', currency: 'BRL', spend30: 22650, site: 'technoticias.com.br', dailyLimit: 1000, monthlyLimit: 30000, spentMonth: 14880, onLimit: 'pause' },
-  { id: 'act_7766554433', name: 'Viagem Fácil · Promo', client: 'Viagem Fácil', profile: 'p5', state: 'active', currency: 'USD', spend30: 5120, site: 'viagemfacil.com', dailyLimit: null, monthlyLimit: 8000, spentMonth: 3420, onLimit: 'warn' },
+  { id: 'act_1029384756', name: 'CA 01 · Blog', business: 'BM Blog Exemplo', client: FB_MY_CLIENT, profile: 'p1', state: 'active', currency: 'BRL', spend30: 18420, site: 'blogexemplo.com', dailyLimit: 800, monthlyLimit: 20000, spentMonth: 11240, onLimit: 'pause' },
+  { id: 'act_5566778899', name: 'CA 02 · Receitas', business: 'BM Blog Exemplo', client: FB_MY_CLIENT, profile: 'p2', state: 'active', currency: 'BRL', spend30: 9310, site: 'receitas.blogexemplo.com', dailyLimit: 400, monthlyLimit: 10000, spentMonth: 9120, onLimit: 'warn' },
+  { id: 'act_1122334455', name: 'CA 03 · Viagens (teste)', business: 'BM Blog Exemplo', client: FB_MY_CLIENT, profile: 'p2', state: 'active', currency: 'BRL', spend30: 2140, site: null, dailyLimit: 100, monthlyLimit: 3000, spentMonth: 1310, onLimit: 'pause' },
+  { id: 'act_9988776655', name: 'CA 07 · Blog Exemplo', business: 'BM Agência Dias', client: FB_MY_CLIENT, profile: 'p3', state: 'unsettled', currency: 'BRL', spend30: 4870, site: 'blogexemplo.com', dailyLimit: null, monthlyLimit: null, spentMonth: 2980, onLimit: 'warn' },
+  { id: 'act_3344556677', name: 'CA antiga', business: 'BM Blog Exemplo', client: FB_MY_CLIENT, profile: 'p1', state: 'disabled', currency: 'USD', spend30: 0, site: null, dailyLimit: null, monthlyLimit: null, spentMonth: 0, onLimit: 'warn' },
+  { id: 'act_4455667788', name: 'CA 01 · Gadgets', business: 'BM Tech Notícias', client: 'Tech Notícias', profile: 'p4', state: 'active', currency: 'BRL', spend30: 22650, site: 'technoticias.com.br', dailyLimit: 1000, monthlyLimit: 30000, spentMonth: 14880, onLimit: 'pause' },
+  { id: 'act_7766554433', name: 'CA Promo', business: 'BM Viagem Fácil', client: 'Viagem Fácil', profile: 'p5', state: 'active', currency: 'USD', spend30: 5120, site: 'viagemfacil.com', dailyLimit: null, monthlyLimit: 8000, spentMonth: 3420, onLimit: 'warn' },
 ]
 const FB_INITIAL_MEMBERS: FbMember[] = [
   { email: 'ana@blogexemplo.com', name: 'Ana Souza', role: 'Gestor de tráfego', accounts: ['act_5566778899', 'act_1122334455'], daily: 450, monthly: 12000, spentMonth: 10430 },
@@ -7759,7 +7759,7 @@ function FbAccountDialog({ account, members, onClose, onSave }: { account: FbAcc
   return (
     <Dialog open={!!account} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-[560px]">
-        <DialogHeader><DialogTitle>{account?.name}</DialogTitle><DialogDescription>Quem da sua equipe usa esta conta e quanto ela pode gastar. Você, como dono, sempre vê todas as contas.</DialogDescription></DialogHeader>
+        <DialogHeader><DialogTitle>{account?.name}</DialogTitle><DialogDescription>Conta de anúncio <span className="font-mono">{account?.id}</span>, da {account?.business}. Quem você marcar recebe só esta conta, nunca a BM inteira. Você, como dono, sempre vê todas.</DialogDescription></DialogHeader>
         <div className="grid gap-5">
           <div>
             <div className="text-[13px] font-medium text-muted-foreground">Quem pode usar</div>
@@ -7800,15 +7800,23 @@ function FbMemberDialog({ member, accounts, onClose, onSave }: { member: FbMembe
   return (
     <Dialog open={!!member} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-[560px]">
-        <DialogHeader><DialogTitle>{member?.name}</DialogTitle><DialogDescription>As contas que essa pessoa usa e quanto ela pode pôr nelas. Os limites somam todas as contas dela.</DialogDescription></DialogHeader>
+        <DialogHeader><DialogTitle>{member?.name}</DialogTitle><DialogDescription>As contas de anúncio que essa pessoa usa e quanto ela pode pôr nelas. Os limites somam todas as contas dela.</DialogDescription></DialogHeader>
         <div className="grid gap-5">
           <div>
-            <div className="text-[13px] font-medium text-muted-foreground">Contas de anúncio</div>
-            <ul className="mt-2 grid gap-1 rounded-md border p-2">
-              {accounts.filter((account) => account.state !== 'disabled').map((account) => (
-                <li key={account.id}><label className="flex items-center gap-3 rounded-md px-2 py-1.5 hover:bg-muted"><input type="checkbox" className="size-4 accent-[hsl(var(--foreground))]" checked={chosen.includes(account.id)} onChange={() => toggle(account.id)} /><span className="min-w-0 flex-1 text-[14px]">{account.name}</span><Code>{account.id}</Code></label></li>
+            <div className="text-[13px] font-medium text-muted-foreground">Contas de anúncio, separadas pela BM de origem</div>
+            <div className="mt-2 grid gap-3 rounded-md border p-2">
+              {[...new Set(accounts.filter((account) => account.state !== 'disabled').map((account) => account.business))].map((business) => (
+                <div key={business}>
+                  <div className="px-2 pb-1 text-[12px] text-muted-foreground">{business}</div>
+                  <ul className="grid gap-1">
+                    {accounts.filter((account) => account.state !== 'disabled' && account.business === business).map((account) => (
+                      <li key={account.id}><label className="flex items-center gap-3 rounded-md px-2 py-1.5 hover:bg-muted"><input type="checkbox" className="size-4 accent-[hsl(var(--foreground))]" checked={chosen.includes(account.id)} onChange={() => toggle(account.id)} /><span className="min-w-0 flex-1 text-[14px]">{account.name}</span><Code>{account.id}</Code></label></li>
+                    ))}
+                  </ul>
+                </div>
               ))}
-            </ul>
+            </div>
+            <p className="mt-2 text-[13px] text-muted-foreground">Você libera conta por conta. A pessoa não recebe a BM: só vê e usa as contas marcadas, mesmo que a BM tenha outras.</p>
           </div>
           <div className="grid items-start gap-4 sm:grid-cols-2">
             <FbMoneyField id="fb-mem-daily" label="Limite diário" value={daily} hint="Orçamentos diários ativos que ela criou ou mudou" onChange={setDaily} />
@@ -7872,14 +7880,14 @@ function FacebookScreen({ accounts, setAccounts, members, setMembers, viewer, se
         )}
         {tab === 'people' && owner ? (
           <section className="grid gap-3">
-            <div><h2 className="text-[20px] font-semibold tracking-tight">Pessoas e limites</h2><p className="mt-1 max-w-[80ch] text-[14px] text-muted-foreground">Cada pessoa só vê e usa as contas marcadas para ela. Os limites somam todas as contas dela e valem junto com o limite de cada conta: vale o menor.</p></div>
+            <div><h2 className="text-[20px] font-semibold tracking-tight">Pessoas e limites</h2><p className="mt-1 max-w-[80ch] text-[14px] text-muted-foreground">Cada pessoa recebe contas de anúncio, uma a uma, nunca a BM inteira. Ela só vê e usa as contas marcadas. Os limites somam todas as contas dela e valem junto com o limite de cada conta: vale o menor.</p></div>
             <Table min={900}>
-              <thead><tr><th className={th}>Pessoa</th><th className={th}>Contas</th><th className={cn(th, 'text-right')}>Limite diário</th><th className={th}>Gasto no mês</th><th className={th}><span className="sr-only">Ação</span></th></tr></thead>
+              <thead><tr><th className={th}>Pessoa</th><th className={th}>Contas de anúncio</th><th className={cn(th, 'text-right')}>Limite diário</th><th className={th}>Gasto no mês</th><th className={th}><span className="sr-only">Ação</span></th></tr></thead>
               <tbody>
                 {members.map((member) => (
                   <tr key={member.email} className="hover:bg-muted">
                     <td className={td}><div className="flex items-center gap-3"><Avatar name={member.name} /><div><div className="font-medium">{member.name}</div><div className="text-[13px] text-muted-foreground">{member.role}</div></div></div></td>
-                    <td className={cn(td, 'text-[13px]')}>{member.accounts.length ? member.accounts.map((id) => accounts.find((account) => account.id === id)?.name).join(', ') : <span className="text-muted-foreground">Nenhuma</span>}</td>
+                    <td className={cn(td, 'text-[13px]')}>{member.accounts.length ? <ul className="grid gap-0.5">{member.accounts.map((id) => { const account = accounts.find((item) => item.id === id); return <li key={id}>{account?.name} <span className="text-muted-foreground">· {account?.business}</span></li> })}</ul> : <span className="text-muted-foreground">Nenhuma</span>}</td>
                     <td className={cn(td, 'text-right tnum')}>{member.daily === null ? <span className="text-[13px] text-muted-foreground">Sem limite</span> : fbMoney(member.daily, true)}</td>
                     <td className={td}><FbLimitBar used={member.spentMonth} limit={member.monthly} /></td>
                     <td className={cn(td, 'text-right')}><Button size="sm" variant="outline" onClick={() => setEditingMember(member)}>Configurar</Button></td>
@@ -7932,13 +7940,13 @@ function FacebookScreen({ accounts, setAccounts, members, setMembers, viewer, se
                 <div className="relative w-full sm:w-60"><Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input aria-label="Buscar contas" className="h-9 pl-9" placeholder={staff ? 'Conta, ID ou cliente' : 'Nome ou ID da conta'} value={query} onChange={(event) => setQuery(event.target.value)} /></div>
               </div>
               <Table min={1080}>
-                <thead><tr><th className={th}>Conta</th>{staff && <th className={th}>Cliente</th>}<th className={th}>Situação no Facebook</th><th className={th}>Gasto no mês</th><th className={th}>Site</th>{!staff && <th className={th}>Quem usa</th>}<th className={th}><span className="sr-only">Ações</span></th></tr></thead>
+                <thead><tr><th className={th}>Conta de anúncio</th>{staff && <th className={th}>Cliente</th>}<th className={th}>Situação no Facebook</th><th className={th}>Gasto no mês</th><th className={th}>Site</th>{!staff && <th className={th}>Quem usa</th>}<th className={th}><span className="sr-only">Ações</span></th></tr></thead>
                 <tbody>
                   {shown.map((account) => {
                     const users = members.filter((member) => member.accounts.includes(account.id))
                     return (
                       <tr key={account.id} className="hover:bg-muted">
-                        <td className={td}><div className="font-medium">{account.name}</div><div className="text-[13px] text-muted-foreground"><Code>{account.id}</Code> · {account.currency}</div></td>
+                        <td className={td}><div className="font-medium">{account.name}</div><div className="text-[13px] text-muted-foreground"><Code>{account.id}</Code> · {account.currency} · {account.business}</div></td>
                         {staff && <td className={td}>{account.client}</td>}
                         <td className={td}><Status tone={FB_ACCOUNT_STATE[account.state][1]}>{FB_ACCOUNT_STATE[account.state][0]}</Status></td>
                         <td className={td}><FbLimitBar used={account.spentMonth} limit={account.monthlyLimit} currency={account.currency} /></td>
@@ -7983,8 +7991,8 @@ function FacebookScreen({ accounts, setAccounts, members, setMembers, viewer, se
 function FbConnectScreen({ go, accounts, setAccounts }: { go: (screen: Screen) => void; accounts: FbAccount[]; setAccounts: (accounts: FbAccount[]) => void }) {
   const [signed, setSigned] = useState(false)
   const found: FbAccount[] = [
-    { id: 'act_7788990011', name: 'Blog Exemplo · Remarketing', client: FB_MY_CLIENT, profile: 'p1', state: 'active', currency: 'BRL', spend30: 3150, site: null, dailyLimit: null, monthlyLimit: null, spentMonth: 1720, onLimit: 'warn' },
-    { id: 'act_6655443322', name: 'Receitas · Reels', client: FB_MY_CLIENT, profile: 'p1', state: 'active', currency: 'BRL', spend30: 1280, site: null, dailyLimit: null, monthlyLimit: null, spentMonth: 640, onLimit: 'warn' },
+    { id: 'act_7788990011', name: 'CA 04 · Remarketing', business: 'BM Blog Exemplo', client: FB_MY_CLIENT, profile: 'p1', state: 'active', currency: 'BRL', spend30: 3150, site: null, dailyLimit: null, monthlyLimit: null, spentMonth: 1720, onLimit: 'warn' },
+    { id: 'act_6655443322', name: 'CA 05 · Reels', business: 'BM Blog Exemplo', client: FB_MY_CLIENT, profile: 'p1', state: 'active', currency: 'BRL', spend30: 1280, site: null, dailyLimit: null, monthlyLimit: null, spentMonth: 640, onLimit: 'warn' },
   ]
   const [picked, setPicked] = useState<Record<string, string | null>>({ act_7788990011: 'blogexemplo.com', act_6655443322: null })
   const [chosen, setChosen] = useState<string[]>(['act_7788990011', 'act_6655443322'])
@@ -8006,16 +8014,16 @@ function FbConnectScreen({ go, accounts, setAccounts }: { go: (screen: Screen) =
         <Card pad>
           <ol className="[&>li:last-child>span:first-child]:hidden">
             <Step number={1} title="Entre com o Facebook">
-              <p className="text-[14px] text-muted-foreground">Abre a janela do Facebook. Lá você escolhe as contas e aceita as permissões de ler os anúncios, criar campanhas e mudar status e orçamento.</p>
+              <p className="text-[14px] text-muted-foreground">Abre a janela do Facebook. Lá você escolhe as BMs e as contas de anúncio e aceita as permissões de ler os anúncios, criar campanhas e mudar status e orçamento.</p>
               {signed ? <Status tone="ok">Conectado como Pedro Henrique</Status> : <Button className="w-fit" onClick={() => setSigned(true)}>Continuar com o Facebook</Button>}
             </Step>
-            <Step number={2} title="Escolha as contas e o site de cada uma">
+            <Step number={2} title="Escolha as contas de anúncio e o site de cada uma">
               {!signed ? <p className="text-[14px] text-muted-foreground">As contas aparecem aqui depois do passo 1.</p> : (
                 <ul className="grid gap-2">
                   {found.map((account) => (
                     <li key={account.id} className="flex flex-wrap items-center gap-3 rounded-md border px-3 py-2">
                       <input type="checkbox" id={`fb-${account.id}`} className="size-4 accent-[hsl(var(--foreground))]" checked={chosen.includes(account.id)} onChange={() => toggle(account.id)} />
-                      <label htmlFor={`fb-${account.id}`} className="min-w-0 flex-1"><div className="text-[14px] font-medium">{account.name}</div><div className="text-[13px] text-muted-foreground"><Code>{account.id}</Code> · {account.currency}</div></label>
+                      <label htmlFor={`fb-${account.id}`} className="min-w-0 flex-1"><div className="text-[14px] font-medium">{account.name}</div><div className="text-[13px] text-muted-foreground"><Code>{account.id}</Code> · {account.currency} · {account.business}</div></label>
                       <FbSitePicker account={{ ...account, site: picked[account.id] }} onPick={(site) => setPicked({ ...picked, [account.id]: site })} />
                     </li>
                   ))}
