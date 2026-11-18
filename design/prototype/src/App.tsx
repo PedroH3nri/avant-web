@@ -92,6 +92,9 @@ const SCREENS = [
   ['fbcampanha', 'Integrações · Campanha'],
   ['fbconjunto', 'Integrações · Conjunto de anúncios'],
   ['fbanuncio', 'Integrações · Anúncio'],
+  ['fbeditar', 'Integrações · Editar no Facebook'],
+  ['fbavisos', 'Integrações · Facebook · Avisos'],
+  ['fbhistorico', 'Integrações · Facebook · Histórico'],
   ['fbinterno', 'Painel interno · Facebook'],
   ['fbcampanhasinterno', 'Painel interno · Campanhas do Facebook'],
   ['fbcampanhainterno', 'Painel interno · Campanha do Facebook'],
@@ -389,7 +392,7 @@ type RailGroup = { key: string; label: string; icon: typeof Home; items: { id: S
 const CLIENT_RAIL: RailGroup[] = [
   { key: 'inicio', label: 'Início', icon: Home, items: [{ id: 'inicio', label: 'Dashboard' }] },
   { key: 'relatorios', label: 'Relatórios', icon: BarChart3, items: [{ id: 'desempenho', label: 'Ad Manager' }, { id: 'visitas', label: 'Page Views' }, { id: 'relatorios', label: 'Relatórios customizados', also: ['construtor', 'relatorio'], separated: true }] },
-  { key: 'integracoes', label: 'Integrações', icon: Plug, items: [{ id: 'facebook', label: 'Facebook', also: ['fbvazio', 'fbconectar', 'fbpessoas'] }, { id: 'fbcampanhas', label: 'Campanhas do Facebook', also: ['fbnovacampanha', 'fbcampanha', 'fbconjunto', 'fbanuncio'] }] },
+  { key: 'integracoes', label: 'Integrações', icon: Plug, items: [{ id: 'facebook', label: 'Facebook', also: ['fbvazio', 'fbconectar', 'fbpessoas', 'fbavisos', 'fbhistorico'] }, { id: 'fbcampanhas', label: 'Campanhas do Facebook', also: ['fbnovacampanha', 'fbcampanha', 'fbconjunto', 'fbanuncio', 'fbeditar'] }] },
   { key: 'financeiro', label: 'Financeiro', icon: Wallet, items: [{ id: 'resultado', label: 'Resultado' }, { id: 'custos', label: 'Custos' }] },
   { key: 'inventario', label: 'Inventário', icon: Network, items: [{ id: 'networks', label: 'Networks do GAM', also: ['conectar'] }, { id: 'rewards', label: 'Rewards', also: ['reward', 'rewardmetricas'] }, { id: 'adtags', label: 'Ad tags', also: ['adtag', 'adtagmetricas'] }, { id: 'loaders', label: 'Loaders', also: ['loader'] }, { id: 'regraspreco', label: 'Regras de preço', also: ['regrasite', 'regra', 'cascata'] }] },
   { key: 'equipe', label: 'Equipe', icon: Users, items: [{ id: 'equipe', label: 'Membros', also: ['membro'] }, { id: 'grupos', label: 'Grupos', also: ['grupo', 'grupoinativo'] }] },
@@ -1878,6 +1881,7 @@ const PROTO_PERMS: [string, string[]][] = [
   ['Sites', ['Ver sites e ad units', 'Atribuir sites', 'Cadastrar sites']],
   ['Relatórios', ['Ver relatórios']],
   ['Histórico', ['Ver o histórico']],
+  ['Facebook', ['Ver campanhas do Facebook', 'Conectar perfis do Facebook', 'Criar e editar campanhas', 'Configurar contas e limites']],
   ['API', ['Gerenciar chaves de API']],
 ]
 
@@ -2315,7 +2319,7 @@ function CompanyImageCard({ name, image, setImage, staff }: { name: string; imag
 /* ---------- Relatórios (construtor como o do HubSpot) ---------- */
 
 type Kind = 'money' | 'int' | 'pct'
-type Source = 'gam' | 'visits'
+type Source = 'gam' | 'visits' | 'facebook'
 type FieldDef = { key: string; label: string; kind: Kind; sources: Source[]; hint?: string }
 const R_METRICS: FieldDef[] = [
   { key: 'revenue', label: 'Receita', kind: 'money', sources: ['gam'] },
@@ -2328,6 +2332,11 @@ const R_METRICS: FieldDef[] = [
   { key: 'fill_rate', label: 'Taxa de preenchimento', kind: 'pct', sources: ['gam'] },
   { key: 'page_views', label: 'Page views', kind: 'int', sources: ['visits'] },
   { key: 'page_rpm', label: 'RPM por página', kind: 'money', sources: ['gam', 'visits'], hint: 'Receita do GAM ÷ page views × 1.000' },
+  { key: 'fb_spend', label: 'Gasto no Facebook', kind: 'money', sources: ['facebook'] },
+  { key: 'fb_link_clicks', label: 'Cliques no link', kind: 'int', sources: ['facebook'] },
+  { key: 'fb_cpc', label: 'CPC', kind: 'money', sources: ['facebook'] },
+  { key: 'fb_profit', label: 'Lucro do Facebook', kind: 'money', sources: ['gam', 'facebook'], hint: 'Receita pelos UTMs − gasto' },
+  { key: 'fb_roi', label: 'ROI do Facebook', kind: 'pct', sources: ['gam', 'facebook'], hint: 'Lucro ÷ gasto' },
 ]
 type DimDef = { key: string; label: string; only?: Source; hint?: string }
 const R_DIMENSIONS: DimDef[] = [
@@ -2340,6 +2349,10 @@ const R_DIMENSIONS: DimDef[] = [
   { key: 'device', label: 'Dispositivo', only: 'gam', hint: 'Não existe nas page views' },
   { key: 'ad_unit', label: 'Ad unit', only: 'gam', hint: 'Não existe nas page views' },
   { key: 'hour', label: 'Hora', only: 'visits', hint: 'Só com page views' },
+  { key: 'fb_account', label: 'Conta de anúncio', only: 'facebook' },
+  { key: 'fb_campaign', label: 'Campanha do Facebook', only: 'facebook' },
+  { key: 'fb_adset', label: 'Conjunto do Facebook', only: 'facebook' },
+  { key: 'fb_ad', label: 'Anúncio do Facebook', only: 'facebook' },
 ]
 const DIM_VALUES: Record<string, string[]> = {
   site: ['blogexemplo.com', 'receitas.blogexemplo.com', 'viagens.blogexemplo.com'],
@@ -2350,6 +2363,10 @@ const DIM_VALUES: Record<string, string[]> = {
   hour: Array.from({ length: 24 }, (_, h) => `${String(h).padStart(2, '0')}h`),
   week: ['29/09', '06/10', '13/10', '20/10'],
   month: ['Agosto', 'Setembro', 'Outubro'],
+  fb_account: ['CA 01 · Blog', 'CA 02 · Receitas', 'CA 07 · Blog Exemplo'],
+  fb_campaign: ['[RCT] Bolo de cenoura · BR', '[BLG] Cartão sem anuidade · BR', '[RCT] Air fryer · Advantage+', '[BLG] Concursos 2027 · LAL 1%'],
+  fb_adset: ['Brasil · 25-54 · Advantage+', 'Brasil · Mulheres 30-55', 'LAL 1% visitantes 30 dias'],
+  fb_ad: ['Vídeo 01 · Gancho do preço', 'Carrossel · 5 passos', 'Imagem · Antes e depois'],
 }
 
 type CustomDef = { key: string; name: string; formula: string; kind: Kind; decimals: number; description?: string }
@@ -2392,6 +2409,7 @@ const METRIC_NEON: Record<string, string> = {
   revenue: '#39FF14', revenue_gross: '#39FF14', ecpm: '#FFC400', rpmre: '#FFC400', page_rpm: '#FFC400',
   impressions: '#8B5CFF', viewable_impressions: '#8B5CFF', unfilled_impressions: '#FF1744',
   eligible_requests: '#FF7A00', requests: '#FF7A00', pmr: '#00E5FF', fill_rate: '#00E5FF', ctr: '#00E5FF', active_view: '#00E5FF',
+  fb_spend: '#FF1744', fb_profit: '#39FF14', fb_roi: '#00E5FF', fb_link_clicks: '#FF2BD6', fb_cpc: '#FFC400',
   clicks: '#FF2BD6', page_views: '#FF2BD6', floor: '#FF2BD6', opens: '#8B5CFF', completed: '#39FF14', pages: '#FF2BD6', rendered: '#8B5CFF', empty: '#FF1744',
 }
 /** A cor neon de uma métrica; métrica personalizada fica com o ciano. */
@@ -2420,6 +2438,7 @@ const INITIAL_REPORTS: ReportDraft[] = [
   { ...blank(), id: 'r3', name: 'Top ad units', metrics: ['revenue'], dims: ['ad_unit'], chart: 'bar', limit: 5, visibility: 'roles', roles: ['Gestor de tráfego'], owner: 'Ana Souza', updated: '24/10/2026' },
   { ...blank(), id: 'r4', name: 'Receita do mês', metrics: ['revenue'], dims: [], period: 'this_month', chart: 'kpi', compare: true, visibility: 'company', owner: 'João Lima', updated: '20/10/2026', styles: { revenue: { scale: { mode: 'red_green', from: 2000, to: 5000 } } } },
   { ...blank(), id: 'r5', name: 'Page views por hora', metrics: ['page_views'], dims: ['hour'], period: 'yesterday', chart: 'area', visibility: 'company', owner: 'Carla Mendes', updated: '18/10/2026' },
+  { ...blank(), id: 'r7', name: 'Facebook: gasto e lucro por dia', metrics: ['fb_spend', 'fb_profit'], dims: ['date'], chart: 'bar', visibility: 'roles', roles: ['Gestor de tráfego'], owner: 'Ana Souza', updated: 'Hoje, 09:30' },
   { ...blank(), id: 'r6', name: 'Receita por país', metrics: ['revenue'], dims: ['country'], chart: 'pie', visibility: 'company', updated: '15/10/2026' },
 ]
 const TEMPLATES: (Omit<ReportDraft, 'id' | 'owner' | 'updated'> & { key: string; desc: string })[] = [
@@ -2428,6 +2447,7 @@ const TEMPLATES: (Omit<ReportDraft, 'id' | 'owner' | 'updated'> & { key: string;
   { ...blank(), key: 'top_ad_units', name: 'Top ad units', desc: 'Os 10 ad units que mais renderam.', metrics: ['revenue', 'impressions'], dims: ['ad_unit'], chart: 'bar', limit: 10 },
   { ...blank(), key: 'revenue_by_country', name: 'Receita por país', desc: 'De onde vem a receita.', metrics: ['revenue'], dims: ['country'], chart: 'pie' },
   { ...blank(), key: 'page_rpm_by_site', name: 'RPM por página por site', desc: 'Quanto cada mil page views rendem em cada site.', metrics: ['page_rpm', 'page_views', 'revenue'], dims: ['site'], chart: 'table' },
+  { ...blank(), key: 'roi_by_fb_campaign', name: 'ROI por campanha do Facebook', desc: 'Gasto, receita pelos UTMs e ROI de cada campanha.', metrics: ['fb_spend', 'revenue', 'fb_roi'], dims: ['fb_campaign'], chart: 'table' },
   { ...blank(), key: 'page_views_by_hour', name: 'Page views por hora', desc: 'Os horários de mais visita, ontem.', metrics: ['page_views'], dims: ['hour'], period: 'yesterday', chart: 'line' },
 ]
 const VIS_LABEL: Record<Visibility, string> = { private: 'Só eu', company: 'Empresa inteira', roles: 'Papéis escolhidos' }
@@ -2447,6 +2467,17 @@ function metricSources(key: string, customs: CustomDef[]): Source[] {
   const vars = c ? formulaVars(c.formula) : []
   return vars.some((v) => v === 'page_views') ? ['gam', 'visits'] : ['gam']
 }
+/** Se alguma métrica escolhida vem do Facebook. */
+function usesFacebook(metrics: string[], customs: CustomDef[]) { return metrics.some((metric) => metricSources(metric, customs).includes('facebook')) }
+/** Por que a dimensão não combina com as métricas escolhidas, ou nulo quando combina. */
+function dimBlockReason(dimension: DimDef, metrics: string[], customs: CustomDef[]): string | null {
+  const visits = usesVisits(metrics, customs)
+  if (dimension.only === 'gam' && visits) return 'Não existe nas page views'
+  if (dimension.only === 'gam' && usesFacebook(metrics, customs)) return 'Não existe no Facebook'
+  if (dimension.only === 'visits' && !onlyVisits(metrics, customs)) return 'Só com page views'
+  if (dimension.only === 'facebook' && visits) return 'Não existe nas page views'
+  return null
+}
 function usesVisits(metrics: string[], customs: CustomDef[]) { return metrics.some((m) => metricSources(m, customs).includes('visits')) }
 function onlyVisits(metrics: string[], customs: CustomDef[]) { return metrics.length > 0 && metrics.every((m) => metricSources(m, customs).every((s) => s === 'visits')) }
 
@@ -2454,7 +2485,7 @@ function hash(text: string) { let h = 7; for (const ch of text) h = (h * 31 + ch
 function sampleValue(metric: string, row: string, kind: Kind) {
   const f = 0.55 + (hash(metric + row) % 900) / 1000
   if (kind === 'pct') return 30 + f * 40
-  if (kind === 'money') return metric.includes('rpm') || metric === 'ecpm' ? 2 + f * 3 : 4200 * f
+  if (kind === 'money') return metric === 'fb_cpc' ? 0.15 + f * 0.3 : metric === 'fb_spend' ? 2100 * f : metric.includes('rpm') || metric === 'ecpm' ? 2 + f * 3 : 4200 * f
   return Math.round(182000 * f)
 }
 const TIME_DIMS = ['date', 'week', 'month', 'hour']
@@ -3210,12 +3241,10 @@ function ReportBuilderScreen({ initial, customs, setCustoms, onBack, onSave }: {
   const toggle = (list: string[], key: string) => (list.includes(key) ? list.filter((x) => x !== key) : [...list, key])
   const matches = (label: string, key: string) => !search.trim() || label.toLowerCase().includes(search.toLowerCase()) || key.includes(search.toLowerCase())
   const visits = usesVisits(draft.metrics, customs)
-  const visitsOnly = onlyVisits(draft.metrics, customs)
-  const dimDisabled = (d: DimDef) => (d.only === 'gam' && visits) || (d.only === 'visits' && !visitsOnly)
+  const dimDisabled = (d: DimDef) => dimBlockReason(d, draft.metrics, customs) !== null
+  const facebook = usesFacebook(draft.metrics, customs)
   const setMetrics = (metrics: string[]) => {
-    const nextVisits = usesVisits(metrics, customs)
-    const nextOnly = onlyVisits(metrics, customs)
-    const dims = draft.dims.filter((key) => { const d = R_DIMENSIONS.find((x) => x.key === key)!; return !((d.only === 'gam' && nextVisits) || (d.only === 'visits' && !nextOnly)) })
+    const dims = draft.dims.filter((key) => dimBlockReason(R_DIMENSIONS.find((x) => x.key === key)!, metrics, customs) === null)
     update({ metrics, dims, chart: chartAllowed(draft.chart, metrics.length, dims.length) ? draft.chart : 'table' })
   }
   const setDims = (dims: string[]) => update({ dims, chart: chartAllowed(draft.chart, draft.metrics.length, dims.length) ? draft.chart : 'table' })
@@ -3249,9 +3278,16 @@ function ReportBuilderScreen({ initial, customs, setCustoms, onBack, onSave }: {
           </div>
           <PanelTitle>Métricas</PanelTitle>
           <div className="grid gap-0.5 px-2">
-            {R_METRICS.filter((m) => matches(m.label, m.key)).map((m) => (
+            {R_METRICS.filter((m) => !m.sources.includes('facebook') && matches(m.label, m.key)).map((m) => (
               <FieldItem key={m.key} label={m.label} picked={draft.metrics.includes(m.key)} disabled={!editable} badge={m.sources.includes('visits') ? 'visitas' : undefined} onClick={() => setMetrics(toggle(draft.metrics, m.key))} />
             ))}
+          </div>
+          <PanelTitle>Facebook</PanelTitle>
+          <div className="grid gap-0.5 px-2">
+            {R_METRICS.filter((m) => m.sources.includes('facebook') && matches(m.label, m.key)).map((m) => (
+              <FieldItem key={m.key} label={m.label} picked={draft.metrics.includes(m.key)} disabled={!editable} onClick={() => setMetrics(toggle(draft.metrics, m.key))} />
+            ))}
+            <p className="px-2.5 py-1.5 text-[12px] text-muted-foreground">A receita de cada campanha vem do Ad Manager, pelos UTMs.</p>
           </div>
           <PanelTitle action={<Button variant="ghost" size="sm" className="h-7 px-2 text-[13px]" onClick={() => setCreating(true)}><Plus className="h-3.5 w-3.5" />Nova</Button>}>Minhas métricas</PanelTitle>
           <div className="grid gap-0.5 px-2">
@@ -3263,7 +3299,7 @@ function ReportBuilderScreen({ initial, customs, setCustoms, onBack, onSave }: {
           <PanelTitle>Dimensões</PanelTitle>
           <div className="grid gap-0.5 px-2 pb-4">
             {R_DIMENSIONS.filter((d) => matches(d.label, d.key)).map((d) => (
-              <FieldItem key={d.key} label={d.label} picked={draft.dims.includes(d.key)} disabled={!editable || dimDisabled(d)} hint={d.hint} badge={dimDisabled(d) ? d.hint : undefined} onClick={() => setDims(toggle(draft.dims, d.key))} />
+              <FieldItem key={d.key} label={d.label} picked={draft.dims.includes(d.key)} disabled={!editable || dimDisabled(d)} hint={d.hint} badge={dimBlockReason(d, draft.metrics, customs) ?? undefined} onClick={() => setDims(toggle(draft.dims, d.key))} />
             ))}
           </div>
         </aside>
@@ -3282,12 +3318,12 @@ function ReportBuilderScreen({ initial, customs, setCustoms, onBack, onSave }: {
               {draft.dims.map((d) => <span key={d} className="inline-flex h-7 items-center gap-1 rounded-full border border-dashed bg-card pl-3 pr-1 text-[13px]">{R_DIMENSIONS.find((x) => x.key === d)?.label}{editable && <button onClick={() => setDims(draft.dims.filter((x) => x !== d))} aria-label="Tirar dimensão" className="rounded-full p-1 hover:bg-accent"><X className="h-3 w-3" /></button>}</span>)}
             </div>
             {draft.chart !== 'table' && (
-              <Card pad footerNote={`${PERIODS.find(([k]) => k === draft.period)![1]}${draft.compare ? ', comparando com o período anterior' : ''} · em R$, a sua moeda · só os sites que você vê`}>
+              <Card pad footerNote={`${PERIODS.find(([k]) => k === draft.period)![1]}${draft.compare ? ', comparando com o período anterior' : ''} · em R$, a sua moeda${facebook ? ' (gasto em dólar convertido pela cotação do dia)' : ''} · só os sites que você vê`}>
                 <ReportChart draft={draft} customs={customs} />
               </Card>
             )}
             {draft.chart !== 'table' && draft.chart !== 'kpi' && <h2 className="text-[14px] font-semibold">Dados</h2>}
-            {draft.chart === 'table' && <p className="text-[13px] text-muted-foreground">{PERIODS.find(([k]) => k === draft.period)![1]} · em R$, a sua moeda · só os sites que você vê</p>}
+            {draft.chart === 'table' && <p className="text-[13px] text-muted-foreground">{PERIODS.find(([k]) => k === draft.period)![1]} · em R$, a sua moeda{facebook ? ' (gasto em dólar convertido pela cotação do dia)' : ''} · só os sites que você vê</p>}
             {draft.chart !== 'kpi' && <ReportTable draft={draft} customs={customs} />}
           </div>
         </main>
@@ -7508,7 +7544,7 @@ type FbProfile = { id: string; name: string; client: string; since: string; acce
 type FbAccountState = 'active' | 'unsettled' | 'disabled'
 type FbOnLimit = 'warn' | 'pause'
 type FbAccount = { id: string; name: string; business: string; client: string; profile: string; state: FbAccountState; currency: 'BRL' | 'USD'; spend30: number; site: string | null; dailyLimit: number | null; monthlyLimit: number | null; spentMonth: number; onLimit: FbOnLimit }
-type FbEntity = { id: string; level: FbLevel; name: string; parent: string | null; campaign: string; account: string; on: boolean; budget: number | null; spend: number; roi: number; cpc: number; utm: 'ok' | 'missing' | null }
+type FbEntity = { id: string; level: FbLevel; name: string; parent: string | null; campaign: string; account: string; on: boolean; budget: number | null; spend: number; roi: number; cpc: number; utm: 'ok' | 'missing' | null; review?: 'pending' | 'rejected'; reviewReason?: string }
 type FbMember = { email: string; name: string; role: string; accounts: string[]; daily: number | null; monthly: number | null; spentMonth: number }
 /** Quem está olhando a tela no protótipo: o dono da Empresa, um funcionário ou a equipe Groone. */
 type FbViewer = { kind: 'owner' } | { kind: 'member'; email: string } | { kind: 'staff' }
@@ -7563,9 +7599,9 @@ const FB_CAMPAIGN_SEEDS: [string, string, number | null, number, number, boolean
   ['[BLG] Aposentadoria INSS · Interesses', 'act_1029384756', 220, 5480, 0.11, true],
   ['[RCT] Air fryer · Advantage+', 'act_5566778899', 120, 3020, 0.84, true],
   ['[BLG] Concursos 2027 · LAL 1%', 'act_9988776655', 160, 4870, -0.07, true],
-  ['[BLG] Dicas de economia · Broad', 'act_1029384756', 90, 2410, -0.34, true],
+  ['[BLG] Dicas de economia · Broad', 'act_1029384756', 90, 2410, -0.34, false],
   ['[VGM] Pacotes Nordeste · Teste', 'act_1122334455', 70, 2140, 0, true],
-  ['[RCT] Receitas de Natal · BR', 'act_5566778899', 100, 1980, 0.21, false],
+  ['[RCT] Receitas de Natal · BR', 'act_5566778899', 160, 1980, 0.21, false],
   ['[TEC] Celulares até R$ 1.500', 'act_4455667788', 400, 12100, 0.29, true],
   ['[TEC] Melhores fones 2026', 'act_4455667788', 300, 10550, -0.12, true],
   ['[VF] Passagens baratas · LATAM', 'act_7766554433', 170, 5120, 0.47, true],
@@ -7593,7 +7629,99 @@ function fbBuildEntities(): FbEntity[] {
   })
   return list
 }
-const FB_INITIAL_ENTITIES = fbBuildEntities()
+/** Marca dois anúncios de exemplo na primeira campanha: um reprovado pelo Facebook e um em revisão. */
+function fbWithReviews(entities: FbEntity[]): FbEntity[] {
+  const first = entities[0].id
+  return entities.map((entity) => {
+    if (entity.id === `${first}12`) return { ...entity, review: 'rejected' as const, reviewReason: 'A página de destino não carregou para o revisor do Facebook (página de destino não funcional).' }
+    if (entity.id === `${first}22`) return { ...entity, review: 'pending' as const }
+    return entity
+  })
+}
+const FB_INITIAL_ENTITIES = fbWithReviews(fbBuildEntities())
+
+/** Papéis que têm a permissão "Conectar perfis do Facebook" no exemplo; o dono sempre pode. */
+const FB_CONNECT_ROLES = ['Gestor de tráfego']
+/** Se quem está olhando pode conectar perfis: o dono ou quem tem a permissão pelo papel. */
+function fbCanConnect(viewer: FbViewer, members: FbMember[]) {
+  if (viewer.kind === 'owner') return true
+  if (viewer.kind === 'staff') return false
+  const member = members.find((item) => item.email === viewer.email)
+  return !!member && FB_CONNECT_ROLES.includes(member.role)
+}
+/** O nome de quem está olhando, para o histórico. */
+function fbViewerName(viewer: FbViewer, members: FbMember[]) {
+  if (viewer.kind === 'owner') return 'Pedro Henrique'
+  if (viewer.kind === 'staff') return 'Equipe Groone'
+  return members.find((item) => item.email === viewer.email)?.name ?? viewer.email
+}
+
+/* Histórico de mudanças: quem mudou o quê, pelo Avant, por regra, pelo limite ou direto no Facebook. */
+type FbChangeOrigin = 'avant' | 'rule' | 'limit' | 'facebook'
+type FbChange = { id: string; when: string; who: string; origin: FbChangeOrigin; client: string; account: string; campaign: string | null; entity: string | null; entityName: string; level: FbLevel | null; what: string; detail: string }
+/** Uma mudança feita agora pelo Avant: quem e quando vêm de quem está olhando. */
+type FbChangeInput = Omit<FbChange, 'id' | 'when' | 'who' | 'origin'>
+const FB_ORIGIN: Record<FbChangeOrigin, string> = { avant: 'Pelo Avant', rule: 'Regra automática', limit: 'Limite de gasto', facebook: 'No Facebook' }
+
+/** Os dados de onde a mudança aconteceu, a partir da entidade e da conta dela. */
+function fbAbout(entity: FbEntity, accounts: FbAccount[]) {
+  const account = accounts.find((item) => item.id === entity.account)
+  return { client: account?.client ?? FB_MY_CLIENT, account: entity.account, campaign: entity.campaign, entity: entity.id, entityName: entity.name, level: entity.level }
+}
+
+/** Histórico de exemplo das últimas semanas. */
+function fbInitialHistory(): FbChange[] {
+  const campaigns = FB_INITIAL_ENTITIES.filter((entity) => entity.level === 'campaign')
+  const [bolo, cartao, , air, concursos] = campaigns
+  const pacotes = campaigns.find((entity) => entity.name.startsWith('[VGM]'))!
+  const find = (id: string) => FB_INITIAL_ENTITIES.find((entity) => entity.id === id)!
+  const about = (entity: FbEntity) => fbAbout(entity, FB_INITIAL_ACCOUNTS)
+  return [
+    { id: 'h1', when: '18/11 12:05', who: 'Facebook', origin: 'facebook', ...about(find(`${bolo.id}12`)), what: 'Reprovou o anúncio', detail: 'Página de destino não funcional' },
+    { id: 'h2', when: '18/11 11:42', who: 'Ana Souza', origin: 'avant', ...about(find(`${bolo.id}12`)), what: 'Editou o anúncio', detail: 'Texto principal e link. Foi para a revisão do Facebook.' },
+    { id: 'h3', when: '18/11 10:15', who: 'Ana Souza', origin: 'avant', ...about(find(`${bolo.id}22`)), what: 'Editou o anúncio', detail: 'Trocou a imagem. Em revisão no Facebook.' },
+    { id: 'h4', when: '18/11 06:00', who: 'Regra automática', origin: 'rule', ...about(bolo), what: 'Subiu o orçamento', detail: 'R$ 136,00 → R$ 150,00. ROI de 64% passou do limite de 50%.' },
+    { id: 'h5', when: '17/11 19:20', who: 'Carla Mendes', origin: 'avant', ...about(find(`${cartao.id}2`)), what: 'Pausou', detail: '' },
+    { id: 'h6', when: '17/11 15:03', who: 'Rafael Dias', origin: 'facebook', ...about(concursos), what: 'Mudou o orçamento', detail: 'R$ 140,00 → R$ 160,00. Feito no Gerenciador de Anúncios, fora do Avant: o limite não foi checado.' },
+    { id: 'h7', when: '17/11 09:10', who: 'Pedro Henrique', origin: 'avant', client: FB_MY_CLIENT, account: 'act_5566778899', campaign: null, entity: null, entityName: 'CA 02 · Receitas', level: null, what: 'Mudou o limite diário da conta', detail: 'R$ 350,00 → R$ 400,00' },
+    { id: 'h8', when: '15/11 14:30', who: 'Ana Souza', origin: 'avant', ...about(air), what: 'Criou a campanha', detail: '2 conjuntos e 4 anúncios, criada pausada' },
+    { id: 'h9', when: '31/10 18:20', who: 'Avant', origin: 'limit', ...about(pacotes), what: 'Pausou pelo limite', detail: 'A conta CA 03 · Viagens (teste) chegou ao limite mensal de R$ 3.000,00. Volta no dia 1º ou quando o limite subir.' },
+    { id: 'h10', when: '30/10 10:02', who: 'Marina Costa', origin: 'avant', ...about(campaigns.find((entity) => entity.name.startsWith('[TEC] Celulares'))!), what: 'Ligou as regras automáticas', detail: 'Escalar e pausar por ROI' },
+  ]
+}
+const FB_INITIAL_HISTORY = fbInitialHistory()
+
+/* Avisos da integração: o que aparece no painel e por e-mail para quem precisa agir. */
+type FbAlertKind = 'limit_paused' | 'limit_near' | 'profile_expired' | 'ad_rejected' | 'account_unsettled' | 'account_disabled'
+type FbAlert = { id: string; when: string; kind: FbAlertKind; client: string; account: string; text: string; action: string; target: string | null; read: boolean }
+const FB_ALERT_KIND: Record<FbAlertKind, [string, 'bad' | 'ochre']> = {
+  limit_paused: ['Pausado pelo limite', 'bad'],
+  limit_near: ['Perto do limite', 'ochre'],
+  profile_expired: ['Perfil desconectado', 'bad'],
+  ad_rejected: ['Anúncio reprovado', 'bad'],
+  account_unsettled: ['Pagamento pendente', 'ochre'],
+  account_disabled: ['Conta desativada', 'bad'],
+}
+const FB_INITIAL_ALERTS: FbAlert[] = [
+  { id: 'a1', when: 'Hoje, 12:05', kind: 'ad_rejected', client: FB_MY_CLIENT, account: 'act_5566778899', text: 'O Facebook reprovou "Carrossel · 5 passos" em [RCT] Bolo de cenoura · BR: a página de destino não carregou para o revisor.', action: 'Ver anúncio', target: `${FB_INITIAL_ENTITIES[0].id}12`, read: false },
+  { id: 'a2', when: 'Hoje, 08:00', kind: 'limit_near', client: FB_MY_CLIENT, account: 'act_5566778899', text: 'CA 02 · Receitas gastou R$ 9.120,00 de R$ 10.000,00 no mês (91%). No limite, o Avant só avisa: a conta está em "avisar".', action: 'Configurar conta', target: null, read: false },
+  { id: 'a3', when: 'Ontem, 22:40', kind: 'profile_expired', client: FB_MY_CLIENT, account: 'act_9988776655', text: 'O acesso de Rafael Dias ao Facebook expirou. CA 07 · Blog Exemplo parou de sincronizar e as regras dela estão paradas até ele reconectar.', action: 'Reconectar', target: null, read: true },
+  { id: 'a4', when: '16/11, 09:12', kind: 'account_unsettled', client: FB_MY_CLIENT, account: 'act_9988776655', text: 'CA 07 · Blog Exemplo está com pagamento pendente no Facebook. Os anúncios dela não rodam até o pagamento ser feito.', action: 'Abrir pagamentos no Facebook', target: null, read: true },
+  { id: 'a5', when: '10/11, 15:30', kind: 'account_disabled', client: FB_MY_CLIENT, account: 'act_3344556677', text: 'O Facebook desativou CA antiga. Ela fica no Avant só para consulta. O motivo e o pedido de revisão ficam na Qualidade da conta, no Facebook.', action: 'Abrir Qualidade da conta', target: null, read: true },
+  { id: 'a6', when: '31/10, 18:20', kind: 'limit_paused', client: FB_MY_CLIENT, account: 'act_1122334455', text: 'CA 03 · Viagens (teste) chegou ao limite mensal de R$ 3.000,00. O Avant pausou [VGM] Pacotes Nordeste · Teste. Volta no dia 1º ou quando o limite subir.', action: 'Ver campanha', target: FB_INITIAL_ENTITIES.find((entity) => entity.name.startsWith('[VGM]'))!.id, read: true },
+  { id: 'a7', when: 'Hoje, 07:00', kind: 'limit_near', client: 'Viagem Fácil', account: 'act_7766554433', text: 'CA Promo gastou US$ 7.410,00 de US$ 8.000,00 no mês (93%).', action: 'Ver conta', target: null, read: false },
+  { id: 'a8', when: 'Hoje, 09:02', kind: 'profile_expired', client: 'Viagem Fácil', account: 'act_7766554433', text: 'O Facebook pediu um checkpoint no perfil de Lucas Prado. A sincronia continua, mas pode parar a qualquer hora.', action: 'Reconectar', target: null, read: false },
+]
+/** Quem recebe cada aviso: o dono, quem usa a conta e quem conectou o perfil; e se vai também por e-mail. */
+type FbAlertRecipients = { owner: boolean; users: boolean; connector: boolean; email: boolean }
+const FB_INITIAL_RECIPIENTS: Record<FbAlertKind, FbAlertRecipients> = {
+  limit_paused: { owner: true, users: true, connector: false, email: true },
+  limit_near: { owner: true, users: true, connector: false, email: false },
+  profile_expired: { owner: true, users: false, connector: true, email: true },
+  ad_rejected: { owner: false, users: true, connector: false, email: true },
+  account_unsettled: { owner: true, users: true, connector: false, email: true },
+  account_disabled: { owner: true, users: true, connector: true, email: true },
+}
 
 /** Dinheiro na moeda da conta de anúncio, como no Genius. */
 const fbMoney = (value: number, whole = false, currency: 'BRL' | 'USD' = 'BRL') => new Intl.NumberFormat('pt-BR', { style: 'currency', currency, maximumFractionDigits: whole ? 0 : 2 }).format(value)
@@ -7830,11 +7958,16 @@ function FbMemberDialog({ member, accounts, onClose, onSave }: { member: FbMembe
   )
 }
 
-/** Tela Facebook: perfis, contas de anúncio (site, quem usa, limites) e a aba das pessoas com os limites de cada uma. */
-function FacebookScreen({ accounts, setAccounts, members, setMembers, viewer, setViewer, startTab = 'accounts', go, openAccount }: { accounts: FbAccount[]; setAccounts: (accounts: FbAccount[]) => void; members: FbMember[]; setMembers: (members: FbMember[]) => void; viewer: FbViewer; setViewer: (viewer: FbViewer) => void; startTab?: 'accounts' | 'people'; go: (screen: Screen) => void; openAccount: (id: string) => void }) {
+/** As abas da tela Facebook. */
+type FbTab = 'accounts' | 'people' | 'alerts' | 'history'
+
+/** Tela Facebook: perfis, contas de anúncio (site, quem usa, limites), pessoas e limites, avisos e histórico. */
+function FacebookScreen({ accounts, setAccounts, members, setMembers, viewer, setViewer, startTab = 'accounts', go, openAccount, alerts, setAlerts, history, actAlert, addChange }: { accounts: FbAccount[]; setAccounts: (accounts: FbAccount[]) => void; members: FbMember[]; setMembers: (members: FbMember[]) => void; viewer: FbViewer; setViewer: (viewer: FbViewer) => void; startTab?: FbTab; go: (screen: Screen) => void; openAccount: (id: string) => void; alerts: FbAlert[]; setAlerts: (alerts: FbAlert[]) => void; history: FbChange[]; actAlert: (alert: FbAlert) => void; addChange: (change: FbChangeInput) => void }) {
   const staff = viewer.kind === 'staff'
   const owner = viewer.kind === 'owner'
-  const [tab, setTab] = useState<'accounts' | 'people'>(owner ? startTab : 'accounts')
+  const canConnect = fbCanConnect(viewer, members)
+  const myName = fbViewerName(viewer, members)
+  const [tab, setTab] = useState<FbTab>(startTab === 'people' && !owner ? 'accounts' : startTab)
   const [filter, setFilter] = useState<'all' | 'nosite' | 'problem'>('all')
   const [query, setQuery] = useState('')
   const [client, setClient] = useState('all')
@@ -7848,6 +7981,8 @@ function FacebookScreen({ accounts, setAccounts, members, setMembers, viewer, se
   const shown = (filter === 'nosite' ? withoutSite : filter === 'problem' ? problems : visible).filter((account) => `${account.name} ${account.id} ${account.client}`.toLowerCase().includes(query.toLowerCase()))
   const profiles = FB_PROFILES.filter((profile) => (staff ? client === 'all' || profile.client === client : profile.client === FB_MY_CLIENT && (owner || visible.some((account) => account.profile === profile.id))))
   const expired = profiles.filter((profile) => profile.access === 'expired')
+  const visibleIds = fbVisibleAccounts(accounts, viewer, members).filter((account) => client === 'all' || account.client === client).map((account) => account.id)
+  const unreadAlerts = alerts.filter((alert) => visibleIds.includes(alert.account) && !alert.read).length
   const clients = [...new Set(accounts.map((account) => account.client))]
   /** Grava o site escolhido para a conta. */
   const link = (id: string, site: string) => { setAccounts(accounts.map((account) => (account.id === id ? { ...account, site } : account))); toast.success(`Conta vinculada a ${site}`, { description: 'A receita dos últimos 30 dias entra na próxima sincronia, em até 1 hora.' }) }
@@ -7856,12 +7991,14 @@ function FacebookScreen({ accounts, setAccounts, members, setMembers, viewer, se
     setAccounts(accounts.map((account) => (account.id === saved.id ? saved : account)))
     setMembers(members.map((member) => ({ ...member, accounts: people.includes(member.email) ? [...new Set([...member.accounts, saved.id])] : member.accounts.filter((id) => id !== saved.id) })))
     setEditing(null)
+    const before = accounts.find((account) => account.id === saved.id)
+    if (before && (before.dailyLimit !== saved.dailyLimit || before.monthlyLimit !== saved.monthlyLimit)) addChange({ client: saved.client, account: saved.id, campaign: null, entity: null, entityName: saved.name, level: null, what: 'Mudou os limites da conta', detail: `Diário ${saved.dailyLimit === null ? 'sem limite' : fbMoney(saved.dailyLimit)}, mensal ${saved.monthlyLimit === null ? 'sem limite' : fbMoney(saved.monthlyLimit)}` })
     toast.success('Conta salva')
   }
   return (
     <>
       <PageHeader title="Facebook" sub={staff ? 'Perfis e contas de anúncio de todos os clientes. Só leitura.' : 'Perfis conectados e contas de anúncio. Cada conta precisa de um site para o Avant calcular receita e ROI.'}
-        actions={staff ? undefined : <><Button variant="outline" onClick={() => setGuide(true)}>Como funciona</Button>{owner && <Button onClick={() => go('fbconectar')}><Plus className="h-4 w-4" />Conectar perfil</Button>}</>} />
+        actions={staff ? undefined : <><Button variant="outline" onClick={() => setGuide(true)}>Como funciona</Button>{canConnect && <Button onClick={() => go('fbconectar')}><Plus className="h-4 w-4" />Conectar perfil</Button>}</>} />
       <Body>
         {staff ? <FbStaffNote /> : <FbViewerSwitch viewer={viewer} setViewer={(next) => { setViewer(next); setTab('accounts') }} members={members} />}
         {expired.map((profile) => (
@@ -7871,23 +8008,26 @@ function FacebookScreen({ accounts, setAccounts, members, setMembers, viewer, se
             {!staff && <Button size="sm" variant="outline" onClick={() => toast('No Avant de verdade, abre o login do Facebook para quem conectou o perfil.')}>Reconectar</Button>}
           </div>
         ))}
-        {owner && (
-          <div className="flex w-fit rounded-md border bg-card p-0.5" role="tablist" aria-label="Seção">
-            {([['accounts', 'Contas e perfis'], ['people', 'Pessoas e limites']] as const).map(([key, label]) => (
-              <button key={key} role="tab" aria-selected={tab === key} onClick={() => setTab(key)} className={cn('h-8 rounded-[4px] px-3 text-[13px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', tab === key ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground')}>{label}</button>
-            ))}
-          </div>
-        )}
-        {tab === 'people' && owner ? (
+        <div className="flex w-fit flex-wrap rounded-md border bg-card p-0.5" role="tablist" aria-label="Seção">
+          {([['accounts', 'Contas e perfis'], ['people', 'Pessoas e limites'], ['alerts', 'Avisos'], ['history', 'Histórico']] as const).filter(([key]) => key !== 'people' || owner).map(([key, label]) => (
+            <button key={key} role="tab" aria-selected={tab === key} onClick={() => setTab(key)} className={cn('flex h-8 items-center gap-1.5 rounded-[4px] px-3 text-[13px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', tab === key ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground')}>{label}{key === 'alerts' && unreadAlerts > 0 && <span className="rounded-full bg-foreground px-1.5 text-[11px] leading-[18px] text-background tnum">{unreadAlerts}</span>}</button>
+          ))}
+        </div>
+        {tab === 'alerts' ? (
+          <FbAlertsPanel alerts={alerts} setAlerts={setAlerts} accountIds={visibleIds} owner={owner} staff={staff} act={actAlert} />
+        ) : tab === 'history' ? (
+          <FbHistoryPanel history={history} accountIds={visibleIds} staff={staff} />
+        ) : tab === 'people' && owner ? (
           <section className="grid gap-3">
             <div><h2 className="text-[20px] font-semibold tracking-tight">Pessoas e limites</h2><p className="mt-1 max-w-[80ch] text-[14px] text-muted-foreground">Cada pessoa recebe contas de anúncio, uma a uma, nunca a BM inteira. Ela só vê e usa as contas marcadas. Os limites somam todas as contas dela e valem junto com o limite de cada conta: vale o menor.</p></div>
             <Table min={900}>
-              <thead><tr><th className={th}>Pessoa</th><th className={th}>Contas de anúncio</th><th className={cn(th, 'text-right')}>Limite diário</th><th className={th}>Gasto no mês</th><th className={th}><span className="sr-only">Ação</span></th></tr></thead>
+              <thead><tr><th className={th}>Pessoa</th><th className={th}>Contas de anúncio</th><th className={th}>Conecta perfis</th><th className={cn(th, 'text-right')}>Limite diário</th><th className={th}>Gasto no mês</th><th className={th}><span className="sr-only">Ação</span></th></tr></thead>
               <tbody>
                 {members.map((member) => (
                   <tr key={member.email} className="hover:bg-muted">
                     <td className={td}><div className="flex items-center gap-3"><Avatar name={member.name} /><div><div className="font-medium">{member.name}</div><div className="text-[13px] text-muted-foreground">{member.role}</div></div></div></td>
                     <td className={cn(td, 'text-[13px]')}>{member.accounts.length ? <ul className="grid gap-0.5">{member.accounts.map((id) => { const account = accounts.find((item) => item.id === id); return <li key={id}>{account?.name} <span className="text-muted-foreground">· {account?.business}</span></li> })}</ul> : <span className="text-muted-foreground">Nenhuma</span>}</td>
+                    <td className={cn(td, 'text-[13px]')}>{FB_CONNECT_ROLES.includes(member.role) ? <span>Sim<span className="block text-muted-foreground">pelo papel {member.role}</span></span> : <span className="text-muted-foreground">Não</span>}</td>
                     <td className={cn(td, 'text-right tnum')}>{member.daily === null ? <span className="text-[13px] text-muted-foreground">Sem limite</span> : fbMoney(member.daily, true)}</td>
                     <td className={td}><FbLimitBar used={member.spentMonth} limit={member.monthly} /></td>
                     <td className={cn(td, 'text-right')}><Button size="sm" variant="outline" onClick={() => setEditingMember(member)}>Configurar</Button></td>
@@ -7895,7 +8035,7 @@ function FacebookScreen({ accounts, setAccounts, members, setMembers, viewer, se
                 ))}
               </tbody>
             </Table>
-            <p className="text-[13px] text-muted-foreground">As pessoas vêm da Equipe. Quem não tem nenhuma conta marcada vê a tela do Facebook vazia, com o aviso para pedir acesso ao dono.</p>
+            <p className="text-[13px] text-muted-foreground">As pessoas vêm da Equipe. Quem não tem nenhuma conta marcada vê a tela do Facebook vazia, com o aviso para pedir acesso ao dono. Quem pode conectar perfis sai da permissão "Conectar perfis do Facebook", em Papéis e permissões; as contas que essa pessoa trouxer ficam liberadas para ela e para o dono.</p>
           </section>
         ) : (
           <>
@@ -7912,7 +8052,7 @@ function FacebookScreen({ accounts, setAccounts, members, setMembers, viewer, se
                       <td className={cn(td, 'text-right tnum')}>{accounts.filter((account) => account.profile === profile.id).length}</td>
                       <td className={cn(td, 'text-muted-foreground')}>{profile.synced}</td>
                       <td className={cn(td, 'text-right')}>
-                        {owner && (
+                        {(owner || (canConnect && profile.name === myName)) && (
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild><Button size="icon" variant="ghost" aria-label={`Ações de ${profile.name}`}><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
@@ -8070,11 +8210,13 @@ function FbToggleDialog({ entity, onClose, onConfirm }: { entity: FbEntity | nul
 const FB_RULED = [FB_INITIAL_ENTITIES[0].id, FB_INITIAL_ENTITIES.find((entity) => entity.level === 'campaign' && entity.name.startsWith('[RCT] Air'))!.id, FB_INITIAL_ENTITIES.find((entity) => entity.level === 'adset')!.id, FB_INITIAL_ENTITIES.find((entity) => entity.level === 'campaign' && entity.name.startsWith('[TEC] Celulares'))!.id]
 
 /** Tabela de campanhas, conjuntos ou anúncios, com liga/pausa, gasto, receita, lucro e ROI. */
-function FbEntityTable({ rows, accounts, factor, open, askToggle, showParent, staff }: { rows: FbEntity[]; accounts: FbAccount[]; factor: number; open: (entity: FbEntity) => void; askToggle: (entity: FbEntity) => void; showParent: boolean; staff: boolean }) {
+function FbEntityTable({ rows, accounts, factor, open, askToggle, showParent, staff, selected, setSelected }: { rows: FbEntity[]; accounts: FbAccount[]; factor: number; open: (entity: FbEntity) => void; askToggle: (entity: FbEntity) => void; showParent: boolean; staff: boolean; selected?: string[]; setSelected?: (ids: string[]) => void }) {
   const level = rows[0]?.level ?? 'campaign'
+  const picking = !staff && !!selected && !!setSelected
+  const allPicked = picking && rows.length > 0 && rows.every((entity) => selected.includes(entity.id))
   return (
     <Table min={1040}>
-      <thead><tr><th className={cn(th, 'w-14')}><span className="sr-only">Ligada</span></th><th className={th}>{FB_LEVEL[level].one}</th><th className={cn(th, 'text-right')}>Orçamento/dia</th><th className={cn(th, 'text-right')}>Gasto</th><th className={cn(th, 'text-right')}>Receita</th><th className={cn(th, 'text-right')}>Lucro</th><th className={cn(th, 'text-right')}>ROI</th><th className={cn(th, 'text-right')}>CPC</th><th className={th}>{level === 'ad' ? 'UTMs' : 'Regras'}</th></tr></thead>
+      <thead><tr>{picking && <th className={cn(th, 'w-10')}><input type="checkbox" aria-label="Marcar todas desta página" className="size-4 accent-[hsl(var(--foreground))]" checked={allPicked} onChange={() => setSelected(allPicked ? selected.filter((id) => !rows.some((entity) => entity.id === id)) : [...new Set([...selected, ...rows.map((entity) => entity.id)])])} /></th>}<th className={cn(th, 'w-14')}><span className="sr-only">Ligada</span></th><th className={th}>{FB_LEVEL[level].one}</th><th className={cn(th, 'text-right')}>Orçamento/dia</th><th className={cn(th, 'text-right')}>Gasto</th><th className={cn(th, 'text-right')}>Receita</th><th className={cn(th, 'text-right')}>Lucro</th><th className={cn(th, 'text-right')}>ROI</th><th className={cn(th, 'text-right')}>CPC</th><th className={th}>{level === 'ad' ? 'UTMs' : 'Regras'}</th></tr></thead>
       <tbody>
         {rows.map((entity) => {
           const site = fbSiteOf(entity, accounts)
@@ -8083,9 +8225,10 @@ function FbEntityTable({ rows, accounts, factor, open, askToggle, showParent, st
           const account = accounts.find((item) => item.id === entity.account)
           const currency = account?.currency ?? 'BRL'
           return (
-            <tr key={entity.id} className="hover:bg-muted">
+            <tr key={entity.id} className={cn('hover:bg-muted', picking && selected.includes(entity.id) && 'bg-muted')}>
+              {picking && <td className={td}><input type="checkbox" aria-label={`Marcar ${entity.name}`} className="size-4 accent-[hsl(var(--foreground))]" checked={selected.includes(entity.id)} onChange={() => setSelected(selected.includes(entity.id) ? selected.filter((id) => id !== entity.id) : [...selected, entity.id])} /></td>}
               <td className={td}><Switch aria-label={entity.on ? `Pausar ${entity.name}` : `Ativar ${entity.name}`} checked={entity.on} disabled={staff} onCheckedChange={() => askToggle(entity)} /></td>
-              <td className={td}><button className="text-left font-medium hover:underline" onClick={() => open(entity)}>{entity.name}</button><div className="text-[12px] text-muted-foreground">{staff && `${account?.client} · `}{parent ? parent.name : account?.name}{site ? <> · <span className="font-mono">{site}</span></> : ' · sem site'}</div></td>
+              <td className={td}><span className="inline-flex flex-wrap items-center gap-2"><button className="text-left font-medium hover:underline" onClick={() => open(entity)}>{entity.name}</button>{entity.review === 'rejected' && <Badge tone="bad">Reprovado</Badge>}{entity.review === 'pending' && <Badge>Em revisão</Badge>}</span><div className="text-[12px] text-muted-foreground">{staff && `${account?.client} · `}{parent ? parent.name : account?.name}{site ? <> · <span className="font-mono">{site}</span></> : ' · sem site'}</div></td>
               <td className={cn(td, 'text-right tnum')}>{entity.budget !== null ? fbMoney(entity.budget, true, currency) : <span className="text-[12px] text-muted-foreground">{entity.level === 'campaign' ? 'Nos conjuntos' : entity.level === 'adset' ? 'Na campanha' : '—'}</span>}</td>
               <td className={cn(td, 'text-right tnum')}>{fbMoney(entity.spend * factor, false, currency)}</td>
               <td className={cn(td, 'text-right tnum')}>{numbers.revenue === null ? <span className="text-muted-foreground" title="A conta não tem site vinculado">—</span> : fbMoney(numbers.revenue, false, currency)}</td>
@@ -8102,10 +8245,12 @@ function FbEntityTable({ rows, accounts, factor, open, askToggle, showParent, st
 }
 
 /** Tela Campanhas: números do período, gráfico de gasto e receita e as abas campanhas, conjuntos e anúncios. */
-function FbCampaignsScreen({ entities, setEntities, accounts, members, viewer, setViewer, accountFilter, setAccountFilter, open, create }: { entities: FbEntity[]; setEntities: (entities: FbEntity[]) => void; accounts: FbAccount[]; members: FbMember[]; viewer: FbViewer; setViewer: (viewer: FbViewer) => void; accountFilter: string; setAccountFilter: (id: string) => void; open: (entity: FbEntity) => void; create: () => void }) {
+function FbCampaignsScreen({ entities, setEntities, accounts, members, viewer, setViewer, accountFilter, setAccountFilter, open, create, addChange }: { entities: FbEntity[]; setEntities: (entities: FbEntity[]) => void; accounts: FbAccount[]; members: FbMember[]; viewer: FbViewer; setViewer: (viewer: FbViewer) => void; accountFilter: string; setAccountFilter: (id: string) => void; open: (entity: FbEntity) => void; create: () => void; addChange: (change: FbChangeInput) => void }) {
   const staff = viewer.kind === 'staff'
   const [level, setLevel] = useState<FbLevel>('campaign')
-  const [status, setStatus] = useState<'on' | 'off' | 'all'>('on')
+  const [status, setStatus] = useState<'on' | 'off' | 'all' | 'review'>('on')
+  const [selected, setSelected] = useState<string[]>([])
+  const [bulk, setBulk] = useState<'on' | 'off' | null>(null)
   const [period, setPeriod] = useState('30')
   const [query, setQuery] = useState('')
   const [client, setClient] = useState('all')
@@ -8114,7 +8259,21 @@ function FbCampaignsScreen({ entities, setEntities, accounts, members, viewer, s
   const visible = fbVisibleAccounts(accounts, viewer, members).filter((account) => client === 'all' || account.client === client)
   const filterValue = visible.some((account) => account.id === accountFilter) ? accountFilter : 'all'
   const inAccount = (entity: FbEntity) => (filterValue === 'all' ? visible.some((account) => account.id === entity.account) : entity.account === filterValue)
-  const rows = entities.filter((entity) => entity.level === level && inAccount(entity) && (status === 'all' || (status === 'on') === entity.on) && entity.name.toLowerCase().includes(query.toLowerCase()))
+  const rows = entities.filter((entity) => entity.level === level && inAccount(entity) && (status === 'all' || (status === 'review' ? !!entity.review : (status === 'on') === entity.on)) && entity.name.toLowerCase().includes(query.toLowerCase()))
+  const picked = entities.filter((entity) => selected.includes(entity.id))
+  const bulkItems = picked.filter((entity) => (bulk === 'on' ? !entity.on : entity.on))
+  const blocked = bulk === 'on' ? fbBlockedByLimit(bulkItems, viewer, members, accounts, entities) : []
+  const reviewing = entities.filter((entity) => entity.review && inAccount(entity))
+  const accountProblems = visible.filter((account) => account.state === 'unsettled' && (filterValue === 'all' || account.id === filterValue))
+  /** Aplica a ação em lote nas que podem e registra cada uma no histórico. */
+  const applyBulk = () => {
+    const done = bulkItems.filter((item) => !blocked.some(([entity]) => entity.id === item.id))
+    setEntities(entities.map((entity) => (done.some((item) => item.id === entity.id) ? { ...entity, on: bulk === 'on' } : entity)))
+    done.forEach((item) => addChange({ ...fbAbout(item, accounts), what: bulk === 'on' ? 'Ativou' : 'Pausou', detail: `Em lote, com mais ${done.length - 1}` }))
+    toast.success(`${done.length} ${bulk === 'on' ? 'ativadas' : 'pausadas'} no Facebook`, { description: blocked.length ? `${blocked.length} ficaram pausadas pelo limite.` : undefined })
+    setSelected([])
+    setBulk(null)
+  }
   const campaigns = entities.filter((entity) => entity.level === 'campaign' && inAccount(entity))
   const spend = campaigns.reduce((total, entity) => total + entity.spend * factor, 0)
   const withSite = campaigns.filter((entity) => fbSiteOf(entity, accounts))
@@ -8137,6 +8296,8 @@ function FbCampaignsScreen({ entities, setEntities, accounts, members, viewer, s
         </>} />
       <Body>
         {staff ? <FbStaffNote /> : <FbViewerSwitch viewer={viewer} setViewer={setViewer} members={members} />}
+        {accountProblems.map((account) => <div key={account.id} className="flex flex-wrap items-start gap-3 rounded-lg border border-bad/25 bg-card p-4"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-bad" /><div className="min-w-0 flex-1 text-[14px]"><span className="font-medium">{account.name} está com pagamento pendente no Facebook.</span> <span className="text-muted-foreground">Os anúncios dela não rodam até o pagamento ser feito. O Avant não mexe em pagamento.</span></div><a className="inline-flex items-center gap-1 text-[14px] text-link hover:underline" href="#" onClick={(event) => event.preventDefault()}>Abrir pagamentos no Facebook<ExternalLink className="h-3.5 w-3.5" /></a></div>)}
+        {reviewing.length > 0 && <div className="flex flex-wrap items-center gap-3 rounded-md border px-3 py-2 text-[13px]"><AlertTriangle className="h-4 w-4 shrink-0 text-bad" /><span className="min-w-0 flex-1">{[reviewing.filter((entity) => entity.review === 'rejected').length, reviewing.filter((entity) => entity.review === 'pending').length].map((count, index) => (count ? `${count} ${index === 0 ? (count > 1 ? 'anúncios reprovados' : 'anúncio reprovado') : 'em revisão'}` : '')).filter(Boolean).join(' e ')} no Facebook.</span><Button size="sm" variant="outline" onClick={() => { setLevel('ad'); setStatus('review'); setSelected([]) }}>Ver</Button></div>}
         {unlinked.length > 0 && <div className="flex flex-wrap items-start gap-2 rounded-md border border-ochre/40 bg-ochre-soft px-3 py-2 text-[13px] text-ochre"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" /><span className="min-w-0 flex-1">{unlinked.map((account) => account.name).join(', ')} {unlinked.length > 1 ? 'estão' : 'está'} sem site. O gasto entra nos números, mas a receita e o ROI ficam de fora.</span></div>}
         {mixedCurrency ? (
           <p className="rounded-md border px-3 py-2 text-[13px] text-muted-foreground">Essas contas usam moedas diferentes. Escolha uma conta para ver os totais; a tabela mostra cada linha na moeda da conta dela.</p>
@@ -8161,19 +8322,167 @@ function FbCampaignsScreen({ entities, setEntities, accounts, members, viewer, s
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex rounded-md border bg-card p-0.5" role="tablist" aria-label="Nível">
               {(['campaign', 'adset', 'ad'] as FbLevel[]).map((key) => (
-                <button key={key} role="tab" aria-selected={level === key} onClick={() => setLevel(key)} className={cn('h-8 rounded-[4px] px-3 text-[13px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', level === key ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground')}>{FB_LEVEL[key].tab} <span className="tnum text-muted-foreground">{entities.filter((entity) => entity.level === key && inAccount(entity)).length}</span></button>
+                <button key={key} role="tab" aria-selected={level === key} onClick={() => { setLevel(key); setSelected([]) }} className={cn('h-8 rounded-[4px] px-3 text-[13px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', level === key ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground')}>{FB_LEVEL[key].tab} <span className="tnum text-muted-foreground">{entities.filter((entity) => entity.level === key && inAccount(entity)).length}</span></button>
               ))}
             </div>
-            <Select value={status} onValueChange={(value) => setStatus(value as 'on' | 'off' | 'all')}><SelectTrigger aria-label="Situação" className="h-9 w-[140px]"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="on">Ativas</SelectItem><SelectItem value="off">Pausadas</SelectItem><SelectItem value="all">Todas</SelectItem></SelectContent></Select>
+            <Select value={status} onValueChange={(value) => { setStatus(value as 'on' | 'off' | 'all' | 'review'); setSelected([]) }}><SelectTrigger aria-label="Situação" className="h-9 w-[200px]"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="on">Ativas</SelectItem><SelectItem value="off">Pausadas</SelectItem><SelectItem value="review">Em revisão ou reprovados</SelectItem><SelectItem value="all">Todas</SelectItem></SelectContent></Select>
             <div className="relative ml-auto w-full sm:w-64"><Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input aria-label="Buscar" className="h-9 pl-9" placeholder={`Buscar ${FB_LEVEL[level].tab.toLowerCase()}`} value={query} onChange={(event) => setQuery(event.target.value)} /></div>
           </div>
-          {rows.length ? <FbEntityTable rows={rows.slice(0, 10)} accounts={accounts} factor={factor} open={open} askToggle={setAsking} showParent={level !== 'campaign'} staff={staff} /> : <div className="rounded-lg border bg-card py-12 text-center"><p className="font-medium">Nada com esse filtro</p><p className="mt-1 text-[13px] text-muted-foreground">Mude a situação ou a busca. As campanhas novas chegam na próxima sincronia, a cada hora.</p></div>}
+          {selected.length > 0 && (
+            <div className="sticky top-[60px] z-10 flex flex-wrap items-center gap-3 rounded-md border bg-card px-3 py-2 shadow-sm" role="region" aria-label="Ações em lote">
+              <span className="text-[14px] font-medium tnum">{selected.length} {selected.length > 1 ? 'marcadas' : 'marcada'}</span>
+              <Button size="sm" variant="outline" disabled={!picked.some((entity) => !entity.on)} onClick={() => setBulk('on')}>Ativar</Button>
+              <Button size="sm" variant="outline" disabled={!picked.some((entity) => entity.on)} onClick={() => setBulk('off')}>Pausar</Button>
+              <button className="ml-auto text-[13px] text-muted-foreground hover:text-foreground" onClick={() => setSelected([])}>Limpar seleção</button>
+            </div>
+          )}
+          {rows.length ? <FbEntityTable rows={rows.slice(0, 10)} accounts={accounts} factor={factor} open={open} askToggle={setAsking} showParent={level !== 'campaign'} staff={staff} selected={selected} setSelected={setSelected} /> : <div className="rounded-lg border bg-card py-12 text-center"><p className="font-medium">Nada com esse filtro</p><p className="mt-1 text-[13px] text-muted-foreground">Mude a situação ou a busca. As campanhas novas chegam na próxima sincronia, a cada hora.</p></div>}
           {rows.length > 10 && <PricePager page={1} total={rows.length} onPage={() => undefined} />}
         </section>
       </Body>
-      <FbToggleDialog entity={asking} onClose={() => setAsking(null)} onConfirm={() => { setEntities(entities.map((entity) => (entity.id === asking!.id ? { ...entity, on: !entity.on } : entity))); toast.success(asking!.on ? 'Pausada no Facebook' : 'Ativada no Facebook'); setAsking(null) }} />
+      <FbToggleDialog entity={asking} onClose={() => setAsking(null)} onConfirm={() => { setEntities(entities.map((entity) => (entity.id === asking!.id ? { ...entity, on: !entity.on } : entity))); addChange({ ...fbAbout(asking!, accounts), what: asking!.on ? 'Pausou' : 'Ativou', detail: '' }); toast.success(asking!.on ? 'Pausada no Facebook' : 'Ativada no Facebook'); setAsking(null) }} />
+      <FbBulkDialog action={bulk} items={bulkItems} blocked={blocked} onClose={() => setBulk(null)} onConfirm={applyBulk} />
     </>
   )
+}
+
+/** Tabela do histórico de mudanças: quando, quem, por onde, em quê e o que mudou. */
+function FbHistoryTable({ rows, showWhere, staff, empty }: { rows: FbChange[]; showWhere: boolean; staff: boolean; empty: string }) {
+  return (
+    <Table min={860}>
+      <thead><tr><th className={th}>Quando</th><th className={th}>Quem</th><th className={th}>Por onde</th>{showWhere && <th className={th}>Em</th>}<th className={th}>Mudança</th></tr></thead>
+      <tbody>
+        {rows.map((change) => (
+          <tr key={change.id}>
+            <td className={cn(td, 'whitespace-nowrap tnum text-[13px]')}>{change.when}</td>
+            <td className={cn(td, 'whitespace-nowrap')}>{change.who}{staff && <div className="text-[12px] text-muted-foreground">{change.client}</div>}</td>
+            <td className={td}><Badge tone={change.origin === 'facebook' ? 'ochre' : 'neutral'}>{FB_ORIGIN[change.origin]}</Badge></td>
+            {showWhere && <td className={cn(td, 'text-[13px]')}><div className="font-medium">{change.entityName}</div><div className="text-muted-foreground">{change.level ? FB_LEVEL[change.level].one : 'Conta de anúncio'}</div></td>}
+            <td className={cn(td, 'text-[13px]')}><div className="font-medium">{change.what}</div>{change.detail && <div className="text-muted-foreground">{change.detail}</div>}</td>
+          </tr>
+        ))}
+        {!rows.length && <tr><td className={cn(td, 'py-12 text-center')} colSpan={showWhere ? 5 : 4}><History className="mx-auto h-5 w-5 text-muted-foreground" /><p className="mt-2 font-medium">{empty}</p></td></tr>}
+      </tbody>
+    </Table>
+  )
+}
+
+/** Aba Histórico: tudo que mudou nas contas que a pessoa vê, com filtro por pessoa e por onde a mudança foi feita. */
+function FbHistoryPanel({ history, accountIds, staff }: { history: FbChange[]; accountIds: string[]; staff: boolean }) {
+  const [origin, setOrigin] = useState<FbChangeOrigin | 'all'>('all')
+  const [who, setWho] = useState('all')
+  const mine = history.filter((change) => accountIds.includes(change.account))
+  const people = [...new Set(mine.map((change) => change.who))]
+  const rows = mine.filter((change) => (origin === 'all' || change.origin === origin) && (who === 'all' || change.who === who))
+  return (
+    <section className="grid gap-3">
+      <div><h2 className="text-[20px] font-semibold tracking-tight">Histórico</h2><p className="mt-1 max-w-[80ch] text-[14px] text-muted-foreground">Quem mudou o quê nas campanhas e contas. O que foi feito direto no Gerenciador de Anúncios também aparece, na sincronia de cada hora, com o nome de quem fez no Facebook.</p></div>
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="flex rounded-md border bg-card p-0.5" role="tablist" aria-label="Por onde">
+          {([['all', 'Tudo'], ['avant', FB_ORIGIN.avant], ['rule', FB_ORIGIN.rule], ['limit', FB_ORIGIN.limit], ['facebook', FB_ORIGIN.facebook]] as const).map(([key, label]) => (
+            <button key={key} role="tab" aria-selected={origin === key} onClick={() => setOrigin(key)} className={cn('h-8 rounded-[4px] px-3 text-[13px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', origin === key ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground')}>{label}</button>
+          ))}
+        </div>
+        <Select value={who} onValueChange={setWho}><SelectTrigger aria-label="Pessoa" className="h-9 w-[200px]"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Todas as pessoas</SelectItem>{people.map((name) => <SelectItem key={name} value={name}>{name}</SelectItem>)}</SelectContent></Select>
+      </div>
+      <FbHistoryTable rows={rows.slice(0, 10)} showWhere staff={staff} empty="Nenhuma mudança com esse filtro" />
+      {rows.length > 10 && <PricePager page={1} total={rows.length} onPage={() => undefined} />}
+    </section>
+  )
+}
+
+/** Aba Avisos: a lista do que precisa de atenção e, para o dono, quem recebe cada tipo de aviso. */
+function FbAlertsPanel({ alerts, setAlerts, accountIds, owner, staff, act }: { alerts: FbAlert[]; setAlerts: (alerts: FbAlert[]) => void; accountIds: string[]; owner: boolean; staff: boolean; act: (alert: FbAlert) => void }) {
+  const [recipients, setRecipients] = useState(FB_INITIAL_RECIPIENTS)
+  const mine = alerts.filter((alert) => accountIds.includes(alert.account))
+  const unread = mine.filter((alert) => !alert.read).length
+  /** Liga ou desliga um destinatário de um tipo de aviso. */
+  const flip = (kind: FbAlertKind, key: keyof FbAlertRecipients) => setRecipients({ ...recipients, [kind]: { ...recipients[kind], [key]: !recipients[kind][key] } })
+  return (
+    <section className="grid gap-6">
+      <div className="grid gap-3">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div><h2 className="text-[20px] font-semibold tracking-tight">Avisos</h2><p className="mt-1 max-w-[80ch] text-[14px] text-muted-foreground">O que precisa de alguém: limite, perfil desconectado, anúncio reprovado e conta com problema no Facebook. {staff ? 'A equipe Groone vê os avisos de todos os clientes.' : 'Você vê os avisos das contas que usa.'}</p></div>
+          {unread > 0 && <Button size="sm" variant="outline" onClick={() => setAlerts(alerts.map((alert) => (accountIds.includes(alert.account) ? { ...alert, read: true } : alert)))}>Marcar todos como lidos</Button>}
+        </div>
+        <div className="overflow-hidden rounded-lg border bg-card">
+          {mine.map((alert) => (
+            <div key={alert.id} className="flex flex-wrap items-start gap-3 border-b px-4 py-3 last:border-b-0">
+              <span className={cn('mt-2 h-2 w-2 shrink-0 rounded-full', alert.read ? 'bg-transparent' : 'bg-foreground')} aria-label={alert.read ? undefined : 'Não lido'} />
+              <div className="grid min-w-0 flex-1 gap-1">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1"><Status tone={FB_ALERT_KIND[alert.kind][1]}>{FB_ALERT_KIND[alert.kind][0]}</Status><span className="text-[13px] text-muted-foreground">{alert.when}{staff && ` · ${alert.client}`}</span></div>
+                <p className={cn('text-[14px]', !alert.read && 'font-medium')}>{alert.text}</p>
+              </div>
+              {!staff || alert.target ? <Button size="sm" variant="outline" onClick={() => { setAlerts(alerts.map((item) => (item.id === alert.id ? { ...item, read: true } : item))); act(alert) }}>{alert.action}</Button> : null}
+            </div>
+          ))}
+          {!mine.length && <div className="py-12 text-center"><p className="font-medium">Nenhum aviso</p><p className="mt-1 text-[13px] text-muted-foreground">Quando uma conta chegar perto do limite ou o Facebook reprovar algo, aparece aqui.</p></div>}
+        </div>
+      </div>
+      {!staff && (
+        <div className="grid gap-3">
+          <div><h2 className="text-[20px] font-semibold tracking-tight">Quem recebe</h2><p className="mt-1 text-[14px] text-muted-foreground">{owner ? 'Os avisos aparecem aqui para quem estiver marcado. Com e-mail ligado, chegam também por e-mail.' : 'O dono da Empresa escolhe quem recebe cada aviso.'}</p></div>
+          <Table min={720}>
+            <thead><tr><th className={th}>Aviso</th><th className={cn(th, 'text-center')}>Dono</th><th className={cn(th, 'text-center')}>Quem usa a conta</th><th className={cn(th, 'text-center')}>Quem conectou o perfil</th><th className={cn(th, 'text-center')}>Por e-mail</th></tr></thead>
+            <tbody>
+              {(Object.keys(FB_ALERT_KIND) as FbAlertKind[]).map((kind) => (
+                <tr key={kind}>
+                  <td className={td}>{FB_ALERT_KIND[kind][0]}</td>
+                  {(['owner', 'users', 'connector'] as const).map((key) => <td key={key} className={cn(td, 'text-center')}><input type="checkbox" aria-label={`${FB_ALERT_KIND[kind][0]}: ${key}`} className="size-4 accent-[hsl(var(--foreground))]" disabled={!owner} checked={recipients[kind][key]} onChange={() => flip(kind, key)} /></td>)}
+                  <td className={cn(td, 'text-center')}><Switch aria-label={`${FB_ALERT_KIND[kind][0]} por e-mail`} disabled={!owner} checked={recipients[kind].email} onCheckedChange={() => flip(kind, 'email')} /></td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        </div>
+      )}
+    </section>
+  )
+}
+
+/** Aviso no topo do anúncio quando o Facebook está revisando ou reprovou, com o que dá para fazer. */
+function FbReviewBanner({ entity, staff, edit, appeal }: { entity: FbEntity; staff: boolean; edit: () => void; appeal: () => void }) {
+  if (entity.review === 'pending') return <div className="flex items-start gap-2 rounded-md border px-3 py-2 text-[13px]"><Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin text-muted-foreground" /><span><span className="font-medium">Em revisão no Facebook.</span> <span className="text-muted-foreground">Costuma levar até 24 horas. Até lá, a versão nova não roda.</span></span></div>
+  if (entity.review !== 'rejected') return null
+  return (
+    <div className="flex flex-wrap items-start gap-3 rounded-lg border border-bad/25 bg-card p-4">
+      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-bad" />
+      <div className="min-w-0 flex-1 text-[14px]"><div className="font-medium">Reprovado pelo Facebook</div><p className="mt-1 text-muted-foreground">{entity.reviewReason} O anúncio não roda até ser corrigido e aprovado.</p></div>
+      {!staff && <div className="flex flex-wrap gap-2"><Button size="sm" variant="outline" onClick={appeal}>Pedir nova análise</Button><Button size="sm" onClick={edit}><Pencil className="h-4 w-4" />Editar e reenviar</Button></div>}
+    </div>
+  )
+}
+
+/** Confirmação de pausar ou ativar várias de uma vez, mostrando as que não podem ser ativadas por causa do limite. */
+function FbBulkDialog({ action, items, blocked, onClose, onConfirm }: { action: 'on' | 'off' | null; items: FbEntity[]; blocked: [FbEntity, string][]; onClose: () => void; onConfirm: () => void }) {
+  const allowed = items.filter((item) => !blocked.some(([entity]) => entity.id === item.id))
+  const verb = action === 'on' ? 'Ativar' : 'Pausar'
+  return (
+    <Dialog open={action !== null} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-[540px]">
+        <DialogHeader><DialogTitle>{verb} {allowed.length} de uma vez?</DialogTitle><DialogDescription>{action === 'on' ? 'Voltam a gastar o orçamento no Facebook em alguns minutos.' : 'Os anúncios param de rodar no Facebook em alguns minutos.'}</DialogDescription></DialogHeader>
+        <ul className="scroll-thin grid max-h-[220px] gap-1 overflow-y-auto rounded-md border p-2 text-[13px]">
+          {allowed.map((item) => <li key={item.id} className="flex items-center gap-2 px-1"><Check className="h-3.5 w-3.5 text-ok" />{item.name}</li>)}
+          {blocked.map(([item, reason]) => <li key={item.id} className="flex items-start gap-2 px-1 text-bad"><X className="mt-0.5 h-3.5 w-3.5 shrink-0" /><span>{item.name}<span className="block text-[12px]">{reason}</span></span></li>)}
+        </ul>
+        {blocked.length > 0 && <p className="text-[13px] text-muted-foreground">As marcadas em vermelho ficam pausadas: ativar todas passaria do limite diário. Vale o menor entre o limite da pessoa e o da conta.</p>}
+        <DialogFooter><Button variant="outline" onClick={onClose}>Cancelar</Button><Button disabled={!allowed.length} onClick={onConfirm}>{verb} {allowed.length}</Button></DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+/** Quais das entidades escolhidas passariam do limite diário se fossem ativadas, uma por uma, na ordem da lista. */
+function fbBlockedByLimit(items: FbEntity[], viewer: FbViewer, members: FbMember[], accounts: FbAccount[], entities: FbEntity[]): [FbEntity, string][] {
+  let simulated = entities
+  const blocked: [FbEntity, string][] = []
+  items.filter((item) => !item.on).forEach((item) => {
+    const room = fbRoomFor(viewer, accounts.find((account) => account.id === item.account), members, simulated)
+    const budget = item.budget ?? 0
+    if (room && budget > 0 && room.used + budget > room.limit) blocked.push([item, `Passa do ${room.label.charAt(0).toLowerCase()}${room.label.slice(1)}: sobram ${fbMoney(Math.max(0, room.limit - room.used))} por dia.`])
+    else simulated = simulated.map((entity) => (entity.id === item.id ? { ...entity, on: true } : entity))
+  })
+  return blocked
 }
 
 /** O limite que vale para quem cria: o menor entre o da pessoa e o da conta, com o quanto já está em uso. */
@@ -8234,6 +8543,17 @@ function fbStartDraft(accountId: string, from?: FbEntity): FbDraftCampaign {
   return { accountId: from?.account ?? accountId, name: from ? `${from.name} · cópia` : '[RCT] Pudim de leite · BR', objective: 'traffic', special: from?.name.includes('Cartão') || from?.name.includes('INSS') ? ['credit'] : [], budgetAt: from && from.budget === null ? 'adset' : 'campaign', budgetKind: 'daily', budget: String(from?.budget ?? 120), bid: 'volume', bidValue: '', spendCap: '', startOn: 'paused', adsets: [fbBlankAdset(from ? FB_ADSET_NAMES[0] : 'Brasil · 25-65 · Advantage+')] }
 }
 
+/** O rascunho de uma edição: a campanha da entidade, com os nomes, o formato e o orçamento que ela já tem. */
+function fbEditDraft(edit: FbEntity, entities: FbEntity[]): FbDraftCampaign {
+  const campaign = entities.find((item) => item.id === edit.campaign) ?? edit
+  const adset = edit.level === 'ad' ? entities.find((item) => item.id === edit.parent) : edit.level === 'adset' ? edit : entities.find((item) => item.parent === campaign.id)
+  const base = fbStartDraft(campaign.account, campaign)
+  const format: FbAdFormat = edit.name.startsWith('Vídeo') ? 'video' : edit.name.startsWith('Carrossel') ? 'carousel' : 'image'
+  const cards = format === 'carousel' ? [1, 2, 3, 4, 5].map((step) => ({ id: fbDraftId(), title: `Passo ${step}`, path: `/bolo-de-cenoura#passo-${step}`, media: true })) : []
+  const ad = { ...base.adsets[0].ads[0], name: edit.level === 'ad' ? edit.name : base.adsets[0].ads[0].name, format, media: true, cards, path: '/bolo-de-cenoura', titles: ['Bolo de cenoura fofinho'], texts: ['O bolo de cenoura mais fofinho, com cobertura de chocolate que endurece. Receita completa no link.'] }
+  return { ...base, name: campaign.name, adsets: [{ ...base.adsets[0], name: adset?.name ?? base.adsets[0].name, budget: String(adset?.budget ?? 60), ads: [ad] }] }
+}
+
 /** Lista de valores em chips, com um campo para incluir e sugestões para tocar. */
 function FbChips({ id, label, values, suggestions = [], placeholder, hint, onChange }: { id: string; label: string; values: string[]; suggestions?: string[]; placeholder: string; hint?: string; onChange: (values: string[]) => void }) {
   const [text, setText] = useState('')
@@ -8252,13 +8572,14 @@ function FbChips({ id, label, values, suggestions = [], placeholder, hint, onCha
 }
 
 /** Escolha em botões lado a lado, como os filtros de status do painel. */
-function FbSegment<Value extends string>({ label, value, options, onChange }: { label: string; value: Value; options: [Value, string][]; onChange: (value: Value) => void }) {
+function FbSegment<Value extends string>({ label, value, options, onChange, disabled = false, hint }: { label: string; value: Value; options: [Value, string][]; onChange: (value: Value) => void; disabled?: boolean; hint?: string }) {
   return (
     <div className="grid gap-2">
       <div className="text-[13px] font-medium text-muted-foreground">{label}</div>
-      <div className="flex w-fit flex-wrap rounded-md border bg-card p-0.5" role="radiogroup" aria-label={label}>
-        {options.map(([key, text]) => <button key={key} type="button" role="radio" aria-checked={value === key} onClick={() => onChange(key)} className={cn('h-8 rounded-[4px] px-3 text-[13px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', value === key ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground')}>{text}</button>)}
+      <div className={cn('flex w-fit flex-wrap rounded-md border bg-card p-0.5', disabled && 'opacity-60')} role="radiogroup" aria-label={label}>
+        {options.map(([key, text]) => <button key={key} type="button" role="radio" disabled={disabled} aria-checked={value === key} onClick={() => onChange(key)} className={cn('disabled:cursor-not-allowed h-8 rounded-[4px] px-3 text-[13px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', value === key ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground')}>{text}</button>)}
       </div>
+      {hint && <p className="text-[13px] text-muted-foreground">{hint}</p>}
     </div>
   )
 }
@@ -8276,15 +8597,17 @@ function FbMediaPick({ chosen, label, onPick }: { chosen: boolean; label: string
 }
 
 /** Criar campanha pelo Avant no formato do Gerenciador de Anúncios: campanha, conjuntos e anúncios, com a checagem de tudo que o Facebook exige e do limite de gasto. */
-function FbCreateScreen({ accounts, members, viewer, setViewer, entities, setEntities, from, back }: { accounts: FbAccount[]; members: FbMember[]; viewer: FbViewer; setViewer: (viewer: FbViewer) => void; entities: FbEntity[]; setEntities: (entities: FbEntity[]) => void; from?: FbEntity; back: () => void }) {
-  const usable = fbVisibleAccounts(accounts, viewer, members).filter((account) => account.state === 'active')
-  const [draft, setDraft] = useState<FbDraftCampaign>(() => fbStartDraft(usable[0]?.id ?? '', from))
-  const [selection, setSelection] = useState<FbSelection>({ kind: 'campaign' })
+function FbCreateScreen({ accounts, members, viewer, setViewer, entities, setEntities, from, edit, addChange, back }: { accounts: FbAccount[]; members: FbMember[]; viewer: FbViewer; setViewer: (viewer: FbViewer) => void; entities: FbEntity[]; setEntities: (entities: FbEntity[]) => void; from?: FbEntity; edit?: FbEntity; addChange: (change: FbChangeInput) => void; back: () => void }) {
+  const usable = fbVisibleAccounts(accounts, viewer, members).filter((account) => account.state === 'active' || account.id === edit?.account)
+  const [draft, setDraft] = useState<FbDraftCampaign>(() => (edit ? fbEditDraft(edit, entities) : fbStartDraft(usable[0]?.id ?? '', from)))
+  const [selection, setSelection] = useState<FbSelection>(edit?.level === 'adset' ? { kind: 'adset', adset: 0 } : edit?.level === 'ad' ? { kind: 'ad', adset: 0, ad: 0 } : { kind: 'campaign' })
   const account = usable.find((item) => item.id === draft.accountId)
   const domain = account?.site ?? null
   const room = fbRoomFor(viewer, account, members, entities)
   const dailyTotal = draft.budgetAt === 'campaign' ? (draft.budgetKind === 'daily' ? Number(draft.budget || 0) : Number(draft.budget || 0) / 30) : draft.adsets.reduce((total, adset) => total + Number(adset.budget || 0), 0)
-  const over = room !== null && room.used + dailyTotal > room.limit
+  const already = edit ? fbActiveDailyBudget(entities.filter((item) => item.campaign === edit.campaign), [edit.account]) : 0
+  const extra = !edit ? dailyTotal : edit.level === 'campaign' && draft.budgetAt === 'campaign' ? dailyTotal - already : edit.level === 'adset' && draft.budgetAt === 'adset' ? Number(draft.adsets[0].budget || 0) - (edit.on ? edit.budget ?? 0 : 0) : 0
+  const over = room !== null && extra > 0 && room.used + extra > room.limit
   const adset = selection.kind !== 'campaign' ? draft.adsets[selection.adset] : null
   const ad = selection.kind === 'ad' && adset ? adset.ads[selection.ad] : null
   /** Muda campos da campanha. */
@@ -8318,10 +8641,20 @@ function FbCreateScreen({ accounts, members, viewer, setViewer, entities, setEnt
     ['Todo anúncio com texto e título', allAds.every((item) => item.texts.some((text) => text.trim()) && item.titles.some((title) => title.trim()))],
   ]
   const ready = checks.every(([, passed]) => passed)
-  /** Cria a campanha de exemplo e volta para a lista. */
+  /** Cria a campanha de exemplo (ou salva a edição) e volta. */
   const submit = () => {
+    if (edit) {
+      const name = edit.level === 'campaign' ? draft.name : edit.level === 'adset' ? draft.adsets[0].name : draft.adsets[0].ads[0].name
+      const budget = edit.level === 'campaign' && draft.budgetAt === 'campaign' ? Number(draft.budget) : edit.level === 'adset' && draft.budgetAt === 'adset' ? Number(draft.adsets[0].budget) : edit.budget
+      setEntities(entities.map((item) => (item.id !== edit.id ? item : { ...item, name, budget, review: edit.level === 'ad' ? 'pending' as const : item.review, reviewReason: edit.level === 'ad' ? undefined : item.reviewReason })))
+      addChange({ ...fbAbout({ ...edit, name }, accounts), what: `Editou ${edit.level === 'campaign' ? 'a campanha' : edit.level === 'adset' ? 'o conjunto' : 'o anúncio'}`, detail: edit.level === 'ad' ? 'Foi para a revisão do Facebook.' : budget !== edit.budget ? `Orçamento ${fbMoney(edit.budget ?? 0)} → ${fbMoney(budget ?? 0)}` : '' })
+      toast.success('Mudanças salvas no Facebook', { description: edit.level === 'ad' ? 'O anúncio volta para a revisão do Facebook.' : 'Valem em alguns minutos.' })
+      back()
+      return
+    }
     const id = `2385${Date.now().toString().slice(-7)}`
     setEntities([{ id, level: 'campaign', name: draft.name, parent: null, campaign: id, account: draft.accountId, on: draft.startOn === 'active', budget: draft.budgetAt === 'campaign' ? Number(draft.budget) : null, spend: 0, roi: 0, cpc: 0.25, utm: null }, ...entities])
+    addChange({ client: account?.client ?? FB_MY_CLIENT, account: draft.accountId, campaign: id, entity: id, entityName: draft.name, level: 'campaign', what: from ? 'Duplicou a campanha' : 'Criou a campanha', detail: `${draft.adsets.length} conjunto(s) e ${allAds.length} anúncio(s), ${draft.startOn === 'active' ? 'criada ativa' : 'criada pausada'}${from ? `, a partir de ${from.name}` : ''}` })
     toast.success('Campanha criada no Facebook', { description: `${draft.adsets.length} conjunto(s) e ${allAds.length} anúncio(s). ${draft.startOn === 'active' ? 'Entram em revisão e rodam quando aprovados.' : 'Criada pausada.'}` })
     back()
   }
@@ -8330,10 +8663,23 @@ function FbCreateScreen({ accounts, members, viewer, setViewer, entities, setEnt
   )
   return (
     <>
-      <PageHeader back={<button onClick={back} className="mb-3 flex items-center gap-1.5 text-[14px] text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4" />Campanhas</button>} title={from ? 'Duplicar campanha' : 'Nova campanha'}
-        sub={from ? `Cópia de ${from.name}. Mude o que quiser antes de criar.` : 'No mesmo formato do Gerenciador de Anúncios: a campanha, os conjuntos e os anúncios de cada conjunto.'}
+      <PageHeader back={<button onClick={back} className="mb-3 flex items-center gap-1.5 text-[14px] text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4" />{edit ? edit.name : 'Campanhas'}</button>} title={edit ? `Editar ${edit.level === 'campaign' ? 'campanha' : edit.level === 'adset' ? 'conjunto' : 'anúncio'}` : from ? 'Duplicar campanha' : 'Nova campanha'}
+        sub={edit ? `${edit.name}. As mudanças vão direto para o Facebook.` : from ? `Cópia de ${from.name}. Mude o que quiser antes de criar.` : 'No mesmo formato do Gerenciador de Anúncios: a campanha, os conjuntos e os anúncios de cada conjunto.'}
         actions={<a className="inline-flex items-center gap-1 text-[14px] text-link hover:underline" href="#" onClick={(event) => event.preventDefault()}>Abrir no Gerenciador de Anúncios<ExternalLink className="h-3.5 w-3.5" /></a>} />
       <Body className="lg:grid-cols-[240px_minmax(0,1fr)_300px]">
+        {edit ? (
+          <div className="grid content-start gap-3 lg:sticky lg:top-[136px]">
+            <div className="rounded-lg border bg-card p-4 text-[13px]">
+              <div className="font-medium">Ao salvar</div>
+              <ul className="mt-2 grid list-disc gap-2 pl-4 text-muted-foreground">
+                {edit.level === 'campaign' && <><li>Conta e objetivo não mudam depois de criada: é regra do Facebook. Para mudar, duplique a campanha.</li><li>Mudar orçamento ou lance pode voltar a campanha para a fase de aprendizado.</li></>}
+                {edit.level === 'adset' && <><li>Mudar público, posicionamentos ou otimização volta o conjunto para a fase de aprendizado, que dura uns 7 dias ou 50 resultados.</li><li>O orçamento é checado contra o limite, como na criação.</li></>}
+                {edit.level === 'ad' && <><li>Mudar texto, mídia ou link manda o anúncio de novo para a revisão do Facebook.</li><li>Os números e o histórico continuam no mesmo anúncio.</li></>}
+                <li>Fica no histórico com o seu nome.</li>
+              </ul>
+            </div>
+          </div>
+        ) : (
         <nav className="grid content-start gap-1 lg:sticky lg:top-[136px]" aria-label="Estrutura da campanha">
           <div className="px-2 pb-1 text-[12px] font-medium text-muted-foreground">Estrutura</div>
           {treeButton({ kind: 'campaign' }, draft.name || 'Campanha', 0, selection.kind === 'campaign')}
@@ -8347,6 +8693,7 @@ function FbCreateScreen({ accounts, members, viewer, setViewer, entities, setEnt
           <button type="button" onClick={addAdset} className="flex h-7 items-center gap-1 rounded-md text-[12px] text-muted-foreground hover:text-foreground" style={{ paddingLeft: 22 }}><Plus className="h-3.5 w-3.5" />Conjunto</button>
           <div className="mt-3"><FbViewerSwitchCompact viewer={viewer} setViewer={setViewer} members={members} /></div>
         </nav>
+        )}
 
         <div className="grid content-start gap-6">
           {selection.kind === 'campaign' && (
@@ -8355,7 +8702,7 @@ function FbCreateScreen({ accounts, members, viewer, setViewer, entities, setEnt
               <FbFormBlock title="Conta e nome">
                 <div className="grid items-start gap-4 sm:grid-cols-2">
                   <Field id="fb-new-account" label="Conta de anúncio" hint={viewer.kind === 'member' ? 'Só as contas que o dono liberou para você.' : account ? account.business : undefined} error={account && !domain && 'Essa conta não tem site. Vincule um site na tela Facebook antes de criar.'}>
-                    <Select value={draft.accountId} onValueChange={(accountId) => setCampaign({ accountId })}><SelectTrigger id="fb-new-account" className="h-10"><SelectValue placeholder="Escolha a conta" /></SelectTrigger><SelectContent>{usable.map((item) => <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>)}</SelectContent></Select>
+                    <Select value={draft.accountId} disabled={!!edit} onValueChange={(accountId) => setCampaign({ accountId })}><SelectTrigger id="fb-new-account" className="h-10"><SelectValue placeholder="Escolha a conta" /></SelectTrigger><SelectContent>{usable.map((item) => <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>)}</SelectContent></Select>
                   </Field>
                   <Field id="fb-new-name" label="Nome da campanha"><Input id="fb-new-name" className="h-10" value={draft.name} onChange={(event) => setCampaign({ name: event.target.value })} /></Field>
                 </div>
@@ -8363,7 +8710,7 @@ function FbCreateScreen({ accounts, members, viewer, setViewer, entities, setEnt
               <FbFormBlock title="Objetivo" desc="O mesmo do Gerenciador de Anúncios. Ele muda as opções de otimização dos conjuntos.">
                 <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3" role="radiogroup" aria-label="Objetivo">
                   {FB_OBJECTIVES.map(([key, label, text]) => (
-                    <button key={key} type="button" role="radio" aria-checked={draft.objective === key} onClick={() => setDraft({ ...draft, objective: key, adsets: draft.adsets.map((item) => ({ ...item, optimization: FB_OPTIMIZATION[key][0] })) })} className={cn('rounded-md border p-3 text-left', draft.objective === key ? 'border-foreground ring-1 ring-foreground' : 'hover:bg-muted')}>
+                    <button key={key} type="button" role="radio" disabled={!!edit} aria-checked={draft.objective === key} onClick={() => setDraft({ ...draft, objective: key, adsets: draft.adsets.map((item) => ({ ...item, optimization: FB_OPTIMIZATION[key][0] })) })} className={cn('rounded-md border p-3 text-left disabled:cursor-not-allowed', draft.objective === key ? 'border-foreground ring-1 ring-foreground' : 'hover:bg-muted disabled:opacity-50 disabled:hover:bg-transparent')}>
                       <div className="text-[14px] font-medium">{label}</div><div className="mt-1 text-[12px] text-muted-foreground">{text}</div>
                     </button>
                   ))}
@@ -8377,7 +8724,7 @@ function FbCreateScreen({ accounts, members, viewer, setViewer, entities, setEnt
               </FbFormBlock>
               <FbFormBlock title="Orçamento e lance">
                 <div className="grid items-start gap-4 sm:grid-cols-2">
-                  <FbSegment label="Onde fica o orçamento" value={draft.budgetAt} options={[['campaign', 'Na campanha'], ['adset', 'Nos conjuntos']]} onChange={(budgetAt) => setCampaign({ budgetAt })} />
+                  <FbSegment label="Onde fica o orçamento" value={draft.budgetAt} options={[['campaign', 'Na campanha'], ['adset', 'Nos conjuntos']]} disabled={!!edit} onChange={(budgetAt) => setCampaign({ budgetAt })} />
                   {draft.budgetAt === 'campaign' && <FbSegment label="Tipo" value={draft.budgetKind} options={[['daily', 'Diário'], ['lifetime', 'Vitalício']]} onChange={(budgetKind) => setCampaign({ budgetKind })} />}
                   {draft.budgetAt === 'campaign' && (
                     <Field id="fb-new-budget" label={draft.budgetKind === 'daily' ? 'Orçamento diário' : 'Orçamento vitalício'} hint={draft.budgetKind === 'lifetime' ? 'Precisa de data de fim nos conjuntos. Conta no limite como o valor dividido pelos dias.' : undefined} error={(dailyTotal < 6 && 'O Facebook pede pelo menos R$ 6,00 por dia.') || (over && room && `Passa do ${room.label.charAt(0).toLowerCase()}${room.label.slice(1)}: sobram ${fbMoney(Math.max(0, room.limit - room.used))} por dia.`)}>
@@ -8389,7 +8736,7 @@ function FbCreateScreen({ accounts, members, viewer, setViewer, entities, setEnt
                   </Field>
                   {draft.bid !== 'volume' && <FbMoneyField id="fb-new-bid-value" label={draft.bid === 'cost_cap' ? 'Custo máximo por resultado' : 'Lance máximo'} value={draft.bidValue} hint="Ex.: R$ 0,30 por visualização da página de destino" onChange={(bidValue) => setCampaign({ bidValue })} />}
                   <FbMoneyField id="fb-new-spend-cap" label="Limite de gasto da campanha (opcional)" value={draft.spendCap} hint="A campanha para quando gastar esse total" onChange={(spendCap) => setCampaign({ spendCap })} />
-                  <FbSegment label="Ao criar" value={draft.startOn} options={[['paused', 'Criar pausada'], ['active', 'Criar e ativar']]} onChange={(startOn) => setCampaign({ startOn })} />
+                  {!edit && <FbSegment label="Ao criar" value={draft.startOn} options={[['paused', 'Criar pausada'], ['active', 'Criar e ativar']]} onChange={(startOn) => setCampaign({ startOn })} />}
                 </div>
               </FbFormBlock>
             </section>
@@ -8397,7 +8744,7 @@ function FbCreateScreen({ accounts, members, viewer, setViewer, entities, setEnt
 
           {adset && selection.kind === 'adset' && (
             <section className="overflow-hidden rounded-lg border bg-card">
-              <div className="flex flex-wrap items-start justify-between gap-3 p-6"><div><h2 className="text-[20px] font-semibold tracking-tight">Conjunto de anúncios</h2><p className="mt-2 text-[14px] text-muted-foreground">Público, posicionamentos, datas e otimização deste conjunto.</p></div><div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => copyAdset(selection.adset)}><Copy className="h-4 w-4" />Duplicar conjunto</Button>{draft.adsets.length > 1 && <Button size="sm" variant="ghost" onClick={() => remove(selection)}><Trash2 className="h-4 w-4" />Tirar</Button>}</div></div>
+              <div className="flex flex-wrap items-start justify-between gap-3 p-6"><div><h2 className="text-[20px] font-semibold tracking-tight">Conjunto de anúncios</h2><p className="mt-2 text-[14px] text-muted-foreground">Público, posicionamentos, datas e otimização deste conjunto.</p></div>{!edit && <div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => copyAdset(selection.adset)}><Copy className="h-4 w-4" />Duplicar conjunto</Button>{draft.adsets.length > 1 && <Button size="sm" variant="ghost" onClick={() => remove(selection)}><Trash2 className="h-4 w-4" />Tirar</Button>}</div>}</div>
               <FbFormBlock title="Nome e otimização">
                 <div className="grid items-start gap-4 sm:grid-cols-2">
                   <Field id="fb-set-name" label="Nome do conjunto"><Input id="fb-set-name" className="h-10" value={adset.name} onChange={(event) => setAdset(selection.adset, { name: event.target.value })} /></Field>
@@ -8448,7 +8795,7 @@ function FbCreateScreen({ accounts, members, viewer, setViewer, entities, setEnt
 
           {ad && adset && selection.kind === 'ad' && (
             <section className="overflow-hidden rounded-lg border bg-card">
-              <div className="flex flex-wrap items-start justify-between gap-3 p-6"><div><h2 className="text-[20px] font-semibold tracking-tight">Anúncio</h2><p className="mt-2 text-[14px] text-muted-foreground">No conjunto {adset.name}.</p></div>{adset.ads.length > 1 && <Button size="sm" variant="ghost" onClick={() => remove(selection)}><Trash2 className="h-4 w-4" />Tirar</Button>}</div>
+              <div className="flex flex-wrap items-start justify-between gap-3 p-6"><div><h2 className="text-[20px] font-semibold tracking-tight">Anúncio</h2><p className="mt-2 text-[14px] text-muted-foreground">No conjunto {adset.name}.</p></div>{!edit && adset.ads.length > 1 && <Button size="sm" variant="ghost" onClick={() => remove(selection)}><Trash2 className="h-4 w-4" />Tirar</Button>}</div>
               <FbFormBlock title="Identidade" desc="Quem publica o anúncio. A Página é obrigatória.">
                 <div className="grid items-start gap-4 sm:grid-cols-2">
                   <Field id="fb-ad-name" label="Nome do anúncio"><Input id="fb-ad-name" className="h-10" value={ad.name} onChange={(event) => setAd(selection.adset, selection.ad, { name: event.target.value })} /></Field>
@@ -8502,15 +8849,16 @@ function FbCreateScreen({ accounts, members, viewer, setViewer, entities, setEnt
           <Card pad>
             <h2 className="text-[14px] font-medium">Resumo</h2>
             <dl className="mt-3 grid gap-2 text-[13px]">
-              {([['Conta', account ? `${account.name} · ${account.business}` : '—'], ['Objetivo', FB_OBJECTIVES.find(([key]) => key === draft.objective)?.[1] ?? ''], ['Orçamento', draft.budgetAt === 'campaign' ? `${fbMoney(Number(draft.budget || 0))} ${draft.budgetKind === 'daily' ? 'por dia' : 'no total'}` : `${fbMoney(dailyTotal)} por dia nos conjuntos`], ['Estrutura', `${draft.adsets.length} conjunto(s), ${allAds.length} anúncio(s)`], ['Ao criar', draft.startOn === 'active' ? 'Ativa, depois da revisão' : 'Pausada']] as const).map(([label, shown]) => <div key={label} className="flex justify-between gap-3"><dt className="text-muted-foreground">{label}</dt><dd className="text-right">{shown}</dd></div>)}
+              {([['Conta', account ? `${account.name} · ${account.business}` : '—'], ['Objetivo', FB_OBJECTIVES.find(([key]) => key === draft.objective)?.[1] ?? ''], ['Orçamento', draft.budgetAt === 'campaign' ? `${fbMoney(Number(draft.budget || 0))} ${draft.budgetKind === 'daily' ? 'por dia' : 'no total'}` : `${fbMoney(dailyTotal)} por dia nos conjuntos`], ['Estrutura', `${draft.adsets.length} conjunto(s), ${allAds.length} anúncio(s)`], ['Ao criar', draft.startOn === 'active' ? 'Ativa, depois da revisão' : 'Pausada']] as const).filter(([label]) => !edit || label === 'Conta' || label === 'Objetivo' || (label === 'Orçamento' && edit.level !== 'ad')).map(([label, shown]) => <div key={label} className="flex justify-between gap-3"><dt className="text-muted-foreground">{label}</dt><dd className="text-right">{shown}</dd></div>)}
             </dl>
-            {room && <div className="mt-4 grid gap-2 border-t pt-4"><div className="text-[13px] text-muted-foreground">{room.label}</div><FbLimitBar used={room.used + dailyTotal} limit={room.limit} /></div>}
+            {room && <div className="mt-4 grid gap-2 border-t pt-4"><div className="text-[13px] text-muted-foreground">{room.label}</div><FbLimitBar used={room.used + Math.max(0, extra)} limit={room.limit} /></div>}
           </Card>
           <Card pad>
-            <h2 className="text-[14px] font-medium">Para criar</h2>
+            <h2 className="text-[14px] font-medium">{edit ? 'Para salvar' : 'Para criar'}</h2>
             <ul className="mt-3 grid gap-1.5">{checks.map(([label, passed]) => <li key={label}><Status tone={passed ? 'ok' : 'bad'}>{label}</Status></li>)}</ul>
           </Card>
-          <Button disabled={!ready} onClick={submit}>Criar no Facebook</Button>
+          <Button disabled={!ready} onClick={submit}>{edit ? 'Salvar no Facebook' : 'Criar no Facebook'}</Button>
+          {edit && <Button variant="outline" onClick={back}>Cancelar</Button>}
         </div>
       </Body>
     </>
@@ -8711,7 +9059,7 @@ function FbAdPreview({ entity, site }: { entity: FbEntity; site: string | null }
 }
 
 /** Página de uma campanha, conjunto ou anúncio: números, gráfico, métricas, filhos, orçamento, regras e decisões. */
-function FbEntityScreen({ entity, entities, setEntities, accounts, staff, open, duplicate, back }: { entity: FbEntity; entities: FbEntity[]; setEntities: (entities: FbEntity[]) => void; accounts: FbAccount[]; staff: boolean; open: (entity: FbEntity) => void; duplicate: (entity: FbEntity) => void; back: () => void }) {
+function FbEntityScreen({ entity, entities, setEntities, accounts, staff, open, duplicate, edit, history, addChange, back }: { entity: FbEntity; entities: FbEntity[]; setEntities: (entities: FbEntity[]) => void; accounts: FbAccount[]; staff: boolean; open: (entity: FbEntity) => void; duplicate: (entity: FbEntity) => void; edit: (entity: FbEntity) => void; history: FbChange[]; addChange: (change: FbChangeInput) => void; back: () => void }) {
   const [period, setPeriod] = useState('30')
   const [asking, setAsking] = useState<FbEntity | null>(null)
   const factor = Number(period) / 30
@@ -8723,13 +9071,18 @@ function FbEntityScreen({ entity, entities, setEntities, accounts, staff, open, 
   const numbers = fbNumbers(spend, entity.roi, entity.cpc, !!site)
   const daily = fbDaily(entity.spend, entity.roi, Number(period), entity.id.length + entity.spend)
   const money = (value: number, whole = false) => fbMoney(value, whole, account.currency)
+  const family = [entity.id, ...children.map((child) => child.id), ...entities.filter((item) => children.some((child) => child.id === item.parent)).map((item) => item.id)]
+  const changes = history.filter((change) => (entity.level === 'campaign' ? change.campaign === entity.id : change.entity !== null && family.includes(change.entity)))
+  /** Pede ao Facebook para analisar de novo o anúncio reprovado, sem mudar nada. */
+  const appeal = () => { setEntities(entities.map((item) => (item.id === entity.id ? { ...item, review: 'pending' as const } : item))); addChange({ ...fbAbout(entity, accounts), what: 'Pediu nova análise', detail: 'Sem mudanças no anúncio' }); toast.success('Pedido enviado ao Facebook', { description: 'A resposta costuma vir em até 24 horas e aparece nos avisos.' }) }
   return (
     <>
       <PageHeader title={entity.name} sub={`${FB_LEVEL[entity.level].one} · ${staff ? `${account.client} · ` : ''}${account.name}${site ? ` · ${site}` : ' · sem site'}`}
         back={<button onClick={back} className="mb-3 flex items-center gap-1.5 text-[14px] text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4" />{parent ? parent.name : 'Campanhas'}</button>}
-        actions={<div className="flex flex-wrap items-center gap-3"><Status tone={entity.on ? 'ok' : 'neutral'}>{entity.on ? 'Ativa' : 'Pausada'}</Status>{!staff && <Button variant="outline" onClick={() => setAsking(entity)}>{entity.on ? 'Pausar' : 'Ativar'}</Button>}{!staff && entity.level === 'campaign' && <Button variant="outline" onClick={() => duplicate(entity)}><Copy className="h-4 w-4" />Duplicar</Button>}<Select value={period} onValueChange={setPeriod}><SelectTrigger aria-label="Período" className="h-9 w-[160px]"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="7">Últimos 7 dias</SelectItem><SelectItem value="30">Últimos 30 dias</SelectItem></SelectContent></Select></div>} />
+        actions={<div className="flex flex-wrap items-center gap-3">{entity.review === 'rejected' ? <Status tone="bad">Reprovado</Status> : entity.review === 'pending' ? <Status tone="ochre">Em revisão</Status> : <Status tone={entity.on ? 'ok' : 'neutral'}>{entity.on ? 'Ativa' : 'Pausada'}</Status>}{!staff && <Button variant="outline" onClick={() => setAsking(entity)}>{entity.on ? 'Pausar' : 'Ativar'}</Button>}{!staff && <Button variant="outline" onClick={() => edit(entity)}><Pencil className="h-4 w-4" />Editar</Button>}{!staff && entity.level === 'campaign' && <Button variant="outline" onClick={() => duplicate(entity)}><Copy className="h-4 w-4" />Duplicar</Button>}<Select value={period} onValueChange={setPeriod}><SelectTrigger aria-label="Período" className="h-9 w-[160px]"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="7">Últimos 7 dias</SelectItem><SelectItem value="30">Últimos 30 dias</SelectItem></SelectContent></Select></div>} />
       <Body>
         {staff && <FbStaffNote />}
+        <FbReviewBanner entity={entity} staff={staff} edit={() => edit(entity)} appeal={appeal} />
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-muted-foreground"><span>ID <Code>{entity.id}</Code></span><a className="inline-flex items-center gap-1 text-link hover:underline" href="#" onClick={(event) => event.preventDefault()}>Abrir no Gerenciador de Anúncios<ExternalLink className="h-3.5 w-3.5" /></a></div>
         {!site && <div className="flex items-start gap-2 rounded-md border border-ochre/40 bg-ochre-soft px-3 py-2 text-[13px] text-ochre"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />A conta {account.name} não tem site. Vincule um site na tela Facebook para ver receita, lucro e ROI.</div>}
         <FbTiles tiles={[
@@ -8752,9 +9105,13 @@ function FbEntityScreen({ entity, entities, setEntities, accounts, staff, open, 
           <FbBudgetCard entity={entity} parent={parent} account={account} readOnly={staff} />
           <FbRulesCard key={entity.id} entity={entity} budgetHere={entity.budget !== null} readOnly={staff} />
         </div>
+        <section className="grid gap-3">
+          <div><h2 className="text-[20px] font-semibold tracking-tight">Histórico de mudanças</h2><p className="mt-1 text-[14px] text-muted-foreground">Quem mudou {entity.level === 'campaign' ? 'a campanha, os conjuntos e os anúncios dela' : entity.level === 'adset' ? 'o conjunto e os anúncios dele' : 'o anúncio'}, pelo Avant ou direto no Facebook.</p></div>
+          <FbHistoryTable rows={changes.slice(0, 10)} showWhere={entity.level !== 'ad'} staff={false} empty="Ninguém mudou nada ainda" />
+        </section>
         <FbDecisions entity={entity} />
       </Body>
-      <FbToggleDialog entity={asking} onClose={() => setAsking(null)} onConfirm={() => { setEntities(entities.map((item) => (item.id === asking!.id ? { ...item, on: !item.on } : item))); toast.success(asking!.on ? 'Pausada no Facebook' : 'Ativada no Facebook'); setAsking(null) }} />
+      <FbToggleDialog entity={asking} onClose={() => setAsking(null)} onConfirm={() => { setEntities(entities.map((item) => (item.id === asking!.id ? { ...item, on: !item.on } : item))); addChange({ ...fbAbout(asking!, accounts), what: asking!.on ? 'Pausou' : 'Ativou', detail: '' }); toast.success(asking!.on ? 'Pausada no Facebook' : 'Ativada no Facebook'); setAsking(null) }} />
     </>
   )
 }
@@ -8815,6 +9172,18 @@ export default function App() {
   const [fbMembers, setFbMembers] = useState(FB_INITIAL_MEMBERS)
   const [fbViewer, setFbViewer] = useState<FbViewer>({ kind: 'owner' })
   const [fbDraftFrom, setFbDraftFrom] = useState<FbEntity | null>(null)
+  const [fbEditing, setFbEditing] = useState<FbEntity | null>(null)
+  const [fbHistory, setFbHistory] = useState(FB_INITIAL_HISTORY)
+  const [fbAlerts, setFbAlerts] = useState(FB_INITIAL_ALERTS)
+  /** Registra uma mudança no histórico do Facebook com o nome de quem está olhando. */
+  const addFbChange = (change: FbChangeInput) => setFbHistory((current) => [{ ...change, origin: 'avant', id: `h${Date.now()}${current.length}`, when: 'Agora', who: fbViewerName(fbViewer, fbMembers) }, ...current])
+  /** O botão de um aviso: abre o anúncio ou a campanha, as campanhas da conta, ou o que precisa ser feito no Facebook. */
+  const actFbAlert = (alert: FbAlert, staff: boolean) => {
+    const target = alert.target ? fbEntities.find((entity) => entity.id === alert.target) : undefined
+    if (target) return openFbEntity(target, staff)
+    if (alert.kind === 'limit_near' || alert.kind === 'limit_paused') { setFbAccountFilter(alert.account); return go(staff ? 'fbcampanhasinterno' : 'fbcampanhas') }
+    toast(alert.kind === 'profile_expired' ? 'No Avant de verdade, abre o login do Facebook para quem conectou o perfil.' : 'No Avant de verdade, abre essa página no Facebook, numa aba nova.')
+  }
   /** Abre a página da campanha, do conjunto ou do anúncio. */
   const openFbEntity = (entity: FbEntity, staff = INTERNAL_SCREENS.includes(screen)) => { setFbEntityId(entity.id); go(`${entity.level === 'campaign' ? 'fbcampanha' : entity.level === 'adset' ? 'fbconjunto' : 'fbanuncio'}${staff ? 'interno' : ''}` as Screen) }
   /** Abre a ad tag do site (ou começa uma) no painel do cliente ou no interno. */
@@ -8906,16 +9275,17 @@ export default function App() {
       case 'cascata': case 'cascatainterno': { const staff = screen === 'cascatainterno'; const site = priceSites.find((item) => item.domain === priceDomain && item.active) ?? priceSites[0]; const rules = priceCascades(site); const rule = rules.find((item) => item.id === priceRuleId) ?? rules[0]; return <CascadeRuleScreen key={rule.id} initial={rule} site={site} staff={staff} back={() => go(staff ? 'regrasiteinterno' : 'regrasite')} /> }
       case 'regra': case 'regrainterno': { const staff = screen === 'regrainterno'; const site = priceSites.find((item) => item.domain === priceDomain) ?? priceSites[0]; const rules = priceRules(site.active ? site : priceSites[0]); const rule = rules.find((item) => item.id === priceRuleId) ?? rules[0]; return <PriceRuleScreen key={rule.id} initial={rule} site={site.active ? site : priceSites[0]} staff={staff} back={() => go(staff ? 'regrasiteinterno' : 'regrasite')} /> }
       case 'fbvazio': return <FbEmptyState go={go} />
-      case 'facebook': case 'fbpessoas': case 'fbinterno': { const staff = screen === 'fbinterno'; return <FacebookScreen key={screen} accounts={fbAccounts} setAccounts={setFbAccounts} members={fbMembers} setMembers={setFbMembers} viewer={staff ? { kind: 'staff' } : fbViewer} setViewer={setFbViewer} startTab={screen === 'fbpessoas' ? 'people' : 'accounts'} go={go} openAccount={(id) => { setFbAccountFilter(id); go(staff ? 'fbcampanhasinterno' : 'fbcampanhas') }} /> }
+      case 'facebook': case 'fbpessoas': case 'fbavisos': case 'fbhistorico': case 'fbinterno': { const staff = screen === 'fbinterno'; return <FacebookScreen key={screen} accounts={fbAccounts} setAccounts={setFbAccounts} members={fbMembers} setMembers={setFbMembers} viewer={staff ? { kind: 'staff' } : fbViewer} setViewer={setFbViewer} startTab={screen === 'fbpessoas' ? 'people' : screen === 'fbavisos' ? 'alerts' : screen === 'fbhistorico' ? 'history' : 'accounts'} go={go} openAccount={(id) => { setFbAccountFilter(id); go(staff ? 'fbcampanhasinterno' : 'fbcampanhas') }} alerts={fbAlerts} setAlerts={setFbAlerts} history={fbHistory} actAlert={(alert) => actFbAlert(alert, staff)} addChange={addFbChange} /> }
       case 'fbconectar': return <FbConnectScreen go={go} accounts={fbAccounts} setAccounts={setFbAccounts} />
-      case 'fbcampanhas': case 'fbcampanhasinterno': { const staff = screen === 'fbcampanhasinterno'; return <FbCampaignsScreen key={screen} entities={fbEntities} setEntities={setFbEntities} accounts={fbAccounts} members={fbMembers} viewer={staff ? { kind: 'staff' } : fbViewer} setViewer={setFbViewer} accountFilter={fbAccountFilter} setAccountFilter={setFbAccountFilter} open={(entity) => openFbEntity(entity, staff)} create={() => { setFbDraftFrom(null); go('fbnovacampanha') }} /> }
-      case 'fbnovacampanha': return <FbCreateScreen key={fbDraftFrom?.id ?? 'new'} accounts={fbAccounts} members={fbMembers} viewer={fbViewer} setViewer={setFbViewer} entities={fbEntities} setEntities={setFbEntities} from={fbDraftFrom ?? undefined} back={() => go('fbcampanhas')} />
+      case 'fbcampanhas': case 'fbcampanhasinterno': { const staff = screen === 'fbcampanhasinterno'; return <FbCampaignsScreen key={screen} entities={fbEntities} setEntities={setFbEntities} accounts={fbAccounts} members={fbMembers} viewer={staff ? { kind: 'staff' } : fbViewer} setViewer={setFbViewer} accountFilter={fbAccountFilter} setAccountFilter={setFbAccountFilter} open={(entity) => openFbEntity(entity, staff)} create={() => { setFbDraftFrom(null); go('fbnovacampanha') }} addChange={addFbChange} /> }
+      case 'fbnovacampanha': return <FbCreateScreen key={fbDraftFrom?.id ?? 'new'} accounts={fbAccounts} members={fbMembers} viewer={fbViewer} setViewer={setFbViewer} entities={fbEntities} setEntities={setFbEntities} from={fbDraftFrom ?? undefined} addChange={addFbChange} back={() => go('fbcampanhas')} />
+      case 'fbeditar': { const editing = (fbEditing && fbEntities.find((item) => item.id === fbEditing.id)) ?? fbEntities.find((item) => item.review === 'rejected')!; return <FbCreateScreen key={`edit-${editing.id}`} accounts={fbAccounts} members={fbMembers} viewer={fbViewer} setViewer={setFbViewer} entities={fbEntities} setEntities={setFbEntities} edit={editing} addChange={addFbChange} back={() => openFbEntity(editing, false)} /> }
       case 'fbcampanha': case 'fbconjunto': case 'fbanuncio': case 'fbcampanhainterno': case 'fbconjuntointerno': case 'fbanunciointerno': {
         const staff = screen.endsWith('interno')
         const level: FbLevel = screen.startsWith('fbcampanha') ? 'campaign' : screen.startsWith('fbconjunto') ? 'adset' : 'ad'
         const entity = fbEntities.find((item) => item.id === fbEntityId && item.level === level) ?? fbEntities.find((item) => item.level === level)!
         const parent = fbEntities.find((item) => item.id === entity.parent)
-        return <FbEntityScreen key={entity.id} entity={entity} entities={fbEntities} setEntities={setFbEntities} accounts={fbAccounts} staff={staff} open={(item) => openFbEntity(item, staff)} duplicate={(item) => { setFbDraftFrom(item); go('fbnovacampanha') }} back={() => (parent ? openFbEntity(parent, staff) : go(staff ? 'fbcampanhasinterno' : 'fbcampanhas'))} />
+        return <FbEntityScreen key={entity.id} entity={entity} entities={fbEntities} setEntities={setFbEntities} accounts={fbAccounts} staff={staff} open={(item) => openFbEntity(item, staff)} duplicate={(item) => { setFbDraftFrom(item); go('fbnovacampanha') }} edit={(item) => { setFbEditing(item); go('fbeditar') }} history={fbHistory} addChange={addFbChange} back={() => (parent ? openFbEntity(parent, staff) : go(staff ? 'fbcampanhasinterno' : 'fbcampanhas'))} />
       }
       case 'tarefa': { const task = tasks.find((item) => item.id === taskId) ?? tasks[0]; return <TaskScreen key={task.id} task={task} update={(next) => setTasks(tasks.map((item) => (item.id === next.id ? next : item)))} back={() => go('tarefas')} /> }
     }
