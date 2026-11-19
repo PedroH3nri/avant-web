@@ -20,6 +20,7 @@ import { errorText, lang, pick, t } from '@/lib/i18n'
 import { clientService } from '@/modules/internal/clients/service'
 import { staffService } from '@/modules/internal/staff/service'
 import { facebookService } from '@/modules/facebook/service'
+import { googleAdsService } from '@/modules/google_ads/service'
 import { networkName } from '@/modules/networks/rules'
 import { networkService } from '@/modules/networks/service'
 import ConfigPanel, { type FilterOption } from '@/modules/reports/components/ConfigPanel.vue'
@@ -135,7 +136,7 @@ async function loadExtras() {
   const groone = session.company?.is_internal === true
   /** A lista que a pessoa não pode ver: fica vazia no filtro. */
   const denied = () => Promise.reject(new Error('sem permissão'))
-  const [roleList, siteList, networkList, clientList, staffList, memberList, accountList] = await Promise.allSettled([
+  const [roleList, siteList, networkList, clientList, staffList, memberList, accountList, googleAdsList] = await Promise.allSettled([
     session.can('roles.view') ? teamService.roleOptions() : denied(),
     session.can('sites.view') ? siteService.options() : denied(),
     session.can('network.view') ? networkService.options() : denied(),
@@ -143,6 +144,7 @@ async function loadExtras() {
     groone ? staffService.options() : denied(),
     !groone && session.can('team.view') ? teamService.memberOptions() : denied(),
     !groone && session.can('facebook.view') ? facebookService.accounts() : denied(),
+    !groone && session.can('google_ads.view') ? googleAdsService.accounts() : denied(),
   ])
   roles.value = roleList.status === 'fulfilled' ? roleList.value.items.map((role) => ({ id: role.id, name: pick(role.name) })) : null
   options.value = {
@@ -152,6 +154,7 @@ async function loadExtras() {
     account_manager: staffList.status === 'fulfilled' ? staffList.value.items.map((member) => ({ value: member.user.id, label: member.user.name || member.user.email })) : [],
     site_category: SITE_CATEGORIES.map((category) => ({ value: category, label: categoryLabel(category) })),
     fb_account: accountList.status === 'fulfilled' ? accountList.value.map((account) => ({ value: account.id, label: account.name })) : [],
+    gads_account: googleAdsList.status === 'fulfilled' ? googleAdsList.value.map((account) => ({ value: account.id, label: account.name })) : [],
     site_responsible: memberList.status === 'fulfilled' ? memberList.value.items.map((member) => ({ value: member.user.id, label: member.user.name || member.user.email })) : [],
   }
 }

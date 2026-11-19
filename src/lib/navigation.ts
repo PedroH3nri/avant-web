@@ -69,6 +69,10 @@ export const NAV_GROUPS: NavGroup[] = [
       { to: '/interno/facebook', key: 'nav.facebook', icon: Megaphone, internal: true },
       { to: '/campanhas-facebook', key: 'nav.facebookCampaigns', icon: ChartLine, clientOnly: true },
       { to: '/interno/campanhas-facebook', key: 'nav.facebookCampaigns', icon: ChartLine, internal: true },
+      { to: '/google-ads', key: 'nav.googleAds', icon: Megaphone, clientOnly: true },
+      { to: '/interno/google-ads', key: 'nav.googleAds', icon: Megaphone, internal: true },
+      { to: '/campanhas-google-ads', key: 'nav.googleAdsCampaigns', icon: ChartLine, clientOnly: true },
+      { to: '/interno/campanhas-google-ads', key: 'nav.googleAdsCampaigns', icon: ChartLine, internal: true },
     ],
   },
   {
