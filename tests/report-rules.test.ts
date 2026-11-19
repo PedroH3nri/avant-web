@@ -35,10 +35,12 @@ const catalog: MetricCatalog = {
     { key: 'revenue', label, kind: 'sum', format: 'currency', sources: ['gam'], internal_only: false },
     { key: 'ecpm', label, kind: 'ratio', format: 'currency', sources: ['gam'], internal_only: false },
     { key: 'page_views', label, kind: 'sum', format: 'number', sources: ['gam', 'page_views'], internal_only: false },
+    { key: 'fb_spend', label, kind: 'sum', format: 'currency', sources: ['facebook'], internal_only: false },
   ],
   custom_metrics: [{ query_key: 'custom.rpm', name: 'RPM', description: null, format: 'currency', decimals: 2, sources: ['gam'] }],
   dimensions: [
-    { key: 'date', label, sources: ['gam', 'page_views', 'gam_key_values'], filterable: false },
+    { key: 'date', label, sources: ['gam', 'page_views', 'gam_key_values', 'facebook'], filterable: false },
+    { key: 'fb_campaign', label, sources: ['facebook'], filterable: true },
     { key: 'site', label, sources: ['gam', 'page_views'], filterable: true },
     { key: 'hour', label, sources: ['page_views'], filterable: false },
     { key: 'ad_unit', label, sources: ['gam'], filterable: true },
@@ -61,6 +63,8 @@ describe('regras do construtor de relatórios', () => {
     expect(pickSource(['revenue'], ['hour'], [], catalog)).toBeNull()
     expect(pickSource(['custom.rpm'], ['key_value'], [], catalog)).toBeNull()
     expect(pickSource(['revenue'], [], ['ad_unit'], catalog)).toBe('gam')
+    expect(pickSource(['fb_spend'], ['date', 'fb_campaign'], [], catalog)).toBe('facebook')
+    expect(pickSource(['revenue', 'fb_spend'], ['date'], [], catalog)).toBeNull()
   })
 
   it('apaga o campo que deixaria a consulta sem fonte', () => {
