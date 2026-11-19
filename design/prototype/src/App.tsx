@@ -30,6 +30,7 @@ const SCREENS = [
   ['construtor', 'Relatórios · Construtor'],
   ['resultado', 'Resultado'],
   ['custos', 'Custos'],
+  ['controlecustos', 'Financeiro · Controle de custos'],
   ['equipe', 'Equipe'],
   ['grupos', 'Equipe · Grupos'],
   ['grupo', 'Equipe · Página do grupo'],
@@ -410,7 +411,7 @@ const CLIENT_RAIL: RailGroup[] = [
   { key: 'inicio', label: 'Início', icon: Home, items: [{ id: 'inicio', label: 'Dashboard' }] },
   { key: 'relatorios', label: 'Relatórios', icon: BarChart3, items: [{ id: 'desempenho', label: 'Ad Manager' }, { id: 'visitas', label: 'Page Views' }, { id: 'relatorios', label: 'Relatórios customizados', also: ['construtor', 'relatorio'], separated: true }] },
   { key: 'integracoes', label: 'Integrações', icon: Plug, items: [{ id: 'facebook', label: 'Facebook', also: ['fbvazio', 'fbconectar', 'fbpessoas', 'fbavisos', 'fbhistorico'] }, { id: 'fbcampanhas', label: 'Campanhas do Facebook', also: ['fbnovacampanha', 'fbcampanha', 'fbconjunto', 'fbanuncio', 'fbeditar'] }, { id: 'gads', label: 'Google Ads', also: ['gadsvazio', 'gadsconectar', 'gadspessoas', 'gadsavisos', 'gadshistorico'] }, { id: 'gadscampanhas', label: 'Campanhas do Google Ads', also: ['gadsnovacampanha', 'gadscampanha', 'gadsgrupo', 'gadsanuncio', 'gadseditar'] }] },
-  { key: 'financeiro', label: 'Financeiro', icon: Wallet, items: [{ id: 'resultado', label: 'Resultado' }, { id: 'custos', label: 'Custos' }] },
+  { key: 'financeiro', label: 'Financeiro', icon: Wallet, items: [{ id: 'resultado', label: 'Resultado' }, { id: 'custos', label: 'Custos' }, { id: 'controlecustos', label: 'Controle de custos' }] },
   { key: 'inventario', label: 'Inventário', icon: Network, items: [{ id: 'networks', label: 'Networks do GAM', also: ['conectar'] }, { id: 'rewards', label: 'Rewards', also: ['reward', 'rewardmetricas'] }, { id: 'adtags', label: 'Ad tags', also: ['adtag', 'adtagmetricas'] }, { id: 'loaders', label: 'Loaders', also: ['loader'] }, { id: 'regraspreco', label: 'Regras de preço', also: ['regrasite', 'regra', 'cascata'] }] },
   { key: 'equipe', label: 'Equipe', icon: Users, items: [{ id: 'equipe', label: 'Membros', also: ['membro'] }, { id: 'grupos', label: 'Grupos', also: ['grupo', 'grupoinativo'] }] },
   { key: 'empresa', label: 'Empresa', icon: Settings, items: [{ id: 'configuracoes', label: 'Configurações' }, { id: 'fiscais', label: 'Dados fiscais' }] },
@@ -1707,7 +1708,7 @@ const RESULT_MONTHS = [
   { month: 'set. 2026', billing: 11040, deductions: 133, costs: 2110 },
   { month: 'out. 2026', billing: 7215, deductions: null, costs: 1820 },
 ] as const
-const COST_LINES = [['Imposto (6% do faturamento)', 662.4], ['Equipe de conteúdo', 1200], ['Servidor e CDN', 180], ['Ferramentas', 67.6]] as const
+const COST_LINES = [['Imposto (6% do faturamento)', 662.4], ['Equipe de conteúdo', 1200], ['Servidor e CDN', 180], ['Ferramentas', 67.6], ['Facebook (gasto em anúncios, automático)', 4120], ['Google Ads (gasto em anúncios, automático)', 3710]] as const
 
 function Money({ value, strong }: { value: number; strong?: boolean }) {
   return <span className={cn('tnum whitespace-nowrap', strong && 'font-semibold', value < 0 && (strong ? 'text-bad' : 'text-muted-foreground'))}>{usd.format(value)}</span>
@@ -10078,6 +10079,148 @@ function GaCreateScreen({ accounts, members, viewer, setViewer, entities, setEnt
   )
 }
 
+/* ---------- Financeiro: controle de custos das integrações (avant-web#331, protótipo) ---------- */
+
+type CostIntegration = 'facebook' | 'google'
+/** Uma conta de anúncio de qualquer integração, com quem usa, gasto, receita e ROI do período. */
+type CostAccountRow = { id: string; integration: CostIntegration; name: string; holder: string; site: string | null; spend: number; revenue: number | null; dailyLimit: number | null; monthlyLimit: number | null }
+const COST_INTEGRATION: Record<CostIntegration, string> = { facebook: 'Facebook', google: 'Google Ads' }
+const COST_INTEGRATION_COLOR: Record<CostIntegration, string> = { facebook: '#1877F2', google: '#F9AB00' }
+const COST_OWNER = 'Pedro Henrique'
+
+/** ROI médio das campanhas de uma conta, pesado pelo gasto. */
+function costAccountRoi(spends: { spend: number; roi: number }[]) {
+  const spend = spends.reduce((total, item) => total + item.spend, 0)
+  return spend ? spends.reduce((total, item) => total + item.spend * item.roi, 0) / spend : 0
+}
+
+/** Junta as contas do Facebook e do Google Ads do cliente numa lista só, com quem usa cada uma. */
+function costAccountRows(): CostAccountRow[] {
+  const holderOf = (members: FbMember[], id: string) => members.find((member) => member.accounts.includes(id))?.name ?? COST_OWNER
+  const facebook = FB_INITIAL_ACCOUNTS.filter((account) => account.client === FB_MY_CLIENT && account.state !== 'disabled').map((account) => {
+    const roi = costAccountRoi(FB_INITIAL_ENTITIES.filter((entity) => entity.level === 'campaign' && entity.account === account.id))
+    return { id: account.id, integration: 'facebook' as const, name: account.name, holder: holderOf(FB_INITIAL_MEMBERS, account.id), site: account.site, spend: account.spentMonth, revenue: account.site ? account.spentMonth * (1 + roi) : null, dailyLimit: account.dailyLimit, monthlyLimit: account.monthlyLimit }
+  })
+  const google = GA_INITIAL_ACCOUNTS.filter((account) => account.client === GA_MY_CLIENT && account.state !== 'suspended').map((account) => {
+    const roi = costAccountRoi(GA_INITIAL_ENTITIES.filter((entity) => entity.level === 'campaign' && entity.account === account.id))
+    return { id: account.id, integration: 'google' as const, name: account.name, holder: holderOf(GA_INITIAL_MEMBERS, account.id), site: account.site, spend: account.spentMonth, revenue: account.site ? account.spentMonth * (1 + roi) : null, dailyLimit: account.dailyLimit, monthlyLimit: account.monthlyLimit }
+  })
+  return [...facebook, ...google]
+}
+const COST_ROWS = costAccountRows()
+
+/** Soma gasto e receita de um grupo de contas; a receita só das que têm site. */
+function costTotals(rows: CostAccountRow[]) {
+  const spend = rows.reduce((total, row) => total + row.spend, 0)
+  const withSite = rows.filter((row) => row.revenue !== null)
+  const siteSpend = withSite.reduce((total, row) => total + row.spend, 0)
+  const revenue = withSite.reduce((total, row) => total + (row.revenue ?? 0), 0)
+  return { spend, revenue, profit: revenue - siteSpend, roi: siteSpend ? (revenue - siteSpend) / siteSpend : 0, accounts: rows.length, noSite: rows.length - withSite.length }
+}
+
+/** Barra da parte do gasto, com a cor da integração ou neutra. */
+function CostShare({ share, color }: { share: number; color?: string }) {
+  return <div className="flex items-center gap-3"><div className="h-2 w-32 rounded-full bg-secondary"><div className="h-2 rounded-full bg-foreground" style={{ width: `${Math.max(2, share * 100)}%`, background: color }} /></div><span className="tnum text-[13px]">{pctShort.format(share * 100)}%</span></div>
+}
+
+/** Controle de custos: quanto cada integração e cada pessoa gasta em anúncios e quanto isso traz de receita. */
+function CostControlScreen({ go }: { go: (screen: Screen) => void }) {
+  const [period, setPeriod] = useState('month')
+  const [integration, setIntegration] = useState<CostIntegration | 'all'>('all')
+  const [person, setPerson] = useState('all')
+  const factor = period === 'month' ? 1 : period === 'last' ? 1.42 : 1.6
+  const scaled = COST_ROWS.map((row) => ({ ...row, spend: row.spend * factor, revenue: row.revenue === null ? null : row.revenue * factor }))
+  const rows = scaled.filter((row) => (integration === 'all' || row.integration === integration) && (person === 'all' || row.holder === person))
+  const totals = costTotals(rows)
+  const people = [...new Set(scaled.map((row) => row.holder))]
+  const byIntegration = (['facebook', 'google'] as CostIntegration[]).map((key) => ({ key, ...costTotals(rows.filter((row) => row.integration === key)) })).filter((item) => item.accounts > 0)
+  const byPerson = people.map((name) => ({ name, integrations: [...new Set(rows.filter((row) => row.holder === name).map((row) => row.integration))], ...costTotals(rows.filter((row) => row.holder === name)) })).filter((item) => item.accounts > 0).sort((first, second) => second.spend - first.spend)
+  const daily = fbDaily(totals.spend * (30 / 19) / factor, totals.roi, 19, 7)
+  const periodLabel = period === 'month' ? 'novembro até hoje' : period === 'last' ? 'outubro' : 'últimos 30 dias'
+  return (
+    <>
+      <PageHeader title="Controle de custos" sub="Quanto cada integração e cada pessoa gasta em anúncios e quanto esse gasto traz de receita no Ad Manager."
+        actions={<>
+          <Select value={period} onValueChange={setPeriod}><SelectTrigger aria-label="Período" className="h-9 w-[170px]"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="month">Este mês</SelectItem><SelectItem value="last">Mês passado</SelectItem><SelectItem value="30">Últimos 30 dias</SelectItem></SelectContent></Select>
+          <Select value={integration} onValueChange={(value) => setIntegration(value as CostIntegration | 'all')}><SelectTrigger aria-label="Integração" className="h-9 w-[180px]"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Todas as integrações</SelectItem><SelectItem value="facebook">Facebook</SelectItem><SelectItem value="google">Google Ads</SelectItem></SelectContent></Select>
+          <Select value={person} onValueChange={setPerson}><SelectTrigger aria-label="Pessoa" className="h-9 w-[190px]"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Todas as pessoas</SelectItem>{people.map((name) => <SelectItem key={name} value={name}>{name}</SelectItem>)}</SelectContent></Select>
+        </>} />
+      <Body>
+        <FbTiles tiles={[
+          ['Gasto em anúncios', fbMoney(totals.spend, true), `${totals.accounts} contas · ${periodLabel}`],
+          ['Receita', fbMoney(totals.revenue, true), 'Ad Manager, pelos UTMs'],
+          ['Lucro', fbMoney(totals.profit, true), 'Receita menos gasto', fbRoiTone(totals.profit)],
+          ['ROI', fbRoiText(totals.roi), totals.noSite ? `${totals.noSite} contas sem site ficam de fora` : 'Todas as contas com site', fbRoiTone(totals.roi)],
+        ]} />
+        <Card title="Gasto e receita por dia" desc="Das contas no filtro, na moeda da Empresa.">
+          <PricePairChart labels={daily.map((day) => day.day)} main={daily.map((day) => day.revenue)} second={daily.map((day) => day.spend)} mainLabel="Receita" secondLabel="Gasto" mainColor={FB_COLOR.revenue} secondColor={FB_COLOR.spend} format={(value) => fbMoney(value, true)} />
+        </Card>
+        <section className="grid gap-3">
+          <div><h2 className="text-[20px] font-semibold tracking-tight">Por integração</h2><p className="mt-1 text-[14px] text-muted-foreground">Onde está o maior gasto e qual integração dá mais retorno. Clique para filtrar.</p></div>
+          <Table min={860}>
+            <thead><tr><th className={th}>Integração</th><th className={cn(th, 'text-right')}>Contas</th><th className={th}>Parte do gasto</th><th className={cn(th, 'text-right')}>Gasto</th><th className={cn(th, 'text-right')}>Receita</th><th className={cn(th, 'text-right')}>Lucro</th><th className={cn(th, 'text-right')}>ROI</th></tr></thead>
+            <tbody>
+              {byIntegration.map((item) => (
+                <tr key={item.key} className="cursor-pointer hover:bg-muted" onClick={() => setIntegration(integration === item.key ? 'all' : item.key)}>
+                  <td className={td}><span className="flex items-center gap-2 font-medium"><span className="h-2.5 w-2.5 rounded-full" style={{ background: COST_INTEGRATION_COLOR[item.key] }} />{COST_INTEGRATION[item.key]}</span></td>
+                  <td className={cn(td, 'text-right tnum')}>{item.accounts}</td>
+                  <td className={td}><CostShare share={totals.spend ? item.spend / totals.spend : 0} color={COST_INTEGRATION_COLOR[item.key]} /></td>
+                  <td className={cn(td, 'text-right tnum')}>{fbMoney(item.spend)}</td>
+                  <td className={cn(td, 'text-right tnum')}>{fbMoney(item.revenue)}</td>
+                  <td className={cn(td, 'text-right tnum', fbRoiTone(item.profit))}>{fbMoney(item.profit)}</td>
+                  <td className={cn(td, 'whitespace-nowrap text-right tnum', fbRoiTone(item.roi))}>{fbRoiText(item.roi)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        </section>
+        <section className="grid gap-3">
+          <div><h2 className="text-[20px] font-semibold tracking-tight">Por pessoa</h2><p className="mt-1 text-[14px] text-muted-foreground">Quem está gastando mais e se o gasto volta como receita. A pessoa é quem usa a conta; contas sem ninguém ficam com o dono.</p></div>
+          <Table min={980}>
+            <thead><tr><th className={th}>Pessoa</th><th className={th}>Integrações</th><th className={cn(th, 'text-right')}>Contas</th><th className={th}>Parte do gasto</th><th className={cn(th, 'text-right')}>Gasto</th><th className={cn(th, 'text-right')}>Receita</th><th className={cn(th, 'text-right')}>Lucro</th><th className={cn(th, 'text-right')}>ROI</th></tr></thead>
+            <tbody>
+              {byPerson.map((item) => (
+                <tr key={item.name} className={cn('cursor-pointer hover:bg-muted', person === item.name && 'bg-muted')} onClick={() => setPerson(person === item.name ? 'all' : item.name)}>
+                  <td className={td}><span className="flex items-center gap-3"><Avatar name={item.name} size={28} /><span className="font-medium">{item.name}</span>{item.name === COST_OWNER && <Badge>Dono</Badge>}</span></td>
+                  <td className={td}><span className="flex flex-wrap gap-1.5">{item.integrations.map((key) => <span key={key} className="inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[12px]"><span className="h-2 w-2 rounded-full" style={{ background: COST_INTEGRATION_COLOR[key] }} />{COST_INTEGRATION[key]}</span>)}</span></td>
+                  <td className={cn(td, 'text-right tnum')}>{item.accounts}</td>
+                  <td className={td}><CostShare share={totals.spend ? item.spend / totals.spend : 0} /></td>
+                  <td className={cn(td, 'text-right tnum')}>{fbMoney(item.spend)}</td>
+                  <td className={cn(td, 'text-right tnum')}>{fbMoney(item.revenue)}</td>
+                  <td className={cn(td, 'text-right tnum', fbRoiTone(item.profit))}>{fbMoney(item.profit)}</td>
+                  <td className={cn(td, 'whitespace-nowrap text-right tnum', fbRoiTone(item.roi))}>{fbRoiText(item.roi)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        </section>
+        <section className="grid gap-3">
+          <div className="flex flex-wrap items-end justify-between gap-3"><div><h2 className="text-[20px] font-semibold tracking-tight">Por conta</h2><p className="mt-1 text-[14px] text-muted-foreground">{person === 'all' ? 'Todas as contas no filtro, da que mais gasta para a que menos gasta.' : `As contas de ${person}.`}</p></div><div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => go('facebook')}>Facebook</Button><Button size="sm" variant="outline" onClick={() => go('gads')}>Google Ads</Button></div></div>
+          <Table min={980}>
+            <thead><tr><th className={th}>Conta</th><th className={th}>Pessoa</th><th className={th}>Gasto no mês e limite</th><th className={cn(th, 'text-right')}>Receita</th><th className={cn(th, 'text-right')}>Lucro</th><th className={cn(th, 'text-right')}>ROI</th></tr></thead>
+            <tbody>
+              {[...rows].sort((first, second) => second.spend - first.spend).map((row) => {
+                const roi = row.revenue === null ? null : (row.revenue - row.spend) / row.spend
+                return (
+                  <tr key={row.id} className="hover:bg-muted">
+                    <td className={td}><div className="flex items-center gap-2 font-medium"><span className="h-2 w-2 shrink-0 rounded-full" style={{ background: COST_INTEGRATION_COLOR[row.integration] }} />{row.name}</div><div className="text-[12px] text-muted-foreground">{COST_INTEGRATION[row.integration]} · {row.site ?? 'sem site'}</div></td>
+                    <td className={cn(td, 'whitespace-nowrap')}>{row.holder}</td>
+                    <td className={td}>{period === 'month' ? <FbLimitBar used={row.spend} limit={row.monthlyLimit} /> : <span className="tnum">{fbMoney(row.spend)}</span>}</td>
+                    <td className={cn(td, 'text-right tnum')}>{row.revenue === null ? <span className="text-muted-foreground">—</span> : fbMoney(row.revenue)}</td>
+                    <td className={cn(td, 'text-right tnum')}>{roi === null ? <span className="text-muted-foreground">—</span> : <span className={fbRoiTone(roi)}>{fbMoney((row.revenue ?? 0) - row.spend)}</span>}</td>
+                    <td className={cn(td, 'whitespace-nowrap text-right tnum')}>{roi === null ? <span className="text-muted-foreground">—</span> : <span className={fbRoiTone(roi)}>{fbRoiText(roi)}</span>}</td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </Table>
+          <p className="text-[13px] text-muted-foreground">Tudo na moeda da Empresa, convertido pela cotação do dia. O gasto das integrações também entra no Resultado de cada mês, uma linha por integração, sem precisar lançar em Custos.</p>
+        </section>
+      </Body>
+    </>
+  )
+}
+
 export default function App() {
   const initial = typeof location !== 'undefined' && isScreen(location.hash.slice(1)) ? (location.hash.slice(1) as Screen) : 'equipe'
   const [screen, setScreen] = useState<Screen>(initial)
@@ -10205,6 +10348,7 @@ export default function App() {
       case 'construtor': return <ReportBuilderScreen key={`${draft.id}-${draft.name}`} initial={draft} customs={customs} setCustoms={setCustoms} onBack={() => (draft.id ? viewReport(draft.id) : go('relatorios'))} onSave={saveReport} />
       case 'resultado': return <ResultScreen go={go} />
       case 'custos': return <CostsScreen />
+      case 'controlecustos': return <CostControlScreen go={go} />
       case 'equipe': return <TeamScreen t={t} go={go} members={members} setMembers={setMembers} groupCount={groups.length} />
       case 'grupos': return <GroupsScreen t={t} go={go} members={members} groups={groups} setGroups={setGroups} openGroup={openGroup} />
       case 'grupo': return <GroupScreen key={groupId} t={t} go={go} members={members} groups={groups} setGroups={setGroups} groupId={groupId === 'parcerias' ? 'trafego' : groupId} openMember={() => go('membro')} />
