@@ -16,6 +16,9 @@ Painel Vue 3 do Groone Avant. Leia o README antes de mudar algo.
 - Clean code obrigatório (skill `avant-clean-code`): nomes claros, nada de nome de uma letra
   (nem em callback ou `v-for`), toda função e todo componente com um comentário de 1 ou 2
   linhas sobre o que faz, nada de comentário ao lado do código. Conferido por `pnpm clean-code`.
+- Segurança obrigatória (skill `avant-seguranca`, decisão 18): nada de segredo ou dado bancário
+  em resposta, log ou lista; acesso declarado em toda rota; isolamento por Empresa com teste de
+  outra Empresa; checagem da skill antes do PR.
 - Antes de abrir PR: `pnpm lint && pnpm clean-code && pnpm typecheck && pnpm test && pnpm build`.
 - Nada de segredos no repositório. Comentários em português.
 - PRs vão para `pre-develop`; a promoção para `develop` passa por revisão e CI (skill `avant-fluxo-de-trabalho`).
