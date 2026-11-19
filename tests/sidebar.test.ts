@@ -17,12 +17,12 @@ describe('menu do painel', () => {
   beforeAll(() => (lang.value = 'pt'))
 
   it('mostra os mesmos itens para a equipe Groone, sem filtrar por permissão', () => {
-    expect(labels(true)).toEqual(['Dashboard', 'Tarefas', 'Clientes', 'Equipes', 'Networks do GAM', 'Contratos', 'Sites', 'Rewards', 'Ad tags', 'Loaders', 'Regras de preço', 'Checklists', 'Ad Manager', 'Page Views', 'Resultado', 'Resultado dos clientes', 'Metas', 'Relatórios customizados', 'Facebook', 'Campanhas do Facebook', 'Ferramentas do GAM', 'Alertas', 'Envios agendados', 'Modelos de dashboard', 'Minha comissão', 'Minhas invoices', 'Comissões', 'Invoices', 'Equipe Groone', 'Papéis da equipe', 'Custos'])
+    expect(labels(true)).toEqual(['Dashboard', 'Tarefas', 'Clientes', 'Equipes', 'Networks do GAM', 'Contratos', 'Sites', 'Rewards', 'Ad tags', 'Loaders', 'Regras de preço', 'Checklists', 'Ad Manager', 'Page Views', 'Resultado', 'Resultado dos clientes', 'Metas', 'Relatórios customizados', 'Facebook', 'Campanhas do Facebook', 'Google Ads', 'Campanhas do Google Ads', 'Ferramentas do GAM', 'Alertas', 'Envios agendados', 'Modelos de dashboard', 'Minha comissão', 'Minhas invoices', 'Comissões', 'Invoices', 'Equipe Groone', 'Papéis da equipe', 'Custos'])
     expect(headers(true)).toEqual(['Inventário', 'Relatórios', 'Integrações', 'Ferramentas', 'Comissões', 'Empresa'])
   })
 
   it('quem não é da equipe Groone não vê os itens internos', () => {
-    expect(labels(false)).toEqual(['Dashboard', 'Equipes', 'Networks do GAM', 'Sites', 'Rewards', 'Ad tags', 'Loaders', 'Regras de preço', 'Ad Manager', 'Page Views', 'Resultado', 'Relatórios customizados', 'Facebook', 'Campanhas do Facebook', 'Papéis e permissões', 'Custos'])
+    expect(labels(false)).toEqual(['Dashboard', 'Equipes', 'Networks do GAM', 'Sites', 'Rewards', 'Ad tags', 'Loaders', 'Regras de preço', 'Ad Manager', 'Page Views', 'Resultado', 'Relatórios customizados', 'Facebook', 'Campanhas do Facebook', 'Google Ads', 'Campanhas do Google Ads', 'Papéis e permissões', 'Custos'])
     expect(headers(false)).toEqual(['Inventário', 'Relatórios', 'Integrações', 'Empresa'])
     expect(labels(false)).not.toContain('Equipe Groone')
   })
@@ -60,6 +60,8 @@ describe('menu do painel', () => {
       ['/interno/envios', 'Envios agendados'],
       ['/interno/campanhas-facebook/123', 'Campanhas do Facebook'],
       ['/interno/facebook', 'Facebook'],
+      ['/interno/campanhas-google-ads/campaign/123', 'Campanhas do Google Ads'],
+      ['/interno/google-ads', 'Google Ads'],
       ['/interno/modelos-de-dashboard', 'Modelos de dashboard'],
     ]
     for (const [path, label] of cases) expect(activeLabels(true, path)).toEqual([label])
