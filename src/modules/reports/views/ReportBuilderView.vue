@@ -19,6 +19,7 @@ import { ApiError } from '@/lib/api'
 import { errorText, lang, pick, t } from '@/lib/i18n'
 import { clientService } from '@/modules/internal/clients/service'
 import { staffService } from '@/modules/internal/staff/service'
+import { facebookService } from '@/modules/facebook/service'
 import { networkName } from '@/modules/networks/rules'
 import { networkService } from '@/modules/networks/service'
 import ConfigPanel, { type FilterOption } from '@/modules/reports/components/ConfigPanel.vue'
@@ -129,18 +130,19 @@ async function load() {
 }
 
 /** Papéis (para "Papéis escolhidos") e os valores dos filtros que a pessoa pode ver; na Groone, também clientes e responsáveis;
- * nos clientes, os membros que podem ser responsáveis por um site. */
+ * nos clientes, os membros que podem ser responsáveis por um site e as contas de anúncio do Facebook. */
 async function loadExtras() {
   const groone = session.company?.is_internal === true
   /** A lista que a pessoa não pode ver: fica vazia no filtro. */
   const denied = () => Promise.reject(new Error('sem permissão'))
-  const [roleList, siteList, networkList, clientList, staffList, memberList] = await Promise.allSettled([
+  const [roleList, siteList, networkList, clientList, staffList, memberList, accountList] = await Promise.allSettled([
     session.can('roles.view') ? teamService.roleOptions() : denied(),
     session.can('sites.view') ? siteService.options() : denied(),
     session.can('network.view') ? networkService.options() : denied(),
     groone && session.can('internal.clients.view') ? clientService.options() : denied(),
     groone ? staffService.options() : denied(),
     !groone && session.can('team.view') ? teamService.memberOptions() : denied(),
+    !groone && session.can('facebook.view') ? facebookService.accounts() : denied(),
   ])
   roles.value = roleList.status === 'fulfilled' ? roleList.value.items.map((role) => ({ id: role.id, name: pick(role.name) })) : null
   options.value = {
@@ -149,6 +151,7 @@ async function loadExtras() {
     client: clientList.status === 'fulfilled' ? clientList.value.items.map((client) => ({ value: client.id, label: client.name })) : [],
     account_manager: staffList.status === 'fulfilled' ? staffList.value.items.map((member) => ({ value: member.user.id, label: member.user.name || member.user.email })) : [],
     site_category: SITE_CATEGORIES.map((category) => ({ value: category, label: categoryLabel(category) })),
+    fb_account: accountList.status === 'fulfilled' ? accountList.value.map((account) => ({ value: account.id, label: account.name })) : [],
     site_responsible: memberList.status === 'fulfilled' ? memberList.value.items.map((member) => ({ value: member.user.id, label: member.user.name || member.user.email })) : [],
   }
 }

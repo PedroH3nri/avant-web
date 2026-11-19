@@ -8,7 +8,7 @@ const FALLBACK: SeriesColor[] = ['lime', 'cyan', 'magenta', 'violet', 'orange', 
 /** A cor fixa de cada métrica do catálogo, por família:
  * receita verde, valor por mil (eCPM e RPM) dourado, impressões violeta, requisições laranja,
  * taxas ciano, cliques, page views e floor magenta, o que falta vermelho. Inclui as séries de
- * rewards, tag e regras de preço, que não estão no catálogo; na Cascata, a compra na escada fica
+ * rewards, tag e regras de preço, que não estão no catálogo, e as do Facebook (gasto laranja); na Cascata, a compra na escada fica
  * ciano e a compra na 1ª violeta, para as duas não se confundirem no mesmo gráfico. */
 export const METRIC_COLOR: Record<string, SeriesColor> = {
   revenue: 'lime',
@@ -40,6 +40,17 @@ export const METRIC_COLOR: Record<string, SeriesColor> = {
   pages: 'magenta',
   rendered: 'violet',
   empty: 'red',
+  fb_spend: 'orange',
+  fb_revenue: 'lime',
+  fb_profit: 'lime',
+  fb_roi: 'cyan',
+  fb_impressions: 'violet',
+  fb_clicks: 'magenta',
+  fb_link_clicks: 'magenta',
+  fb_landing_page_views: 'magenta',
+  fb_cpc: 'yellow',
+  fb_cpm: 'yellow',
+  fb_ctr: 'cyan',
 }
 
 /** A variável CSS de uma cor da paleta, que já muda entre o tema claro e o escuro. */
