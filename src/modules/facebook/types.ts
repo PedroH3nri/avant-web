@@ -215,3 +215,116 @@ export interface FacebookLimitDetails {
   room: string
   currency: string
 }
+
+export type FacebookObjective = 'awareness' | 'traffic' | 'engagement' | 'leads' | 'app_promotion' | 'sales'
+export type FacebookAdFormat = 'image' | 'video' | 'carousel'
+export type FacebookListKind = 'pages' | 'instagram' | 'pixels' | 'audiences' | 'interests' | 'locations' | 'locales'
+export type FacebookJobKind = 'create' | 'edit' | 'duplicate'
+export type FacebookJobState = 'queued' | 'running' | 'done' | 'failed'
+export type FacebookJobStep = 'media' | 'campaign' | 'adsets' | 'creatives' | 'ads' | 'activate'
+
+/** Um item escolhido numa lista do Facebook: o id que ele deu e o nome para a tela. */
+export interface FacebookPick {
+  id: string
+  name: string
+  kind?: string
+}
+
+/** Um cartão do carrossel com a imagem já enviada. */
+export interface FacebookCardInput {
+  title: string
+  path: string
+  image_hash: string
+}
+
+/** Um anúncio do rascunho, igual ao FacebookAdIn da API. */
+export interface FacebookAdInput {
+  name: string
+  format: FacebookAdFormat
+  page_id: string
+  texts: string[]
+  titles: string[]
+  path: string
+  call_to_action: string
+  instagram_id: string | null
+  description: string
+  display_link: string
+  image_hash: string | null
+  video_id: string | null
+  cards: FacebookCardInput[]
+}
+
+/** Um conjunto do rascunho, igual ao FacebookAdsetIn da API. */
+export interface FacebookAdsetInput {
+  name: string
+  optimization: string
+  countries: string[]
+  ads: FacebookAdInput[]
+  start_time: string | null
+  end_time: string | null
+  budget: string | null
+  places: FacebookPick[]
+  age_min: number
+  age_max: number
+  gender: 'all' | 'men' | 'women'
+  locales: FacebookPick[]
+  advantage_audience: boolean
+  interests: FacebookPick[]
+  audiences: FacebookPick[]
+  excluded_audiences: FacebookPick[]
+  placements: string[]
+  pixel_id: string | null
+  event: string | null
+}
+
+/** A campanha nova, igual ao FacebookDraftIn da API. */
+export interface FacebookDraftInput {
+  account_id: string
+  name: string
+  objective: FacebookObjective
+  adsets: FacebookAdsetInput[]
+  budget_at: 'campaign' | 'adset'
+  budget_kind: 'daily' | 'lifetime'
+  budget: string | null
+  special_categories: string[]
+  bid: 'volume' | 'cost_cap' | 'bid_cap'
+  bid_amount: string | null
+  spend_cap: string | null
+  start_active: boolean
+}
+
+/** O que muda num objeto que já existe: nome e, conforme o nível, limite de gasto, público ou anúncio. */
+export interface FacebookEditInput {
+  name?: string | null
+  spend_cap?: string | null
+  adset?: FacebookAdsetInput | null
+  ad?: FacebookAdInput | null
+}
+
+/** Um job de criar, editar ou duplicar: o passo, os ids criados, o erro e o aviso. */
+export interface FacebookJob {
+  id: string
+  account_id: string
+  kind: FacebookJobKind
+  state: FacebookJobState
+  step: FacebookJobStep | null
+  target_external_id: string | null
+  created: Record<string, unknown>
+  error_code: string | null
+  error_message: string | null
+  warning_code: string | null
+  created_at: string
+  updated_at: string
+  finished_at: string | null
+}
+
+export interface FacebookOption {
+  id: string
+  name: string
+  detail: string
+}
+
+export interface FacebookMedia {
+  kind: 'image' | 'video'
+  ref: string
+}

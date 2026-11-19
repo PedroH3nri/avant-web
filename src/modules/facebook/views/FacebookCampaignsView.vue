@@ -5,7 +5,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useDebounceFn } from '@vueuse/core'
 import { toast } from 'vue-sonner'
-import { ChevronRight, Megaphone, Search } from 'lucide-vue-next'
+import { ChevronRight, Megaphone, Plus, Search } from 'lucide-vue-next'
 import LoadError from '@/components/LoadError.vue'
 import PageBody from '@/components/PageBody.vue'
 import PageHeader from '@/components/PageHeader.vue'
@@ -162,7 +162,11 @@ watch([level, parent, accountId, companyId, days, inReview], refilter)
 </script>
 
 <template>
-  <PageHeader :title="t('fb.campaignsTitle')" :sub="internal ? t('fb.campaignsSubInternal') : t('fb.campaignsSub')" />
+  <PageHeader :title="t('fb.campaignsTitle')" :sub="internal ? t('fb.campaignsSubInternal') : t('fb.campaignsSub')">
+    <template v-if="canManage" #actions>
+      <Button @click="router.push(`${campaignsPath(false)}/nova`)"><Plus aria-hidden="true" />{{ t('fb.create.action') }}</Button>
+    </template>
+  </PageHeader>
   <PageBody>
     <div class="flex flex-wrap items-center gap-3">
       <Segmented :model-value="level" :label="t('fb.level')" :options="levelOptions" @update:model-value="pickLevel" />
