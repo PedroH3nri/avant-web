@@ -1,6 +1,6 @@
 /** Chamadas da API do Facebook, no painel do cliente (/facebook) e no interno (/internal/facebook, só leitura). */
 
-import { api, type Query } from '@/lib/api'
+import { api, request, type Query } from '@/lib/api'
 import type { Page } from '@/lib/types'
 import type {
   FacebookAccount,
@@ -11,8 +11,14 @@ import type {
   FacebookBudgetInput,
   FacebookChange,
   FacebookControlResult,
+  FacebookDraftInput,
+  FacebookEditInput,
+  FacebookJob,
+  FacebookListKind,
+  FacebookMedia,
   FacebookObject,
   FacebookObjectDetail,
+  FacebookOption,
   FacebookPerson,
   FacebookPersonInput,
   FacebookProfile,
@@ -70,4 +76,16 @@ export const facebookService = {
   setBudget: (externalId: string, input: FacebookBudgetInput) => api.put<FacebookBudget>(`/facebook/objects/${externalId}/budget`, input),
   /** Grava as regras automáticas do objeto. */
   setRule: (externalId: string, input: FacebookRuleInput) => api.put<FacebookRule>(`/facebook/objects/${externalId}/rules`, input),
+  /** Cria a campanha do rascunho no Facebook (um job; rascunho incompleto volta 422 com os problemas). */
+  create: (draft: FacebookDraftInput) => api.post<FacebookJob>('/facebook/jobs', draft),
+  /** Duplica a campanha, o conjunto ou o anúncio, com tudo dentro e pausado (um job). */
+  duplicate: (externalId: string) => api.post<FacebookJob>(`/facebook/objects/${externalId}/duplicate`),
+  /** Edita nome, limite de gasto, público ou anúncio no Facebook (um job). */
+  edit: (externalId: string, input: FacebookEditInput) => api.put<FacebookJob>(`/facebook/objects/${externalId}`, input),
+  /** O job com o passo, os ids criados e o erro do Facebook. */
+  job: (id: string) => api.get<FacebookJob>(`/facebook/jobs/${id}`),
+  /** Uma lista do Facebook da conta; interesses, lugares e idiomas buscam pelo texto. */
+  options: (kind: FacebookListKind, accountId: string, query = '') => api.get<FacebookOption[]>(`/facebook/lists/${kind}`, { account_id: accountId, q: query || undefined }),
+  /** Manda a imagem ou o vídeo para a conta no Facebook; o Avant guarda só o hash ou o id. */
+  uploadMedia: (accountId: string, file: File) => request<FacebookMedia>('POST', '/facebook/media', { file, query: { account_id: accountId, name: file.name } }),
 }
