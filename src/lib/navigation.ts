@@ -3,7 +3,7 @@
 import { computed, type Component } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
-import { BellRing, Building2, ChartLine, CircleDollarSign, Code2, Coins, Eye, FileChartColumn, FileSignature, FileText, Gift, Globe, IdCard, LayoutDashboard, LayoutTemplate, ListChecks, ListTodo, LoaderCircle, MailCheck, Network, Receipt, ReceiptText, Scale, ShieldCheck, Target, Users, UsersRound, Wallet, Wrench } from 'lucide-vue-next'
+import { BellRing, Building2, ChartLine, CircleDollarSign, Code2, Coins, Eye, FileChartColumn, FileSignature, FileText, Gift, Globe, IdCard, LayoutDashboard, LayoutTemplate, ListChecks, ListTodo, LoaderCircle, MailCheck, Megaphone, Network, Plug, Receipt, ReceiptText, Scale, ShieldCheck, Target, Users, UsersRound, Wallet, Wrench } from 'lucide-vue-next'
 import { ApiError } from '@/lib/api'
 import { errorText, type Key } from '@/lib/i18n'
 import { useSession } from '@/stores/session'
@@ -57,6 +57,18 @@ export const NAV_GROUPS: NavGroup[] = [
       { to: '/interno/resultados', key: 'int.results', icon: Scale, internal: true },
       { to: '/interno/metas', key: 'goals.title', icon: Target, internal: true },
       { to: '/relatorios', key: 'nav.customReports', icon: FileChartColumn, separated: true },
+    ],
+  },
+  {
+    id: 'integrations',
+    key: 'nav.groupIntegrations',
+    label: 'nav.groupIntegrations',
+    icon: Plug,
+    items: [
+      { to: '/facebook', key: 'nav.facebook', icon: Megaphone, clientOnly: true },
+      { to: '/interno/facebook', key: 'nav.facebook', icon: Megaphone, internal: true },
+      { to: '/campanhas-facebook', key: 'nav.facebookCampaigns', icon: ChartLine, clientOnly: true },
+      { to: '/interno/campanhas-facebook', key: 'nav.facebookCampaigns', icon: ChartLine, internal: true },
     ],
   },
   {
