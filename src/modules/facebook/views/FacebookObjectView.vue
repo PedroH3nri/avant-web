@@ -2,9 +2,9 @@
 /** Uma campanha, conjunto ou anúncio do Facebook: números do período, por dia e por país, ligar ou pausar, orçamento,
  * regras automáticas com as decisões e o histórico dele. */
 import { computed, onMounted, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
-import { ArrowLeft, ExternalLink } from 'lucide-vue-next'
+import { ArrowLeft, Copy, ExternalLink, Pencil } from 'lucide-vue-next'
 import LoadError from '@/components/LoadError.vue'
 import PageBody from '@/components/PageBody.vue'
 import PageHeader from '@/components/PageHeader.vue'
@@ -18,13 +18,15 @@ import { td, th } from '@/lib/table'
 import FacebookBudgetCard from '@/modules/facebook/components/FacebookBudgetCard.vue'
 import FacebookDecisionsPanel from '@/modules/facebook/components/FacebookDecisionsPanel.vue'
 import FacebookHistoryPanel from '@/modules/facebook/components/FacebookHistoryPanel.vue'
+import FacebookJobDialog from '@/modules/facebook/components/FacebookJobDialog.vue'
 import FacebookRulesCard from '@/modules/facebook/components/FacebookRulesCard.vue'
 import { ACCOUNT_QUALITY_URL, PERIODS, campaignsPath, controlErrorText, formatCount, formatMoney, formatRatio, objectState, periodRange } from '@/modules/facebook/rules'
 import { facebookReader, facebookService } from '@/modules/facebook/service'
 import { useSession } from '@/stores/session'
-import type { FacebookObjectDetail, FacebookTotals } from '@/modules/facebook/types'
+import type { FacebookJob, FacebookObjectDetail, FacebookTotals } from '@/modules/facebook/types'
 
 const route = useRoute()
+const router = useRouter()
 const internal = route.meta.internal === true
 const reader = facebookReader(internal)
 const base = campaignsPath(internal)
@@ -32,6 +34,9 @@ const externalId = String(route.params.id)
 const session = useSession()
 const canManage = computed(() => !internal && session.can('facebook.manage'))
 const switching = ref(false)
+const duplicating = ref(false)
+const job = ref<FacebookJob | null>(null)
+const following = ref(false)
 
 const days = ref(typeof route.query.dias === 'string' && PERIODS.map(String).includes(route.query.dias) ? route.query.dias : '7')
 const detail = ref<FacebookObjectDetail | null>(null)
@@ -95,6 +100,19 @@ async function toggle() {
   }
 }
 
+/** Duplica o objeto no Facebook, com tudo dentro e pausado; a janela acompanha o job. */
+async function duplicate() {
+  duplicating.value = true
+  try {
+    job.value = await facebookService.duplicate(externalId)
+    following.value = true
+  } catch (error) {
+    toast.error(errorText(error instanceof ApiError ? error.code : 'unknown'))
+  } finally {
+    duplicating.value = false
+  }
+}
+
 onMounted(load)
 watch(days, load)
 </script>
@@ -113,6 +131,8 @@ watch(days, load)
       </p>
     </template>
     <template #actions>
+      <Button v-if="canManage && detail" variant="outline" @click="router.push(`${base}/${externalId}/editar`)"><Pencil aria-hidden="true" />{{ t('fb.edit.action') }}</Button>
+      <Button v-if="canManage && detail" variant="outline" :loading="duplicating" @click="duplicate"><Copy aria-hidden="true" />{{ t('fb.duplicate.action') }}</Button>
       <Button v-if="canManage && detail" variant="outline" :loading="switching" @click="toggle">{{ detail.active ? t('fb.control.pause') : t('fb.control.activate') }}</Button>
       <NativeSelect v-model="days" :aria-label="t('fb.period')" class="w-[160px]" :options="periodOptions" />
     </template>
@@ -180,4 +200,5 @@ watch(days, load)
       </section>
     </template>
   </PageBody>
+  <FacebookJobDialog v-model:open="following" :job="job" />
 </template>

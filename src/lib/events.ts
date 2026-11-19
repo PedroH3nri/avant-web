@@ -22,10 +22,15 @@ export interface GamToolRunUpdated {
   network_id: string
 }
 
+export interface FacebookJobUpdated {
+  job_id: string
+}
+
 interface EventMap {
   'network.updated': NetworkUpdated
   'metrics.updated': MetricsUpdated
   'gam_tool_run.updated': GamToolRunUpdated
+  'facebook.job.updated': FacebookJobUpdated
 }
 type Type = keyof EventMap
 type Handler<T extends Type> = (data: EventMap[T]) => void
