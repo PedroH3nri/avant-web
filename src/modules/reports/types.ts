@@ -6,7 +6,7 @@ export type MetricKind = 'sum' | 'ratio'
 
 export type MetricFormat = 'number' | 'currency' | 'percent'
 
-export type MetricSource = 'gam' | 'gam_key_values' | 'page_views' | 'facebook'
+export type MetricSource = 'gam' | 'gam_key_values' | 'page_views' | 'facebook' | 'google_ads'
 
 export type RelativePeriod = 'today' | 'yesterday' | 'last_7_days' | 'last_30_days' | 'this_month' | 'last_month'
 
