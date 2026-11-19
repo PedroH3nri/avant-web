@@ -5,15 +5,19 @@ import {
   campaignsPath,
   changeText,
   childLevel,
+  controlErrorText,
+  decisionBudget,
   facebookPath,
   formatMoney,
   formatRatio,
   objectState,
+  limitDetails,
   overLimit,
+  parseAmount,
   parseLimit,
   periodRange,
 } from '@/modules/facebook/rules'
-import type { FacebookAlert, FacebookChange } from '@/modules/facebook/types'
+import type { FacebookAlert, FacebookChange, FacebookRuleDecision } from '@/modules/facebook/types'
 
 /** Uma linha do histórico de exemplo. */
 function change(what: string, data: Record<string, unknown>): FacebookChange {
@@ -96,5 +100,35 @@ describe('regras do Facebook', () => {
       read: false,
     }
     expect(alertText(alert)).toEqual({ key: 'fb.alert.ad_rejected', params: { account: 'CA 01', profile: '–', ad: 'Carrossel' } })
+  })
+
+  it('o erro de limite diz qual limite e quanto ainda cabe', () => {
+    const details = { period: 'daily', scope: 'account', room: '150', currency: 'BRL' }
+    expect(limitDetails(details)).toEqual(details)
+    expect(limitDetails({ period: 'weekly' })).toBeNull()
+    const text = controlErrorText('facebook_limit_exceeded', details, 'pt-BR')
+    expect(text?.key).toBe('fb.limitExceeded.daily.account')
+    expect(text?.params.room).toContain('150,00')
+    expect(controlErrorText('facebook_error', details, 'pt-BR')).toBeNull()
+  })
+
+  it('a decisão das regras mostra o orçamento antes e depois, de micros para o valor', () => {
+    const decision: FacebookRuleDecision = {
+      id: 'd1',
+      object_external_id: 's1',
+      day: '2026-11-18',
+      action: 'scale_up',
+      decided_at: '2026-11-19T09:00:00Z',
+      roi: 64,
+      data: { before: 100_000_000, after: 110_000_000 },
+    }
+    expect(decisionBudget(decision)).toEqual({ before: '100', after: '110' })
+    expect(decisionBudget({ ...decision, data: {} })).toEqual({ before: null, after: null })
+  })
+
+  it('o orçamento digitado precisa ser maior que zero', () => {
+    expect(parseAmount('12,50')).toBe('12.50')
+    expect(parseAmount('')).toBeUndefined()
+    expect(parseAmount('0')).toBeUndefined()
   })
 })

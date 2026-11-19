@@ -7,8 +7,11 @@ import type {
   FacebookAlert,
   FacebookChange,
   FacebookLevel,
+  FacebookLimitDetails,
   FacebookObject,
   FacebookProfileStatus,
+  FacebookRuleAction,
+  FacebookRuleDecision,
 } from '@/modules/facebook/types'
 
 type Tone = 'ok' | 'warn' | 'bad' | 'neutral'
@@ -103,6 +106,8 @@ const CHANGE_KEYS: Record<string, Key> = {
   'object.status': 'fb.change.status',
   'object.budget': 'fb.change.budget',
   'object.name': 'fb.change.name',
+  'object.duplicated': 'fb.change.duplicated',
+  'object.rules': 'fb.change.rules',
 }
 
 /** A chave do texto de uma linha do histórico e os valores dela. */
@@ -122,6 +127,7 @@ function shown(value: unknown): string {
 const ALERT_KEYS: Record<FacebookAlert['kind'], Key> = {
   limit_paused: 'fb.alert.limit_paused',
   limit_near: 'fb.alert.limit_near',
+  limit_reached: 'fb.alert.limit_reached',
   profile_expired: 'fb.alert.profile_expired',
   ad_rejected: 'fb.alert.ad_rejected',
   account_unsettled: 'fb.alert.account_unsettled',
@@ -138,5 +144,51 @@ export function alertText(alert: FacebookAlert): { key: Key; params: Record<stri
       profile: typeof data.profile_name === 'string' ? data.profile_name : '–',
       ad: typeof data.object_name === 'string' ? data.object_name : '–',
     },
+  }
+}
+
+/** Endereço da Qualidade da Conta no Facebook, onde se pede nova análise (a Graph API não tem isso). */
+export const ACCOUNT_QUALITY_URL = 'https://www.facebook.com/accountquality'
+
+const MICROS = 1_000_000
+
+/** Micros (como o core grava nas decisões) para o texto decimal da API. */
+export function fromMicros(value: unknown): string | null {
+  return typeof value === 'number' ? String(value / MICROS) : null
+}
+
+const DECISION_TONES: Record<FacebookRuleAction, Tone> = { scale_up: 'ok', scale_down: 'warn', pause: 'warn', duplicate: 'ok', held_by_limit: 'neutral', failed: 'bad' }
+
+/** A cor da decisão das regras. */
+export function decisionTone(action: FacebookRuleAction): Tone {
+  return DECISION_TONES[action]
+}
+
+/** O orçamento antes e depois de uma decisão, quando ela mexeu nele. */
+export function decisionBudget(decision: FacebookRuleDecision): { before: string | null; after: string | null } {
+  return { before: fromMicros(decision.data.before), after: fromMicros(decision.data.after) }
+}
+
+/** Os detalhes do erro de limite, quando a API mandou os quatro campos. */
+export function limitDetails(details: Record<string, unknown>): FacebookLimitDetails | null {
+  const { period, scope, room, currency } = details
+  if ((period !== 'daily' && period !== 'monthly') || (scope !== 'account' && scope !== 'person')) return null
+  if (typeof room !== 'string' || typeof currency !== 'string') return null
+  return { period, scope, room, currency }
+}
+
+/** Texto do valor digitado para a API (orçamento ou limite): positivo com até 2 casas; senão ``undefined``. */
+export function parseAmount(text: string): string | undefined {
+  const parsed = parseLimit(text)
+  return parsed === null ? undefined : parsed
+}
+
+/** A chave e os valores do erro de um pedido de controle: o de limite diz quanto ainda cabe. */
+export function controlErrorText(code: string, details: Record<string, unknown>, locale: string): { key: Key; params: Record<string, string> } | null {
+  const limit = code === 'facebook_limit_exceeded' ? limitDetails(details) : null
+  if (!limit) return null
+  return {
+    key: `fb.limitExceeded.${limit.period}.${limit.scope}` as Key,
+    params: { room: formatMoney(limit.room, limit.currency, locale) },
   }
 }
