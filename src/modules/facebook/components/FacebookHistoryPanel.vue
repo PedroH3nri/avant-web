@@ -8,7 +8,7 @@ import NativeSelect from '@/components/ui/NativeSelect.vue'
 import Pagination from '@/components/ui/Pagination.vue'
 import TableState from '@/components/ui/TableState.vue'
 import { ApiError } from '@/lib/api'
-import { errorText, formatDate, t } from '@/lib/i18n'
+import { errorText, formatDate, t, type Key } from '@/lib/i18n'
 import { td, th } from '@/lib/table'
 import { changeText } from '@/modules/facebook/rules'
 import { facebookReader } from '@/modules/facebook/service'
@@ -26,6 +26,8 @@ const loadError = ref<string | null>(null)
 const originOptions = [
   { value: '', label: t('fb.history.allOrigins') },
   { value: 'avant', label: t('fb.history.origin.avant') },
+  { value: 'rule', label: t('fb.history.origin.rule') },
+  { value: 'limit', label: t('fb.history.origin.limit') },
   { value: 'facebook', label: t('fb.history.origin.facebook') },
 ]
 
@@ -77,7 +79,7 @@ watch([origin, () => props.companyId], refilter)
         <TableState :cols="internal ? 5 : 4" :loading="!changes" :empty="changes?.length === 0" :icon="History" :desc="t('fb.history.empty')" />
         <tr v-for="change in changes ?? []" :key="change.id" class="hover:bg-muted">
           <td :class="[td, 'whitespace-nowrap text-[13px] text-muted-foreground tnum']">{{ formatDate(change.happened_at) }}</td>
-          <td :class="td">{{ change.origin === 'facebook' ? t('fb.history.origin.facebook') : (change.actor_name ?? t('fb.history.someone')) }}</td>
+          <td :class="td">{{ change.origin === 'avant' ? (change.actor_name ?? t('fb.history.someone')) : t(`fb.history.origin.${change.origin}` as Key) }}</td>
           <td v-if="internal" :class="td">{{ clientName(change.company_id) }}</td>
           <td :class="td">
             <span class="block">{{ change.object_name ?? accountName(change.account_id) }}</span>

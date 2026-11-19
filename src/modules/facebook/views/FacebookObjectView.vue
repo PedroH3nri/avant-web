@@ -1,20 +1,27 @@
 <script setup lang="ts">
-/** Uma campanha, conjunto ou anúncio do Facebook: números do período, por dia, por país e o histórico dele. */
+/** Uma campanha, conjunto ou anúncio do Facebook: números do período, por dia e por país, ligar ou pausar, orçamento,
+ * regras automáticas com as decisões e o histórico dele. */
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { ArrowLeft } from 'lucide-vue-next'
+import { toast } from 'vue-sonner'
+import { ArrowLeft, ExternalLink } from 'lucide-vue-next'
 import LoadError from '@/components/LoadError.vue'
 import PageBody from '@/components/PageBody.vue'
 import PageHeader from '@/components/PageHeader.vue'
+import Button from '@/components/ui/Button.vue'
 import DataTable from '@/components/ui/DataTable.vue'
 import NativeSelect from '@/components/ui/NativeSelect.vue'
 import Status from '@/components/ui/Status.vue'
 import { ApiError } from '@/lib/api'
 import { errorText, locale, t, type Key } from '@/lib/i18n'
 import { td, th } from '@/lib/table'
+import FacebookBudgetCard from '@/modules/facebook/components/FacebookBudgetCard.vue'
+import FacebookDecisionsPanel from '@/modules/facebook/components/FacebookDecisionsPanel.vue'
 import FacebookHistoryPanel from '@/modules/facebook/components/FacebookHistoryPanel.vue'
-import { PERIODS, campaignsPath, formatCount, formatMoney, formatRatio, objectState, periodRange } from '@/modules/facebook/rules'
-import { facebookReader } from '@/modules/facebook/service'
+import FacebookRulesCard from '@/modules/facebook/components/FacebookRulesCard.vue'
+import { ACCOUNT_QUALITY_URL, PERIODS, campaignsPath, controlErrorText, formatCount, formatMoney, formatRatio, objectState, periodRange } from '@/modules/facebook/rules'
+import { facebookReader, facebookService } from '@/modules/facebook/service'
+import { useSession } from '@/stores/session'
 import type { FacebookObjectDetail, FacebookTotals } from '@/modules/facebook/types'
 
 const route = useRoute()
@@ -22,6 +29,9 @@ const internal = route.meta.internal === true
 const reader = facebookReader(internal)
 const base = campaignsPath(internal)
 const externalId = String(route.params.id)
+const session = useSession()
+const canManage = computed(() => !internal && session.can('facebook.manage'))
+const switching = ref(false)
 
 const days = ref(typeof route.query.dias === 'string' && PERIODS.map(String).includes(route.query.dias) ? route.query.dias : '7')
 const detail = ref<FacebookObjectDetail | null>(null)
@@ -66,6 +76,25 @@ const row = (totals: FacebookTotals) => [
 ]
 const ROW_KEYS: Key[] = ['fb.metric.spend', 'fb.metric.impressions', 'fb.metric.linkClicks', 'fb.metric.revenue', 'fb.metric.profit', 'fb.metric.roi']
 
+/** Liga ou pausa o objeto no Facebook; o erro de limite diz quanto ainda cabe. */
+async function toggle() {
+  if (!detail.value) return
+  switching.value = true
+  try {
+    const result = await facebookService.setStatus([externalId], !detail.value.active)
+    const failed = result.failed[externalId]
+    if (failed) toast.error(errorText(failed))
+    else toast.success(detail.value.active ? t('fb.control.paused', { n: 1 }) : t('fb.control.activated', { n: 1 }))
+    await load()
+  } catch (error) {
+    const api = error instanceof ApiError ? error : null
+    const limit = api ? controlErrorText(api.code, api.details, locale.value) : null
+    toast.error(limit ? t(limit.key, limit.params) : errorText(api?.code ?? 'unknown'))
+  } finally {
+    switching.value = false
+  }
+}
+
 onMounted(load)
 watch(days, load)
 </script>
@@ -84,6 +113,7 @@ watch(days, load)
       </p>
     </template>
     <template #actions>
+      <Button v-if="canManage && detail" variant="outline" :loading="switching" @click="toggle">{{ detail.active ? t('fb.control.pause') : t('fb.control.activate') }}</Button>
       <NativeSelect v-model="days" :aria-label="t('fb.period')" class="w-[160px]" :options="periodOptions" />
     </template>
   </PageHeader>
@@ -95,6 +125,7 @@ watch(days, load)
         <ul class="mt-1 list-disc pl-5 text-muted-foreground">
           <li v-for="reason in detail.review_reasons" :key="reason">{{ reason }}</li>
         </ul>
+        <a v-if="!internal" :href="ACCOUNT_QUALITY_URL" target="_blank" rel="noopener noreferrer" class="mt-3 inline-flex items-center gap-1 text-[13px] text-link hover:underline">{{ t('fb.appeal') }}<ExternalLink class="size-3.5" aria-hidden="true" /></a>
       </div>
       <dl class="grid grid-cols-2 gap-px overflow-hidden rounded-lg border bg-border sm:grid-cols-4">
         <div v-for="item in summary" :key="item.key" class="bg-card p-4">
@@ -138,6 +169,11 @@ watch(days, load)
           </tbody>
         </DataTable>
       </section>
+      <div class="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+        <FacebookBudgetCard :key="`${detail.daily_budget}-${detail.lifetime_budget}`" :detail="detail" :internal="internal" :read-only="!canManage" @saved="load" />
+        <FacebookRulesCard :detail="detail" :internal="internal" :read-only="!canManage" />
+      </div>
+      <FacebookDecisionsPanel :external-id="externalId" :internal="internal" :currency="currency" />
       <section class="grid gap-3">
         <h2 class="text-[20px] font-semibold tracking-tight">{{ t('fb.tab.history') }}</h2>
         <FacebookHistoryPanel :internal="internal" company-id="" :object-id="externalId" :account-name="() => detail?.account.name ?? '–'" :client-name="() => ''" />

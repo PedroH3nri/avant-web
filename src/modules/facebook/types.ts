@@ -5,8 +5,8 @@ export type FacebookAccountState = 'active' | 'unsettled' | 'disabled' | 'closed
 export type FacebookOnLimit = 'warn' | 'pause'
 export type FacebookLevel = 'campaign' | 'adset' | 'ad'
 export type FacebookReview = 'pending' | 'approved' | 'rejected'
-export type FacebookChangeOrigin = 'avant' | 'facebook'
-export type FacebookAlertKind = 'limit_paused' | 'limit_near' | 'profile_expired' | 'ad_rejected' | 'account_unsettled' | 'account_disabled'
+export type FacebookChangeOrigin = 'avant' | 'rule' | 'limit' | 'facebook'
+export type FacebookAlertKind = 'limit_paused' | 'limit_near' | 'limit_reached' | 'profile_expired' | 'ad_rejected' | 'account_unsettled' | 'account_disabled'
 
 export interface FacebookPersonRef {
   id: string
@@ -153,4 +153,65 @@ export interface FacebookAlertSetting {
   users: boolean
   connector: boolean
   email: boolean
+}
+
+export type FacebookRuleAction = 'scale_up' | 'scale_down' | 'pause' | 'duplicate' | 'held_by_limit' | 'failed'
+
+/** O que mudou num lote de ligar ou pausar e o código do erro de cada item que o Facebook recusou. */
+export interface FacebookControlResult {
+  done: string[]
+  failed: Record<string, string>
+}
+
+/** O orçamento novo: o diário ou o vitalício, um dos dois. */
+export interface FacebookBudgetInput {
+  daily_budget?: string
+  lifetime_budget?: string
+}
+
+export interface FacebookBudget {
+  external_id: string
+  daily_budget: string | null
+  lifetime_budget: string | null
+}
+
+/** As três regras automáticas; ROI em pontos percentuais, passos em % do orçamento. */
+export interface FacebookRuleInput {
+  scale: boolean
+  up_roi: number
+  up_by: number
+  down_roi: number
+  down_by: number
+  pause: boolean
+  min_roi: number
+  days: number
+  duplicate: boolean
+  duplicate_roi: number
+}
+
+export interface FacebookRule extends FacebookRuleInput {
+  object_external_id: string
+  level: FacebookLevel
+  enabled: boolean
+  updated_at: string
+  updated_by: string | null
+  last_duplicated_at: string | null
+}
+
+export interface FacebookRuleDecision {
+  id: string
+  object_external_id: string
+  day: string
+  action: FacebookRuleAction
+  decided_at: string
+  roi: number | null
+  data: Record<string, unknown>
+}
+
+/** Os detalhes do erro facebook_limit_exceeded: qual limite, de quem e quanto ainda cabe. */
+export interface FacebookLimitDetails {
+  period: 'daily' | 'monthly'
+  scope: 'account' | 'person'
+  room: string
+  currency: string
 }

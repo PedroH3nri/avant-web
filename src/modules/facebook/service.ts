@@ -7,12 +7,18 @@ import type {
   FacebookAccountInput,
   FacebookAlert,
   FacebookAlertSetting,
+  FacebookBudget,
+  FacebookBudgetInput,
   FacebookChange,
+  FacebookControlResult,
   FacebookObject,
   FacebookObjectDetail,
   FacebookPerson,
   FacebookPersonInput,
   FacebookProfile,
+  FacebookRule,
+  FacebookRuleDecision,
+  FacebookRuleInput,
 } from '@/modules/facebook/types'
 
 /** Endereço que abre o login do Facebook; é uma navegação do navegador, não uma chamada da API. */
@@ -32,6 +38,10 @@ export function facebookReader(internal: boolean) {
     changes: (query?: Query) => api.get<Page<FacebookChange>>(`${base}/changes`, query),
     /** Uma página dos avisos, o mais novo primeiro. */
     alerts: (query?: Query) => api.get<Page<FacebookAlert>>(`${base}/alerts`, query),
+    /** As regras automáticas do objeto (as sugeridas, desligadas, quando não há). */
+    rule: (externalId: string) => api.get<FacebookRule>(`${base}/objects/${externalId}/rules`),
+    /** Uma página do que as regras decidiram, a decisão mais nova primeiro. */
+    ruleDecisions: (externalId: string, query?: Query) => api.get<Page<FacebookRuleDecision>>(`${base}/objects/${externalId}/rule-decisions`, query),
   }
 }
 
@@ -54,4 +64,10 @@ export const facebookService = {
   alertSettings: () => api.get<FacebookAlertSetting[]>('/facebook/alert-settings'),
   /** Grava quem recebe os tipos de aviso enviados. */
   setAlertSettings: (settings: FacebookAlertSetting[]) => api.put<FacebookAlertSetting[]>('/facebook/alert-settings', settings),
+  /** Liga ou pausa no Facebook de 1 a 100 objetos; ligar confere os limites antes. */
+  setStatus: (externalIds: string[], active: boolean) => api.post<FacebookControlResult>('/facebook/objects/status', { external_ids: externalIds, active }),
+  /** Troca o orçamento diário ou o vitalício da campanha ou do conjunto. */
+  setBudget: (externalId: string, input: FacebookBudgetInput) => api.put<FacebookBudget>(`/facebook/objects/${externalId}/budget`, input),
+  /** Grava as regras automáticas do objeto. */
+  setRule: (externalId: string, input: FacebookRuleInput) => api.put<FacebookRule>(`/facebook/objects/${externalId}/rules`, input),
 }
