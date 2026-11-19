@@ -25,9 +25,9 @@ const route = useRoute()
 const internal = route.meta.internal === true
 const reader = googleAdsReader(internal)
 const base = campaignsPath(internal)
-const level: GoogleAdsLevel = isLevel(route.params.level) ? route.params.level : 'campaign'
-const externalId = String(route.params.id)
-const child = childLevel(level)
+const level = computed<GoogleAdsLevel>(() => (isLevel(route.params.level) ? route.params.level : 'campaign'))
+const externalId = computed(() => String(route.params.id))
+const child = computed(() => childLevel(level.value))
 
 const days = ref(typeof route.query.dias === 'string' && PERIODS.map(String).includes(route.query.dias) ? route.query.dias : '7')
 const detail = ref<GoogleAdsObjectDetail | null>(null)
@@ -38,7 +38,7 @@ const termKind = ref('terms')
 const loadError = ref<string | null>(null)
 const periodOptions = computed(() => PERIODS.map((count) => ({ value: String(count), label: t('gads.period.days', { n: count }) })))
 const currency = computed(() => detail.value?.account.currency ?? 'USD')
-const showTerms = !internal && level !== 'ad'
+const showTerms = computed(() => !internal && level.value !== 'ad')
 const termOptions = computed(() => [
   { value: 'terms', label: t('gads.terms.title') },
   { value: 'placements', label: t('gads.placements.title') },
@@ -60,22 +60,31 @@ const summary = computed(() => {
   ]
 })
 
+let loadRequest = 0
+let termsRequest = 0
+
 /** O período escolhido, como a API pede. */
 const range = () => periodRange(Number(days.value), new Date())
 
 /** Carrega o objeto, o nível de baixo e as palavras-chave do grupo. */
 async function load() {
   loadError.value = null
+  const request = ++loadRequest
+  const objectLevel = level.value
+  const objectId = externalId.value
+  const childObjects = child.value
   try {
     const [found, foundChildren, foundKeywords] = await Promise.all([
-      reader.object(level, externalId, range()),
-      child ? reader.objects({ ...range(), level: child, parent: externalId }) : Promise.resolve(null),
-      level === 'ad_group' ? reader.keywords(externalId, range()) : Promise.resolve(null),
+      reader.object(objectLevel, objectId, range()),
+      childObjects ? reader.objects({ ...range(), level: childObjects, parent: objectId }) : Promise.resolve(null),
+      objectLevel === 'ad_group' ? reader.keywords(objectId, range()) : Promise.resolve(null),
     ])
+    if (request !== loadRequest) return
     detail.value = found
     children.value = foundChildren?.items ?? null
     keywords.value = foundKeywords
   } catch (error) {
+    if (request !== loadRequest) return
     loadError.value = errorText(error instanceof ApiError ? error.code : 'unknown')
   }
   void loadTerms()
@@ -83,10 +92,12 @@ async function load() {
 
 /** Carrega os termos de pesquisa ou os posicionamentos do período (só no painel do cliente). */
 async function loadTerms() {
-  if (!showTerms) return
+  if (!showTerms.value) return
+  const request = ++termsRequest
   terms.value = null
   const fetchRows = termKind.value === 'terms' ? googleAdsService.searchTerms : googleAdsService.placements
-  terms.value = await fetchRows(level, externalId, range()).catch(() => [])
+  const rows = await fetchRows(level.value, externalId.value, range()).catch(() => [])
+  if (request === termsRequest) terms.value = rows
 }
 
 /** As colunas de uma linha por dia. */
@@ -100,8 +111,18 @@ const row = (totals: GoogleAdsTotals) => [
 ]
 const ROW_KEYS: Key[] = ['gads.metric.spend', 'gads.metric.impressions', 'gads.metric.clicks', 'gads.metric.revenue', 'gads.metric.profit', 'gads.metric.roi']
 
+/** Troca de objeto pelos links da própria tela: limpa o que era do anterior e carrega o novo. */
+function reloadObject() {
+  if (route.params.id === undefined) return
+  detail.value = null
+  children.value = null
+  keywords.value = null
+  void load()
+}
+
 onMounted(load)
 watch(days, load)
+watch([level, externalId], reloadObject)
 watch(termKind, loadTerms)
 </script>
 
@@ -224,7 +245,7 @@ watch(termKind, loadTerms)
       </section>
       <section class="grid gap-3">
         <h2 class="text-[20px] font-semibold tracking-tight">{{ t('gads.tab.history') }}</h2>
-        <GoogleAdsHistoryPanel :internal="internal" company-id="" :object-id="externalId" :account-name="() => detail?.account.name ?? '–'" :client-name="() => ''" />
+        <GoogleAdsHistoryPanel :internal="internal" company-id="" :key="externalId" :object-id="externalId" :account-name="() => detail?.account.name ?? '–'" :client-name="() => ''" />
       </section>
     </template>
   </PageBody>
