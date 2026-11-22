@@ -5,11 +5,6 @@ import type { CompanyStatus, FiscalData } from '@/modules/company/types'
 import type { RevenueStatus } from '@/modules/revenue/types'
 import type { Invitation, Member } from '@/modules/team/types'
 
-/** Pessoa da equipe de uma Empresa cliente, vista pela equipe Groone (GET /internal/teams). */
-export interface ClientMember extends Member {
-  company: { id: string; name: string; slug: string; is_internal: boolean }
-}
-
 /** O que a equipe Groone informa no cadastro do cliente. */
 export interface ClientProfileInput {
   first_name: string

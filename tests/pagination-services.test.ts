@@ -86,16 +86,16 @@ describe('custos e relatórios em páginas', () => {
 describe('clientes do painel interno em páginas', () => {
   afterEach(() => vi.restoreAllMocks())
 
-  it('pede a página dos clientes, equipes, convites de dono e auditoria', async () => {
+  it('pede a página dos clientes, os grupos de um cliente, convites de dono e auditoria', async () => {
     const get = vi.spyOn(api, 'get').mockResolvedValue({ items: [], total: 0, page: 1, pages: 0, page_size: 10 })
     await clientService.list({ page: 2, status: 'active' })
-    await clientService.teams({ page: 3 })
+    await clientService.groups('c3')
     await clientService.ownerInvitations({ page: 4 })
     await clientService.audit('c1', { page: 5 })
     await clientService.options()
     expect(get.mock.calls.map((call) => [call[0], call[1]])).toEqual([
       ['/internal/clients', { page: 2, status: 'active' }],
-      ['/internal/teams', { page: 3 }],
+      ['/internal/clients/c3/groups', undefined],
       ['/internal/owner-invitations', { page: 4 }],
       ['/internal/clients/c1/audit', { page: 5 }],
       ['/internal/clients/options', undefined],
