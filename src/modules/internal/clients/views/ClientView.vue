@@ -21,7 +21,7 @@ import DataTable from '@/components/ui/DataTable.vue'
 import Dialog from '@/components/ui/Dialog.vue'
 import Field from '@/components/ui/Field.vue'
 import Input from '@/components/ui/Input.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import Pagination from '@/components/ui/Pagination.vue'
 import Status from '@/components/ui/Status.vue'
 import { ApiError } from '@/lib/api'
@@ -473,7 +473,7 @@ function who(auditEntry: AuditEntry) {
   />
   <Dialog v-model:open="ownerOpen" :title="t('int.changeOwner')" :desc="t('int.ownerDesc')">
     <Field id="owner-pick" :label="t('int.owner')">
-      <NativeSelect id="owner-pick" v-model="ownerPick" :options="ownerOptions" />
+      <Select id="owner-pick" v-model="ownerPick" :options="ownerOptions" />
     </Field>
     <template #footer>
       <Button variant="outline" @click="ownerOpen = false">{{ t('common.cancel') }}</Button>

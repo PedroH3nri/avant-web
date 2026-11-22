@@ -16,7 +16,7 @@ import Card from '@/components/ui/Card.vue'
 import Checkbox from '@/components/ui/Checkbox.vue'
 import Field from '@/components/ui/Field.vue'
 import Input from '@/components/ui/Input.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import { ApiError } from '@/lib/api'
 import { errorText, pick, t } from '@/lib/i18n'
 import type { Localized } from '@/lib/types'
@@ -128,7 +128,7 @@ async function save() {
         </div>
         <div class="mt-4 grid gap-4 md:grid-cols-2">
           <Field id="tpl-audience" :label="t('tpl.audience')" :hint="t('tpl.audienceHint')">
-            <NativeSelect id="tpl-audience" :model-value="form.audience" :options="audiences" @update:model-value="setAudience" />
+            <Select id="tpl-audience" :model-value="form.audience" :options="audiences" @update:model-value="setAudience" />
           </Field>
           <fieldset class="grid content-start gap-2">
             <legend class="mb-2 text-[14px] font-medium">{{ t('tpl.roles') }}</legend>

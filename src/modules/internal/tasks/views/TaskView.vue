@@ -9,7 +9,7 @@ import PageBody from '@/components/PageBody.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import Button from '@/components/ui/Button.vue'
 import Card from '@/components/ui/Card.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import { ApiError } from '@/lib/api'
 import { errorText, formatDate, t } from '@/lib/i18n'
 import { staffService } from '@/modules/internal/staff/service'
@@ -170,21 +170,21 @@ async function send() {
           <div class="grid gap-1 py-2 text-[14px] sm:grid-cols-[110px_1fr] sm:items-center">
             <dt class="text-muted-foreground">{{ t('task.status') }}</dt>
             <dd class="min-w-0">
-              <NativeSelect v-if="task.editable" :model-value="task.status" :options="statusOptions" :aria-label="t('task.status')" :disabled="saving" class="[&_select]:h-9" @update:model-value="changeStatus" />
+              <Select v-if="task.editable" :model-value="task.status" :options="statusOptions" :aria-label="t('task.status')" :disabled="saving" class="h-9" @update:model-value="changeStatus" />
               <span v-else>{{ statusLabel(task.status) }}</span>
             </dd>
           </div>
           <div class="grid gap-1 py-2 text-[14px] sm:grid-cols-[110px_1fr] sm:items-center">
             <dt class="text-muted-foreground">{{ t('task.priority') }}</dt>
             <dd class="min-w-0">
-              <NativeSelect v-if="task.editable" :model-value="task.priority" :options="priorityOptions" :aria-label="t('task.priority')" :disabled="saving" class="[&_select]:h-9" @update:model-value="changePriority" />
+              <Select v-if="task.editable" :model-value="task.priority" :options="priorityOptions" :aria-label="t('task.priority')" :disabled="saving" class="h-9" @update:model-value="changePriority" />
               <span v-else>{{ priorityLabel(task.priority) }}</span>
             </dd>
           </div>
           <div class="grid gap-1 py-2 text-[14px] sm:grid-cols-[110px_1fr] sm:items-center">
             <dt class="text-muted-foreground">{{ t('task.assignee') }}</dt>
             <dd class="min-w-0">
-              <NativeSelect v-if="task.editable" :model-value="task.assignee?.id ?? NONE" :options="assigneeOptions" :aria-label="t('task.assignee')" :disabled="saving" class="[&_select]:h-9" @update:model-value="changeAssignee" />
+              <Select v-if="task.editable" :model-value="task.assignee?.id ?? NONE" :options="assigneeOptions" :aria-label="t('task.assignee')" :disabled="saving" class="h-9" @update:model-value="changeAssignee" />
               <span v-else>{{ task.assignee?.name ?? t('task.noAssignee') }}</span>
             </dd>
           </div>

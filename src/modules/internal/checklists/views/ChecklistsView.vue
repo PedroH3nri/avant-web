@@ -10,7 +10,7 @@ import PageHeader from '@/components/PageHeader.vue'
 import Button from '@/components/ui/Button.vue'
 import DataTable from '@/components/ui/DataTable.vue'
 import Input from '@/components/ui/Input.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import Pagination from '@/components/ui/Pagination.vue'
 import Status from '@/components/ui/Status.vue'
 import TableState from '@/components/ui/TableState.vue'
@@ -133,8 +133,8 @@ function retry() {
         <Search class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
         <Input v-model="query" type="search" :aria-label="t('check.search')" class="h-9 pl-9" :placeholder="t('check.searchPlaceholder')" />
       </div>
-      <NativeSelect v-model="month" :options="monthOptions" :aria-label="t('check.month')" class="w-full sm:w-[220px] [&_select]:h-9" />
-      <NativeSelect v-model="state" :options="stateOptions" :aria-label="t('check.state')" class="w-full sm:w-[180px] [&_select]:h-9" />
+      <Select v-model="month" :options="monthOptions" :aria-label="t('check.month')" class="w-full sm:w-[220px] h-9" />
+      <Select v-model="state" :options="stateOptions" :aria-label="t('check.state')" class="w-full sm:w-[180px] h-9" />
     </div>
     <LoadError v-if="loadError" :message="loadError" @retry="retry" />
     <template v-else>

@@ -10,7 +10,7 @@ import Pagination from '@/components/ui/Pagination.vue'
 import Avatar from '@/components/ui/Avatar.vue'
 import Badge from '@/components/ui/Badge.vue'
 import DataTable from '@/components/ui/DataTable.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import TableState from '@/components/ui/TableState.vue'
 import { ApiError } from '@/lib/api'
 import { errorText, pick, t } from '@/lib/i18n'
@@ -142,7 +142,7 @@ async function assign(member: Member, roleId: string) {
               </td>
               <td :class="td">
                 <Badge v-if="member.is_owner">{{ t('team.owner') }}</Badge>
-                <NativeSelect
+                <Select
                   v-else-if="editable(member)"
                   :model-value="member.role?.id ?? ''"
                   :options="roleOptions"

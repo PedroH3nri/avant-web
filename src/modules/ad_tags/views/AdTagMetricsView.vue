@@ -11,7 +11,7 @@ import PageHeader from '@/components/PageHeader.vue'
 import Button from '@/components/ui/Button.vue'
 import Card from '@/components/ui/Card.vue'
 import DataTable from '@/components/ui/DataTable.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import { ApiError } from '@/lib/api'
 import { errorText, formatDate, locale, t, type Key } from '@/lib/i18n'
 import { td, th } from '@/lib/table'
@@ -95,7 +95,7 @@ watch(period, load)
       <RouterLink :to="base" class="mb-3 inline-flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-foreground"><ArrowLeft class="size-4" />{{ t('at.back') }}</RouterLink>
     </template>
     <template #actions>
-      <NativeSelect v-model="period" :aria-label="t('at.period')" class="w-[180px]" :options="['7', '30', '90'].map((days) => ({ value: days, label: t(`at.period.${days}` as Key) }))" />
+      <Select v-model="period" :aria-label="t('at.period')" class="w-[180px]" :options="['7', '30', '90'].map((days) => ({ value: days, label: t(`at.period.${days}` as Key) }))" />
       <Button variant="outline" @click="router.push(`${base}/${tagId}`)"><Pencil />{{ t('common.edit') }}</Button>
     </template>
   </PageHeader>

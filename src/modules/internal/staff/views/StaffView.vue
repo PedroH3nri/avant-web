@@ -14,7 +14,7 @@ import Card from '@/components/ui/Card.vue'
 import DataTable from '@/components/ui/DataTable.vue'
 import Field from '@/components/ui/Field.vue'
 import Input from '@/components/ui/Input.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import Pagination from '@/components/ui/Pagination.vue'
 import Status from '@/components/ui/Status.vue'
 import TableState from '@/components/ui/TableState.vue'
@@ -150,7 +150,7 @@ async function invite() {
           <Input id="si-email" v-model="email" type="email" autocomplete="off" placeholder="nome@groone.com" />
         </Field>
         <Field id="si-role" :label="t('team.role')">
-          <NativeSelect id="si-role" v-model="roleId" :options="roleOptions" />
+          <Select id="si-role" v-model="roleId" :options="roleOptions" />
         </Field>
       </form>
       <template #footer>
@@ -197,7 +197,7 @@ async function invite() {
           </td>
           <td :class="td">
             <Badge v-if="member.is_owner">{{ t('int.owner') }}</Badge>
-            <NativeSelect
+            <Select
               v-else-if="editable(member)"
               :model-value="member.role?.id ?? ''"
               :options="roleOptions"

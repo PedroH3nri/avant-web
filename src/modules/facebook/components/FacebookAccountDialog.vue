@@ -6,7 +6,7 @@ import Button from '@/components/ui/Button.vue'
 import Dialog from '@/components/ui/Dialog.vue'
 import Field from '@/components/ui/Field.vue'
 import Input from '@/components/ui/Input.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import Segmented from '@/components/ui/Segmented.vue'
 import { ApiError } from '@/lib/api'
 import { errorText, t } from '@/lib/i18n'
@@ -73,10 +73,10 @@ async function save() {
   <Dialog v-model:open="open" :title="account?.name ?? ''" :desc="t('fb.account.desc')" class="max-w-[520px]">
     <div v-if="account" class="grid gap-4">
       <Field id="fb-site" :label="t('fb.account.site')" :hint="t('fb.account.siteHint')">
-        <NativeSelect id="fb-site" v-model="siteId" :options="siteOptions" />
+        <Select id="fb-site" v-model="siteId" :options="siteOptions" />
       </Field>
       <Field id="fb-holder" :label="t('fb.account.holder')" :hint="t('fb.account.holderHint')">
-        <NativeSelect id="fb-holder" v-model="userId" :options="personOptions" />
+        <Select id="fb-holder" v-model="userId" :options="personOptions" />
       </Field>
       <div class="grid gap-4 sm:grid-cols-2">
         <Field id="fb-daily" :label="t('fb.account.daily', { currency: account.currency })" :error="dailyValue === undefined && t('fb.limitInvalid')">

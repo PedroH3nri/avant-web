@@ -22,7 +22,7 @@ import Field from '@/components/ui/Field.vue'
 import Input from '@/components/ui/Input.vue'
 import MenuContent from '@/components/ui/MenuContent.vue'
 import MenuItem from '@/components/ui/MenuItem.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import SeatBar from '@/components/ui/SeatBar.vue'
 import Status from '@/components/ui/Status.vue'
 import TableState from '@/components/ui/TableState.vue'
@@ -267,7 +267,7 @@ async function cancel(invitation: Invitation) {
             <Input id="inv-email" v-model="email" type="email" placeholder="nome@empresa.com" autocomplete="off" :invalid="dupe" />
           </Field>
           <Field id="inv-role" :label="t('team.role')">
-            <NativeSelect id="inv-role" v-model="inviteRole" :options="roleOptions" />
+            <Select id="inv-role" v-model="inviteRole" :options="roleOptions" />
           </Field>
         </form>
         <template #note>
@@ -401,7 +401,7 @@ async function cancel(invitation: Invitation) {
 
     <Dialog v-model:open="roleOpen" :title="t('team.changeRole')" :desc="roleTarget ? t('team.changeRoleDesc', { name: roleTarget.user.name }) : ''">
       <Field id="member-role" :label="t('team.role')">
-        <NativeSelect id="member-role" v-model="newRole" :options="roleOptions" />
+        <Select id="member-role" v-model="newRole" :options="roleOptions" />
       </Field>
       <template #footer>
         <Button variant="outline" @click="roleTarget = null">{{ t('common.cancel') }}</Button>

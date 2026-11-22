@@ -2,7 +2,7 @@
 /** Escolhe com que período comparar: nenhum, o anterior, o do ano passado ou datas escolhidas. */
 import { computed } from 'vue'
 import Input from '@/components/ui/Input.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import { t, type Key } from '@/lib/i18n'
 import { COMPARE_MODES, comparisonReady, type Comparison } from '@/modules/reports/rules'
 import type { CompareMode } from '@/modules/reports/types'
@@ -26,7 +26,7 @@ function setDate(edge: 'start' | 'end', value: string) {
 
 <template>
   <div class="flex flex-wrap items-center gap-2">
-    <NativeSelect
+    <Select
       :model-value="modelValue.mode"
       :options="options"
       :disabled="disabled"

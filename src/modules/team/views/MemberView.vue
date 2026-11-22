@@ -12,7 +12,7 @@ import Button from '@/components/ui/Button.vue'
 import Card from '@/components/ui/Card.vue'
 import Checkbox from '@/components/ui/Checkbox.vue'
 import Input from '@/components/ui/Input.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import Status from '@/components/ui/Status.vue'
 import { ApiError } from '@/lib/api'
 import { errorText, formatDate, pick, t } from '@/lib/i18n'
@@ -255,8 +255,8 @@ const permName = (key: string) => pick(catalog.value.find((permission) => permis
           <div v-else class="grid gap-3">
             <div v-for="(row, index) in rows" :key="index" class="grid gap-1">
               <div class="grid items-center gap-2 sm:grid-cols-[minmax(0,1fr)_120px_160px_auto]">
-                <NativeSelect v-model="row.permission" :options="permOptions" :aria-label="t('member.permission')" />
-                <NativeSelect v-model="row.effect" :options="effectOptions" :aria-label="t('member.effect')" />
+                <Select v-model="row.permission" :options="permOptions" :aria-label="t('member.permission')" />
+                <Select v-model="row.effect" :options="effectOptions" :aria-label="t('member.effect')" />
                 <Input v-model="row.until" type="date" :min="today" :aria-label="t('member.until')" :invalid="!!rowError(row, index)" />
                 <Button variant="ghost" size="icon" :aria-label="t('member.removeRow')" @click="rows = rows.filter((_, rowIndex) => rowIndex !== index)"><X /></Button>
               </div>

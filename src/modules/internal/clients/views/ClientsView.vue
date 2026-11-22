@@ -18,7 +18,7 @@ import DataTable from '@/components/ui/DataTable.vue'
 import Pagination from '@/components/ui/Pagination.vue'
 import Field from '@/components/ui/Field.vue'
 import Input from '@/components/ui/Input.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import SeatBar from '@/components/ui/SeatBar.vue'
 import Status from '@/components/ui/Status.vue'
 import TableState from '@/components/ui/TableState.vue'
@@ -321,9 +321,9 @@ const referrerName = (client: Client) => (client.profile?.referred_by_company_id
           <Search class="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
           <Input v-model="searchText" :aria-label="t('int.searchLabel')" class="h-9 bg-card pl-9" :placeholder="t('int.search')" />
         </div>
-        <NativeSelect v-model="tab" :options="statusOptions" :aria-label="t('int.situation')" class="w-full sm:w-44 [&_select]:h-9" />
-        <NativeSelect v-model="manager" :options="managerOptions" :aria-label="t('int.column.manager')" class="w-full sm:w-52 [&_select]:h-9" />
-        <NativeSelect v-model="sort" :options="sortOptions" :aria-label="t('views.sort')" class="w-full sm:w-56 [&_select]:h-9" />
+        <Select v-model="tab" :options="statusOptions" :aria-label="t('int.situation')" class="w-full sm:w-44 h-9" />
+        <Select v-model="manager" :options="managerOptions" :aria-label="t('int.column.manager')" class="w-full sm:w-52 h-9" />
+        <Select v-model="sort" :options="sortOptions" :aria-label="t('views.sort')" class="w-full sm:w-56 h-9" />
         <ColumnsMenu v-model:shown="columns" :columns="COLUMNS" :label="columnLabel" />
       </SavedViewsBar>
 

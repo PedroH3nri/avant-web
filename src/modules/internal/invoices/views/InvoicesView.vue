@@ -9,7 +9,7 @@ import PageHeader from '@/components/PageHeader.vue'
 import Avatar from '@/components/ui/Avatar.vue'
 import Button from '@/components/ui/Button.vue'
 import DataTable from '@/components/ui/DataTable.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import Pagination from '@/components/ui/Pagination.vue'
 import Status from '@/components/ui/Status.vue'
 import TableState from '@/components/ui/TableState.vue'
@@ -127,9 +127,9 @@ const monthName = (iso: string) => new Intl.DateTimeFormat(locale.value, { month
   </PageHeader>
   <PageBody>
     <SavedViewsBar screen="invoices" :default-label="t('inv.team.allInvoices')" :current="current" :defaults="DEFAULT_VIEW" @apply="applyView">
-      <NativeSelect v-model="status" :options="statusOptions" :aria-label="t('inv.col.status')" class="w-full sm:w-[200px] [&_select]:h-9" />
-      <NativeSelect v-model="month" :options="months" :aria-label="t('inv.col.month')" class="w-full sm:w-[200px] [&_select]:h-9" />
-      <NativeSelect v-model="person" :options="personOptions" :aria-label="t('inv.col.person')" class="w-full sm:w-[220px] [&_select]:h-9" />
+      <Select v-model="status" :options="statusOptions" :aria-label="t('inv.col.status')" class="w-full sm:w-[200px] h-9" />
+      <Select v-model="month" :options="months" :aria-label="t('inv.col.month')" class="w-full sm:w-[200px] h-9" />
+      <Select v-model="person" :options="personOptions" :aria-label="t('inv.col.person')" class="w-full sm:w-[220px] h-9" />
       <ColumnsMenu v-model:shown="columns" :columns="COLUMNS" :label="columnLabel" />
     </SavedViewsBar>
     <LoadError v-if="loadError" :message="loadError" @retry="load" />
