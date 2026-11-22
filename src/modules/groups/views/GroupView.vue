@@ -19,7 +19,7 @@ import Field from '@/components/ui/Field.vue'
 import Input from '@/components/ui/Input.vue'
 import MenuContent from '@/components/ui/MenuContent.vue'
 import MenuItem from '@/components/ui/MenuItem.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import Status from '@/components/ui/Status.vue'
 import { ApiError } from '@/lib/api'
 import { errorText, formatDate, pick, t } from '@/lib/i18n'
@@ -257,7 +257,7 @@ const deleteDesc = computed(() => {
 
     <Dialog v-model:open="adding" :title="t('groups.addTo', { name: group?.name ?? '' })" :desc="t('groups.addDesc')">
       <Field id="group-add" :label="t('team.person')">
-        <NativeSelect id="group-add" v-model="pickedMember" :options="freeOptions" />
+        <Select id="group-add" v-model="pickedMember" :options="freeOptions" />
       </Field>
       <template #footer>
         <Button variant="outline" @click="adding = false">{{ t('common.cancel') }}</Button>

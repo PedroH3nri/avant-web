@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { SearchSelect } from '@/components/ui/search-select'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
@@ -895,10 +896,7 @@ function TeamScreen({ t, go, members, setMembers, groupCount }: { t: T; go: (s: 
               <Input id="inv-email" className="h-10" type="email" placeholder="nome@empresa.com" value={email} onChange={(e) => setEmail(e.target.value)} aria-invalid={dupe} />
             </Field>
             <Field id="inv-role" label={t('team.role')}>
-              <Select value={role} onValueChange={setRole}>
-                <SelectTrigger id="inv-role" className="h-10"><SelectValue /></SelectTrigger>
-                <SelectContent>{ROLES.map((r) => <SelectItem key={r.name} value={r.name}>{r.name}</SelectItem>)}</SelectContent>
-              </Select>
+              <SearchSelect id="inv-role" value={role} onValueChange={setRole} options={ROLES.map((r) => ({ value: r.name, label: r.name }))} />
             </Field>
           </form>
         </Card>

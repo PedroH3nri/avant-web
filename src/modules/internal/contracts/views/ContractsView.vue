@@ -16,7 +16,7 @@ import Field from '@/components/ui/Field.vue'
 import Input from '@/components/ui/Input.vue'
 import MenuContent from '@/components/ui/MenuContent.vue'
 import MenuItem from '@/components/ui/MenuItem.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import Pagination from '@/components/ui/Pagination.vue'
 import Status from '@/components/ui/Status.vue'
 import TableState from '@/components/ui/TableState.vue'
@@ -295,8 +295,8 @@ async function confirmRemove() {
 
       <section class="grid gap-3">
         <SavedViewsBar screen="contracts" :default-label="t('ct.activeContracts')" :current="current" :defaults="DEFAULT_VIEW" @apply="applyView">
-          <NativeSelect :model-value="filter" :options="filterOptions" :aria-label="t('ct.filterLabel')" class="w-full sm:w-44 [&_select]:h-9" @update:model-value="choose($event as Filter)" />
-          <NativeSelect v-model="client" :options="clientOptions" :aria-label="t('ct.client')" class="w-full sm:w-56 [&_select]:h-9" />
+          <Select :model-value="filter" :options="filterOptions" :aria-label="t('ct.filterLabel')" class="w-full sm:w-44 h-9" @update:model-value="choose($event as Filter)" />
+          <Select v-model="client" :options="clientOptions" :aria-label="t('ct.client')" class="w-full sm:w-56 h-9" />
           <ColumnsMenu v-model:shown="columns" :columns="COLUMNS" :label="columnLabel" />
         </SavedViewsBar>
         <DataTable :min="900">
@@ -354,7 +354,7 @@ async function confirmRemove() {
     <p v-if="!manual.length" class="text-[14px] text-muted-foreground">{{ t('ct.noManual') }}</p>
     <form v-else id="contract-form" class="grid gap-4" @submit.prevent="create">
       <Field id="contract-network" :label="t('ct.network')">
-        <NativeSelect id="contract-network" v-model="networkId" :options="networkOptions" />
+        <Select id="contract-network" v-model="networkId" :options="networkOptions" />
       </Field>
       <Field id="contract-revshare" :label="t('ct.revshare')" :hint="revshareHint" :error="revshareError">
         <Input id="contract-revshare" v-model="revshareInput" inputmode="decimal" class="tnum" placeholder="30" :aria-invalid="!!revshareError" />

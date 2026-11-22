@@ -6,7 +6,7 @@ import Button from '@/components/ui/Button.vue'
 import Dialog from '@/components/ui/Dialog.vue'
 import Field from '@/components/ui/Field.vue'
 import Input from '@/components/ui/Input.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import Segmented from '@/components/ui/Segmented.vue'
 import { ApiError } from '@/lib/api'
 import { errorText, t } from '@/lib/i18n'
@@ -73,10 +73,10 @@ async function save() {
   <Dialog v-model:open="open" :title="account?.name ?? ''" :desc="t('gads.account.desc')" class="max-w-[520px]">
     <div v-if="account" class="grid gap-4">
       <Field id="gads-site" :label="t('gads.account.site')" :hint="t('gads.account.siteHint')">
-        <NativeSelect id="gads-site" v-model="siteId" :options="siteOptions" />
+        <Select id="gads-site" v-model="siteId" :options="siteOptions" />
       </Field>
       <Field id="gads-holder" :label="t('gads.account.holder')" :hint="t('gads.account.holderHint')">
-        <NativeSelect id="gads-holder" v-model="userId" :options="personOptions" />
+        <Select id="gads-holder" v-model="userId" :options="personOptions" />
       </Field>
       <div class="grid gap-4 sm:grid-cols-2">
         <Field id="gads-daily" :label="t('gads.account.daily', { currency: account.currency })" :error="dailyValue === undefined && t('gads.limitInvalid')">

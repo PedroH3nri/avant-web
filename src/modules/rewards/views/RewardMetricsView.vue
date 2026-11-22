@@ -10,7 +10,7 @@ import PageBody from '@/components/PageBody.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import Button from '@/components/ui/Button.vue'
 import Card from '@/components/ui/Card.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import { ApiError } from '@/lib/api'
 import { errorText, locale, t, type Key } from '@/lib/i18n'
 import RewardLeadsCard from '@/modules/rewards/components/RewardLeadsCard.vue'
@@ -127,7 +127,7 @@ watch(period, load)
       </RouterLink>
     </template>
     <template #actions>
-      <NativeSelect
+      <Select
         v-model="period"
         :aria-label="t('rw.period')"
         class="w-[180px]"

@@ -18,7 +18,7 @@ import Field from '@/components/ui/Field.vue'
 import Input from '@/components/ui/Input.vue'
 import MenuContent from '@/components/ui/MenuContent.vue'
 import MenuItem from '@/components/ui/MenuItem.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import Pagination from '@/components/ui/Pagination.vue'
 import Segmented from '@/components/ui/Segmented.vue'
 import Status from '@/components/ui/Status.vue'
@@ -260,7 +260,7 @@ watch(period, load)
       <RouterLink :to="`${base}/${siteId}`" class="mb-3 inline-flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-foreground"><ArrowLeft class="size-4" />{{ site?.domain || t('nav.priceRules') }}</RouterLink>
     </template>
     <template v-if="rule" #actions>
-      <NativeSelect v-model="period" :aria-label="t('pr.period')" class="w-[180px]" :options="HOUR_PERIODS.map((days) => ({ value: days, label: t(`pr.period.${days}` as Key) }))" />
+      <Select v-model="period" :aria-label="t('pr.period')" class="w-[180px]" :options="HOUR_PERIODS.map((days) => ({ value: days, label: t(`pr.period.${days}` as Key) }))" />
       <template v-if="canManage">
         <Button variant="outline" @click="openFloor"><Pencil />{{ t('pr.manualFloor') }}</Button>
         <DropdownMenuRoot>
@@ -334,10 +334,10 @@ watch(period, load)
             <Input id="pr-min-requests" v-model="limits.minRequests" class="tnum" inputmode="numeric" :disabled="!canManage" />
           </Field>
           <Field id="pr-floor-min" :label="t('pr.limit.floorMin', { currency: rule.currency })" :hint="t('pr.limit.floorMinHint')">
-            <NativeSelect id="pr-floor-min" v-model="limits.floorMin" class="tnum" :options="minOptions" :disabled="!canManage" />
+            <Select id="pr-floor-min" v-model="limits.floorMin" class="tnum" :options="minOptions" :disabled="!canManage" />
           </Field>
           <Field id="pr-floor-max" :label="t('pr.limit.floorMax', { currency: rule.currency })" :hint="t('pr.limit.floorMaxHint')">
-            <NativeSelect id="pr-floor-max" v-model="limits.floorMax" class="tnum" :options="maxOptions" :disabled="!canManage" />
+            <Select id="pr-floor-max" v-model="limits.floorMax" class="tnum" :options="maxOptions" :disabled="!canManage" />
           </Field>
           <Field id="pr-step" :label="t('pr.limit.step')" :hint="t('pr.limit.stepHint')">
             <Segmented v-model="limits.step" :options="stepOptions" :label="t('pr.limit.step')" :disabled="!canManage" />
@@ -395,7 +395,7 @@ watch(period, load)
   <Dialog v-model:open="floorOpen" :title="t('pr.manualFloor')" :desc="t('pr.manualFloorDesc')">
     <form id="pr-floor" class="grid gap-4" @submit.prevent="saveFloor">
       <Field id="pr-floor-value" :label="t('pr.floorLabel', { currency: rule?.currency ?? '' })" :hint="floorHint">
-        <NativeSelect id="pr-floor-value" v-model="floorTier" class="tnum" :options="floorOptions" />
+        <Select id="pr-floor-value" v-model="floorTier" class="tnum" :options="floorOptions" />
       </Field>
     </form>
     <template #footer>

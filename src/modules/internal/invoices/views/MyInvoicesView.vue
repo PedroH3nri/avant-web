@@ -12,7 +12,7 @@ import Card from '@/components/ui/Card.vue'
 import DataTable from '@/components/ui/DataTable.vue'
 import Dialog from '@/components/ui/Dialog.vue'
 import Field from '@/components/ui/Field.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import Pagination from '@/components/ui/Pagination.vue'
 import Status from '@/components/ui/Status.vue'
 import TableState from '@/components/ui/TableState.vue'
@@ -167,7 +167,7 @@ async function create() {
   <Dialog v-model:open="creating" :title="t('inv.create.title')" :desc="t('inv.create.desc')">
     <div class="grid gap-4">
       <Field id="inv-month" :label="t('inv.col.month')">
-        <NativeSelect id="inv-month" v-model="createMonth" :options="monthOptions" />
+        <Select id="inv-month" v-model="createMonth" :options="monthOptions" />
       </Field>
       <dl v-if="chosen" class="grid divide-y rounded-md border text-[14px]">
         <div v-for="[name, value] in breakdown" :key="name" class="flex justify-between gap-3 px-3 py-2">

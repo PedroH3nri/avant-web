@@ -12,7 +12,7 @@ import Card from '@/components/ui/Card.vue'
 import Checkbox from '@/components/ui/Checkbox.vue'
 import DataTable from '@/components/ui/DataTable.vue'
 import Input from '@/components/ui/Input.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import Pagination from '@/components/ui/Pagination.vue'
 import Status from '@/components/ui/Status.vue'
 import TableState from '@/components/ui/TableState.vue'
@@ -111,7 +111,7 @@ function state(reward: Reward): { tone: 'ok' | 'neutral' | 'bad'; label: string 
         <Search class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
         <Input v-model="query" :aria-label="t('rw.search')" class="h-9 bg-card pl-9" :placeholder="t('rw.searchPlaceholder')" />
       </div>
-      <NativeSelect v-if="!internal && sites.length > 1" v-model="siteId" :aria-label="t('rw.site')" class="w-full sm:w-[240px]" :options="siteOptions" />
+      <Select v-if="!internal && sites.length > 1" v-model="siteId" :aria-label="t('rw.site')" class="w-full sm:w-[240px]" :options="siteOptions" />
       <Checkbox id="rw-deleted" v-model="deleted" :label="t('rw.showDeleted')" />
     </div>
     <LoadError v-if="loadError" :message="loadError" @retry="load" />

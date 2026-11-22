@@ -10,7 +10,7 @@ import Button from '@/components/ui/Button.vue'
 import Dialog from '@/components/ui/Dialog.vue'
 import Field from '@/components/ui/Field.vue'
 import Input from '@/components/ui/Input.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import { ApiError } from '@/lib/api'
 import { errorText, lang, locale, t } from '@/lib/i18n'
 import { formatMetric, toNumber } from '@/lib/metrics'
@@ -169,7 +169,7 @@ async function save() {
           </p>
         </div>
         <div class="grid grid-cols-2 gap-4">
-          <Field id="metric-format" :label="t('report.metricFormat')"><NativeSelect id="metric-format" v-model="format" :options="formats" /></Field>
+          <Field id="metric-format" :label="t('report.metricFormat')"><Select id="metric-format" v-model="format" :options="formats" /></Field>
           <Field id="metric-decimals" :label="t('report.metricDecimals')"><Input id="metric-decimals" v-model="decimals" type="number" min="0" max="6" /></Field>
         </div>
         <p v-if="saveError" class="text-[13px] text-bad">{{ saveError }}</p>

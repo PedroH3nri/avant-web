@@ -14,7 +14,7 @@ import DataTable from '@/components/ui/DataTable.vue'
 import Dialog from '@/components/ui/Dialog.vue'
 import Field from '@/components/ui/Field.vue'
 import Input from '@/components/ui/Input.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import Pagination from '@/components/ui/Pagination.vue'
 import Status from '@/components/ui/Status.vue'
 import TableState from '@/components/ui/TableState.vue'
@@ -214,7 +214,7 @@ function seenText(tag: AdTag): string {
     <form id="at-new" class="grid gap-4" @submit.prevent="create">
       <Input v-if="internal" v-model="siteQuery" :aria-label="t('at.searchSite')" class="h-9" :placeholder="t('at.searchSite')" />
       <Field id="at-new-site" :label="t('at.site')">
-        <NativeSelect id="at-new-site" v-model="newSite" :options="siteOptions" />
+        <Select id="at-new-site" v-model="newSite" :options="siteOptions" />
       </Field>
       <Field id="at-new-name" :label="t('at.name')" :hint="t('at.nameHint')" :error="nameTaken && t('at.nameTaken')">
         <Input id="at-new-name" v-model="newName" :maxlength="LIMITS.name" :placeholder="t('at.defaultName')" />

@@ -8,7 +8,7 @@ import LoadError from '@/components/LoadError.vue'
 import PageBody from '@/components/PageBody.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import DataTable from '@/components/ui/DataTable.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import Segmented from '@/components/ui/Segmented.vue'
 import Status from '@/components/ui/Status.vue'
 import TableState from '@/components/ui/TableState.vue'
@@ -142,7 +142,7 @@ watch(termKind, loadTerms)
       </p>
     </template>
     <template #actions>
-      <NativeSelect v-model="days" :aria-label="t('gads.period')" class="w-[160px]" :options="periodOptions" />
+      <Select v-model="days" :aria-label="t('gads.period')" class="w-[160px]" :options="periodOptions" />
     </template>
   </PageHeader>
   <PageBody>

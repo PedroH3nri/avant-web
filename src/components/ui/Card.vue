@@ -6,8 +6,8 @@ withDefaults(defineProps<{ title?: string; desc?: string; footerNote?: string; c
 </script>
 
 <template>
-  <section :class="cn('overflow-hidden rounded-lg border bg-card', $props.class)">
-    <div v-if="title || desc || $slots.default" :class="pad ? 'p-6' : ''">
+  <section :class="cn('flex flex-col overflow-hidden rounded-lg border bg-card', $props.class)">
+    <div v-if="title || desc || $slots.default" :class="pad ? 'flex-1 p-6' : 'flex-1'">
       <h2 v-if="title" class="text-[20px] font-semibold tracking-[-0.025em]">{{ title }}</h2>
       <div v-if="desc || $slots.desc" class="mt-2 max-w-[70ch] text-[14px] text-muted-foreground">
         <slot name="desc">{{ desc }}</slot>

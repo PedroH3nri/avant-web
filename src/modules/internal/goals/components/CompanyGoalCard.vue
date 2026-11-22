@@ -6,7 +6,7 @@ import Button from '@/components/ui/Button.vue'
 import Card from '@/components/ui/Card.vue'
 import Field from '@/components/ui/Field.vue'
 import Input from '@/components/ui/Input.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import { ApiError } from '@/lib/api'
 import { errorText, lang, locale, t } from '@/lib/i18n'
 import { formatMetric } from '@/lib/metrics'
@@ -72,7 +72,7 @@ async function save() {
   <Card :title="t('goals.company')" :desc="t('goals.companyCardDesc')" :footer-note="canManage ? t('goals.companyTotal', { total: yearTotal }) : t('goals.companyReadonly')">
     <div class="grid gap-4">
       <Field id="company-goal-year" :label="t('goals.templateYear')" class="w-[140px]">
-        <NativeSelect id="company-goal-year" v-model="year" :options="yearOptions" />
+        <Select id="company-goal-year" v-model="year" :options="yearOptions" />
       </Field>
       <p v-if="templates && !current && !canManage" class="text-[14px] text-muted-foreground">{{ t('goals.companyNone') }}</p>
       <fieldset v-else class="grid gap-2" :disabled="!canManage || busy || !templates">

@@ -80,7 +80,7 @@ async function add() {
 </script>
 
 <template>
-  <Card :title="t('inv.clientNetworks')" :desc="t('inv.clientNetworksDesc')" class="!max-w-none lg:col-span-2">
+  <Card class="lg:col-span-2" :title="t('inv.clientNetworks')" :desc="t('inv.clientNetworksDesc')">
     <LoadError v-if="loadError" :message="loadError" @retry="load" />
     <p v-else-if="networks?.length === 0" class="text-[14px] text-muted-foreground">{{ t('inv.clientNetworksNone') }}</p>
     <DataTable v-else :min="640">

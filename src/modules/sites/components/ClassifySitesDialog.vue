@@ -5,7 +5,7 @@ import { toast } from 'vue-sonner'
 import Button from '@/components/ui/Button.vue'
 import Dialog from '@/components/ui/Dialog.vue'
 import Field from '@/components/ui/Field.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import { ApiError } from '@/lib/api'
 import { errorText, t } from '@/lib/i18n'
 import { KEEP, NONE, SITE_CATEGORIES, categoryLabel, sitePatch } from '@/modules/sites/rules'
@@ -65,10 +65,10 @@ async function save() {
   <Dialog v-model:open="open" :title="title" :desc="t('sites.classify.desc')" class="max-w-[440px]">
     <div class="grid gap-4">
       <Field id="classify-category" :label="t('sites.col.category')">
-        <NativeSelect id="classify-category" v-model="category" :options="categoryOptions" />
+        <Select id="classify-category" v-model="category" :options="categoryOptions" />
       </Field>
       <Field id="classify-responsible" :label="t('sites.col.responsible')">
-        <NativeSelect id="classify-responsible" v-model="responsible" :options="responsibleOptions" />
+        <Select id="classify-responsible" v-model="responsible" :options="responsibleOptions" />
       </Field>
     </div>
     <template #footer>

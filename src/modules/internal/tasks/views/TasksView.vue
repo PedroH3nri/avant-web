@@ -9,7 +9,7 @@ import PageHeader from '@/components/PageHeader.vue'
 import Button from '@/components/ui/Button.vue'
 import DataTable from '@/components/ui/DataTable.vue'
 import Input from '@/components/ui/Input.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import Pagination from '@/components/ui/Pagination.vue'
 import Status from '@/components/ui/Status.vue'
 import TableState from '@/components/ui/TableState.vue'
@@ -137,8 +137,8 @@ const openCreated = (task: SupportTaskDetail) => router.push(`/interno/tarefas/$
         <Search class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input v-model="query" :aria-label="t('task.search')" class="h-9 pl-9" :placeholder="t('task.searchPlaceholder')" />
       </div>
-      <NativeSelect v-model="status" :options="statusOptions" :aria-label="t('task.status')" class="w-full sm:w-[230px] [&_select]:h-9" />
-      <NativeSelect v-model="priority" :options="priorityOptions" :aria-label="t('task.priority')" class="w-full sm:w-[170px] [&_select]:h-9" />
+      <Select v-model="status" :options="statusOptions" :aria-label="t('task.status')" class="w-full sm:w-[230px] h-9" />
+      <Select v-model="priority" :options="priorityOptions" :aria-label="t('task.priority')" class="w-full sm:w-[170px] h-9" />
     </div>
     <LoadError v-if="loadError" :message="loadError" @retry="load" />
     <p v-else-if="!tasks" class="text-[14px] text-muted-foreground" role="status">{{ t('common.loading') }}</p>

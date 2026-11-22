@@ -17,7 +17,7 @@ import Field from '@/components/ui/Field.vue'
 import Input from '@/components/ui/Input.vue'
 import MenuContent from '@/components/ui/MenuContent.vue'
 import MenuItem from '@/components/ui/MenuItem.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import Status from '@/components/ui/Status.vue'
 import TableState from '@/components/ui/TableState.vue'
 import { ApiError } from '@/lib/api'
@@ -183,9 +183,9 @@ async function saveStart() {
     <template v-else>
       <CommissionKpis :items="kpis" />
       <SavedViewsBar screen="commissions" :default-label="t('com.thisMonth')" :current="current" :defaults="DEFAULT_VIEW" @apply="applyView">
-        <NativeSelect v-model="month" :options="months" :aria-label="t('com.month')" class="w-full sm:w-[200px] [&_select]:h-9" />
-        <NativeSelect v-model="status" :options="statusOptions" :aria-label="t('com.col.status')" class="w-full sm:w-[180px] [&_select]:h-9" />
-        <NativeSelect v-model="sort" :options="sortOptions" :aria-label="t('views.sort')" class="w-full sm:w-[200px] [&_select]:h-9" />
+        <Select v-model="month" :options="months" :aria-label="t('com.month')" class="w-full sm:w-[200px] h-9" />
+        <Select v-model="status" :options="statusOptions" :aria-label="t('com.col.status')" class="w-full sm:w-[180px] h-9" />
+        <Select v-model="sort" :options="sortOptions" :aria-label="t('views.sort')" class="w-full sm:w-[200px] h-9" />
         <ColumnsMenu v-model:shown="columns" :columns="COLUMNS" :label="columnLabel" />
       </SavedViewsBar>
       <DataTable :min="960">

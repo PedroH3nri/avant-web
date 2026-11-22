@@ -9,7 +9,7 @@ import Button from '@/components/ui/Button.vue'
 import Card from '@/components/ui/Card.vue'
 import DataTable from '@/components/ui/DataTable.vue'
 import Input from '@/components/ui/Input.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import Pagination from '@/components/ui/Pagination.vue'
 import TableState from '@/components/ui/TableState.vue'
 import { ApiError } from '@/lib/api'
@@ -121,7 +121,7 @@ async function confirmRemove() {
         <Search class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
         <Input v-model="query" :aria-label="t('rw.leadsSearch')" class="h-9 pl-9" :placeholder="t('rw.leadsSearchPlaceholder')" />
       </div>
-      <NativeSelect v-if="reward.questions.length" v-model="answer" :aria-label="t('rw.answerFilter')" class="w-full sm:w-[260px]" :options="answerOptions" />
+      <Select v-if="reward.questions.length" v-model="answer" :aria-label="t('rw.answerFilter')" class="w-full sm:w-[260px]" :options="answerOptions" />
       <Button variant="outline" class="sm:ml-auto" @click="exportLeads"><Download />{{ t('rw.export') }}</Button>
     </div>
     <p v-if="loadError" class="px-6 py-4 text-[14px] text-bad">{{ loadError }}</p>

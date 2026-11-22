@@ -8,7 +8,7 @@ import Checkbox from '@/components/ui/Checkbox.vue'
 import Dialog from '@/components/ui/Dialog.vue'
 import Field from '@/components/ui/Field.vue'
 import Input from '@/components/ui/Input.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import { ApiError } from '@/lib/api'
 import { errorText, lang, pick, t, type Key } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
@@ -122,7 +122,7 @@ async function save() {
         </Field>
       </div>
       <Field id="rule-transfer" :label="t('com.transfer')" :hint="canTransfer ? t('com.transferHint') : t('com.transferClientOnly')">
-        <NativeSelect id="rule-transfer" v-model="form.transfer" :options="transferOptions" class="sm:w-[320px]" :disabled="!canTransfer" />
+        <Select id="rule-transfer" v-model="form.transfer" :options="transferOptions" class="sm:w-[320px]" :disabled="!canTransfer" />
       </Field>
     </form>
     <template #footer>

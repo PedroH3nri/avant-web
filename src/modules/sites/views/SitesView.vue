@@ -16,7 +16,7 @@ import DataTable from '@/components/ui/DataTable.vue'
 import Pagination from '@/components/ui/Pagination.vue'
 import Field from '@/components/ui/Field.vue'
 import Input from '@/components/ui/Input.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import Status from '@/components/ui/Status.vue'
 import TableState from '@/components/ui/TableState.vue'
 import { ApiError } from '@/lib/api'
@@ -257,9 +257,9 @@ const tab = (on: boolean) =>
         </button>
       </div>
       <template v-if="view === 'sites'">
-        <NativeSelect v-if="networks.length > 1" v-model="networkId" :options="networkOptions" class="w-full sm:w-56" :aria-label="t('sites.col.network')" />
-        <NativeSelect v-model="categoryFilter" :options="categoryOptions" class="w-full sm:w-48" :aria-label="t('sites.col.category')" />
-        <NativeSelect v-if="people.length" v-model="responsibleFilter" :options="responsibleOptions" class="w-full sm:w-48" :aria-label="t('sites.col.responsible')" />
+        <Select v-if="networks.length > 1" v-model="networkId" :options="networkOptions" class="w-full sm:w-56" :aria-label="t('sites.col.network')" />
+        <Select v-model="categoryFilter" :options="categoryOptions" class="w-full sm:w-48" :aria-label="t('sites.col.category')" />
+        <Select v-if="people.length" v-model="responsibleFilter" :options="responsibleOptions" class="w-full sm:w-48" :aria-label="t('sites.col.responsible')" />
         <Checkbox id="sites-archived" v-model="archived" :label="t('sites.archived')" />
         <div class="relative w-full sm:ml-auto sm:w-64">
           <Search class="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
@@ -358,7 +358,7 @@ const tab = (on: boolean) =>
             <td :class="[td, 'font-mono text-[13px] text-muted-foreground']">{{ unit.code ?? '' }}</td>
             <td v-if="networks.length" :class="[td, 'text-muted-foreground']">{{ netName(unit.network_id) }}</td>
             <td :class="td">
-              <NativeSelect
+              <Select
                 :model-value="choice[unit.id] ?? ''"
                 :options="siteOptionsFor(unit)"
                 class="w-full max-w-[260px]"

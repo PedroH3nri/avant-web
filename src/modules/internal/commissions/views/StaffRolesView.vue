@@ -23,7 +23,7 @@ import { activeByRole, localToday, personGoalAmount, splitEvent } from '@/module
 import { staffService } from '@/modules/internal/staff/service'
 import { commissionService } from '@/modules/internal/commissions/service'
 import type { CommissionRule } from '@/modules/internal/commissions/types'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import GoalTemplatesDialog from '@/modules/internal/goals/components/GoalTemplatesDialog.vue'
 import { formatAmount, monthOptions } from '@/modules/internal/goals/rules'
 import { goalService } from '@/modules/internal/goals/service'
@@ -293,7 +293,7 @@ function ruleEnd(rule: CommissionRule): string {
         <Card :title="t('com.goal.title')" :desc="t('com.goal.desc')">
           <div class="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto]">
             <Field id="role-goal" :label="t('com.goal.template')">
-              <NativeSelect
+              <Select
                 id="role-goal"
                 :key="`goal-select-${goalKey}`"
                 :model-value="goal?.goal_template_id ?? ''"

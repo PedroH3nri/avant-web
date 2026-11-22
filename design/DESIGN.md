@@ -168,8 +168,13 @@ Primary is ink-filled; outline for secondary actions; ghost inside table rows. 3
 ### Cards / Containers
 A card has a body (24px padding, 20px title, muted description) and, when it saves something, a muted footer with the explanatory note on the left and the single action on the right.
 
+**Two cards per row** (Pedro, 22/11): on wide screens (from 1024px) small cards with little data, such as a status, a short field, an image or a few label/value lines, go two per row (`lg:grid-cols-2` on the page body). Cards with a table, a long list, a feed or a long form take the whole row (`lg:col-span-2`). Cards in the same row share the height and the footer sits at the bottom, so there is no blank area under it. Never let a wide item open a second column by accident: declare the columns on the page body.
+
 ### Inputs / Fields
 40px, label above in 13px muted, hint or error below in 13px. Errors say what is wrong and how to fix it.
+
+### Selects
+Never the browser's native `<select>`. Every choice list uses the panel's own select (`src/components/ui/Select.vue`, prototype `search-select.tsx`), Select2-style: a 40px button like an input with the chosen label and a chevron, and a popover list as wide as the button with a check on the chosen option. From 8 options a search field sits on top of the list (accent and case insensitive, "Nada encontrado" when empty). Keyboard: arrows open and move, Home/End, Enter picks, Esc closes, a letter jumps when there is no search.
 
 ### Navigation
 Sidebar items are 36px rows with a 16px icon; the active item gets the chip fill and medium weight, inactive items are gray and get a soft fill on hover. A red dot on an item flags a problem inside it (a network without access). Every item opens a working screen: no locked or "Em breve" items.

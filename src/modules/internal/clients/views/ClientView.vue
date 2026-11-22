@@ -21,7 +21,7 @@ import DataTable from '@/components/ui/DataTable.vue'
 import Dialog from '@/components/ui/Dialog.vue'
 import Field from '@/components/ui/Field.vue'
 import Input from '@/components/ui/Input.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import Pagination from '@/components/ui/Pagination.vue'
 import Status from '@/components/ui/Status.vue'
 import { ApiError } from '@/lib/api'
@@ -294,8 +294,8 @@ function who(auditEntry: AuditEntry) {
       <Button :loading="inviteBusy" @click="sendInvite"><Mail />{{ pendingOwnerInvite ? t('int.resendInvite') : t('int.sendInvite') }}</Button>
     </template>
   </PageHeader>
-  <PageBody class="[&>*]:max-w-[960px]">
-    <LoadError v-if="loadError" :message="loadError" @retry="load" />
+  <PageBody class="lg:grid-flow-row-dense lg:grid-cols-2">
+    <LoadError v-if="loadError" class="lg:col-span-2" :message="loadError" @retry="load" />
     <template v-if="client">
       <Card :title="t('int.situation')" :desc="t('int.situationDesc')">
         <Status :tone="STATUS_TONE[client.status]">{{ t(`int.status.${client.status}`) }}</Status>
@@ -312,14 +312,14 @@ function who(auditEntry: AuditEntry) {
         </template>
       </Card>
 
-      <Card v-if="client.status === 'pending'" :title="t('int.ownerInvite')" :desc="t('int.ownerInviteDesc')">
+      <Card v-if="client.status === 'pending'" class="lg:col-span-2" :title="t('int.ownerInvite')" :desc="t('int.ownerInviteDesc')">
         <p class="text-[14px]">
           <template v-if="pendingOwnerInvite">{{ t('int.ownerInviteSent', { email: pendingOwnerInvite.email, when: t('int.expires', { when: formatAgo(pendingOwnerInvite.expires_at) }) }) }}</template>
           <span v-else class="text-muted-foreground">{{ t('int.ownerInviteNone') }}</span>
         </p>
       </Card>
 
-      <Card :title="t('int.profileTitle')" :desc="t('int.profileDesc')">
+      <Card :class="editing ? 'lg:col-span-2' : ''" :title="t('int.profileTitle')" :desc="t('int.profileDesc')">
         <form v-if="editing" id="client-profile" @submit.prevent="saveProfile">
           <ClientProfileForm v-model="profile" id-prefix="cp" :referrers="referrers" />
         </form>
@@ -355,35 +355,6 @@ function who(auditEntry: AuditEntry) {
 
       <CompanyImageCard :name="client.name" :image-url="client.image_url" staff :readonly="!canManage" :save="saveImage" :remove="removeImage" />
 
-      <Card :title="t('int.fiscalTitle')" :desc="t('int.fiscalDesc')">
-        <dl v-if="client.profile?.fiscal" class="-my-2 grid divide-y text-[14px]">
-          <div class="grid gap-1 py-2 sm:grid-cols-[180px_1fr]">
-            <dt class="text-muted-foreground">{{ t('fiscal.taxType') }}</dt>
-            <dd>{{ taxTypeLabel(client.profile.fiscal.tax_type) }} · <span class="tnum">{{ client.profile.fiscal.tax_id }}</span></dd>
-          </div>
-          <div class="grid gap-1 py-2 sm:grid-cols-[180px_1fr]">
-            <dt class="text-muted-foreground">{{ t('fiscal.legalName') }}</dt>
-            <dd>{{ client.profile.fiscal.legal_name }}</dd>
-          </div>
-          <div class="grid gap-1 py-2 sm:grid-cols-[180px_1fr]">
-            <dt class="text-muted-foreground">{{ t('fiscal.billingAddress') }}</dt>
-            <dd>{{ client.profile.fiscal.billing_address }} · <span class="tnum">{{ client.profile.fiscal.billing_phone_ddi }} {{ client.profile.fiscal.billing_phone }}</span></dd>
-          </div>
-          <div class="grid gap-1 py-2 sm:grid-cols-[180px_1fr]">
-            <dt class="text-muted-foreground">{{ t('fiscal.bank') }}</dt>
-            <dd>
-              {{ client.profile.fiscal.bank_name }} · <span class="font-mono">{{ client.profile.fiscal.swift_code }}</span> ·
-              <span class="tnum">{{ client.profile.fiscal.routing_number }} / {{ client.profile.fiscal.account_number }}</span>
-            </dd>
-          </div>
-        </dl>
-        <p v-else class="flex items-center gap-2 text-[14px] text-muted-foreground"><Lock class="size-4" aria-hidden="true" />{{ t('int.fiscalEmpty') }}</p>
-      </Card>
-
-      <ClientNetworksCard :client-id="client.id" :client-name="client.name" />
-      <ClientDocumentsCard v-if="canDocuments" :company-id="client.id" @changed="auditChanged" />
-      <ClientNotesCard v-if="canNotes" :company-id="client.id" @changed="auditChanged" />
-
       <Card :title="t('int.seatsTitle')" :desc="t('int.seatsDesc')">
         <div class="max-w-[160px]">
           <Field id="cl-seats" :label="t('int.seats')" :error="seatsLow && t('int.seatsMin', { n: client.seats_used })">
@@ -408,7 +379,45 @@ function who(auditEntry: AuditEntry) {
         </template>
       </Card>
 
-      <template v-if="members.length">
+      <Card :class="pending.length ? '' : 'lg:col-span-2'" :title="t('int.fiscalTitle')" :desc="t('int.fiscalDesc')">
+        <dl v-if="client.profile?.fiscal" class="-my-2 grid divide-y text-[14px]">
+          <div class="grid gap-1 py-2 sm:grid-cols-[180px_1fr]">
+            <dt class="text-muted-foreground">{{ t('fiscal.taxType') }}</dt>
+            <dd>{{ taxTypeLabel(client.profile.fiscal.tax_type) }} · <span class="tnum">{{ client.profile.fiscal.tax_id }}</span></dd>
+          </div>
+          <div class="grid gap-1 py-2 sm:grid-cols-[180px_1fr]">
+            <dt class="text-muted-foreground">{{ t('fiscal.legalName') }}</dt>
+            <dd>{{ client.profile.fiscal.legal_name }}</dd>
+          </div>
+          <div class="grid gap-1 py-2 sm:grid-cols-[180px_1fr]">
+            <dt class="text-muted-foreground">{{ t('fiscal.billingAddress') }}</dt>
+            <dd>{{ client.profile.fiscal.billing_address }} · <span class="tnum">{{ client.profile.fiscal.billing_phone_ddi }} {{ client.profile.fiscal.billing_phone }}</span></dd>
+          </div>
+          <div class="grid gap-1 py-2 sm:grid-cols-[180px_1fr]">
+            <dt class="text-muted-foreground">{{ t('fiscal.bank') }}</dt>
+            <dd>
+              {{ client.profile.fiscal.bank_name }} · <span class="font-mono">{{ client.profile.fiscal.swift_code }}</span> ·
+              <span class="tnum">{{ client.profile.fiscal.routing_number }} / {{ client.profile.fiscal.account_number }}</span>
+            </dd>
+          </div>
+        </dl>
+        <p v-else class="flex items-center gap-2 text-[14px] text-muted-foreground"><Lock class="size-4" aria-hidden="true" />{{ t('int.fiscalEmpty') }}</p>
+      </Card>
+
+      <Card v-if="pending.length" :title="t('int.invites')">
+        <ul class="-my-3 divide-y">
+          <li v-for="invitation in pending" :key="invitation.id" class="flex flex-wrap items-center justify-between gap-2 py-3 text-[14px]">
+            <span class="font-medium">{{ invitation.email }}</span>
+            <span class="text-[13px] text-muted-foreground">{{ t('int.expires', { when: formatAgo(invitation.expires_at) }) }}</span>
+          </li>
+        </ul>
+      </Card>
+
+      <ClientNetworksCard :client-id="client.id" :client-name="client.name" />
+      <ClientDocumentsCard v-if="canDocuments" class="lg:col-span-2" :company-id="client.id" @changed="auditChanged" />
+      <ClientNotesCard v-if="canNotes" class="lg:col-span-2" :company-id="client.id" @changed="auditChanged" />
+
+      <div v-if="members.length" class="grid gap-3 lg:col-span-2">
         <h2 class="text-[13px] font-medium text-muted-foreground">{{ t('int.members') }}</h2>
         <DataTable :min="640">
           <thead>
@@ -436,18 +445,9 @@ function who(auditEntry: AuditEntry) {
             </tr>
           </tbody>
         </DataTable>
-      </template>
+      </div>
 
-      <Card v-if="pending.length" :title="t('int.invites')">
-        <ul class="-my-3 divide-y">
-          <li v-for="invitation in pending" :key="invitation.id" class="flex flex-wrap items-center justify-between gap-2 py-3 text-[14px]">
-            <span class="font-medium">{{ invitation.email }}</span>
-            <span class="text-[13px] text-muted-foreground">{{ t('int.expires', { when: formatAgo(invitation.expires_at) }) }}</span>
-          </li>
-        </ul>
-      </Card>
-
-      <Card :title="t('int.audit')" :desc="t('int.auditDesc')">
+      <Card class="lg:col-span-2" :title="t('int.audit')" :desc="t('int.auditDesc')">
         <p v-if="!audit.length" class="text-[14px] text-muted-foreground">{{ t('int.auditEmpty') }}</p>
         <ol v-else class="-my-3 divide-y">
           <li v-for="entry in audit" :key="entry.id" class="flex flex-wrap items-baseline gap-x-4 gap-y-0.5 py-2.5 text-[14px]">
@@ -473,7 +473,7 @@ function who(auditEntry: AuditEntry) {
   />
   <Dialog v-model:open="ownerOpen" :title="t('int.changeOwner')" :desc="t('int.ownerDesc')">
     <Field id="owner-pick" :label="t('int.owner')">
-      <NativeSelect id="owner-pick" v-model="ownerPick" :options="ownerOptions" />
+      <Select id="owner-pick" v-model="ownerPick" :options="ownerOptions" />
     </Field>
     <template #footer>
       <Button variant="outline" @click="ownerOpen = false">{{ t('common.cancel') }}</Button>
