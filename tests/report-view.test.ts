@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
+import { chooseOption } from './select-helper'
 import { createPinia, setActivePinia } from 'pinia'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { defineComponent } from 'vue'
@@ -113,7 +114,7 @@ describe('leitura do relatório salvo', () => {
 
   it('troca o período só na visita, volta ao salvo e salva assim', async () => {
     const wrapper = await open()
-    await wrapper.find('select').setValue('last_7_days')
+    await chooseOption(wrapper.find('[role="combobox"]').element, 'last_7_days')
     await flushPromises()
     expect(service.query).toHaveBeenLastCalledWith(expect.objectContaining({ period: { preset: 'last_7_days' } }))
     expect(wrapper.text()).toContain('Vendo diferente do salvo')
@@ -121,7 +122,7 @@ describe('leitura do relatório salvo', () => {
     await button('Voltar ao salvo').trigger('click')
     await flushPromises()
     expect(service.query).toHaveBeenLastCalledWith(expect.objectContaining({ period: { preset: 'last_30_days' } }))
-    await wrapper.find('select').setValue('last_7_days')
+    await chooseOption(wrapper.find('[role="combobox"]').element, 'last_7_days')
     service.update.mockResolvedValue({ ...report, query: { ...report.query, period: { preset: 'last_7_days' } } })
     await button('Salvar assim').trigger('click')
     await flushPromises()

@@ -17,7 +17,7 @@ import Button from '@/components/ui/Button.vue'
 import Card from '@/components/ui/Card.vue'
 import MenuContent from '@/components/ui/MenuContent.vue'
 import MenuItem from '@/components/ui/MenuItem.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import { ApiError } from '@/lib/api'
 import { errorText, formatDate, lang, locale, t, type Key } from '@/lib/i18n'
 import { change, formatMetric, PERIOD_PRESETS, toNumber } from '@/lib/metrics'
@@ -276,7 +276,7 @@ onBeforeUnmount(() => {
     </PageHeader>
     <PageBody>
       <div class="flex flex-wrap items-center gap-2">
-        <NativeSelect :model-value="period" :options="periods" :aria-label="t('perf.period')" class="w-full sm:w-[240px]" @update:model-value="(value) => (period = value as ViewPeriod)" />
+        <Select :model-value="period" :options="periods" :aria-label="t('perf.period')" class="w-full sm:w-[240px]" @update:model-value="(value) => (period = value as ViewPeriod)" />
         <ComparePicker v-model="compare" />
         <Badge v-for="chip in chips" :key="chip.key">{{ chip.text }}</Badge>
         <span v-if="changed" class="flex flex-wrap items-center gap-2 text-[13px] text-muted-foreground sm:ml-auto">

@@ -8,7 +8,7 @@ import PageHeader from '@/components/PageHeader.vue'
 import Button from '@/components/ui/Button.vue'
 import Card from '@/components/ui/Card.vue'
 import DataTable from '@/components/ui/DataTable.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import Status from '@/components/ui/Status.vue'
 import TableState from '@/components/ui/TableState.vue'
 import { ApiError } from '@/lib/api'
@@ -86,7 +86,7 @@ const marginText = computed(() => {
 <template>
   <PageHeader :title="t('nav.results')" :sub="t('res.sub')">
     <template #actions>
-      <NativeSelect v-model="period" :options="periodOptions" class="w-[200px]" :aria-label="t('res.periodLabel')" />
+      <Select v-model="period" :options="periodOptions" class="w-[200px]" :aria-label="t('res.periodLabel')" />
       <Button v-if="session.can('costs.view')" variant="outline" @click="router.push('/custos')">{{ t('nav.costs') }}</Button>
     </template>
   </PageHeader>

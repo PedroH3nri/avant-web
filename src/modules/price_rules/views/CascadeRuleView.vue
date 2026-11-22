@@ -18,7 +18,7 @@ import Field from '@/components/ui/Field.vue'
 import Input from '@/components/ui/Input.vue'
 import MenuContent from '@/components/ui/MenuContent.vue'
 import MenuItem from '@/components/ui/MenuItem.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import Pagination from '@/components/ui/Pagination.vue'
 import Segmented from '@/components/ui/Segmented.vue'
 import Status from '@/components/ui/Status.vue'
@@ -313,7 +313,7 @@ watch(period, load)
       <RouterLink :to="`${base}/${siteId}`" class="mb-3 inline-flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-foreground"><ArrowLeft class="size-4" />{{ site?.domain || t('nav.priceRules') }}</RouterLink>
     </template>
     <template v-if="rule" #actions>
-      <NativeSelect v-model="period" :aria-label="t('pr.period')" class="w-[180px]" :options="HOUR_PERIODS.map((days) => ({ value: days, label: t(`pr.period.${days}` as Key) }))" />
+      <Select v-model="period" :aria-label="t('pr.period')" class="w-[180px]" :options="HOUR_PERIODS.map((days) => ({ value: days, label: t(`pr.period.${days}` as Key) }))" />
       <template v-if="canManage">
         <Button variant="outline" @click="openStart"><Pencil />{{ t('pr.manualStart') }}</Button>
         <DropdownMenuRoot>
@@ -412,10 +412,10 @@ watch(period, load)
         </dl>
         <div v-else-if="limits" class="grid gap-4 border-t p-6 sm:grid-cols-2 lg:grid-cols-3">
           <Field id="cas-floor-min" :label="t('pr.limit.floorMin', { currency: rule.currency })" :hint="t('pr.cascadeLimit.floorMinHint')">
-            <NativeSelect id="cas-floor-min" v-model="limits.floorMin" class="tnum" :options="minOptions" :disabled="!canManage" />
+            <Select id="cas-floor-min" v-model="limits.floorMin" class="tnum" :options="minOptions" :disabled="!canManage" />
           </Field>
           <Field id="cas-floor-max" :label="t('pr.limit.floorMax', { currency: rule.currency })" :hint="t('pr.cascadeLimit.floorMaxHint')">
-            <NativeSelect id="cas-floor-max" v-model="limits.floorMax" class="tnum" :options="maxOptions" :disabled="!canManage" />
+            <Select id="cas-floor-max" v-model="limits.floorMax" class="tnum" :options="maxOptions" :disabled="!canManage" />
           </Field>
           <Field id="cas-drop" :label="t('pr.cascadeLimit.drop')" :hint="t('pr.cascadeLimit.dropHint', { percent: dropPercentText(formDrop) })">
             <Segmented v-model="limits.drop" :options="dropOptions" :label="t('pr.cascadeLimit.drop')" :disabled="!canManage" />
@@ -481,7 +481,7 @@ watch(period, load)
   <Dialog v-model:open="startOpen" :title="t('pr.manualStart')" :desc="t('pr.manualStartDesc', { drop: dropText(savedDrop) })">
     <form id="cas-start" class="grid gap-4" @submit.prevent="saveStart">
       <Field id="cas-start-value" :label="t('pr.startLabel', { currency: rule?.currency ?? '' })" :hint="t('pr.startHint', { count: tiers.length, currency: rule?.currency ?? '', ladder: ladderText(cascadeLadder(tiers, Number(startTier), savedDrop)) })">
-        <NativeSelect id="cas-start-value" v-model="startTier" class="tnum" :options="startOptions" />
+        <Select id="cas-start-value" v-model="startTier" class="tnum" :options="startOptions" />
       </Field>
     </form>
     <template #footer>

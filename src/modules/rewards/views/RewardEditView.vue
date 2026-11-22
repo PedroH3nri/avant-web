@@ -17,7 +17,7 @@ import Field from '@/components/ui/Field.vue'
 import Input from '@/components/ui/Input.vue'
 import MenuContent from '@/components/ui/MenuContent.vue'
 import MenuItem from '@/components/ui/MenuItem.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import { rewardSteps } from 'avant-tag/reward'
 import type { RewardStep, VisitorLanguage } from 'avant-tag/reward'
 import { ApiError } from '@/lib/api'
@@ -325,7 +325,7 @@ const segment = (selected: boolean) => ['h-8 rounded px-3 text-[13px] font-mediu
                 <Input v-if="rewardId" id="rw-site" :model-value="domain" disabled />
                 <div v-else class="grid gap-2">
                   <Input v-if="internal" v-model="siteQuery" :aria-label="t('rw.siteSearch')" :placeholder="t('rw.siteSearch')" />
-                  <NativeSelect id="rw-site" :model-value="site?.id ?? ''" :options="siteOptions.length ? siteOptions : [{ value: '', label: t('rw.sitePick') }]" @update:model-value="chooseSite" />
+                  <Select id="rw-site" :model-value="site?.id ?? ''" :options="siteOptions.length ? siteOptions : [{ value: '', label: t('rw.sitePick') }]" @update:model-value="chooseSite" />
                 </div>
               </Field>
               <Field id="rw-active" :label="t('rw.col.state')">
@@ -430,7 +430,7 @@ const segment = (selected: boolean) => ['h-8 rounded px-3 text-[13px] font-mediu
               <div v-if="input.lead" class="grid gap-4">
                 <div class="grid items-start gap-4 sm:grid-cols-2">
                   <Field id="rw-lead-kind" :label="t('rw.leadKind')">
-                    <NativeSelect
+                    <Select
                       id="rw-lead-kind"
                       v-model="input.lead.kind"
                       :options="[
@@ -440,7 +440,7 @@ const segment = (selected: boolean) => ['h-8 rounded px-3 text-[13px] font-mediu
                     />
                   </Field>
                   <Field id="rw-lead-position" :label="t('rw.leadPosition')">
-                    <NativeSelect
+                    <Select
                       id="rw-lead-position"
                       v-model="input.lead.position"
                       :disabled="input.questions.length === 0"
@@ -531,7 +531,7 @@ const segment = (selected: boolean) => ['h-8 rounded px-3 text-[13px] font-mediu
             </div>
             <div class="grid items-start gap-4 sm:grid-cols-2">
               <Field id="rw-font" :label="t('rw.font')">
-                <NativeSelect id="rw-font" v-model="input.style.font" :options="FONTS.map((font) => ({ value: font, label: font }))" />
+                <Select id="rw-font" v-model="input.style.font" :options="FONTS.map((font) => ({ value: font, label: font }))" />
               </Field>
               <Field id="rw-shadow" :label="t('rw.shadow')">
                 <Checkbox id="rw-shadow" v-model="input.style.shadow" :label="t('rw.shadow')" />
@@ -563,7 +563,7 @@ const segment = (selected: boolean) => ['h-8 rounded px-3 text-[13px] font-mediu
               </Field>
             </div>
             <Field id="rw-block" :label="t('rw.adUnits')" :hint="adUnitHint">
-              <NativeSelect id="rw-block" :model-value="input.ad_unit_day ?? ''" class="sm:w-[420px]" :options="adUnitOptions" @update:model-value="(day: string) => input && (input.ad_unit_day = day || null)" />
+              <Select id="rw-block" :model-value="input.ad_unit_day ?? ''" class="sm:w-[420px]" :options="adUnitOptions" @update:model-value="(day: string) => input && (input.ad_unit_day = day || null)" />
             </Field>
             <Field id="rw-cooldown" :label="t('rw.cooldown')" :hint="t('rw.cooldownHint')" :error="problem('cooldown', 'rw.cooldownBad')">
               <input
@@ -620,7 +620,7 @@ const segment = (selected: boolean) => ['h-8 rounded px-3 text-[13px] font-mediu
             <div class="text-[13px] text-muted-foreground">{{ t('rw.previewSub') }}</div>
           </div>
           <div class="flex items-center gap-2">
-            <NativeSelect
+            <Select
               v-model="visitorLang"
               :aria-label="t('rw.visitorLang')"
               class="w-[140px]"

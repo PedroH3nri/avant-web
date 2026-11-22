@@ -6,7 +6,7 @@ import Button from '@/components/ui/Button.vue'
 import Dialog from '@/components/ui/Dialog.vue'
 import Field from '@/components/ui/Field.vue'
 import Input from '@/components/ui/Input.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import { ApiError } from '@/lib/api'
 import { errorText, lang, t } from '@/lib/i18n'
 import { amountInput, amountValid, serviceItemBody } from '@/modules/internal/invoices/rules'
@@ -55,7 +55,7 @@ async function save() {
     <p v-if="services.length === 0" class="text-[14px] text-muted-foreground">{{ t('inv.line.noServices') }}</p>
     <form v-else id="service-line" class="grid gap-4" novalidate @submit.prevent="save">
       <Field id="sl-service" :label="t('inv.line.service')" :hint="chosen?.description || undefined">
-        <NativeSelect id="sl-service" v-model="serviceId" :options="options" />
+        <Select id="sl-service" v-model="serviceId" :options="options" />
       </Field>
       <Field id="sl-desc" :label="t('inv.line.description')">
         <textarea

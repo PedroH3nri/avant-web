@@ -171,6 +171,9 @@ A card has a body (24px padding, 20px title, muted description) and, when it sav
 ### Inputs / Fields
 40px, label above in 13px muted, hint or error below in 13px. Errors say what is wrong and how to fix it.
 
+### Selects
+Never the browser's native `<select>`. Every choice list uses the panel's own select (`src/components/ui/Select.vue`, prototype `search-select.tsx`), Select2-style: a 40px button like an input with the chosen label and a chevron, and a popover list as wide as the button with a check on the chosen option. From 8 options a search field sits on top of the list (accent and case insensitive, "Nada encontrado" when empty). Keyboard: arrows open and move, Home/End, Enter picks, Esc closes, a letter jumps when there is no search.
+
 ### Navigation
 Sidebar items are 36px rows with a 16px icon; the active item gets the chip fill and medium weight, inactive items are gray and get a soft fill on hover. A red dot on an item flags a problem inside it (a network without access). Every item opens a working screen: no locked or "Em breve" items.
 

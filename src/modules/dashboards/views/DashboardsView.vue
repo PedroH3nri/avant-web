@@ -20,7 +20,7 @@ import Card from '@/components/ui/Card.vue'
 import Input from '@/components/ui/Input.vue'
 import MenuContent from '@/components/ui/MenuContent.vue'
 import MenuItem from '@/components/ui/MenuItem.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import { ApiError } from '@/lib/api'
 import { errorText, lang, t } from '@/lib/i18n'
 import AddWidgetDialog from '@/modules/dashboards/components/AddWidgetDialog.vue'
@@ -314,7 +314,7 @@ async function remove() {
         <Button :loading="saving" :disabled="!draftName.trim()" @click="save">{{ t('dash.save') }}</Button>
       </template>
       <template v-else>
-        <NativeSelect
+        <Select
           v-if="dashboard && dashboards.length > 1"
           :model-value="dashboard.id"
           :options="switchOptions"
@@ -353,7 +353,7 @@ async function remove() {
         <p class="flex items-center gap-2 text-[14px]"><LayoutGrid class="size-4 shrink-0" aria-hidden="true" /><span class="md:hidden">{{ t('dash.editHintMenu') }}</span><span class="hidden md:inline">{{ t('dash.editHint') }}</span></p>
         <div class="flex flex-wrap gap-2">
           <Input v-model="draftName" :maxlength="NAME_MAX" class="max-w-[320px]" :aria-label="t('dash.new.name')" />
-          <NativeSelect v-if="dashboard.visibility !== 'roles'" v-model="draftVisibility" :options="visibilities" class="w-[220px]" :aria-label="t('dash.visibility.label')" />
+          <Select v-if="dashboard.visibility !== 'roles'" v-model="draftVisibility" :options="visibilities" class="w-[220px]" :aria-label="t('dash.visibility.label')" />
         </div>
       </div>
       <DashboardFiltersBar v-model="filters" :options="options" :internal="internal" />

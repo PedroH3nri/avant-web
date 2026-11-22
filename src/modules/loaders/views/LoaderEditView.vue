@@ -12,7 +12,7 @@ import Button from '@/components/ui/Button.vue'
 import Card from '@/components/ui/Card.vue'
 import Field from '@/components/ui/Field.vue'
 import Input from '@/components/ui/Input.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import { ApiError } from '@/lib/api'
 import { errorText, lang, t, type Key } from '@/lib/i18n'
 import { clientService } from '@/modules/internal/clients/service'
@@ -223,7 +223,7 @@ const segment = (selected: boolean) => ['h-8 rounded px-3 text-[13px] font-mediu
               <Input id="ld-name" v-model="input.name" :maxlength="LIMITS.name" :placeholder="t('ld.namePlaceholder')" :invalid="!!problem('name')" />
             </Field>
             <Field v-if="internal && !loaderId" id="ld-client" :label="t('ld.col.client')" :error="problem('company', 'ld.clientRequired')">
-              <NativeSelect id="ld-client" v-model="input.company_id" :options="clientOptions" />
+              <Select id="ld-client" v-model="input.company_id" :options="clientOptions" />
             </Field>
             <div class="grid gap-2">
               <p class="text-[13px] font-medium">{{ t('ld.col.template') }}</p>

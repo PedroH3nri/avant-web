@@ -13,7 +13,7 @@ import Button from '@/components/ui/Button.vue'
 import Checkbox from '@/components/ui/Checkbox.vue'
 import DataTable from '@/components/ui/DataTable.vue'
 import Input from '@/components/ui/Input.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import Pagination from '@/components/ui/Pagination.vue'
 import Segmented from '@/components/ui/Segmented.vue'
 import Status from '@/components/ui/Status.vue'
@@ -170,9 +170,9 @@ watch([level, parent, accountId, companyId, days, inReview], refilter)
   <PageBody>
     <div class="flex flex-wrap items-center gap-3">
       <Segmented :model-value="level" :label="t('fb.level')" :options="levelOptions" @update:model-value="pickLevel" />
-      <NativeSelect v-model="days" :aria-label="t('fb.period')" class="w-full sm:w-[160px]" :options="periodOptions" />
-      <NativeSelect v-if="internal" v-model="companyId" :aria-label="t('fb.col.client')" class="w-full sm:w-[220px]" :options="clientOptions" />
-      <NativeSelect v-model="accountId" :aria-label="t('fb.account')" class="w-full sm:w-[220px]" :options="accountOptions" />
+      <Select v-model="days" :aria-label="t('fb.period')" class="w-full sm:w-[160px]" :options="periodOptions" />
+      <Select v-if="internal" v-model="companyId" :aria-label="t('fb.col.client')" class="w-full sm:w-[220px]" :options="clientOptions" />
+      <Select v-model="accountId" :aria-label="t('fb.account')" class="w-full sm:w-[220px]" :options="accountOptions" />
       <div class="relative w-full sm:w-[240px]">
         <Search class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
         <Input v-model="query" :aria-label="t('fb.search')" class="h-9 bg-card pl-9" :placeholder="t('fb.searchPlaceholder')" />

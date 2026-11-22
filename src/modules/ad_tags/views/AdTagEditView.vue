@@ -19,7 +19,7 @@ import Field from '@/components/ui/Field.vue'
 import Input from '@/components/ui/Input.vue'
 import MenuContent from '@/components/ui/MenuContent.vue'
 import MenuItem from '@/components/ui/MenuItem.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import Status from '@/components/ui/Status.vue'
 import { ApiError } from '@/lib/api'
 import { errorText, formatDate, lang, locale, t, tn } from '@/lib/i18n'
@@ -588,7 +588,7 @@ async function goToLoader(loaderId: string | null) {
             </Field>
             <Checkbox id="at-lazy" :model-value="settings.lazy_load" :label="t('at.lazyLoad')" :hint="t('at.lazyLoadHint')" @update:model-value="(value) => changeSettings({ lazy_load: value })" />
             <Field id="at-day" :label="t('at.adUnits')" :hint="dayHint" :error="!day && settings.ad_unit_day ? t('at.adUnitsGone') : null">
-              <NativeSelect id="at-day" :model-value="settings.ad_unit_day ?? ''" :options="dayOptions" @update:model-value="(value) => changeSettings({ ad_unit_day: value || null })" />
+              <Select id="at-day" :model-value="settings.ad_unit_day ?? ''" :options="dayOptions" @update:model-value="(value) => changeSettings({ ad_unit_day: value || null })" />
             </Field>
           </div>
         </Card>

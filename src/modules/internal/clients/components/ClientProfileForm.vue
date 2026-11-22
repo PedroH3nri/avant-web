@@ -3,7 +3,7 @@
 import { computed } from 'vue'
 import Field from '@/components/ui/Field.vue'
 import Input from '@/components/ui/Input.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import { percentageOk } from '@/modules/internal/clients/rules'
 import { t } from '@/lib/i18n'
 import type { ClientProfileInput } from '@/modules/internal/clients/types'
@@ -67,13 +67,13 @@ const field = (name: string) => `${props.idPrefix}-${name}`
         </Field>
       </div>
       <Field :id="field('locale')" :label="t('int.locale')">
-        <NativeSelect :id="field('locale')" v-model="profile.locale" :options="localeOptions" />
+        <Select :id="field('locale')" v-model="profile.locale" :options="localeOptions" />
       </Field>
     </fieldset>
     <fieldset class="grid gap-4 md:grid-cols-[1fr_160px]">
       <legend class="mb-3 text-[13px] font-medium text-muted-foreground">{{ t('int.section.referral') }}</legend>
       <Field :id="field('referrer')" :label="t('int.referredBy')">
-        <NativeSelect :id="field('referrer')" v-model="referrer" :options="referrerOptions" />
+        <Select :id="field('referrer')" v-model="referrer" :options="referrerOptions" />
       </Field>
       <Field :id="field('percentage')" :label="t('int.commission')" :hint="t('int.commissionHint')">
         <Input :id="field('percentage')" v-model="percentage" class="tnum" inputmode="decimal" :disabled="!profile.referred_by_company_id" :invalid="percentageBad" />

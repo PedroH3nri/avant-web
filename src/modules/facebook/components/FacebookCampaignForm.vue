@@ -4,7 +4,7 @@ import { computed } from 'vue'
 import Checkbox from '@/components/ui/Checkbox.vue'
 import Field from '@/components/ui/Field.vue'
 import Input from '@/components/ui/Input.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import Segmented from '@/components/ui/Segmented.vue'
 import { t, type Key } from '@/lib/i18n'
 import { OBJECTIVES, SPECIAL_CATEGORIES, UNSUPPORTED_OBJECTIVES, withObjective } from '@/modules/facebook/draft-rules'
@@ -48,7 +48,7 @@ const startOn = computed({ get: () => (draft.value.start_active ? 'active' : 'pa
       <div class="text-[14px] font-medium">{{ t('fb.create.accountAndName') }}</div>
       <div class="mt-4 grid items-start gap-4 sm:grid-cols-2">
         <Field id="fb-new-account" :label="t('fb.create.account')" :error="account && !account.site_id && t('fb.problem.account_without_site')">
-          <NativeSelect id="fb-new-account" :model-value="draft.account_id" :options="accountOptions" @update:model-value="patch({ account_id: $event })" />
+          <Select id="fb-new-account" :model-value="draft.account_id" :options="accountOptions" @update:model-value="patch({ account_id: $event })" />
         </Field>
         <Field id="fb-new-name" :label="t('fb.create.campaignName')">
           <Input id="fb-new-name" :model-value="draft.name" maxlength="400" @update:model-value="patch({ name: $event })" />
@@ -103,7 +103,7 @@ const startOn = computed({ get: () => (draft.value.start_active ? 'active' : 'pa
           <Input id="fb-new-budget" inputmode="decimal" class="tnum" :model-value="draft.budget ?? ''" @update:model-value="patch({ budget: $event.replace(',', '.') || null })" />
         </Field>
         <Field id="fb-new-bid" :label="t('fb.create.bid')">
-          <NativeSelect id="fb-new-bid" :model-value="draft.bid" :options="bidOptions" @update:model-value="patch({ bid: $event as FacebookDraftInput['bid'] })" />
+          <Select id="fb-new-bid" :model-value="draft.bid" :options="bidOptions" @update:model-value="patch({ bid: $event as FacebookDraftInput['bid'] })" />
         </Field>
         <Field v-if="draft.bid !== 'volume'" id="fb-new-bid-value" :label="t(draft.bid === 'cost_cap' ? 'fb.create.costCap' : 'fb.create.bidCap')">
           <Input id="fb-new-bid-value" inputmode="decimal" class="tnum" :model-value="draft.bid_amount ?? ''" @update:model-value="patch({ bid_amount: $event.replace(',', '.') || null })" />

@@ -11,7 +11,7 @@ import Badge from '@/components/ui/Badge.vue'
 import DataTable from '@/components/ui/DataTable.vue'
 import Pagination from '@/components/ui/Pagination.vue'
 import Input from '@/components/ui/Input.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import Status from '@/components/ui/Status.vue'
 import TableState from '@/components/ui/TableState.vue'
 import { ApiError } from '@/lib/api'
@@ -85,7 +85,7 @@ const statusText = (member: ClientMember) => (member.status === 'active' ? t('te
         <Search class="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
         <Input v-model="searchText" type="search" :aria-label="t('int.teamsSearch')" class="h-10 bg-card pl-9" :placeholder="t('int.teamsSearch')" />
       </div>
-      <NativeSelect v-model="clientId" :options="clientOptions" :aria-label="t('int.teamsClient')" class="w-full sm:w-64" />
+      <Select v-model="clientId" :options="clientOptions" :aria-label="t('int.teamsClient')" class="w-full sm:w-64" />
     </div>
     <LoadError v-if="loadError" :message="loadError" @retry="start" />
     <DataTable v-else :min="760">

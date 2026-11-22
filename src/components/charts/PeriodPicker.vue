@@ -3,7 +3,7 @@
 import { computed } from 'vue'
 import { Check } from 'lucide-vue-next'
 import Button from '@/components/ui/Button.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import { t, type Key } from '@/lib/i18n'
 import { PERIOD_PRESETS } from '@/lib/metrics'
 import type { RelativePeriod } from '@/modules/reports/types'
@@ -20,7 +20,7 @@ const selected = computed({
 </script>
 
 <template>
-  <NativeSelect v-model="selected" :options="options" class="w-[190px]" :aria-label="t('perf.period')" />
+  <Select v-model="selected" :options="options" class="w-[190px]" :aria-label="t('perf.period')" />
   <Button variant="outline" class="h-10" :aria-pressed="compare" @click="compare = !compare">
     <Check v-if="compare" class="size-4" aria-hidden="true" />{{ t('perf.compare') }}
   </Button>

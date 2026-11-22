@@ -5,7 +5,7 @@ import { toast } from 'vue-sonner'
 import Button from '@/components/ui/Button.vue'
 import Card from '@/components/ui/Card.vue'
 import Field from '@/components/ui/Field.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import { ApiError } from '@/lib/api'
 import { errorText, locale, t } from '@/lib/i18n'
 import type { Currency } from '@/modules/currencies/types'
@@ -61,7 +61,7 @@ async function save() {
 <template>
   <Card :title="t('cur.title')" :desc="t('cur.desc')" :footer-note="missing ? t('cur.missing') : t('cur.note')">
     <Field id="display-currency" :label="t('cur.label')" class="max-w-[360px]">
-      <NativeSelect id="display-currency" v-model="chosen" :options="options" :disabled="!options.length" />
+      <Select id="display-currency" v-model="chosen" :options="options" :disabled="!options.length" />
     </Field>
     <template #footer>
       <Button :disabled="busy || chosen === session.displayCurrency" @click="save">{{ t('cur.save') }}</Button>

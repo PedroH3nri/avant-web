@@ -11,7 +11,7 @@ import PageHeader from '@/components/PageHeader.vue'
 import Button from '@/components/ui/Button.vue'
 import DataTable from '@/components/ui/DataTable.vue'
 import Input from '@/components/ui/Input.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import Segmented from '@/components/ui/Segmented.vue'
 import Status from '@/components/ui/Status.vue'
 import TableState from '@/components/ui/TableState.vue'
@@ -198,7 +198,7 @@ onMounted(() => {
     </div>
     <div class="flex flex-wrap items-center gap-3">
       <FacebookTabs v-model="tab" :people="canManage" :unread="unread" />
-      <NativeSelect v-if="internal" :model-value="companyId" :aria-label="t('fb.col.client')" class="w-full sm:w-[240px]" :options="clientOptions" @update:model-value="pickClient" />
+      <Select v-if="internal" :model-value="companyId" :aria-label="t('fb.col.client')" class="w-full sm:w-[240px]" :options="clientOptions" @update:model-value="pickClient" />
     </div>
     <FacebookAlertsPanel v-if="tab === 'alerts'" :internal="internal" :company-id="companyId" :manage="canManage" :client-name="clientName" @read="countUnread" />
     <FacebookHistoryPanel v-else-if="tab === 'history'" :internal="internal" :company-id="companyId" :account-name="accountName" :client-name="clientName" />

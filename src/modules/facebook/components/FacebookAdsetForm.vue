@@ -4,7 +4,7 @@ import { computed, ref, watch } from 'vue'
 import Checkbox from '@/components/ui/Checkbox.vue'
 import Field from '@/components/ui/Field.vue'
 import Input from '@/components/ui/Input.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import Segmented from '@/components/ui/Segmented.vue'
 import Switch from '@/components/ui/Switch.vue'
 import { t, type Key } from '@/lib/i18n'
@@ -65,7 +65,7 @@ watch(() => props.accountId, loadPixels, { immediate: true })
           <Input id="fb-set-name" :model-value="adset.name" maxlength="400" @update:model-value="patch({ name: $event })" />
         </Field>
         <Field id="fb-set-opt" :label="t('fb.create.optimization')">
-          <NativeSelect id="fb-set-opt" :model-value="adset.optimization" :options="optimizationOptions" @update:model-value="patch({ optimization: $event })" />
+          <Select id="fb-set-opt" :model-value="adset.optimization" :options="optimizationOptions" @update:model-value="patch({ optimization: $event })" />
         </Field>
         <Field v-if="budgetHere" id="fb-set-budget" :label="t(lifetime ? 'fb.create.lifetime' : 'fb.create.daily')">
           <Input id="fb-set-budget" inputmode="decimal" class="tnum" :model-value="adset.budget ?? ''" @update:model-value="patch({ budget: $event.replace(',', '.') || null })" />
@@ -77,10 +77,10 @@ watch(() => props.accountId, loadPixels, { immediate: true })
       <p class="mt-1 text-[13px] text-muted-foreground">{{ t(PIXEL_OBJECTIVES.includes(objective) ? 'fb.create.conversionRequired' : 'fb.create.conversionOptional') }}</p>
       <div class="mt-4 grid items-start gap-4 sm:grid-cols-2">
         <Field id="fb-set-pixel" :label="t('fb.create.pixel')">
-          <NativeSelect id="fb-set-pixel" :model-value="adset.pixel_id ?? ''" :options="pixelOptions" @update:model-value="patch({ pixel_id: $event || null, event: $event ? adset.event : null })" />
+          <Select id="fb-set-pixel" :model-value="adset.pixel_id ?? ''" :options="pixelOptions" @update:model-value="patch({ pixel_id: $event || null, event: $event ? adset.event : null })" />
         </Field>
         <Field id="fb-set-event" :label="t('fb.create.event')">
-          <NativeSelect id="fb-set-event" :model-value="adset.event ?? ''" :options="eventOptions" :disabled="!adset.pixel_id" @update:model-value="patch({ event: $event || null })" />
+          <Select id="fb-set-event" :model-value="adset.event ?? ''" :options="eventOptions" :disabled="!adset.pixel_id" @update:model-value="patch({ event: $event || null })" />
         </Field>
       </div>
     </div>
@@ -107,7 +107,7 @@ watch(() => props.accountId, loadPixels, { immediate: true })
             <Input id="fb-set-age-max" inputmode="numeric" class="tnum" :disabled="special" :model-value="String(adset.age_max)" @update:model-value="patch({ age_max: age($event) })" />
           </Field>
           <Field id="fb-set-gender" :label="t('fb.create.gender')">
-            <NativeSelect id="fb-set-gender" :model-value="adset.gender" :options="genderOptions" :disabled="special" @update:model-value="patch({ gender: $event as FacebookAdsetInput['gender'] })" />
+            <Select id="fb-set-gender" :model-value="adset.gender" :options="genderOptions" :disabled="special" @update:model-value="patch({ gender: $event as FacebookAdsetInput['gender'] })" />
           </Field>
         </div>
         <p v-if="special" class="text-[13px] text-muted-foreground">{{ t('fb.create.specialLocks') }}</p>

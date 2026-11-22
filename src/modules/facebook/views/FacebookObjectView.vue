@@ -10,7 +10,7 @@ import PageBody from '@/components/PageBody.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import Button from '@/components/ui/Button.vue'
 import DataTable from '@/components/ui/DataTable.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import Status from '@/components/ui/Status.vue'
 import { ApiError } from '@/lib/api'
 import { errorText, locale, t, type Key } from '@/lib/i18n'
@@ -134,7 +134,7 @@ watch(days, load)
       <Button v-if="canManage && detail" variant="outline" @click="router.push(`${base}/${externalId}/editar`)"><Pencil aria-hidden="true" />{{ t('fb.edit.action') }}</Button>
       <Button v-if="canManage && detail" variant="outline" :loading="duplicating" @click="duplicate"><Copy aria-hidden="true" />{{ t('fb.duplicate.action') }}</Button>
       <Button v-if="canManage && detail" variant="outline" :loading="switching" @click="toggle">{{ detail.active ? t('fb.control.pause') : t('fb.control.activate') }}</Button>
-      <NativeSelect v-model="days" :aria-label="t('fb.period')" class="w-[160px]" :options="periodOptions" />
+      <Select v-model="days" :aria-label="t('fb.period')" class="w-[160px]" :options="periodOptions" />
     </template>
   </PageHeader>
   <PageBody>

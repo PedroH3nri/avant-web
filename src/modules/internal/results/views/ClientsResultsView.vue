@@ -6,7 +6,7 @@ import LoadError from '@/components/LoadError.vue'
 import PageBody from '@/components/PageBody.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import DataTable from '@/components/ui/DataTable.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import Pagination from '@/components/ui/Pagination.vue'
 import Status from '@/components/ui/Status.vue'
 import TableState from '@/components/ui/TableState.vue'
@@ -107,7 +107,7 @@ const valueClass = (value: number | string, strong = false) =>
   <PageHeader :title="t('int.results')" :sub="t('res.clientsSub')" />
   <PageBody>
     <SavedViewsBar screen="client_results" :default-label="t('res.lastMonth')" :current="current" :defaults="DEFAULT_VIEW" @apply="applyView">
-      <NativeSelect v-model="month" :options="monthOptions" class="w-full sm:w-[200px] [&_select]:h-9" :aria-label="t('res.month')" />
+      <Select v-model="month" :options="monthOptions" class="w-full sm:w-[200px] h-9" :aria-label="t('res.month')" />
       <ColumnsMenu v-model:shown="columns" :columns="COLUMNS" :label="columnLabel" />
     </SavedViewsBar>
     <LoadError v-if="loadError" :message="loadError" @retry="load" />
