@@ -168,6 +168,8 @@ Primary is ink-filled; outline for secondary actions; ghost inside table rows. 3
 ### Cards / Containers
 A card has a body (24px padding, 20px title, muted description) and, when it saves something, a muted footer with the explanatory note on the left and the single action on the right.
 
+**Two cards per row** (Pedro, 22/11): on wide screens (from 1024px) small cards with little data, such as a status, a short field, an image or a few label/value lines, go two per row (`lg:grid-cols-2` on the page body). Cards with a table, a long list, a feed or a long form take the whole row (`lg:col-span-2`). Cards in the same row share the height and the footer sits at the bottom, so there is no blank area under it. Never let a wide item open a second column by accident: declare the columns on the page body.
+
 ### Inputs / Fields
 40px, label above in 13px muted, hint or error below in 13px. Errors say what is wrong and how to fix it.
 
