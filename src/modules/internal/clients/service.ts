@@ -2,8 +2,9 @@
 
 import { api, type Query } from '@/lib/api'
 import type { Items, Page } from '@/lib/types'
+import type { Group } from '@/modules/groups/types'
 import type { ClientDocument, ClientDocumentsOverview, DocumentKind } from '@/modules/documents/types'
-import type { AuditEntry, Client, ClientDetail, ClientMember, ClientNote, ClientOption, ManagerChange, OwnerInvitation } from '@/modules/internal/clients/types'
+import type { AuditEntry, Client, ClientDetail, ClientNote, ClientOption, ManagerChange, OwnerInvitation } from '@/modules/internal/clients/types'
 
 /** Serviço dos clientes, das equipes deles e dos convites de dono. */
 export const clientService = {
@@ -29,8 +30,8 @@ export const clientService = {
   changeOwner: (companyId: string, membershipId: string) => api.post(`/internal/clients/${companyId}/owner`, { membership_id: membershipId }),
   /** Uma página numerada da auditoria do cliente, a mais nova primeiro. */
   audit: (companyId: string, query?: Query) => api.get<Page<AuditEntry>>(`/internal/clients/${companyId}/audit`, query),
-  /** Uma página das pessoas das equipes das Empresas cliente. */
-  teams: (query?: Query) => api.get<Page<ClientMember>>('/internal/teams', query),
+  /** Os grupos que uma Empresa cliente cadastrou, com as pessoas de cada um. */
+  groups: (companyId: string) => api.get<Items<Group>>(`/internal/clients/${companyId}/groups`),
   /** Envia o convite de dono. */
   inviteOwner: (companyId: string) => api.post<OwnerInvitation>(`/internal/clients/${companyId}/owner-invitation`),
   /** Uma página dos convites de dono pendentes e vencidos. */

@@ -17,7 +17,7 @@ describe('menu do painel', () => {
   beforeAll(() => (lang.value = 'pt'))
 
   it('mostra os mesmos itens para a equipe Groone, sem filtrar por permissão', () => {
-    expect(labels(true)).toEqual(['Dashboard', 'Tarefas', 'Clientes', 'Equipes', 'Networks do GAM', 'Contratos', 'Sites', 'Rewards', 'Ad tags', 'Loaders', 'Regras de preço', 'Checklists', 'Ad Manager', 'Page Views', 'Resultado', 'Resultado dos clientes', 'Metas', 'Relatórios customizados', 'Facebook', 'Campanhas do Facebook', 'Google Ads', 'Campanhas do Google Ads', 'Ferramentas do GAM', 'Alertas', 'Envios agendados', 'Modelos de dashboard', 'Minha comissão', 'Minhas invoices', 'Comissões', 'Invoices', 'Equipe Groone', 'Papéis da equipe', 'Custos'])
+    expect(labels(true)).toEqual(['Dashboard', 'Tarefas', 'Clientes', 'Empresas', 'Networks do GAM', 'Contratos', 'Sites', 'Rewards', 'Ad tags', 'Loaders', 'Regras de preço', 'Checklists', 'Ad Manager', 'Page Views', 'Resultado', 'Resultado dos clientes', 'Metas', 'Relatórios customizados', 'Facebook', 'Campanhas do Facebook', 'Google Ads', 'Campanhas do Google Ads', 'Ferramentas do GAM', 'Alertas', 'Envios agendados', 'Modelos de dashboard', 'Minha comissão', 'Minhas invoices', 'Comissões', 'Invoices', 'Equipe Groone', 'Papéis da equipe', 'Custos'])
     expect(headers(true)).toEqual(['Inventário', 'Relatórios', 'Integrações', 'Ferramentas', 'Comissões', 'Empresa'])
   })
 
@@ -32,11 +32,10 @@ describe('menu do painel', () => {
     expect(labels(false)).not.toContain('Configurações')
   })
 
-  it('Equipes, para a equipe Groone, são as equipes dos clientes, nunca a própria', () => {
-    const team = visibleGroups(true)
-      .flatMap((section) => section.items)
-      .find((link) => link.key === 'nav.team')
-    expect(team?.to).toBe('/interno/equipes')
+  it('a equipe Groone vê Empresas no lugar de Equipes, e nunca a própria equipe', () => {
+    const links = visibleGroups(true).flatMap((section) => section.items)
+    expect(links.find((link) => link.key === 'int.companies')?.to).toBe('/interno/empresas')
+    expect(links.some((link) => link.key === 'nav.team')).toBe(false)
   })
 
   it('telas sem item próprio acendem o item de onde se chega, e só ele', () => {
