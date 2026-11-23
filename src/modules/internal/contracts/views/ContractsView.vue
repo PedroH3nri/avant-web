@@ -127,7 +127,7 @@ async function loadContracts() {
 async function load() {
   loadError.value = null
   try {
-    const [networkPage, clientList] = await Promise.all([contractService.networks(), clientService.options(), loadContracts()])
+    const [networkPage, clientList] = await Promise.all([contractService.networks(), clientService.companyOptions(), loadContracts()])
     networks.value = networkPage.items
     clients.value = clientList.items.map((item) => ({ value: item.id, label: item.name }))
   } catch (error) {

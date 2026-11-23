@@ -92,6 +92,11 @@ const seatsOk = computed(() => Number.isInteger(Number(seats.value)) && Number(s
 const formOk = computed(() => name.value.trim().length >= 2 && seatsOk.value && profileOk(profile.value))
 const referrers = computed(() => options.value.map((client) => ({ id: client.id, name: client.name })))
 const clientNames = computed(() => new Map(options.value.map((client) => [client.id, client.name])))
+/** O nome do cliente do convite de dono, pelo cliente ou, nos convites antigos, pela Empresa. */
+const inviteClient = (invite: OwnerInvitation) => {
+  const ownerId = invite.client_id ?? invite.company_id
+  return ownerId ? clientNames.value.get(ownerId) : undefined
+}
 
 const canceling = ref<OwnerInvitation | null>(null)
 const cancelOpen = computed({
@@ -301,7 +306,7 @@ const referrerName = (client: Client) => (client.profile?.referred_by_client_id 
           <div class="min-w-0 flex-1">
             <div class="truncate text-[14px] font-medium">{{ invite.email }}</div>
             <div class="mt-0.5 text-[13px] text-muted-foreground">
-              <template v-if="invite.company_id && clientNames.get(invite.company_id)">{{ clientNames.get(invite.company_id) }} · </template>
+              <template v-if="inviteClient(invite)">{{ inviteClient(invite) }} · </template>
               <span :class="expired(invite.expires_at) && 'text-ochre'">{{
                 expired(invite.expires_at) ? t('int.expired') : t('int.expires', { when: formatAgo(invite.expires_at) })
               }}</span>

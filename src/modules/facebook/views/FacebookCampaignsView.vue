@@ -150,7 +150,7 @@ async function setStatus(externalIds: string[], active: boolean) {
 onMounted(() => {
   void load()
   void reader.accounts().then((found) => (accounts.value = found)).catch(() => undefined)
-  if (internal) void clientService.options().then((found) => (clients.value = found.items)).catch(() => undefined)
+  if (internal) void clientService.companyOptions().then((found) => (clients.value = found.items)).catch(() => undefined)
 })
 watch(page, load)
 watch(query, searchLater)

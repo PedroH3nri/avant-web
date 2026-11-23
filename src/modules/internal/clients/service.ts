@@ -12,6 +12,12 @@ export const clientService = {
   list: (query?: Query) => api.get<Page<Client>>('/internal/clients', query),
   /** Todas as Empresas cliente (id, nome e situação), para seletores e as abas. */
   options: () => api.get<Items<ClientOption>>('/internal/clients/options'),
+  /** Os clientes que já têm Empresa, com o id da Empresa, para os seletores que filtram por Empresa. */
+  companyOptions: async (): Promise<Items<ClientOption>> => {
+    const found = await api.get<Items<ClientOption>>('/internal/clients/options')
+    const items = found.items.flatMap((item) => (item.company_id ? [{ ...item, id: item.company_id }] : []))
+    return { ...found, items }
+  },
   /** Uma Empresa cliente com membros e convites. */
   show: (companyId: string) => api.get<ClientDetail>(`/internal/clients/${companyId}`),
   /** Cadastra um cliente pendente. */

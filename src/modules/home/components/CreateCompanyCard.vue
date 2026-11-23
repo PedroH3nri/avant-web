@@ -37,7 +37,7 @@ async function create() {
   <Card class="max-w-[560px]" :title="t('home.createTitle')" :desc="t('home.createDesc')">
     <form id="create-company" novalidate @submit.prevent="create">
       <Field id="create-company-name" :label="t('home.createName')" :hint="t('home.createHint')" :error="failure ?? undefined">
-        <Input id="create-company-name" v-model="name" maxlength="80" autocomplete="organization" :invalid="!!failure" />
+        <Input id="create-company-name" v-model="name" maxlength="120" autocomplete="organization" :invalid="!!failure" />
       </Field>
     </form>
     <template #note>{{ t('home.createNote') }}</template>

@@ -95,7 +95,7 @@ async function load() {
       input.value = inputOf(loader)
     } else {
       input.value = blankInput(internal ? '' : undefined)
-      if (internal) clients.value = (await clientService.options()).items
+      if (internal) clients.value = (await clientService.companyOptions()).items
     }
   } catch (error) {
     loadError.value = errorText(error instanceof ApiError ? error.code : 'unknown')

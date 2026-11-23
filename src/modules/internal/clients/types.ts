@@ -25,7 +25,10 @@ export interface ClientProfile extends ClientProfileInput {
 }
 
 /** O cliente nas listas inteiras (`/internal/clients/options`). */
-export type ClientOption = Pick<Client, 'id' | 'name' | 'status'>
+export interface ClientOption extends Pick<Client, 'id' | 'name' | 'status'> {
+  /** A Empresa do cliente; vazia até ele criar. */
+  company_id: string | null
+}
 
 /** A Empresa do cliente, quando ele já criou. */
 export interface ClientCompanyRef {
