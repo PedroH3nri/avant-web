@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { cleanFilters, firstValue, monthPeriod, parseSort, periodMonth, sameDefinition, sortValue, toggleColumn } from '@/modules/views/rules'
+import { cleanFilters, firstValue, monthPeriod, parseSort, periodMonth, sameDefinition, sortValue, toggleColumn, toggleFilter } from '@/modules/views/rules'
 
 describe('visões salvas', () => {
   it('tira os filtros vazios', () => {
@@ -23,6 +23,8 @@ describe('visões salvas', () => {
     const order = ['client', 'contact', 'manager', 'status']
     expect(toggleColumn(['status', 'client'], 'manager', order)).toEqual(['client', 'manager', 'status'])
     expect(toggleColumn(['client'], 'client', order)).toEqual(['client'])
+    expect(toggleFilter([], 'manager', ['responsible', 'manager'])).toEqual(['manager'])
+    expect(toggleFilter(['manager'], 'manager', ['responsible', 'manager'])).toEqual([])
     expect(firstValue(['a', 'b'])).toBe('a')
     expect(firstValue(undefined)).toBe('')
   })
