@@ -159,7 +159,7 @@ function runSummary(syncRun: SyncRun) {
           <tbody>
             <TableState :cols="4" :empty="network.sites.length === 0" :title="t('netd.noSites')" />
             <tr v-for="site in network.sites" :key="site.id" class="hover:bg-muted">
-              <td :class="[td, 'font-medium']">{{ site.domain }}</td>
+              <td :class="[td, 'font-medium']"><RouterLink :to="`/interno/sites/${site.id}`" class="hover:underline">{{ site.domain }}</RouterLink></td>
               <td :class="td"><Status :tone="approval(site).tone">{{ approval(site).label }}</Status></td>
               <td :class="[td, 'text-right tnum']">{{ site.ad_units }}</td>
               <td :class="[td, 'text-muted-foreground']">{{ site.synced_at ? formatAgo(site.synced_at) : t('int.none.dash') }}</td>
