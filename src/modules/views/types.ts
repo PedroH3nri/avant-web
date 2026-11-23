@@ -3,7 +3,7 @@
 import type { Visibility } from '@/modules/reports/types'
 
 /** As tabelas internas que têm visões salvas. */
-export type ViewScreen = 'clients' | 'contracts' | 'client_results' | 'commissions' | 'invoices'
+export type ViewScreen = 'clients' | 'contracts' | 'client_results' | 'commissions' | 'invoices' | 'companies' | 'networks' | 'sites'
 
 export type SortDirection = 'asc' | 'desc'
 
