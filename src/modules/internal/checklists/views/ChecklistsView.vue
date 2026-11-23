@@ -1,5 +1,6 @@
 <script setup lang="ts">
 /** Checklists de domínio do mês: resumo, busca, filtro de feito e a lista do maior faturamento para o menor. */
+import OpenLink from '@/components/OpenLink.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useDebounceFn } from '@vueuse/core'
@@ -146,10 +147,11 @@ function retry() {
             <th :class="th">{{ t('check.col.items') }}</th>
             <th :class="th">{{ t('check.state') }}</th>
             <th :class="th">{{ t('check.col.checked') }}</th>
+            <th :class="[th, 'w-px']"><span class="sr-only">{{ t('common.open') }}</span></th>
           </tr>
         </thead>
         <tbody>
-          <TableState :cols="5" :loading="!checklists" :empty="checklists?.length === 0" :icon="ListChecks" :title="t('check.empty')" />
+          <TableState :cols="6" :loading="!checklists" :empty="checklists?.length === 0" :icon="ListChecks" :title="t('check.empty')" />
           <tr v-for="checklist in checklists ?? []" :key="checklist.id" class="hover:bg-muted">
             <td :class="td">
               <RouterLink :to="`/interno/checklists/${checklist.id}`" class="block hover:underline focus-visible:underline focus-visible:outline-none">
@@ -174,6 +176,7 @@ function retry() {
               <Status v-else tone="ochre">{{ t('check.toReview', { count: checklist.progress.total - checklist.progress.done }) }}</Status>
             </td>
             <td :class="[td, 'whitespace-nowrap tnum text-[13px] text-muted-foreground']">{{ checklist.checked_at ? formatDate(checklist.checked_at) : t('check.notYet') }}</td>
+            <td :class="[td, 'text-right']"><OpenLink :to="`/interno/checklists/${checklist.id}`" :name="checklist.site.domain" /></td>
           </tr>
         </tbody>
       </DataTable>

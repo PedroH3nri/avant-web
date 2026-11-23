@@ -1,5 +1,6 @@
 <script setup lang="ts">
 /** Tarefas de suporte da equipe Groone: as minhas ou todas, com filtros, e a janela de tarefa nova. */
+import OpenLink from '@/components/OpenLink.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { Plus, Search } from 'lucide-vue-next'
@@ -152,10 +153,11 @@ const openCreated = (task: SupportTaskDetail) => router.push(`/interno/tarefas/$
             <th :class="th">{{ t('task.status') }}</th>
             <th :class="th">{{ t('task.assignee') }}</th>
             <th :class="th">{{ t('task.col.updated') }}</th>
+            <th :class="[th, 'w-px']"><span class="sr-only">{{ t('common.open') }}</span></th>
           </tr>
         </thead>
         <tbody>
-          <TableState :cols="6" :empty="tasks.length === 0" :desc="t('task.empty')" />
+          <TableState :cols="7" :empty="tasks.length === 0" :desc="t('task.empty')" />
           <tr v-for="task in tasks" :key="task.id" class="hover:bg-muted">
             <td :class="td">
               <RouterLink :to="`/interno/tarefas/${task.id}`" class="font-medium hover:underline focus-visible:underline focus-visible:outline-none">{{ task.subject }}</RouterLink>
@@ -171,6 +173,7 @@ const openCreated = (task: SupportTaskDetail) => router.push(`/interno/tarefas/$
             <td :class="td"><Status :tone="STATUS_TONE[task.status]">{{ statusLabel(task.status) }}</Status></td>
             <td :class="[td, 'text-muted-foreground']">{{ task.assignee?.name ?? t('task.noAssignee') }}</td>
             <td :class="[td, 'whitespace-nowrap tnum text-[13px] text-muted-foreground']">{{ formatDate(task.updated_at) }}</td>
+            <td :class="[td, 'text-right']"><OpenLink :to="`/interno/tarefas/${task.id}`" :name="task.subject" /></td>
           </tr>
         </tbody>
       </DataTable>

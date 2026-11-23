@@ -3,6 +3,7 @@
  * Relatórios customizados: os fixados no topo e os outros em cartões com a miniatura guardada (ou em
  * lista), com busca, abas, duplicar, fixar, exportar, apagar e os modelos.
  */
+import OpenLink from '@/components/OpenLink.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useDebounceFn } from '@vueuse/core'
 import { useRouter } from 'vue-router'
@@ -310,7 +311,7 @@ onMounted(load)
               <th :class="th">{{ t('report.owner') }}</th>
               <th :class="th">{{ t('report.whoSees') }}</th>
               <th :class="th">{{ t('report.updated') }}</th>
-              <th :class="[th, 'w-12']"><span class="sr-only">{{ t('report.actions') }}</span></th>
+              <th :class="[th, 'w-px']"><span class="sr-only">{{ t('report.actions') }}</span></th>
             </tr>
           </thead>
           <tbody>
@@ -338,6 +339,8 @@ onMounted(load)
               </td>
               <td :class="[td, 'whitespace-nowrap text-muted-foreground']">{{ formatDate(report.updated_at) }}</td>
               <td :class="td">
+                <div class="flex items-center justify-end gap-1">
+                <OpenLink :to="`/relatorios/${report.id}`" :name="report.name" />
                 <ReportMenu :report="report" :pinned="pinnedIds.has(report.id)" :can-duplicate="canManage" with-open
                   @open="router.push(`/relatorios/${report.id}`)"
                   @edit="router.push(`/relatorios/${report.id}/editar`)"
@@ -346,6 +349,7 @@ onMounted(load)
                   @download="(format) => download(report, format)"
                   @remove="removing = report"
                 />
+                </div>
               </td>
             </tr>
           </tbody>

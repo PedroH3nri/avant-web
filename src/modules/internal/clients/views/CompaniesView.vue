@@ -1,5 +1,6 @@
 <script setup lang="ts">
 /** Painel interno: as Empresas cliente, com busca; cada uma abre o detalhe com a equipe e os grupos. */
+import OpenLink from '@/components/OpenLink.vue'
 import { onMounted, ref, watch } from 'vue'
 import { useDebounceFn } from '@vueuse/core'
 import { Building, Search } from 'lucide-vue-next'
@@ -69,10 +70,11 @@ watch(page, load)
           <th :class="th">{{ t('int.owner') }}</th>
           <th :class="th">{{ t('int.seatsColumn') }}</th>
           <th :class="th">{{ t('team.status') }}</th>
+          <th :class="[th, 'w-px']"><span class="sr-only">{{ t('common.open') }}</span></th>
         </tr>
       </thead>
       <tbody>
-        <TableState :cols="4" :loading="!companies" :empty="companies?.length === 0" :icon="Building" :title="t('int.companiesNone')" />
+        <TableState :cols="5" :loading="!companies" :empty="companies?.length === 0" :icon="Building" :title="t('int.companiesNone')" />
         <tr v-for="company in companies ?? []" :key="company.id">
           <td :class="td">
             <RouterLink :to="`/interno/empresas/${company.id}`" class="flex items-center gap-3 font-medium hover:underline">
@@ -91,6 +93,7 @@ watch(page, load)
           <td :class="td">
             <Status :tone="STATUS_TONE[company.status]">{{ t(`int.status.${company.status}`) }}</Status>
           </td>
+          <td :class="[td, 'text-right']"><OpenLink :to="`/interno/empresas/${company.id}`" :name="company.name" /></td>
         </tr>
       </tbody>
     </DataTable>
