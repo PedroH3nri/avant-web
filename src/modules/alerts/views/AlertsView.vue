@@ -79,7 +79,7 @@ async function loadOptions() {
   const denied = () => Promise.reject(new Error('sem permissão'))
   const [catalog, clientList, staff] = await Promise.allSettled([
     reportService.catalog(),
-    session.can('internal.clients.view') ? clientService.options() : denied(),
+    session.can('internal.clients.view') ? clientService.companyOptions() : denied(),
     staffService.options(),
   ])
   if (catalog.status === 'fulfilled') metrics.value = catalog.value.metrics.filter((metric) => metric.sources.includes('gam'))

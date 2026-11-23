@@ -140,7 +140,7 @@ async function loadExtras() {
     session.can('roles.view') ? teamService.roleOptions() : denied(),
     session.can('sites.view') ? siteService.options() : denied(),
     session.can('network.view') ? networkService.options() : denied(),
-    groone && session.can('internal.clients.view') ? clientService.options() : denied(),
+    groone && session.can('internal.clients.view') ? clientService.companyOptions() : denied(),
     groone ? staffService.options() : denied(),
     !groone && session.can('team.view') ? teamService.memberOptions() : denied(),
     !groone && session.can('facebook.view') ? facebookService.accounts() : denied(),

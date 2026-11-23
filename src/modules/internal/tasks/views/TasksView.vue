@@ -88,7 +88,7 @@ async function load() {
 
 /** Carrega clientes e equipe para a janela de tarefa nova; sem acesso, o seletor fica vazio. */
 async function loadOptions() {
-  const [clientList, staffList] = await Promise.allSettled([clientService.options(), staffService.options()])
+  const [clientList, staffList] = await Promise.allSettled([clientService.companyOptions(), staffService.options()])
   if (clientList.status === 'fulfilled') clients.value = clientList.value.items.map((item) => ({ value: item.id, label: item.name }))
   if (staffList.status === 'fulfilled') staff.value = staffList.value.items.map((member) => ({ value: member.user.id, label: member.user.name }))
 }

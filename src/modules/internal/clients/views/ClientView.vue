@@ -245,7 +245,7 @@ function who(auditEntry: AuditEntry) {
       </RouterLink>
     </template>
     <template v-if="client" #actions>
-      <Button v-if="canManage && client.status === 'pending' && client.profile" :loading="inviteBusy" @click="sendInvite"><Mail />{{ pendingOwnerInvite ? t('int.resendInvite') : t('int.sendInvite') }}</Button>
+      <Button v-if="canManage && client.status === 'pending' && !client.owner" :loading="inviteBusy" @click="sendInvite"><Mail />{{ pendingOwnerInvite ? t('int.resendInvite') : t('int.sendInvite') }}</Button>
       <Button v-else-if="client.company" variant="outline" @click="router.push(`/interno/empresas/${client.company.id}`)"><Building />{{ t('int.openCompany') }}</Button>
     </template>
   </PageHeader>
