@@ -1,5 +1,6 @@
 <script setup lang="ts">
 /** Equipe: membros, convites pendentes e convite novo. */
+import OpenLink from '@/components/OpenLink.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useDebounceFn } from '@vueuse/core'
 import Pagination from '@/components/ui/Pagination.vue'
@@ -314,10 +315,11 @@ async function cancel(invitation: Invitation) {
               <th :class="th">{{ t('team.status') }}</th>
               <th :class="th">{{ t('team.since') }}</th>
               <th :class="[th, 'w-12']"><span class="sr-only">{{ t('team.actions') }}</span></th>
+              <th :class="[th, 'w-px']"><span class="sr-only">{{ t('common.open') }}</span></th>
             </tr>
           </thead>
           <tbody>
-            <TableState :cols="5" :empty="shown.length === 0" :desc="t('team.noMatch', { q: filter })">
+            <TableState :cols="6" :empty="shown.length === 0" :desc="t('team.noMatch', { q: filter })">
               <Button size="sm" variant="outline" @click="filter = ''">{{ t('team.clearFilter') }}</Button>
             </TableState>
             <tr v-for="member in shown" :key="member.id" class="hover:bg-muted">
@@ -358,6 +360,7 @@ async function cancel(invitation: Invitation) {
                   </MenuContent>
                 </DropdownMenuRoot>
               </td>
+              <td :class="[td, 'text-right']"><OpenLink :to="`/equipe/${member.id}`" :name="member.user.name" /></td>
             </tr>
           </tbody>
         </DataTable>

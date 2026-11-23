@@ -1,5 +1,6 @@
 <script setup lang="ts">
 /** Painel interno: as networks do GAM de todos os clientes, com o cliente e o status de faturamento. */
+import OpenLink from '@/components/OpenLink.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useDebounceFn } from '@vueuse/core'
 import { Network as NetworkIcon, Search } from 'lucide-vue-next'
@@ -82,10 +83,11 @@ watch(page, load)
           <th :class="th">{{ t('int.column.revenue') }}</th>
           <th :class="[th, 'text-right']">{{ t('net.col.sites') }}</th>
           <th :class="th"><span class="sr-only">{{ t('team.actions') }}</span></th>
+          <th :class="[th, 'w-px']"><span class="sr-only">{{ t('common.open') }}</span></th>
         </tr>
       </thead>
       <tbody>
-        <TableState :cols="6" :loading="!networks" :empty="networks?.length === 0" :icon="NetworkIcon" :title="t('inv.networksNone')" />
+        <TableState :cols="7" :loading="!networks" :empty="networks?.length === 0" :icon="NetworkIcon" :title="t('inv.networksNone')" />
         <tr v-for="network in networks ?? []" :key="network.id" class="hover:bg-muted">
           <td :class="td">
             <div class="font-medium">{{ networkName(network) }}</div>
@@ -112,6 +114,7 @@ watch(page, load)
               @changed="load"
             />
           </td>
+          <td :class="[td, 'text-right']"><OpenLink :to="`/interno/networks/${network.id}`" :name="networkName(network)" /></td>
         </tr>
       </tbody>
     </DataTable>

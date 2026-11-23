@@ -1,6 +1,7 @@
 <script setup lang="ts">
 /** Campanhas, conjuntos e anúncios do Facebook com gasto, receita, lucro e ROI do período; no interno, de todos os clientes.
  * Quem gerencia campanhas liga ou pausa um por um ou vários de uma vez. */
+import OpenLink from '@/components/OpenLink.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useDebounceFn } from '@vueuse/core'
@@ -117,11 +118,6 @@ function pickLevel(value: string) {
   level.value = value as FacebookLevel
 }
 
-/** Abre o detalhe com os números por dia e por país. */
-function details(item: FacebookObject) {
-  void router.push({ path: `${base}/${item.external_id}`, query: { dias: days.value } })
-}
-
 /** Marca ou desmarca um item para a ação em lote. */
 function pick(externalId: string, chosen: boolean) {
   selected.value = chosen ? [...selected.value, externalId] : selected.value.filter((id) => id !== externalId)
@@ -232,7 +228,7 @@ watch([level, parent, accountId, companyId, days, inReview], refilter)
             <Switch :model-value="item.active" :label="t('fb.control.toggle', { name: item.name })" :disabled="switching" @update:model-value="(active) => setStatus([item.external_id], active)" />
           </td>
           <td :class="[td, 'text-right']">
-            <button type="button" class="text-[13px] text-link hover:underline" @click="details(item)">{{ t('fb.details') }}</button>
+            <OpenLink :to="{ path: `${base}/${item.external_id}`, query: { dias: days } }" :name="item.name" />
           </td>
         </tr>
       </tbody>

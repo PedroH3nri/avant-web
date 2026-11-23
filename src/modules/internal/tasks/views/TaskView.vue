@@ -7,19 +7,17 @@ import { ArrowLeft } from 'lucide-vue-next'
 import LoadError from '@/components/LoadError.vue'
 import PageBody from '@/components/PageBody.vue'
 import PageHeader from '@/components/PageHeader.vue'
-import Button from '@/components/ui/Button.vue'
 import Card from '@/components/ui/Card.vue'
 import Select from '@/components/ui/Select.vue'
 import { ApiError } from '@/lib/api'
 import { errorText, formatDate, t } from '@/lib/i18n'
 import { staffService } from '@/modules/internal/staff/service'
+import TaskTimeline from '@/modules/internal/tasks/components/TaskTimeline.vue'
 import {
-  COMMENT_MAX,
   COMMENT_MIN,
   PRIORITIES,
   STATUSES,
   commentRecipients,
-  eventText,
   personName,
   priorityLabel,
   statusLabel,
@@ -30,7 +28,6 @@ import type { SupportTaskDetail, TaskPatch, TaskPriority, TaskStatus } from '@/m
 import { useSession } from '@/stores/session'
 
 const NONE = 'none'
-const TEXTAREA = 'w-full rounded-md border border-input bg-background px-3 py-2 text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
 
 const route = useRoute()
 const session = useSession()
@@ -51,6 +48,8 @@ const assigneeOptions = computed(() => {
   return options
 })
 const place = computed(() => (task.value ? taskPlace(task.value) : null))
+const recipients = computed(() => (task.value ? commentRecipients(task.value, session.me?.user.id) : []))
+const me = computed(() => ({ name: session.me?.user.name ?? '', imageUrl: session.me?.user.image_url ?? null }))
 const sub = computed(() => (task.value ? t('task.createdBy', { name: personName(task.value.creator), date: formatDate(task.value.created_at) }) : undefined))
 
 /** Mostra o erro num aviso. */
@@ -111,10 +110,10 @@ async function send() {
   if (!task.value || comment.value.trim().length < COMMENT_MIN) return
   sending.value = true
   try {
-    const recipients = commentRecipients(task.value, session.me?.user.id)
+    const notified = recipients.value
     task.value = await taskService.comment(task.value.id, comment.value.trim())
     comment.value = ''
-    const [first, second] = recipients
+    const [first, second] = notified
     const description = second ? t('task.mailTwo', { first: first ?? '', second }) : first ? t('task.mailOne', { name: first }) : undefined
     toast.success(t('task.commented'), { description })
   } catch (error) {
@@ -141,29 +140,7 @@ async function send() {
         <Card :title="t('task.description')">
           <p class="whitespace-pre-line break-words text-[14px]">{{ task.description || '–' }}</p>
         </Card>
-        <Card :title="t('task.timeline')" :desc="t('task.timelineDesc')">
-          <ol class="grid gap-4">
-            <template v-for="event in task.events" :key="event.id">
-              <li v-if="event.kind === 'comment'" class="rounded-md border p-3">
-                <div class="text-[13px]">
-                  <span class="font-medium">{{ personName(event.author) }}</span>
-                  <span class="text-muted-foreground"> · <span class="tnum">{{ formatDate(event.created_at) }}</span></span>
-                </div>
-                <p class="mt-1 whitespace-pre-line break-words text-[14px]">{{ event.message }}</p>
-              </li>
-              <li v-else class="flex flex-wrap gap-x-1.5 px-3 text-[13px] text-muted-foreground">
-                <span class="font-medium text-foreground">{{ personName(event.author) }}</span>{{ eventText(event) }}
-                <span class="tnum">· {{ formatDate(event.created_at) }}</span>
-              </li>
-            </template>
-          </ol>
-          <div class="mt-5 grid gap-3 border-t pt-5">
-            <textarea v-model="comment" rows="3" :maxlength="COMMENT_MAX" :aria-label="t('task.newComment')" :placeholder="t('task.commentPlaceholder')" :class="TEXTAREA" />
-            <div class="flex justify-end">
-              <Button size="sm" :loading="sending" :disabled="comment.trim().length < COMMENT_MIN" @click="send">{{ t('task.comment') }}</Button>
-            </div>
-          </div>
-        </Card>
+        <TaskTimeline v-model:comment="comment" :events="task.events" :me="me" :recipients="recipients" :sending="sending" @send="send" />
       </div>
       <Card :title="t('task.details')" class="self-start">
         <dl class="-my-2 divide-y">

@@ -1,13 +1,13 @@
 <script setup lang="ts">
 /** Lista dos sites com a regra de preço: ligada ou não, controle, blocos com a Automática e regras ativas; no interno, de todos os clientes. */
+import OpenLink from '@/components/OpenLink.vue'
 import { computed, onMounted, ref, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import { useDebounceFn } from '@vueuse/core'
 import { CircleDollarSign, Search } from 'lucide-vue-next'
 import LoadError from '@/components/LoadError.vue'
 import PageBody from '@/components/PageBody.vue'
 import PageHeader from '@/components/PageHeader.vue'
-import Button from '@/components/ui/Button.vue'
 import DataTable from '@/components/ui/DataTable.vue'
 import Input from '@/components/ui/Input.vue'
 import Pagination from '@/components/ui/Pagination.vue'
@@ -21,7 +21,6 @@ import { priceRuleService } from '@/modules/price_rules/service'
 import type { PriceRuleSiteSummary } from '@/modules/price_rules/types'
 
 const route = useRoute()
-const router = useRouter()
 const internal = route.meta.internal === true
 const service = priceRuleService(internal)
 const base = priceRulesPath(internal)
@@ -100,7 +99,7 @@ watch(query, searchLater)
           <td :class="[td, 'text-right tnum']">{{ integer.format(site.automatic_blocks) }}</td>
           <td :class="[td, 'text-right tnum']">{{ site.active ? integer.format(site.active_rules) : '—' }}</td>
           <td :class="[td, 'text-right']">
-            <Button size="sm" variant="outline" @click="router.push(`${base}/${site.site_id}`)">{{ t('pr.open') }}</Button>
+            <OpenLink :to="`${base}/${site.site_id}`" :name="site.domain" />
           </td>
         </tr>
       </tbody>
