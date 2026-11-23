@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
- * Painel interno: um site de cliente com tudo o que é dele. Situação, contrato ativo da network,
- * faturamento, checklist do mês e os ad units ativos em árvore.
+ * Painel interno: um site de cliente com tudo o que é dele. Situação (com o revshare e o faturamento),
+ * o checklist do mês com os itens e os ad units ativos em árvore.
  */
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -22,6 +22,7 @@ import { td, th } from '@/lib/table'
 import { formatRevshare } from '@/modules/internal/contracts/rules'
 import { clientInventoryService } from '@/modules/internal/inventory/service'
 import type { ClientSiteDetail } from '@/modules/internal/inventory/types'
+import SiteChecklistCard from '@/modules/internal/checklists/components/SiteChecklistCard.vue'
 import RevenueStatusBadge from '@/modules/revenue/components/RevenueStatusBadge.vue'
 import { approval, categoryLabel, tree } from '@/modules/sites/rules'
 import { useSession } from '@/stores/session'
@@ -81,7 +82,7 @@ watch(siteId, load, { immediate: true })
     <LoadError v-if="loadError" class="lg:col-span-2 min-[1920px]:col-span-3" :message="loadError" @retry="load" />
     <Card v-else-if="notFound" class="lg:col-span-2 min-[1920px]:col-span-3" :desc="t('sited.notFound')" />
     <template v-if="site">
-      <Card :title="t('netd.situation')">
+      <Card class="self-start" :title="t('netd.situation')">
         <dl class="-my-2 grid divide-y text-[14px]">
           <div class="grid gap-1 py-2 sm:grid-cols-[180px_1fr]">
             <dt class="text-muted-foreground">{{ t('sites.col.approval') }}</dt>
@@ -110,6 +111,20 @@ watch(siteId, load, { immediate: true })
             </dd>
           </div>
           <div class="grid gap-1 py-2 sm:grid-cols-[180px_1fr]">
+            <dt class="text-muted-foreground">{{ t('sited.revshare') }}</dt>
+            <dd class="tnum">
+              <template v-if="site.contract">
+                {{ t('sited.revshareSince', { revshare: formatRevshare(site.contract.revshare, locale), source: t(`ct.source.${site.contract.source}`), when: formatDate(site.contract.started_at, false) }) }}
+              </template>
+              <span v-else-if="site.network" class="text-muted-foreground">{{ t('sited.noContract') }}</span>
+              <span v-else class="text-muted-foreground">{{ t('int.none.dash') }}</span>
+            </dd>
+          </div>
+          <div class="grid gap-1 py-2 sm:grid-cols-[180px_1fr]">
+            <dt class="text-muted-foreground">{{ t('int.column.revenue') }}</dt>
+            <dd><RevenueStatusBadge :status="site.revenue_status" /></dd>
+          </div>
+          <div class="grid gap-1 py-2 sm:grid-cols-[180px_1fr]">
             <dt class="text-muted-foreground">{{ t('sites.col.category') }}</dt>
             <dd>{{ categoryLabel(site.category) }}</dd>
           </div>
@@ -124,29 +139,8 @@ watch(siteId, load, { immediate: true })
         </dl>
       </Card>
 
-      <div class="grid content-start gap-6">
-        <Card :title="t('sited.contract')" :desc="t('sited.contractDesc')">
-          <template v-if="site.contract">
-            <div class="text-[28px] font-semibold tracking-[-0.03em] tnum">{{ formatRevshare(site.contract.revshare, locale) }}</div>
-            <div class="mt-1 text-[13px] text-muted-foreground">
-              {{ t('netd.contractSince', { source: t(`ct.source.${site.contract.source}`), when: formatDate(site.contract.started_at, false) }) }}
-            </div>
-          </template>
-          <p v-else class="text-[14px] text-muted-foreground">{{ site.network ? t('netd.noContract') : t('sited.noNetwork') }}</p>
-        </Card>
-        <Card :title="t('int.column.revenue')">
-          <RevenueStatusBadge :status="site.revenue_status" />
-        </Card>
-      </div>
-
-      <Card v-if="canSeeChecklists" class="self-start lg:col-span-2 min-[1920px]:col-span-1" :title="t('check.col.checklist')" :desc="t('sited.checklistDesc')">
-        <div v-if="site.checklist" class="flex flex-wrap items-center justify-between gap-3">
-          <Status v-if="site.checklist.complete" tone="ok">{{ t('check.done') }}</Status>
-          <Status v-else tone="ochre">{{ t('check.okCount', { done: site.checklist.done, total: site.checklist.total }) }}</Status>
-          <Button size="sm" variant="outline" @click="router.push(`/interno/checklists/${site.checklist.id}`)">{{ t('sited.openChecklist') }}</Button>
-        </div>
-        <p v-else class="text-[14px] text-muted-foreground">{{ t('sited.noChecklist') }}</p>
-      </Card>
+      <SiteChecklistCard v-if="canSeeChecklists && site.checklist" class="min-[1920px]:col-span-2" :checklist-id="site.checklist.id" />
+      <Card v-else-if="canSeeChecklists" class="self-start min-[1920px]:col-span-2" :title="t('check.col.checklist')" :desc="t('sited.noChecklist')" />
 
       <section class="grid gap-3 lg:col-span-2 min-[1920px]:col-span-3">
         <h2 class="text-[13px] font-medium text-muted-foreground">{{ t('sited.units') }}</h2>
