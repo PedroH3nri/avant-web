@@ -1553,6 +1553,8 @@ export const dict = {
 
   // Comum
   'common.save': ['Salvar', 'Save', 'Guardar'],
+  'common.open': ['Abrir', 'Open', 'Abrir'],
+  'common.openNamed': ['Abrir {name}', 'Open {name}', 'Abrir {name}'],
   'common.saved': ['Salvo', 'Saved', 'Guardado'],
   'common.cancel': ['Cancelar', 'Cancel', 'Cancelar'],
   'common.loading': ['Carregando…', 'Loading…', 'Cargando…'],
@@ -3714,7 +3716,6 @@ export const dict = {
   'pr.col.hour': ['Hora', 'Hour', 'Hora'],
   'pr.col.action': ['Ação', 'Action', 'Acción'],
   'pr.col.reason': ['Motivo', 'Reason', 'Motivo'],
-  'pr.open': ['Abrir', 'Open', 'Abrir'],
   'pr.status.waiting': ['Esperando o GAM', 'Waiting for GAM', 'Esperando GAM'],
   'pr.status.unsupported': ['Moeda {currency} sem degraus', '{currency} has no tiers', 'Moneda {currency} sin escalones'],
   'pr.status.off': ['Desligada', 'Off', 'Apagada'],
@@ -4024,7 +4025,6 @@ export const dict = {
   'at.draftPending': ['Alterações não publicadas', 'Unpublished changes', 'Cambios sin publicar'],
   'at.never': ['Nunca', 'Never', 'Nunca'],
   'at.metrics': ['Métricas', 'Metrics', 'Métricas'],
-  'at.open': ['Abrir', 'Open', 'Abrir'],
   'at.empty': ['Nenhuma ad tag ainda. Crie a primeira em Nova tag.', 'No ad tags yet. Create the first one with New tag.', 'Aún no hay ad tags. Crea la primera con Nueva tag.'],
   'at.emptySearch': ['Nenhuma tag com esse nome ou chave.', 'No tag with that name or key.', 'Ninguna tag con ese nombre o clave.'],
   'at.status.paused': ['Pausada', 'Paused', 'Pausada'],

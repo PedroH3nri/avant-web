@@ -1,5 +1,6 @@
 <script setup lang="ts">
 /** Lista dos loaders: no painel do cliente os da Empresa, no interno os de todos os clientes (com a coluna Cliente). */
+import OpenLink from '@/components/OpenLink.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useDebounceFn } from '@vueuse/core'
@@ -93,10 +94,11 @@ function templateText(loader: Loader): string {
           <th :class="th">{{ t('ld.col.adblock') }}</th>
           <th :class="th">{{ t('ld.col.tags') }}</th>
           <th :class="th">{{ t('ld.col.updated') }}</th>
+          <th :class="[th, 'w-px']"><span class="sr-only">{{ t('common.open') }}</span></th>
         </tr>
       </thead>
       <tbody>
-        <TableState :cols="columns" :loading="!loaders" :empty="loaders?.length === 0" :icon="LoaderCircle" :desc="query ? t('ld.emptySearch') : t('ld.empty')" />
+        <TableState :cols="(columns) + 1" :loading="!loaders" :empty="loaders?.length === 0" :icon="LoaderCircle" :desc="query ? t('ld.emptySearch') : t('ld.empty')" />
         <tr v-for="loader in loaders ?? []" :key="loader.id" class="hover:bg-muted">
           <td :class="td">
             <button type="button" class="flex items-center gap-3 text-left" @click="router.push(`${base}/${loader.id}`)">
@@ -117,6 +119,7 @@ function templateText(loader: Loader): string {
             <span v-else class="text-muted-foreground">{{ t('ld.noTags') }}</span>
           </td>
           <td :class="[td, 'whitespace-nowrap text-[13px] text-muted-foreground tnum']">{{ formatDate(loader.updated_at) }}</td>
+          <td :class="[td, 'text-right']"><OpenLink :to="`${base}/${loader.id}`" :name="loader.name" /></td>
         </tr>
       </tbody>
     </DataTable>
