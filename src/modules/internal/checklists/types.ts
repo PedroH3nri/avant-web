@@ -3,6 +3,8 @@
 export type CheckKind = 'link' | 'categories' | 'search' | 'home' | 'author' | 'date' | 'pagination' | 'ads_txt' | 'manual'
 export type CheckOutcome = 'ok' | 'failed' | 'unknown'
 export type ChecklistState = 'all' | 'pending' | 'done'
+/** Como o item é conferido num site que foge do padrão (CheckOverride no avant-core). */
+export type CheckOverride = 'words' | 'url' | 'manual' | 'skip'
 
 export interface ChecklistPerson {
   id: string
@@ -56,6 +58,27 @@ export interface ChecklistRow {
   marked_by: ChecklistPerson | null
   marked_at: string | null
   ok: boolean
+  /** Configuração própria do item neste site; vazio no padrão. */
+  override: ChecklistOverride | null
+  /** Entra na conta do site: o item que não se aplica fica de fora. */
+  counted: boolean
+}
+
+/** A configuração própria de um item num site (GET /internal/sites/{id}/checklist-overrides). */
+export interface ChecklistOverride {
+  item_id: string
+  mode: CheckOverride
+  /** Só no modo words. */
+  words: string[]
+  /** Caminho no próprio site, começando com "/"; só no modo url. */
+  path: string | null
+  updated_at: string
+}
+
+export interface ChecklistOverrideInput {
+  mode: CheckOverride
+  words?: string[]
+  path?: string | null
 }
 
 export interface ChecklistNote {
