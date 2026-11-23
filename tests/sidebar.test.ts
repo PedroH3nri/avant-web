@@ -3,12 +3,12 @@ import { lang, t } from '@/lib/i18n'
 import { linkActive, visibleGroups, type NavItem } from '@/lib/navigation'
 
 /** Os rótulos de todos os itens do menu, na ordem. */
-const labels = (staff: boolean) => visibleGroups(staff).flatMap((section) => section.items.map((link) => t(link.key)))
+const labels = (onGroone: boolean) => visibleGroups(onGroone).flatMap((section) => section.items.map((link) => t(link.key)))
 /** Os títulos dos grupos com título. */
-const headers = (staff: boolean) => visibleGroups(staff).flatMap((section) => (section.key ? [t(section.key)] : []))
+const headers = (onGroone: boolean) => visibleGroups(onGroone).flatMap((section) => (section.key ? [t(section.key)] : []))
 /** Os itens ativos no caminho; as telas internas começam com /interno. */
-const activeLabels = (staff: boolean, path: string) =>
-  visibleGroups(staff)
+const activeLabels = (onGroone: boolean, path: string) =>
+  visibleGroups(onGroone)
     .flatMap((section) => section.items)
     .filter((link: NavItem) => linkActive(link, path, path.startsWith('/interno')))
     .map((link) => t(link.key))
@@ -16,12 +16,12 @@ const activeLabels = (staff: boolean, path: string) =>
 describe('menu do painel', () => {
   beforeAll(() => (lang.value = 'pt'))
 
-  it('mostra os mesmos itens para a equipe Groone, sem filtrar por permissão', () => {
+  it('com a Company Groone ativa mostra o painel interno, sem filtrar por permissão', () => {
     expect(labels(true)).toEqual(['Dashboard', 'Tarefas', 'Clientes', 'Empresas', 'Networks do GAM', 'Contratos', 'Sites', 'Rewards', 'Ad tags', 'Loaders', 'Regras de preço', 'Checklists', 'Ad Manager', 'Page Views', 'Resultado', 'Resultado dos clientes', 'Metas', 'Relatórios customizados', 'Facebook', 'Campanhas do Facebook', 'Google Ads', 'Campanhas do Google Ads', 'Ferramentas do GAM', 'Alertas', 'Envios agendados', 'Modelos de dashboard', 'Minha comissão', 'Minhas invoices', 'Comissões', 'Invoices', 'Equipe Groone', 'Papéis da equipe', 'Custos'])
     expect(headers(true)).toEqual(['Inventário', 'Relatórios', 'Integrações', 'Ferramentas', 'Comissões', 'Empresa'])
   })
 
-  it('quem não é da equipe Groone não vê os itens internos', () => {
+  it('com uma Empresa cliente ativa mostra os links dela, sem os internos (também para a equipe Groone)', () => {
     expect(labels(false)).toEqual(['Dashboard', 'Equipes', 'Networks do GAM', 'Sites', 'Rewards', 'Ad tags', 'Loaders', 'Regras de preço', 'Ad Manager', 'Page Views', 'Resultado', 'Relatórios customizados', 'Facebook', 'Campanhas do Facebook', 'Google Ads', 'Campanhas do Google Ads', 'Papéis e permissões', 'Custos'])
     expect(headers(false)).toEqual(['Inventário', 'Relatórios', 'Integrações', 'Empresa'])
     expect(labels(false)).not.toContain('Equipe Groone')
@@ -32,7 +32,7 @@ describe('menu do painel', () => {
     expect(labels(false)).not.toContain('Configurações')
   })
 
-  it('a equipe Groone vê Empresas no lugar de Equipes, e nunca a própria equipe', () => {
+  it('no painel interno aparece Empresas no lugar de Equipes', () => {
     const links = visibleGroups(true).flatMap((section) => section.items)
     expect(links.find((link) => link.key === 'int.companies')?.to).toBe('/interno/empresas')
     expect(links.some((link) => link.key === 'nav.team')).toBe(false)

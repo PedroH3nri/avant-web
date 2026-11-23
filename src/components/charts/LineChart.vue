@@ -22,18 +22,23 @@ const props = withDefaults(
     description: string
     area?: boolean
     height?: number
+    /** Altura total a ocupar, legenda incluída (o bloco do dashboard); sem ela, usa ``height``. */
+    fillHeight?: number
   }>(),
   { area: false, height: 260 },
 )
 
 const box = useTemplateRef<HTMLDivElement>('box')
 const { width } = useElementSize(box)
+const legend = useTemplateRef<HTMLDivElement>('legend')
+const { height: legendHeight } = useElementSize(legend)
 const hovered = ref<number | null>(null)
 const padding = { top: 12, right: 12, bottom: 28, left: 64 }
 
 const chartWidth = computed(() => Math.max(width.value, 240))
 const plotWidth = computed(() => chartWidth.value - padding.left - padding.right)
-const plotHeight = computed(() => props.height - padding.top - padding.bottom)
+const svgHeight = computed(() => (props.fillHeight ? Math.max(140, Math.floor(props.fillHeight - (props.series.length > 1 ? legendHeight.value + 12 : 0))) : props.height))
+const plotHeight = computed(() => svgHeight.value - padding.top - padding.bottom)
 const ticks = computed(() => {
   const values = props.series.flatMap((line) => line.values).filter((value): value is number => value !== null)
   return niceTicks(Math.max(0, ...values))
@@ -105,7 +110,7 @@ const tooltipLeft = computed(() => {
 
 <template>
   <div ref="box" class="relative w-full">
-    <div v-if="series.length > 1" class="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-muted-foreground">
+    <div v-if="series.length > 1" ref="legend" class="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-muted-foreground">
       <span v-for="line in series" :key="line.key" class="flex items-center gap-1.5">
         <svg width="16" height="4" aria-hidden="true"><line x1="0" x2="16" y1="2" y2="2" :class="stroke(line)" :style="strokeStyle(line)" stroke-width="2" :stroke-dasharray="line.dashed ? '4 3' : undefined" /></svg>
         {{ line.name }}
@@ -113,7 +118,7 @@ const tooltipLeft = computed(() => {
     </div>
     <svg
       :width="chartWidth"
-      :height="height"
+      :height="svgHeight"
       class="block touch-pan-y focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       role="img"
       tabindex="0"
@@ -129,7 +134,7 @@ const tooltipLeft = computed(() => {
         <text :x="padding.left - 8" :y="yOf(tick) + 4" text-anchor="end" class="fill-muted-foreground text-[11px] tnum">{{ format(tick, true) }}</text>
       </g>
       <template v-for="(label, index) in labels" :key="label">
-        <text v-if="index % labelStep === 0" :x="xOf(index)" :y="height - 8" :text-anchor="anchor(index)" class="fill-muted-foreground text-[11px] tnum">{{ label }}</text>
+        <text v-if="index % labelStep === 0" :x="xOf(index)" :y="svgHeight - 8" :text-anchor="anchor(index)" class="fill-muted-foreground text-[11px] tnum">{{ label }}</text>
       </template>
       <path v-for="shape in areaPaths" :key="`area-${shape.key}`" :d="shape.d" :class="shape.color ? undefined : 'fill-foreground/[0.05]'" :style="shape.color ? { fill: shape.color, fillOpacity: 0.12 } : undefined" />
       <path
