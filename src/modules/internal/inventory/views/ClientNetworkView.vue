@@ -25,6 +25,7 @@ import type { ClientNetworkDetail } from '@/modules/internal/inventory/types'
 import { networkName, networkTone, statusKey } from '@/modules/networks/rules'
 import type { SyncRun } from '@/modules/networks/types'
 import RevenueStatusBadge from '@/modules/revenue/components/RevenueStatusBadge.vue'
+import { approval } from '@/modules/sites/rules'
 
 const KINDS: SyncRun['kind'][] = ['test', 'sites', 'ad_units']
 const RUN_TONE: Record<SyncRun['status'], 'ok' | 'warn' | 'bad'> = { ok: 'ok', running: 'warn', failed: 'bad' }
@@ -159,7 +160,7 @@ function runSummary(syncRun: SyncRun) {
             <TableState :cols="4" :empty="network.sites.length === 0" :title="t('netd.noSites')" />
             <tr v-for="site in network.sites" :key="site.id" class="hover:bg-muted">
               <td :class="[td, 'font-medium']">{{ site.domain }}</td>
-              <td :class="[td, 'text-muted-foreground']">{{ site.approval_status ?? t('int.none.dash') }}</td>
+              <td :class="td"><Status :tone="approval(site).tone">{{ approval(site).label }}</Status></td>
               <td :class="[td, 'text-right tnum']">{{ site.ad_units }}</td>
               <td :class="[td, 'text-muted-foreground']">{{ site.synced_at ? formatAgo(site.synced_at) : t('int.none.dash') }}</td>
             </tr>
