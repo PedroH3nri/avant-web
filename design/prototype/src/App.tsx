@@ -1542,7 +1542,7 @@ function ClientNetworksCard() {
   )
 }
 
-/* Painel interno: um site de cliente com a situação, o contrato da network, o faturamento, o checklist e os ad units ativos. */
+/* Painel interno: um site de cliente com a situação (revshare e faturamento numa linha cada), o checklist do mês com os itens e os ad units ativos. */
 function ClientSiteScreen({ go }: { go: (s: Screen) => void }) {
   const row = (label: string, value: React.ReactNode) => <div className="grid gap-1 py-2 sm:grid-cols-[160px_1fr]"><dt className="text-muted-foreground">{label}</dt><dd className="min-w-0">{value}</dd></div>
   const units = [
@@ -1563,26 +1563,41 @@ function ClientSiteScreen({ go }: { go: (s: Screen) => void }) {
         </>}
       />
       <Body className="lg:grid-cols-2 min-[1920px]:grid-cols-3">
-        <Card title="Situação">
+        <Card title="Situação" className="self-start">
           <dl className="-my-2 grid divide-y text-[14px]">
             {row('Aprovação no Ad Manager', <Status tone="ok">Aprovado</Status>)}
             {row('Status', <Status tone="ok">Ativo</Status>)}
             {row('Cliente', <span className="flex items-center gap-2"><CompanyIcon name="Blog Exemplo" image={null} size={20} /><button className="hover:underline" onClick={() => go('cliente')}>Blog Exemplo</button></span>)}
             {row('Network', <button className="hover:underline" onClick={() => go('networks')}>Blog Exemplo Principal <span className="text-muted-foreground">· 21987654321</span></button>)}
+            {row('Revshare da Groone', '15% · origem GAM, desde 01/09/2026')}
+            {row('Faturamento', <RevenueStatus data={{ trend: 'scaling', perDay: 1210, change: 41 }} />)}
             {row('Categoria', 'Culinária')}
             {row('Responsável', 'Ana Souza')}
             {row('Última sincronização', <span className="tnum">23/11/2026 16:02</span>)}
           </dl>
         </Card>
-        <div className="grid content-start gap-6">
-          <Card title="Contrato da network" desc="O revshare ativo, usado no resultado do cliente.">
-            <div className="text-[28px] font-semibold tracking-[-0.03em] tnum">15%</div>
-            <div className="mt-1 text-[13px] text-muted-foreground">Do GAM desde 01/09/2026</div>
-          </Card>
-          <Card title="Faturamento"><RevenueStatus data={{ trend: 'scaling', perDay: 1210, change: 41 }} /></Card>
-        </div>
-        <Card title="Checklist de novembro" desc="Itens conferidos neste mês." className="self-start lg:col-span-2 min-[1920px]:col-span-1">
-          <div className="flex items-center justify-between gap-3"><Status tone="ochre">7 de 10 ok</Status><Button size="sm" variant="outline" onClick={() => go('checklist')}>Abrir checklist</Button></div>
+        <Card title="Checklist de novembro de 2026" className="min-[1920px]:col-span-2" footerNote="Conferido em 23/11/2026, 09:00" footer={<Button size="sm" variant="outline" onClick={() => go('checklist')}>Abrir checklist</Button>}>
+          <div className="grid gap-5">
+            <div className="grid gap-2">
+              <div className="flex items-baseline justify-between gap-2"><span className="text-[28px] font-semibold tracking-[-0.03em] tnum">7/10</span><Status tone="ochre">3 para revisar</Status></div>
+              <div className="flex h-2 gap-[3px]">{[1, 1, 0, 1, 1, 1, 0, 1, 1, 0].map((ok, index) => <span key={index} className={cn('h-full flex-1 rounded-[2px]', ok ? 'bg-primary' : 'bg-muted-foreground/15')} />)}</div>
+            </div>
+            <div className="grid gap-2">
+              <h3 className="text-[13px] font-medium text-muted-foreground">Para revisar</h3>
+              <ul className="divide-y rounded-md border">
+                {[['Aviso legal', 'Falhou', 'bad', 'Procura na página inicial um link com uma das palavras.'], ['Buscador', 'Não deu para conferir', 'ochre', 'Formulário de busca na página inicial.'], ['ads.txt', 'Falhou', 'bad', 'O ads.txt do site tem a linha da Groone (DIRECT).']].map(([name, state, tone, desc]) => (
+                  <li key={name} className="grid gap-2 px-3 py-2.5 sm:grid-cols-[1fr_auto] sm:items-center">
+                    <div><div className="flex items-center gap-3"><span className="text-[14px] font-medium">{name}</span><Status tone={tone as 'bad' | 'ochre'}>{state}</Status></div><p className="mt-0.5 text-[13px] text-muted-foreground">{desc}</p></div>
+                    <Button size="sm" variant="outline" onClick={() => toast.success('Item marcado como ok')}><Check className="h-4 w-4" />Marcar ok</Button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="grid gap-2">
+              <h3 className="text-[13px] font-medium text-muted-foreground">Ok</h3>
+              <ul className="flex flex-wrap gap-2">{['Cookies', 'Privacidade', 'Contato', 'Sobre nós', 'Categorias', 'Autor', 'Data'].map((name) => <li key={name} className="inline-flex items-center gap-1.5 rounded-md border bg-background px-2.5 py-1 text-[13px]"><Check className="h-3.5 w-3.5 text-ok" />{name}</li>)}</ul>
+            </div>
+          </div>
         </Card>
         <section className="grid gap-3 lg:col-span-2 min-[1920px]:col-span-3">
           <h2 className="text-[13px] font-medium text-muted-foreground">Ad units ativos</h2>
