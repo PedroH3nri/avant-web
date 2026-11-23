@@ -43,6 +43,7 @@ const SCREENS = [
   ['configuracoes', 'Configurações'],
   ['interno', 'Painel interno · Clientes'],
   ['cliente', 'Painel interno · Página do cliente'],
+  ['siteinterno', 'Painel interno · Detalhes do site'],
   ['fiscais', 'Configurações · Dados fiscais'],
   ['contratos', 'Painel interno · Contratos'],
   ['resultados', 'Painel interno · Resultado dos clientes'],
@@ -122,7 +123,7 @@ const SCREENS = [
   ['gadsanunciointerno', 'Painel interno · Anúncio do Google Ads'],
 ] as const
 type Screen = (typeof SCREENS)[number][0]
-const INTERNAL_SCREENS: Screen[] = ['gadsinterno', 'gadscampanhasinterno', 'gadscampanhainterno', 'gadsgrupointerno', 'gadsanunciointerno', 'fbinterno', 'fbcampanhasinterno', 'fbcampanhainterno', 'fbconjuntointerno', 'fbanunciointerno', 'interno', 'cliente', 'contratos', 'resultados', 'papelcomissao', 'minhacomissao', 'comissoes', 'minhasinvoices', 'invoice', 'invoices', 'servicosinvoice', 'modelosdash', 'tarefas', 'tarefa', 'checklists', 'checklist', 'checklistitens', 'ferramentasgam', 'execucaogam', 'rewardsinterno', 'rewardinterno', 'rewardmetricasinterno', 'adtagsinterno', 'adtaginterno', 'adtagmetricasinterno', 'loadersinterno', 'loaderinterno', 'regrasprecointerno', 'regrasiteinterno', 'regrainterno', 'cascatainterno']
+const INTERNAL_SCREENS: Screen[] = ['gadsinterno', 'gadscampanhasinterno', 'gadscampanhainterno', 'gadsgrupointerno', 'gadsanunciointerno', 'fbinterno', 'fbcampanhasinterno', 'fbcampanhainterno', 'fbconjuntointerno', 'fbanunciointerno', 'interno', 'cliente', 'siteinterno', 'contratos', 'resultados', 'papelcomissao', 'minhacomissao', 'comissoes', 'minhasinvoices', 'invoice', 'invoices', 'servicosinvoice', 'modelosdash', 'tarefas', 'tarefa', 'checklists', 'checklist', 'checklistitens', 'ferramentasgam', 'execucaogam', 'rewardsinterno', 'rewardinterno', 'rewardmetricasinterno', 'adtagsinterno', 'adtaginterno', 'adtagmetricasinterno', 'loadersinterno', 'loaderinterno', 'regrasprecointerno', 'regrasiteinterno', 'regrainterno', 'cascatainterno']
 const isScreen = (s: string): s is Screen => SCREENS.some(([k]) => k === s)
 type T = (k: Key) => string
 
@@ -419,7 +420,7 @@ const CLIENT_RAIL: RailGroup[] = [
   { key: 'empresa', label: 'Empresa', icon: Settings, items: [{ id: 'configuracoes', label: 'Configurações' }, { id: 'fiscais', label: 'Dados fiscais' }] },
 ]
 const INTERNAL_RAIL: RailGroup[] = [
-  { key: 'clientes', label: 'Inventário', icon: Users, items: [{ id: 'interno', label: 'Clientes', also: ['cliente'] }, { id: 'contratos', label: 'Contratos' }, { id: 'resultados', label: 'Resultado dos clientes' }, { id: 'checklists', label: 'Checklists', also: ['checklist', 'checklistitens'] }, { id: 'rewardsinterno', label: 'Rewards', also: ['rewardinterno', 'rewardmetricasinterno'] }, { id: 'adtagsinterno', label: 'Ad tags', also: ['adtaginterno', 'adtagmetricasinterno'] }, { id: 'loadersinterno', label: 'Loaders', also: ['loaderinterno'] }, { id: 'regrasprecointerno', label: 'Regras de preço', also: ['regrasiteinterno', 'regrainterno', 'cascatainterno'] }] },
+  { key: 'clientes', label: 'Inventário', icon: Users, items: [{ id: 'interno', label: 'Clientes', also: ['cliente', 'siteinterno'] }, { id: 'contratos', label: 'Contratos' }, { id: 'resultados', label: 'Resultado dos clientes' }, { id: 'checklists', label: 'Checklists', also: ['checklist', 'checklistitens'] }, { id: 'rewardsinterno', label: 'Rewards', also: ['rewardinterno', 'rewardmetricasinterno'] }, { id: 'adtagsinterno', label: 'Ad tags', also: ['adtaginterno', 'adtagmetricasinterno'] }, { id: 'loadersinterno', label: 'Loaders', also: ['loaderinterno'] }, { id: 'regrasprecointerno', label: 'Regras de preço', also: ['regrasiteinterno', 'regrainterno', 'cascatainterno'] }] },
   { key: 'integracoes', label: 'Integrações', icon: Plug, items: [{ id: 'fbinterno', label: 'Facebook' }, { id: 'fbcampanhasinterno', label: 'Campanhas do Facebook', also: ['fbcampanhainterno', 'fbconjuntointerno', 'fbanunciointerno'] }, { id: 'gadsinterno', label: 'Google Ads' }, { id: 'gadscampanhasinterno', label: 'Campanhas do Google Ads', also: ['gadscampanhainterno', 'gadsgrupointerno', 'gadsanunciointerno'] }] },
   { key: 'comissoes', label: 'Comissões', icon: Wallet, items: [{ id: 'minhacomissao', label: 'Minha comissão' }, { id: 'minhasinvoices', label: 'Minhas invoices' }, { id: 'comissoes', label: 'Comissões da equipe' }, { id: 'invoices', label: 'Invoices', also: ['servicosinvoice', 'invoice'] }] },
   { key: 'ferramentas', label: 'Ferramentas', icon: Wrench, items: [{ id: 'tarefas', label: 'Tarefas', also: ['tarefa'] }, { id: 'modelosdash', label: 'Modelos de dashboard' }, { id: 'ferramentasgam', label: 'Ferramentas do GAM', also: ['execucaogam'] }] },
@@ -538,7 +539,7 @@ function Shell({ t, lang, setLang, screen, go, image, children }: { t: T; lang: 
 function PageHeader({ title, sub, actions, back }: { title: string; sub?: string; actions?: React.ReactNode; back?: React.ReactNode }) {
   return (
     <div className="border-b bg-background">
-      <div className="mx-auto flex max-w-[1200px] flex-wrap items-end justify-between gap-x-6 gap-y-4 px-4 py-10 sm:px-6">
+      <div className="mx-auto flex max-w-[1200px] min-[1600px]:max-w-[1440px] min-[1920px]:max-w-[1760px] min-[2560px]:max-w-[2160px] flex-wrap items-end justify-between gap-x-6 gap-y-4 px-4 py-10 sm:px-6">
         <div className="min-w-0 max-w-[64ch]">
           {back}
           <h1 className="text-[32px] font-semibold leading-tight tracking-[-0.04em]">{title}</h1>
@@ -550,7 +551,7 @@ function PageHeader({ title, sub, actions, back }: { title: string; sub?: string
   )
 }
 function Body({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <div className="flex-1 bg-muted"><div className={cn('mx-auto grid max-w-[1200px] content-start gap-6 px-4 py-8 sm:px-6 [&>*]:min-w-0', className)}>{children}</div></div>
+  return <div className="flex-1 bg-muted"><div className={cn('mx-auto grid max-w-[1200px] min-[1600px]:max-w-[1440px] min-[1920px]:max-w-[1760px] min-[2560px]:max-w-[2160px] content-start gap-6 px-4 py-8 sm:px-6 [&>*]:min-w-0', className)}>{children}</div></div>
 }
 
 /* ---------- Início ---------- */
@@ -1538,6 +1539,69 @@ function ClientNetworksCard() {
         </DialogContent>
       </Dialog>
     </Card>
+  )
+}
+
+/* Painel interno: um site de cliente com a situação, o contrato da network, o faturamento, o checklist e os ad units ativos. */
+function ClientSiteScreen({ go }: { go: (s: Screen) => void }) {
+  const row = (label: string, value: React.ReactNode) => <div className="grid gap-1 py-2 sm:grid-cols-[160px_1fr]"><dt className="text-muted-foreground">{label}</dt><dd className="min-w-0">{value}</dd></div>
+  const units = [
+    { name: 'blogexemplo_topo', code: 'blogexemplo/topo', link: 'Automática', synced: 'há 2 h', depth: 0 },
+    { name: 'blogexemplo_meio', code: 'blogexemplo/meio', link: 'Automática', synced: 'há 2 h', depth: 0 },
+    { name: 'blogexemplo_meio_2', code: 'blogexemplo/meio/2', link: 'Automática', synced: 'há 2 h', depth: 1 },
+    { name: 'blogexemplo_rodape', code: 'blogexemplo/rodape', link: 'Manual', synced: 'há 2 h', depth: 0 },
+    { name: 'blogexemplo_reward', code: 'blogexemplo/reward', link: 'Automática', synced: 'há 2 h', depth: 0 },
+  ]
+  return (
+    <>
+      <PageHeader title="blogexemplo.com" sub="Blog Exemplo · network Blog Exemplo Principal"
+        back={<button onClick={() => go('interno')} className="mb-3 inline-flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4" />Sites</button>}
+        actions={<>
+          <Button variant="outline" onClick={() => go('regrasiteinterno')}><CircleDollarSign className="h-4 w-4" />Regras de preço</Button>
+          <Button variant="outline" onClick={() => go('networks')}><Network className="h-4 w-4" />Abrir network</Button>
+          <Button variant="outline" onClick={() => go('cliente')}><Users className="h-4 w-4" />Abrir cliente</Button>
+        </>}
+      />
+      <Body className="lg:grid-cols-2 min-[1920px]:grid-cols-3">
+        <Card title="Situação">
+          <dl className="-my-2 grid divide-y text-[14px]">
+            {row('Aprovação no Ad Manager', <Status tone="ok">Aprovado</Status>)}
+            {row('Status', <Status tone="ok">Ativo</Status>)}
+            {row('Cliente', <span className="flex items-center gap-2"><CompanyIcon name="Blog Exemplo" image={null} size={20} /><button className="hover:underline" onClick={() => go('cliente')}>Blog Exemplo</button></span>)}
+            {row('Network', <button className="hover:underline" onClick={() => go('networks')}>Blog Exemplo Principal <span className="text-muted-foreground">· 21987654321</span></button>)}
+            {row('Categoria', 'Culinária')}
+            {row('Responsável', 'Ana Souza')}
+            {row('Última sincronização', <span className="tnum">23/11/2026 16:02</span>)}
+          </dl>
+        </Card>
+        <div className="grid content-start gap-6">
+          <Card title="Contrato da network" desc="O revshare ativo, usado no resultado do cliente.">
+            <div className="text-[28px] font-semibold tracking-[-0.03em] tnum">15%</div>
+            <div className="mt-1 text-[13px] text-muted-foreground">Do GAM desde 01/09/2026</div>
+          </Card>
+          <Card title="Faturamento"><RevenueStatus data={{ trend: 'scaling', perDay: 1210, change: 41 }} /></Card>
+        </div>
+        <Card title="Checklist de novembro" desc="Itens conferidos neste mês." className="self-start lg:col-span-2 min-[1920px]:col-span-1">
+          <div className="flex items-center justify-between gap-3"><Status tone="ochre">7 de 10 ok</Status><Button size="sm" variant="outline" onClick={() => go('checklist')}>Abrir checklist</Button></div>
+        </Card>
+        <section className="grid gap-3 lg:col-span-2 min-[1920px]:col-span-3">
+          <h2 className="text-[13px] font-medium text-muted-foreground">Ad units ativos</h2>
+          <Table min={640}>
+            <thead><tr><th className={th}>Ad unit</th><th className={th}>Código</th><th className={th}>Ligação ao site</th><th className={th}>Sincronizado</th></tr></thead>
+            <tbody>
+              {units.map((unit) => (
+                <tr key={unit.code} className="hover:bg-muted">
+                  <td className={cn(td, 'font-medium')}><span style={{ paddingLeft: unit.depth * 20 }}>{unit.name}</span></td>
+                  <td className={td}><Code>{unit.code}</Code></td>
+                  <td className={cn(td, 'text-muted-foreground')}>{unit.link}</td>
+                  <td className={cn(td, 'text-muted-foreground')}>{unit.synced}</td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        </section>
+      </Body>
+    </>
   )
 }
 
@@ -2834,7 +2898,7 @@ function ReportViewScreen({ report, customs, pinned, onPin, onBack, onEdit, onDu
   return (
     <>
       <div className="border-b bg-background">
-        <div className="mx-auto flex max-w-[1200px] flex-wrap items-end justify-between gap-x-6 gap-y-4 px-4 py-10 sm:px-6">
+        <div className="mx-auto flex max-w-[1200px] min-[1600px]:max-w-[1440px] min-[1920px]:max-w-[1760px] min-[2560px]:max-w-[2160px] flex-wrap items-end justify-between gap-x-6 gap-y-4 px-4 py-10 sm:px-6">
           <div className="min-w-0 max-w-[72ch]">
             <Button variant="ghost" size="sm" onClick={onBack} className="-ml-2.5 mb-3 text-muted-foreground"><ArrowLeft className="h-4 w-4" />Relatórios customizados</Button>
             <h1 className="text-[32px] font-semibold leading-tight tracking-[-0.04em]">{report.name}</h1>
@@ -6683,7 +6747,7 @@ function AdTagEditScreen({ initial, staff, back, save, metrics, loaders, editLoa
           </DropdownMenu>
         </>} />
       <div className="border-b bg-background">
-        <div className="mx-auto flex max-w-[1200px] flex-wrap items-center gap-x-6 gap-y-2 px-4 sm:px-6">
+        <div className="mx-auto flex max-w-[1200px] min-[1600px]:max-w-[1440px] min-[1920px]:max-w-[1760px] min-[2560px]:max-w-[2160px] flex-wrap items-center gap-x-6 gap-y-2 px-4 sm:px-6">
           <nav className="-mb-px flex max-w-full gap-1 overflow-x-auto" aria-label="Partes da ad tag">
             {([['blocks', 'Blocos'], ['integrations', 'Integrações'], ['versions', 'Versões']] as const).map(([id, label]) => (
               <button key={id} onClick={() => setTab(id)} className={cn('border-b-2 px-3 py-3 text-[14px]', tab === id ? 'border-foreground font-medium text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground')} aria-current={tab === id ? 'page' : undefined}>{label}</button>
@@ -10384,6 +10448,7 @@ export default function App() {
       case 'configuracoes': return <SettingsScreen t={t} accent={accent} setAccent={setAccent} theme={theme} setTheme={setTheme} image={image} setImage={setImage} groups={groups} />
       case 'interno': return <InternalScreen t={t} go={go} />
       case 'cliente': return <ClientScreen go={go} />
+      case 'siteinterno': return <ClientSiteScreen go={go} />
       case 'fiscais': return <FiscalScreen />
       case 'contratos': return <ContractsScreen />
       case 'resultados': return <ClientsResultScreen />

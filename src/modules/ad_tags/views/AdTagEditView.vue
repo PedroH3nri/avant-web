@@ -50,6 +50,7 @@ import { ADBLOCK_SHORT, inputOf, loadersPath, previewLoader, TEMPLATE_LABEL, typ
 import { loaderService } from '@/modules/loaders/service'
 import type { LoaderOption } from '@/modules/loaders/types'
 import { dayText } from '@/modules/rewards/rules'
+import { PAGE_WIDTH } from '@/lib/layout'
 import { useSession } from '@/stores/session'
 
 type Tab = 'blocks' | 'integrations' | 'versions'
@@ -456,7 +457,7 @@ async function goToLoader(loaderId: string | null) {
     </template>
   </PageHeader>
   <div v-if="tag && draft" class="sticky top-0 z-20 border-b bg-background">
-    <div class="mx-auto flex max-w-[1200px] flex-wrap items-center gap-x-6 gap-y-2 px-4 sm:px-6">
+    <div :class="PAGE_WIDTH" class="mx-auto flex flex-wrap items-center gap-x-6 gap-y-2 px-4 sm:px-6">
       <nav class="-mb-px flex max-w-full gap-1 overflow-x-auto" :aria-label="t('at.tabs')">
         <button
           v-for="item in ['blocks', 'integrations', 'versions'] as const"

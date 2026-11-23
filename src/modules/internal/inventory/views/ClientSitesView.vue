@@ -81,7 +81,7 @@ watch(page, load)
         <TableState :cols="canSeeChecklists ? 6 : 5" :loading="!sites" :empty="sites?.length === 0" :icon="Globe" :title="t('inv.sitesNone')" />
         <tr v-for="site in sites ?? []" :key="site.id" class="hover:bg-muted">
           <td :class="td">
-            <div class="font-medium">{{ site.domain }}</div>
+            <RouterLink :to="`/interno/sites/${site.id}`" class="font-medium hover:underline">{{ site.domain }}</RouterLink>
             <div class="truncate text-[13px] text-muted-foreground">{{ site.network_name ?? t('inv.awaitingGam') }}</div>
           </td>
           <td :class="td">

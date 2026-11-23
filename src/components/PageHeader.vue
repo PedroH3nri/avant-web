@@ -1,11 +1,13 @@
 <script setup lang="ts">
 /** Cabeçalho das telas: título, subtítulo e uma linha de detalhes opcionais. */
+import { PAGE_WIDTH } from '@/lib/layout'
+
 defineProps<{ title: string; sub?: string }>()
 </script>
 
 <template>
   <div class="border-b bg-background">
-    <div class="mx-auto flex max-w-[1200px] flex-wrap items-end justify-between gap-x-6 gap-y-4 px-4 py-10 sm:px-6">
+    <div :class="PAGE_WIDTH" class="mx-auto flex flex-wrap items-end justify-between gap-x-6 gap-y-4 px-4 py-10 sm:px-6">
       <div class="min-w-0 max-w-[64ch]">
         <slot name="back" />
         <h1 class="text-[32px] font-semibold leading-tight tracking-[-0.04em]">{{ title }}</h1>
