@@ -43,6 +43,12 @@ export function toggleColumn(shown: string[], column: string, order: string[]): 
   return order.filter((key) => next.includes(key))
 }
 
+/** Liga ou desliga um filtro extra, mantendo a ordem do catálogo; pode ficar sem nenhum. */
+export function toggleFilter(shown: string[], filter: string, order: string[]): string[] {
+  const next = shown.includes(filter) ? shown.filter((kept) => kept !== filter) : [...shown, filter]
+  return order.filter((key) => next.includes(key))
+}
+
 /** O primeiro valor de um filtro de lista ou o texto do filtro; vazio sem filtro. */
 export function firstValue(value: FilterValue | undefined): string {
   if (Array.isArray(value)) return value[0] ?? ''

@@ -25,6 +25,7 @@ import type { ClientSite } from '@/modules/internal/inventory/types'
 import RevenueStatusBadge from '@/modules/revenue/components/RevenueStatusBadge.vue'
 import { SITE_CATEGORIES, approval, categoryLabel } from '@/modules/sites/rules'
 import ColumnsMenu from '@/modules/views/components/ColumnsMenu.vue'
+import FiltersMenu from '@/modules/views/components/FiltersMenu.vue'
 import SavedViewsBar from '@/modules/views/components/SavedViewsBar.vue'
 import { cleanFilters, firstValue, parseSort, sortValue } from '@/modules/views/rules'
 import type { ViewDefinition, ViewSort } from '@/modules/views/types'
@@ -41,6 +42,7 @@ const APPROVAL_LABELS: Record<string, Key> = {
   review: 'sites.approval.review',
   awaiting_gam: 'inv.awaitingGam',
 }
+const EXTRA_FILTERS = ['responsible', 'manager']
 const COLUMNS = ['site', 'client', 'approval', 'revenue', 'units', 'checklist', 'category', 'responsible']
 const SORTS: ViewSort[] = [
   { key: 'created_at', direction: 'desc' },
@@ -61,6 +63,9 @@ const searchText = ref('')
 const approvalFilter = ref(ALL)
 const company = ref(ALL)
 const category = ref(ALL)
+const responsible = ref(ALL)
+const manager = ref(ALL)
+const extraFilters = ref<string[]>([])
 const sort = ref(sortValue(SORTS[0] as ViewSort))
 const columns = ref<string[]>([...DEFAULT_VIEW.columns])
 const staff = ref<FilterOption[]>([])
@@ -79,6 +84,8 @@ const current = computed<ViewDefinition>(() => ({
     approval: chosen(approvalFilter.value),
     company_id: chosen(company.value),
     category: chosen(category.value),
+    responsible_user_id: chosen(responsible.value),
+    account_manager_ids: manager.value === ALL ? [] : [manager.value],
   }),
   sort: parseSort(sort.value),
 }))
@@ -96,6 +103,8 @@ async function load() {
         approval: chosen(approvalFilter.value),
         client_id: chosen(company.value),
         category: chosen(category.value),
+        responsible_user_id: chosen(responsible.value),
+        manager: manager.value === ALL ? undefined : [manager.value],
         sort: order?.key,
         direction: order?.direction,
       }),
@@ -125,7 +134,7 @@ function firstPage() {
 }
 const searchSites = useDebounceFn(firstPage, SEARCH_DELAY_MS)
 watch(searchText, () => void searchSites())
-watch([approvalFilter, company, category, sort], firstPage)
+watch([approvalFilter, company, category, responsible, manager, sort], firstPage)
 watch(page, load)
 
 const approvalOptions = computed(() => [{ value: ALL, label: t('inv.allApprovals') }, ...APPROVALS.map((value) => ({ value, label: t(APPROVAL_LABELS[value] as Key) }))])
@@ -135,6 +144,12 @@ const categoryOptions = computed(() => [
   { value: NONE, label: t('sites.category.none') },
   ...SITE_CATEGORIES.map((value) => ({ value, label: categoryLabel(value) })),
 ])
+const responsibleOptions = computed(() => [
+  { value: ALL, label: t('inv.allSiteOwners') },
+  { value: NONE, label: t('sites.responsible.none') },
+  ...staff.value,
+])
+const managerOptions = computed(() => [{ value: ALL, label: t('inv.allGrooneManagers') }, ...staff.value])
 const sortOptions = SORTS.map((option) => ({
   value: sortValue(option),
   label: t((option.key === 'domain' ? `inv.sort.domain.${option.direction}` : `int.sort.${option.key}.${option.direction}`) as Key),
@@ -158,9 +173,22 @@ function applyView(definition: ViewDefinition) {
   approvalFilter.value = known(firstValue(definition.filters.approval), approvalOptions.value)
   company.value = firstValue(definition.filters.company_id) || ALL
   category.value = known(firstValue(definition.filters.category), categoryOptions.value)
+  responsible.value = firstValue(definition.filters.responsible_user_id) || ALL
+  manager.value = firstValue(definition.filters.account_manager_ids) || ALL
+  extraFilters.value = EXTRA_FILTERS.filter((filter) => (filter === 'responsible' ? responsible.value : manager.value) !== ALL)
   const found = definition.sort && SORTS.find((option) => sortValue(option) === sortValue(definition.sort as ViewSort))
   sort.value = sortValue(found || (SORTS[0] as ViewSort))
 }
+
+/** Diz se o filtro extra está ligado na tabela. */
+const extraShown = (filter: string) => extraFilters.value.includes(filter)
+/** O nome do filtro extra no menu de filtros. */
+const extraLabel = (filter: string) => t(filter === 'responsible' ? 'inv.filter.responsible' : 'inv.column.manager')
+/** Desligar um filtro extra tira o valor dele, para não filtrar escondido. */
+watch(extraFilters, (shown) => {
+  if (!shown.includes('responsible')) responsible.value = ALL
+  if (!shown.includes('manager')) manager.value = ALL
+})
 
 /** Limpa a busca e os filtros. */
 function clearFilters() {
@@ -168,6 +196,8 @@ function clearFilters() {
   approvalFilter.value = ALL
   company.value = ALL
   category.value = ALL
+  responsible.value = ALL
+  manager.value = ALL
 }
 </script>
 
@@ -182,7 +212,10 @@ function clearFilters() {
       <Select v-model="approvalFilter" :options="approvalOptions" :aria-label="t('inv.filter.approval')" class="h-9 w-full sm:w-52" />
       <Select v-model="company" :options="companyOptions" :aria-label="t('inv.filter.client')" class="h-9 w-full sm:w-52" />
       <Select v-model="category" :options="categoryOptions" :aria-label="t('inv.filter.category')" class="h-9 w-full sm:w-48" />
+      <Select v-if="extraShown('responsible')" v-model="responsible" :options="responsibleOptions" :aria-label="t('inv.filter.responsible')" class="h-9 w-full sm:w-60" />
+      <Select v-if="extraShown('manager')" v-model="manager" :options="managerOptions" :aria-label="t('inv.column.manager')" class="h-9 w-full sm:w-60" />
       <Select v-model="sort" :options="sortOptions" :aria-label="t('views.sort')" class="h-9 w-full sm:w-52" />
+      <FiltersMenu v-model:shown="extraFilters" :filters="EXTRA_FILTERS" :label="extraLabel" />
       <ColumnsMenu v-model:shown="columns" :columns="COLUMNS" :label="columnLabel" />
     </SavedViewsBar>
     <LoadError v-if="loadError" :message="loadError" @retry="load" />
