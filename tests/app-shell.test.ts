@@ -20,6 +20,7 @@ function me(companyId: string): Me {
     is_staff: false,
     mfa_enabled: false,
     mfa_setup_required: false,
+    can_create_company: false,
     display_currency: 'USD',
     theme: 'system',
     accent: 'default',

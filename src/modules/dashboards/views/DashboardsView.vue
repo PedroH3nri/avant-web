@@ -120,7 +120,7 @@ async function loadOptions() {
   /** A lista que a pessoa não pode ver fica fora dos filtros. */
   const denied = () => Promise.reject(new Error('sem permissão'))
   const [clients, staff, networks, sites] = await Promise.allSettled([
-    internal.value && session.can('internal.clients.view') ? clientService.options() : denied(),
+    internal.value && session.can('internal.clients.view') ? clientService.companyOptions() : denied(),
     internal.value ? staffService.options() : denied(),
     !internal.value && session.can('network.view') ? networkService.options() : denied(),
     !internal.value && session.can('sites.view') ? siteService.options() : denied(),

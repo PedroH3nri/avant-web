@@ -17,6 +17,7 @@ import Card from '@/components/ui/Card.vue'
 import AccountManagerCard from '@/modules/internal/commissions/components/AccountManagerCard.vue'
 import ClientDocumentsCard from '@/modules/internal/clients/components/ClientDocumentsCard.vue'
 import ClientNotesCard from '@/modules/internal/clients/components/ClientNotesCard.vue'
+import ReservedNetworksCard from '@/modules/internal/clients/components/ReservedNetworksCard.vue'
 import Field from '@/components/ui/Field.vue'
 import Input from '@/components/ui/Input.vue'
 import Pagination from '@/components/ui/Pagination.vue'
@@ -184,7 +185,7 @@ async function sendInvite() {
 async function openEdit() {
   const current = client.value
   if (!current) return
-  profile.value = current.profile ? profileInput(current.profile) : emptyProfile()
+  profile.value = profileInput(current.profile)
   editing.value = true
   try {
     const list = await clientService.options()
@@ -222,7 +223,7 @@ async function managerSaved(fresh: Client) {
 const statusOptions = computed(() => STAFF_STATUSES.filter((status) => status !== client.value?.status))
 const pendingOwnerInvite = computed(() => ownerInvite.value ?? (client.value?.invitations ?? []).find((invitation) => invitation.status === 'pending' && invitation.role_id === null) ?? null)
 const referrerName = computed(() => {
-  const referrerId = client.value?.profile?.referred_by_company_id
+  const referrerId = client.value?.profile?.referred_by_client_id
   return referrerId ? (referrers.value.find((item) => item.id === referrerId)?.name ?? referrerId) : null
 })
 /** Mostra o valor ou o texto de não informado. */
@@ -237,15 +238,15 @@ function who(auditEntry: AuditEntry) {
 </script>
 
 <template>
-  <PageHeader :title="client?.name ?? t('int.client')" :sub="client ? client.slug : undefined">
+  <PageHeader :title="client?.name ?? t('int.client')" :sub="client ? (client.company?.slug ?? t('int.noCompany')) : undefined">
     <template #back>
       <RouterLink to="/interno" class="mb-3 inline-flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-foreground">
         <ArrowLeft class="size-4" />{{ t('int.back') }}
       </RouterLink>
     </template>
     <template v-if="client" #actions>
-      <Button v-if="canManage && client.status === 'pending' && client.profile" :loading="inviteBusy" @click="sendInvite"><Mail />{{ pendingOwnerInvite ? t('int.resendInvite') : t('int.sendInvite') }}</Button>
-      <Button v-else-if="client.owner" variant="outline" @click="router.push(`/interno/empresas/${client.id}`)"><Building />{{ t('int.openCompany') }}</Button>
+      <Button v-if="canManage && client.status === 'pending' && !client.owner" :loading="inviteBusy" @click="sendInvite"><Mail />{{ pendingOwnerInvite ? t('int.resendInvite') : t('int.sendInvite') }}</Button>
+      <Button v-else-if="client.company" variant="outline" @click="router.push(`/interno/empresas/${client.company.id}`)"><Building />{{ t('int.openCompany') }}</Button>
     </template>
   </PageHeader>
   <PageBody class="lg:grid-cols-2">
@@ -255,7 +256,7 @@ function who(auditEntry: AuditEntry) {
         <form v-if="editing" id="client-profile" @submit.prevent="saveProfile">
           <ClientProfileForm v-model="profile" id-prefix="cp" :referrers="referrers" />
         </form>
-        <dl v-else-if="client.profile" class="-my-2 grid divide-y text-[14px]">
+        <dl v-else class="-my-2 grid divide-y text-[14px]">
           <div class="grid gap-1 py-2 sm:grid-cols-[180px_1fr]">
             <dt class="text-muted-foreground">{{ t('int.contact') }}</dt>
             <dd>{{ client.profile.first_name }} {{ client.profile.last_name }} · {{ client.profile.email }}</dd>
@@ -273,7 +274,6 @@ function who(auditEntry: AuditEntry) {
             <dd>{{ shown(client.profile.notes) }}</dd>
           </div>
         </dl>
-        <p v-else class="text-[14px] text-muted-foreground">{{ t('int.noProfile') }}</p>
         <template v-if="canManage" #footer>
           <template v-if="editing">
             <Button variant="outline" @click="editing = false">{{ t('common.cancel') }}</Button>
@@ -308,7 +308,7 @@ function who(auditEntry: AuditEntry) {
         <p v-else class="flex items-center gap-2 text-[14px] text-muted-foreground"><Lock class="size-4" aria-hidden="true" />{{ t('int.fiscalEmpty') }}</p>
       </Card>
 
-      <ClientDocumentsCard v-if="canDocuments" class="lg:col-span-2" :company-id="client.id" @changed="auditChanged" />
+      <ClientDocumentsCard v-if="canDocuments && client.company" class="lg:col-span-2" :company-id="client.company.id" @changed="auditChanged" />
 
       <Card :title="t('int.situation')" :desc="t('int.situationDesc')">
         <Status :tone="STATUS_TONE[client.status]">{{ t(`int.status.${client.status}`) }}</Status>
@@ -346,7 +346,9 @@ function who(auditEntry: AuditEntry) {
         </p>
       </Card>
 
-      <ClientNotesCard v-if="canNotes" class="lg:col-span-2" :company-id="client.id" @changed="auditChanged" />
+      <ReservedNetworksCard v-if="!client.company" class="lg:col-span-2" :client-id="client.id" :client-name="client.name" :networks="client.reserved_networks" @changed="reload" />
+
+      <ClientNotesCard v-if="canNotes && client.company" class="lg:col-span-2" :company-id="client.company.id" @changed="auditChanged" />
 
       <Card class="lg:col-span-2" :title="t('int.audit')" :desc="t('int.auditDesc')">
         <p v-if="!audit.length" class="text-[14px] text-muted-foreground">{{ t('int.auditEmpty') }}</p>

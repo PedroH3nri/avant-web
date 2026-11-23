@@ -17,6 +17,7 @@ function me(permissions: string[], accent: AccentId = 'default', chosenTheme: Th
     is_staff: false,
     mfa_enabled: false,
     mfa_setup_required: false,
+    can_create_company: false,
     display_currency: 'USD',
     theme: chosenTheme,
     accent,
@@ -108,5 +109,21 @@ describe('aceite de convite', () => {
     expect(session.me?.active_company_id).toBe('e')
     expect(await received).toEqual({ type: 'company', companyId: 'e' })
     other.close()
+  })
+})
+
+describe('session.createCompany', () => {
+  beforeEach(() => setActivePinia(createPinia()))
+  afterEach(() => vi.restoreAllMocks())
+
+  it('cria a Empresa do cliente e a sessão entra nela', async () => {
+    const session = useSession()
+    session.set({ ...me([]), companies: [], active_company_id: null, can_create_company: true })
+    expect(session.company).toBeNull()
+    const create = vi.spyOn(authService, 'createCompany').mockResolvedValueOnce(me(['*']))
+    await session.createCompany('Blog da Ana')
+    expect(create).toHaveBeenCalledWith('Blog da Ana')
+    expect(session.company?.id).toBe('c')
+    expect(session.me?.can_create_company).toBe(false)
   })
 })

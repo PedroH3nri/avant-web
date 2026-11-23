@@ -124,3 +124,19 @@ describe('listas do painel interno em páginas', () => {
     ])
   })
 })
+
+describe('clientes com Empresa nos seletores', () => {
+  afterEach(() => vi.restoreAllMocks())
+
+  it('troca o id do cliente pelo da Empresa e deixa de fora quem ainda não criou', async () => {
+    vi.spyOn(api, 'get').mockResolvedValue({
+      items: [
+        { id: 'cl1', name: 'Alfa', status: 'active', company_id: 'co1' },
+        { id: 'cl2', name: 'Beta', status: 'pending', company_id: null },
+      ],
+      next_cursor: null,
+    })
+    const found = await clientService.companyOptions()
+    expect(found.items).toEqual([{ id: 'co1', name: 'Alfa', status: 'active', company_id: 'co1' }])
+  })
+})

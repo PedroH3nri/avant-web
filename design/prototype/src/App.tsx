@@ -23,6 +23,7 @@ import { Mark, SeatBar, SeatDot, SeatStrip, type SeatState } from './tiles'
 const SCREENS = [
   ['login', 'Login'],
   ['convite', 'Aceite de convite'],
+  ['criarempresa', 'Início · Criar sua Empresa (conta do cliente)'],
   ['inicio', 'Início'],
   ['desempenho', 'Desempenho'],
   ['visitas', 'Page Views'],
@@ -348,7 +349,7 @@ function Invite({ t, go }: { t: T; go: (s: Screen) => void }) {
     <AuthFrame>
       <div className="flex justify-center -space-x-2"><Avatar name="Pedro Henrique" size={44} /><span className="inline-flex rounded-[9px] ring-2 ring-background"><Mark size={44} /></span></div>
       <h1 className="mt-6 text-center text-[28px] font-semibold leading-tight tracking-[-0.03em]">Entrar na Blog Exemplo</h1>
-      {/* No convite de dono a Empresa já existe: a Groone cadastrou antes. Não há tela de criar Empresa. */}
+      {/* No convite do cliente ainda não há Empresa: depois de entrar, ele a cria em Início (tela criarempresa). */}
       <p className="mt-3 text-center text-[14px] text-muted-foreground">
         <span className="text-foreground">Pedro Henrique</span> convidou <span className="text-foreground">rafael@agenciadias.com</span> como <span className="text-foreground">Gestor de tráfego</span>. Convite válido até 23/10/2026, 14:05.
       </p>
@@ -553,6 +554,31 @@ function Body({ children, className }: { children: React.ReactNode; className?: 
 }
 
 /* ---------- Início ---------- */
+
+/* Conta do cliente (papel Publisher) sem Empresa: cria a dela, uma só; as networks guardadas pela Groone entram nela. */
+function CreateCompanyScreen({ go }: { go: (s: Screen) => void }) {
+  const [name, setName] = useState('')
+  const [busy, setBusy] = useState(false)
+  const ok = name.trim().length >= 2
+  return (
+    <>
+      <PageHeader title="Boa tarde, Pedro" />
+      <Body>
+        <Card
+          className="max-w-[560px]"
+          title="Crie a sua Empresa"
+          desc="A Empresa é onde ficam as suas networks, os sites e a sua equipe. Você cria uma só e ela fica sempre com você."
+          footerNote="As networks que a Groone já guardou para você entram nela e a sincronização começa."
+          footer={<Button disabled={!ok || busy} onClick={() => { setBusy(true); setTimeout(() => { toast.success('Empresa criada.'); go('inicio') }, 700) }}>{busy && <Loader2 className="animate-spin" />}Criar Empresa</Button>}
+        >
+          <Field id="cc-name" label="Nome da Empresa" hint="Pode ser o nome do seu site ou do seu negócio. Dá para mudar depois.">
+            <Input id="cc-name" className="h-10" value={name} onChange={(e) => setName(e.target.value)} maxLength={80} autoComplete="organization" />
+          </Field>
+        </Card>
+      </Body>
+    </>
+  )
+}
 
 function HomeScreen({ t, go, members }: { t: T; go: (s: Screen) => void; members: Member[] }) {
   const pending = members.filter((m) => m.state === 'pending').length
@@ -10336,6 +10362,7 @@ export default function App() {
       case 'login': return <Login t={t} go={go} />
       case 'convite': return <Invite t={t} go={go} />
       case 'inicio': return <HomeScreen t={t} go={go} members={members} />
+      case 'criarempresa': return <CreateCompanyScreen go={go} />
       case 'desempenho': return <PerformanceScreen />
       case 'visitas': return <PageViewsScreen />
       case 'relatorios': return <ReportsScreen reports={reports} setReports={setReports} customs={customs} pinned={pinned} setPinned={setPinned} view={viewReport} edit={openReport} openTemplate={openTemplate} />

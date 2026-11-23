@@ -177,7 +177,7 @@ onMounted(() => {
   void load()
   void loadPeople()
   void countUnread()
-  if (internal) void clientService.options().then((found) => (clients.value = found.items)).catch(() => undefined)
+  if (internal) void clientService.companyOptions().then((found) => (clients.value = found.items)).catch(() => undefined)
   else void siteService.options().then((found) => (sites.value = found.items)).catch(() => undefined)
 })
 </script>
