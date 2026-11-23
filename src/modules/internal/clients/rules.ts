@@ -27,7 +27,7 @@ export function emptyProfile(): ClientProfileInput {
     phone: null,
     locale: 'pt',
     account_manager_id: null,
-    referred_by_company_id: null,
+    referred_by_client_id: null,
     referral_percentage: '2',
     notes: null,
   }
@@ -49,7 +49,7 @@ export function percentageOk(value: string | null): boolean {
 /** Diz se o cadastro pode ser enviado: nomes, e-mail e comissão válida quando há indicação. */
 export function profileOk(profile: ClientProfileInput): boolean {
   const named = profile.first_name.trim() !== '' && profile.last_name.trim() !== ''
-  const referralOk = !profile.referred_by_company_id || percentageOk(profile.referral_percentage)
+  const referralOk = !profile.referred_by_client_id || percentageOk(profile.referral_percentage)
   return named && EMAIL.test(profile.email.trim()) && referralOk
 }
 
@@ -66,7 +66,7 @@ export function profileBody(profile: ClientProfileInput): ClientProfileInput {
     phone_ddi: phone ? blank(profile.phone_ddi) : null,
     phone,
     notes: blank(profile.notes),
-    referral_percentage: profile.referred_by_company_id ? (profile.referral_percentage ?? '2').trim().replace(',', '.') : null,
+    referral_percentage: profile.referred_by_client_id ? (profile.referral_percentage ?? '2').trim().replace(',', '.') : null,
   }
 }
 
