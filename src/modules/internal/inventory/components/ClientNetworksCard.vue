@@ -1,5 +1,6 @@
 <script setup lang="ts">
 /** As networks de um cliente na página dele, com o cadastro pela equipe e a confirmação das que o cliente cadastrou. */
+import OpenLink from '@/components/OpenLink.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { Plus } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
@@ -90,6 +91,7 @@ async function add() {
           <th :class="th">{{ t('net.col.status') }}</th>
           <th :class="[th, 'text-right']">{{ t('net.col.sites') }}</th>
           <th :class="th"><span class="sr-only">{{ t('team.actions') }}</span></th>
+          <th :class="[th, 'w-px']"><span class="sr-only">{{ t('common.open') }}</span></th>
         </tr>
       </thead>
       <tbody>
@@ -112,6 +114,7 @@ async function add() {
               @changed="load"
             />
           </td>
+          <td :class="[td, 'text-right']"><OpenLink :to="`/interno/networks/${network.id}`" :name="networkName(network)" /></td>
         </tr>
       </tbody>
     </DataTable>
