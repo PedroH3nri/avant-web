@@ -21,8 +21,8 @@ const localeOptions = [
   { value: 'es', label: 'Español' },
 ]
 const referrer = computed({
-  get: () => profile.value.referred_by_company_id ?? '',
-  set: (value: string) => (profile.value.referred_by_company_id = value || null),
+  get: () => profile.value.referred_by_client_id ?? '',
+  set: (value: string) => (profile.value.referred_by_client_id = value || null),
 })
 const phone = computed({
   get: () => profile.value.phone ?? '',
@@ -40,7 +40,7 @@ const notes = computed({
   get: () => profile.value.notes ?? '',
   set: (value: string) => (profile.value.notes = value || null),
 })
-const percentageBad = computed(() => !!profile.value.referred_by_company_id && !percentageOk(profile.value.referral_percentage))
+const percentageBad = computed(() => !!profile.value.referred_by_client_id && !percentageOk(profile.value.referral_percentage))
 /** Id do campo com o prefixo do formulário, para dois formulários na mesma tela. */
 const field = (name: string) => `${props.idPrefix}-${name}`
 </script>
@@ -76,7 +76,7 @@ const field = (name: string) => `${props.idPrefix}-${name}`
         <Select :id="field('referrer')" v-model="referrer" :options="referrerOptions" />
       </Field>
       <Field :id="field('percentage')" :label="t('int.commission')" :hint="t('int.commissionHint')">
-        <Input :id="field('percentage')" v-model="percentage" class="tnum" inputmode="decimal" :disabled="!profile.referred_by_company_id" :invalid="percentageBad" />
+        <Input :id="field('percentage')" v-model="percentage" class="tnum" inputmode="decimal" :disabled="!profile.referred_by_client_id" :invalid="percentageBad" />
       </Field>
     </fieldset>
     <Field :id="field('notes')" :label="t('int.notes')">

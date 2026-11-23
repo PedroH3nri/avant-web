@@ -263,7 +263,7 @@ function clearFilters() {
 /** Diz se a data já passou. */
 const expired = (iso: string) => new Date(iso).getTime() <= Date.now()
 /** Nome de quem indicou o cliente, quando houver. */
-const referrerName = (client: Client) => (client.profile?.referred_by_company_id ? clientNames.value.get(client.profile.referred_by_company_id) : undefined)
+const referrerName = (client: Client) => (client.profile?.referred_by_client_id ? clientNames.value.get(client.profile.referred_by_client_id) : undefined)
 </script>
 
 <template>

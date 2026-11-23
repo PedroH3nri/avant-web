@@ -1,11 +1,10 @@
 <script setup lang="ts">
 /**
- * Painel interno: uma Empresa cliente com tudo o que é dela. Dono (só a Groone troca), imagem,
- * vagas, convites, networks, pessoas da equipe e grupos; o cadastro fica no cliente.
+ * Painel interno: uma Empresa cliente com tudo o que é dela. Dono (a conta do cliente, que não
+ * muda), imagem, vagas, convites, networks, pessoas da equipe e grupos; o cadastro fica no cliente.
  */
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { toast } from 'vue-sonner'
 import { ArrowLeft, Building2 } from 'lucide-vue-next'
 import CompanyImageCard from '@/components/CompanyImageCard.vue'
 import LoadError from '@/components/LoadError.vue'
@@ -15,9 +14,6 @@ import Badge from '@/components/ui/Badge.vue'
 import Button from '@/components/ui/Button.vue'
 import Card from '@/components/ui/Card.vue'
 import DataTable from '@/components/ui/DataTable.vue'
-import Dialog from '@/components/ui/Dialog.vue'
-import Field from '@/components/ui/Field.vue'
-import Select from '@/components/ui/Select.vue'
 import Status from '@/components/ui/Status.vue'
 import { ApiError } from '@/lib/api'
 import { errorText, formatAgo, formatDate, pick, t } from '@/lib/i18n'
@@ -34,21 +30,12 @@ const session = useSession()
 const company = ref<ClientDetail | null>(null)
 const groups = ref<Group[] | null>(null)
 const loadError = ref<string | null>(null)
-const ownerOpen = ref(false)
-const ownerPick = ref('')
-const ownerBusy = ref(false)
 
 const companyId = computed(() => String(route.params.id))
 const canManage = computed(() => session.can('internal.clients.manage'))
-const canOwner = computed(() => session.can('internal.owner.change'))
 const members = computed(() => (company.value?.members ?? []).filter((member) => member.status !== 'removed'))
 const namesByMembership = computed(() => new Map(members.value.map((member) => [member.id, member.user.name])))
 const pending = computed(() => (company.value?.invitations ?? []).filter((invitation) => invitation.status === 'pending' && invitation.role_id !== null))
-const candidates = computed(() => members.value.filter((member) => member.status === 'active' && !member.is_owner))
-const ownerOptions = computed(() => candidates.value.map((candidate) => ({ value: candidate.id, label: `${candidate.user.name} (${candidate.user.email})` })))
-
-/** Mostra o erro num aviso. */
-const fail = (error: unknown) => toast.error(errorText(error instanceof ApiError ? error.code : 'unknown'))
 
 /** Carrega a Empresa e os grupos dela juntos. */
 async function load() {
@@ -75,28 +62,6 @@ async function removeImage() {
   await load()
 }
 
-/** Abre o diálogo para trocar o dono, já com o primeiro membro que pode assumir. */
-function openOwner() {
-  ownerPick.value = candidates.value[0]?.id ?? ''
-  ownerOpen.value = true
-}
-
-/** Passa a posse da Empresa para o membro escolhido. */
-async function changeOwner() {
-  if (!ownerPick.value) return
-  ownerBusy.value = true
-  try {
-    await clientService.changeOwner(companyId.value, ownerPick.value)
-    ownerOpen.value = false
-    toast.success(t('int.ownerChanged'))
-    await load()
-  } catch (error) {
-    fail(error)
-  } finally {
-    ownerBusy.value = false
-  }
-}
-
 /** Os nomes das pessoas do grupo, na ordem em que entraram. */
 function groupPeople(group: Group) {
   return group.members.map((member) => namesByMembership.value.get(member.membership_id) ?? t('int.none.dash'))
@@ -104,7 +69,7 @@ function groupPeople(group: Group) {
 </script>
 
 <template>
-  <PageHeader :title="company?.name ?? t('int.company')" :sub="company ? company.slug : undefined">
+  <PageHeader :title="company?.company?.name ?? company?.name ?? t('int.company')" :sub="company?.company?.slug">
     <template #back>
       <RouterLink to="/interno/empresas" class="mb-3 inline-flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-foreground">
         <ArrowLeft class="size-4" />{{ t('int.companies') }}
@@ -123,10 +88,6 @@ function groupPeople(group: Group) {
           <div class="text-[13px] text-muted-foreground">{{ company.owner.email }}</div>
         </template>
         <p v-else class="text-[14px] text-muted-foreground">{{ t('int.noOwner') }}</p>
-        <template v-if="canOwner && company.owner && !candidates.length" #note>{{ t('int.noOtherMembers') }}</template>
-        <template v-if="canOwner && company.owner" #footer>
-          <Button variant="outline" :disabled="!candidates.length" @click="openOwner">{{ t('int.changeOwner') }}</Button>
-        </template>
       </Card>
 
       <CompanyImageCard :name="company.name" :image-url="company.image_url" staff :readonly="!canManage" :save="saveImage" :remove="removeImage" />
@@ -144,7 +105,7 @@ function groupPeople(group: Group) {
         </ul>
       </Card>
 
-      <ClientNetworksCard :client-id="company.id" :client-name="company.name" />
+      <ClientNetworksCard v-if="company.company" :client-id="company.company.id" :client-name="company.company.name" />
 
       <div class="grid gap-3 lg:col-span-2">
         <h2 class="text-[13px] font-medium text-muted-foreground">{{ t('int.members') }}</h2>
@@ -164,7 +125,7 @@ function groupPeople(group: Group) {
                 <div class="text-[13px] text-muted-foreground">{{ member.user.email }}</div>
               </td>
               <td :class="td">
-                <Badge v-if="member.is_owner">{{ t('int.owner') }}</Badge>
+                <Badge v-if="member.is_owner">{{ t('team.owner') }}</Badge>
                 <template v-else>{{ pick(member.role?.name) }}</template>
               </td>
               <td :class="td">
@@ -194,14 +155,4 @@ function groupPeople(group: Group) {
       </Card>
     </template>
   </PageBody>
-
-  <Dialog v-model:open="ownerOpen" :title="t('int.changeOwner')" :desc="t('int.ownerDesc')">
-    <Field id="owner-pick" :label="t('int.owner')">
-      <Select id="owner-pick" v-model="ownerPick" :options="ownerOptions" />
-    </Field>
-    <template #footer>
-      <Button variant="outline" @click="ownerOpen = false">{{ t('common.cancel') }}</Button>
-      <Button :loading="ownerBusy" :disabled="!ownerPick" @click="changeOwner">{{ t('int.changeOwner') }}</Button>
-    </template>
-  </Dialog>
 </template>

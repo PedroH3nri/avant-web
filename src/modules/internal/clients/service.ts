@@ -4,7 +4,7 @@ import { api, type Query } from '@/lib/api'
 import type { Items, Page } from '@/lib/types'
 import type { Group } from '@/modules/groups/types'
 import type { ClientDocument, ClientDocumentsOverview, DocumentKind } from '@/modules/documents/types'
-import type { AuditEntry, Client, ClientDetail, ClientNote, ClientOption, ManagerChange, OwnerInvitation } from '@/modules/internal/clients/types'
+import type { AuditEntry, Client, ClientDetail, ClientNote, ClientOption, ManagerChange, OwnerInvitation, ReservedNetwork } from '@/modules/internal/clients/types'
 
 /** Serviço dos clientes, das equipes deles e dos convites de dono. */
 export const clientService = {
@@ -26,12 +26,14 @@ export const clientService = {
   removeImage: (companyId: string) => api.delete<Client>(`/internal/clients/${companyId}/image`),
   /** Troca a situação do cliente. */
   setStatus: (companyId: string, status: string) => api.put(`/internal/clients/${companyId}/status`, { status }),
-  /** Passa a posse para outro membro. */
-  changeOwner: (companyId: string, membershipId: string) => api.post(`/internal/clients/${companyId}/owner`, { membership_id: membershipId }),
   /** Uma página numerada da auditoria do cliente, a mais nova primeiro. */
   audit: (companyId: string, query?: Query) => api.get<Page<AuditEntry>>(`/internal/clients/${companyId}/audit`, query),
   /** Os grupos que uma Empresa cliente cadastrou, com as pessoas de cada um. */
   groups: (companyId: string) => api.get<Items<Group>>(`/internal/clients/${companyId}/groups`),
+  /** Guarda um network code no cliente que ainda não criou a Empresa. */
+  reserveNetwork: (clientId: string, networkCode: string) => api.post<ReservedNetwork>('/internal/networks/reserved', { client_id: clientId, network_code: networkCode }),
+  /** Tira o network code guardado no cliente. */
+  unreserveNetwork: (reservedId: string) => api.delete(`/internal/networks/reserved/${reservedId}`),
   /** Envia o convite de dono. */
   inviteOwner: (companyId: string) => api.post<OwnerInvitation>(`/internal/clients/${companyId}/owner-invitation`),
   /** Uma página dos convites de dono pendentes e vencidos. */

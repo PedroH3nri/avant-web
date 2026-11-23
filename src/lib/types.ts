@@ -55,6 +55,8 @@ export interface Me {
   is_staff: boolean
   mfa_enabled: boolean
   mfa_setup_required: boolean
+  /** A conta do cliente (papel Publisher) que ainda não criou a Empresa dela. */
+  can_create_company: boolean
   display_currency: string
   /** Tema e cor que a pessoa escolheu; valem em todas as Empresas. */
   theme: Theme

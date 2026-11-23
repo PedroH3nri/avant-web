@@ -53,6 +53,9 @@ function firstPage() {
 const searchCompanies = useDebounceFn(firstPage, SEARCH_DELAY_MS)
 watch(searchText, () => void searchCompanies())
 watch(page, load)
+
+/** A página da Empresa, ou a do cliente enquanto ele não criou a Empresa. */
+const rowLink = (row: Client) => (row.company ? `/interno/empresas/${row.company.id}` : `/interno/clientes/${row.id}`)
 </script>
 
 <template>
@@ -77,9 +80,12 @@ watch(page, load)
         <TableState :cols="5" :loading="!companies" :empty="companies?.length === 0" :icon="Building" :title="t('int.companiesNone')" />
         <tr v-for="company in companies ?? []" :key="company.id">
           <td :class="td">
-            <RouterLink :to="`/interno/empresas/${company.id}`" class="flex items-center gap-3 font-medium hover:underline">
-              <CompanyIcon :name="company.name" :image-url="company.image_url" :size="28" />
-              {{ company.name }}
+            <RouterLink :to="rowLink(company)" class="flex items-center gap-3 font-medium hover:underline">
+              <CompanyIcon :name="company.company?.name ?? company.name" :image-url="company.image_url" :size="28" />
+              <span>
+                {{ company.company?.name ?? company.name }}
+                <span v-if="!company.company" class="block text-[13px] font-normal text-muted-foreground">{{ t('int.noCompany') }}</span>
+              </span>
             </RouterLink>
           </td>
           <td :class="td">
@@ -93,7 +99,7 @@ watch(page, load)
           <td :class="td">
             <Status :tone="STATUS_TONE[company.status]">{{ t(`int.status.${company.status}`) }}</Status>
           </td>
-          <td :class="[td, 'text-right']"><OpenLink :to="`/interno/empresas/${company.id}`" :name="company.name" /></td>
+          <td :class="[td, 'text-right']"><OpenLink :to="rowLink(company)" :name="company.company?.name ?? company.name" /></td>
         </tr>
       </tbody>
     </DataTable>

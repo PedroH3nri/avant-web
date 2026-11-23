@@ -136,6 +136,13 @@ export const useSession = defineStore('session', () => {
     announceCompany(me.value?.active_company_id ?? null)
   }
 
+  /** A conta do cliente cria a Empresa dela e a sessão já entra nela, nesta aba e nas outras. */
+  async function createCompany(name: string) {
+    set(await authService.createCompany(name))
+    reconnectEvents()
+    announceCompany(me.value?.active_company_id ?? null)
+  }
+
   /** Aceita o convite já logado: a sessão entra na Empresa nova e as outras abas acompanham. */
   async function acceptInvitation(token: string, body: Record<string, unknown>) {
     set(await authService.acceptInvitation(token, body))
@@ -148,5 +155,5 @@ export const useSession = defineStore('session', () => {
     reconnectEvents()
   }
 
-  return { me, loaded, company, internalCompany, clientCompanies, displayCurrency, can, canIn, set, load, login, verifyMfa, logout, switchCompany, followOtherTab, acceptInvitation, setDisplayCurrency, setAppearance, setUser }
+  return { me, loaded, company, internalCompany, clientCompanies, displayCurrency, can, canIn, set, load, login, verifyMfa, logout, switchCompany, createCompany, followOtherTab, acceptInvitation, setDisplayCurrency, setAppearance, setUser }
 })
