@@ -2,7 +2,7 @@
 
 import { api, type Query } from '@/lib/api'
 import type { Page } from '@/lib/types'
-import type { ClientNetwork, ClientNetworkDetail, ClientSite } from '@/modules/internal/inventory/types'
+import type { ClientNetwork, ClientNetworkDetail, ClientSite, ClientSiteDetail } from '@/modules/internal/inventory/types'
 import type { NetworkSummary, SyncRun } from '@/modules/networks/types'
 
 /** Serviço das networks e dos sites dos clientes. */
@@ -21,4 +21,6 @@ export const clientInventoryService = {
   reject: (networkId: string) => api.post<void>(`/internal/networks/${networkId}/reject`),
   /** Uma página dos sites dos clientes, o mais recente primeiro, com busca pelo domínio. */
   sites: (query?: Query) => api.get<Page<ClientSite>>('/internal/sites', query),
+  /** Um site de cliente com a network, os ad units ativos, o contrato ativo e o faturamento. */
+  site: (siteId: string) => api.get<ClientSiteDetail>(`/internal/sites/${siteId}`),
 }

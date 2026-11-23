@@ -1,13 +1,13 @@
 import { beforeAll, describe, expect, it } from 'vitest'
 import { lang } from '@/lib/i18n'
-import { evidenceText, languageName, monthName, parseWords, previousMonth, progressPercent, rowState, splitRows } from '@/modules/internal/checklists/rules'
+import { evidenceText, languageName, monthName, overrideModes, parseWords, previousMonth, progressPercent, rowState, splitRows } from '@/modules/internal/checklists/rules'
 import type { ChecklistItem, ChecklistRow } from '@/modules/internal/checklists/types'
 
 const item: ChecklistItem = { id: 'cookies', name: 'Políticas de cookies', kind: 'link', words: ['cookies'], position: 1, active: true, created_at: '2026-11-01T00:00:00Z' }
 
 /** Uma linha do checklist com os campos dados. */
 function row(fields: Partial<ChecklistRow>): ChecklistRow {
-  return { item, outcome: null, evidence: null, detail: null, checked_at: null, marked_by: null, marked_at: null, ok: false, ...fields }
+  return { item, outcome: null, evidence: null, detail: null, checked_at: null, marked_by: null, marked_at: null, ok: false, override: null, counted: true, ...fields }
 }
 
 describe('checklist de domínio', () => {
@@ -19,10 +19,17 @@ describe('checklist de domínio', () => {
     expect(rowState(row({}))).toBe('pending')
   })
 
+  it('deixa de fora da revisão o item que não se aplica no site', () => {
+    const skipped = row({ outcome: 'failed', counted: false, override: { item_id: 'cookies', mode: 'skip', words: [], path: null, updated_at: '2026-11-02T10:00:00Z' } })
+    expect(splitRows([skipped])).toEqual({ review: [], fine: [], skipped: [skipped] })
+    expect(overrideModes('manual')).toEqual(['skip'])
+    expect(overrideModes('link')).toEqual(['words', 'url', 'manual', 'skip'])
+  })
+
   it('separa o que revisar do que está ok', () => {
     const failed = row({ outcome: 'failed' })
     const fine = row({ outcome: 'ok', ok: true })
-    expect(splitRows([failed, fine])).toEqual({ review: [failed], fine: [fine] })
+    expect(splitRows([failed, fine])).toEqual({ review: [failed], fine: [fine], skipped: [] })
   })
 
   it('traduz a prova e explica o tipo sem conferência', () => {

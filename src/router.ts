@@ -110,6 +110,7 @@ const routes: RouteRecordRaw[] = [
       { path: 'interno/networks', component: () => import('@/modules/internal/inventory/views/ClientNetworksView.vue'), meta: { internal: true, permission: 'internal.clients.view' } },
       { path: 'interno/networks/:id', component: () => import('@/modules/internal/inventory/views/ClientNetworkView.vue'), meta: { internal: true, permission: 'internal.clients.view' } },
       { path: 'interno/sites', component: () => import('@/modules/internal/inventory/views/ClientSitesView.vue'), meta: { internal: true, permission: 'internal.clients.view' } },
+      { path: 'interno/sites/:id', component: () => import('@/modules/internal/inventory/views/ClientSiteView.vue'), meta: { internal: true, permission: 'internal.clients.view' } },
       { path: 'interno/facebook', component: () => import('@/modules/facebook/views/FacebookView.vue'), meta: { internal: true, permission: 'internal.facebook.view' } },
       { path: 'interno/campanhas-facebook', component: () => import('@/modules/facebook/views/FacebookCampaignsView.vue'), meta: { internal: true, permission: 'internal.facebook.view' } },
       { path: 'interno/campanhas-facebook/:id', component: () => import('@/modules/facebook/views/FacebookObjectView.vue'), meta: { internal: true, permission: 'internal.facebook.view' } },

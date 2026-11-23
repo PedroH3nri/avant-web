@@ -43,6 +43,7 @@ const SCREENS = [
   ['configuracoes', 'Configurações'],
   ['interno', 'Painel interno · Clientes'],
   ['cliente', 'Painel interno · Página do cliente'],
+  ['siteinterno', 'Painel interno · Detalhes do site'],
   ['fiscais', 'Configurações · Dados fiscais'],
   ['contratos', 'Painel interno · Contratos'],
   ['resultados', 'Painel interno · Resultado dos clientes'],
@@ -122,7 +123,7 @@ const SCREENS = [
   ['gadsanunciointerno', 'Painel interno · Anúncio do Google Ads'],
 ] as const
 type Screen = (typeof SCREENS)[number][0]
-const INTERNAL_SCREENS: Screen[] = ['gadsinterno', 'gadscampanhasinterno', 'gadscampanhainterno', 'gadsgrupointerno', 'gadsanunciointerno', 'fbinterno', 'fbcampanhasinterno', 'fbcampanhainterno', 'fbconjuntointerno', 'fbanunciointerno', 'interno', 'cliente', 'contratos', 'resultados', 'papelcomissao', 'minhacomissao', 'comissoes', 'minhasinvoices', 'invoice', 'invoices', 'servicosinvoice', 'modelosdash', 'tarefas', 'tarefa', 'checklists', 'checklist', 'checklistitens', 'ferramentasgam', 'execucaogam', 'rewardsinterno', 'rewardinterno', 'rewardmetricasinterno', 'adtagsinterno', 'adtaginterno', 'adtagmetricasinterno', 'loadersinterno', 'loaderinterno', 'regrasprecointerno', 'regrasiteinterno', 'regrainterno', 'cascatainterno']
+const INTERNAL_SCREENS: Screen[] = ['gadsinterno', 'gadscampanhasinterno', 'gadscampanhainterno', 'gadsgrupointerno', 'gadsanunciointerno', 'fbinterno', 'fbcampanhasinterno', 'fbcampanhainterno', 'fbconjuntointerno', 'fbanunciointerno', 'interno', 'cliente', 'siteinterno', 'contratos', 'resultados', 'papelcomissao', 'minhacomissao', 'comissoes', 'minhasinvoices', 'invoice', 'invoices', 'servicosinvoice', 'modelosdash', 'tarefas', 'tarefa', 'checklists', 'checklist', 'checklistitens', 'ferramentasgam', 'execucaogam', 'rewardsinterno', 'rewardinterno', 'rewardmetricasinterno', 'adtagsinterno', 'adtaginterno', 'adtagmetricasinterno', 'loadersinterno', 'loaderinterno', 'regrasprecointerno', 'regrasiteinterno', 'regrainterno', 'cascatainterno']
 const isScreen = (s: string): s is Screen => SCREENS.some(([k]) => k === s)
 type T = (k: Key) => string
 
@@ -419,7 +420,7 @@ const CLIENT_RAIL: RailGroup[] = [
   { key: 'empresa', label: 'Empresa', icon: Settings, items: [{ id: 'configuracoes', label: 'Configurações' }, { id: 'fiscais', label: 'Dados fiscais' }] },
 ]
 const INTERNAL_RAIL: RailGroup[] = [
-  { key: 'clientes', label: 'Inventário', icon: Users, items: [{ id: 'interno', label: 'Clientes', also: ['cliente'] }, { id: 'contratos', label: 'Contratos' }, { id: 'resultados', label: 'Resultado dos clientes' }, { id: 'checklists', label: 'Checklists', also: ['checklist', 'checklistitens'] }, { id: 'rewardsinterno', label: 'Rewards', also: ['rewardinterno', 'rewardmetricasinterno'] }, { id: 'adtagsinterno', label: 'Ad tags', also: ['adtaginterno', 'adtagmetricasinterno'] }, { id: 'loadersinterno', label: 'Loaders', also: ['loaderinterno'] }, { id: 'regrasprecointerno', label: 'Regras de preço', also: ['regrasiteinterno', 'regrainterno', 'cascatainterno'] }] },
+  { key: 'clientes', label: 'Inventário', icon: Users, items: [{ id: 'interno', label: 'Clientes', also: ['cliente', 'siteinterno'] }, { id: 'contratos', label: 'Contratos' }, { id: 'resultados', label: 'Resultado dos clientes' }, { id: 'checklists', label: 'Checklists', also: ['checklist', 'checklistitens'] }, { id: 'rewardsinterno', label: 'Rewards', also: ['rewardinterno', 'rewardmetricasinterno'] }, { id: 'adtagsinterno', label: 'Ad tags', also: ['adtaginterno', 'adtagmetricasinterno'] }, { id: 'loadersinterno', label: 'Loaders', also: ['loaderinterno'] }, { id: 'regrasprecointerno', label: 'Regras de preço', also: ['regrasiteinterno', 'regrainterno', 'cascatainterno'] }] },
   { key: 'integracoes', label: 'Integrações', icon: Plug, items: [{ id: 'fbinterno', label: 'Facebook' }, { id: 'fbcampanhasinterno', label: 'Campanhas do Facebook', also: ['fbcampanhainterno', 'fbconjuntointerno', 'fbanunciointerno'] }, { id: 'gadsinterno', label: 'Google Ads' }, { id: 'gadscampanhasinterno', label: 'Campanhas do Google Ads', also: ['gadscampanhainterno', 'gadsgrupointerno', 'gadsanunciointerno'] }] },
   { key: 'comissoes', label: 'Comissões', icon: Wallet, items: [{ id: 'minhacomissao', label: 'Minha comissão' }, { id: 'minhasinvoices', label: 'Minhas invoices' }, { id: 'comissoes', label: 'Comissões da equipe' }, { id: 'invoices', label: 'Invoices', also: ['servicosinvoice', 'invoice'] }] },
   { key: 'ferramentas', label: 'Ferramentas', icon: Wrench, items: [{ id: 'tarefas', label: 'Tarefas', also: ['tarefa'] }, { id: 'modelosdash', label: 'Modelos de dashboard' }, { id: 'ferramentasgam', label: 'Ferramentas do GAM', also: ['execucaogam'] }] },
@@ -538,7 +539,7 @@ function Shell({ t, lang, setLang, screen, go, image, children }: { t: T; lang: 
 function PageHeader({ title, sub, actions, back }: { title: string; sub?: string; actions?: React.ReactNode; back?: React.ReactNode }) {
   return (
     <div className="border-b bg-background">
-      <div className="mx-auto flex max-w-[1200px] flex-wrap items-end justify-between gap-x-6 gap-y-4 px-4 py-10 sm:px-6">
+      <div className="mx-auto flex max-w-[1200px] min-[1600px]:max-w-[1440px] min-[1920px]:max-w-[1760px] min-[2560px]:max-w-[2160px] flex-wrap items-end justify-between gap-x-6 gap-y-4 px-4 py-10 sm:px-6">
         <div className="min-w-0 max-w-[64ch]">
           {back}
           <h1 className="text-[32px] font-semibold leading-tight tracking-[-0.04em]">{title}</h1>
@@ -550,7 +551,7 @@ function PageHeader({ title, sub, actions, back }: { title: string; sub?: string
   )
 }
 function Body({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <div className="flex-1 bg-muted"><div className={cn('mx-auto grid max-w-[1200px] content-start gap-6 px-4 py-8 sm:px-6 [&>*]:min-w-0', className)}>{children}</div></div>
+  return <div className="flex-1 bg-muted"><div className={cn('mx-auto grid max-w-[1200px] min-[1600px]:max-w-[1440px] min-[1920px]:max-w-[1760px] min-[2560px]:max-w-[2160px] content-start gap-6 px-4 py-8 sm:px-6 [&>*]:min-w-0', className)}>{children}</div></div>
 }
 
 /* ---------- Início ---------- */
@@ -1538,6 +1539,125 @@ function ClientNetworksCard() {
         </DialogContent>
       </Dialog>
     </Card>
+  )
+}
+
+/* Painel interno: um site de cliente com a situação (revshare e faturamento numa linha cada), o checklist do mês com os itens e os ad units ativos. */
+function ClientSiteScreen({ go }: { go: (s: Screen) => void }) {
+  const [custom, setCustom] = useState<string | null>(null)
+  const row = (label: string, value: React.ReactNode) => <div className="grid gap-1 py-2 sm:grid-cols-[160px_1fr]"><dt className="text-muted-foreground">{label}</dt><dd className="min-w-0">{value}</dd></div>
+  const units = [
+    { name: 'blogexemplo_topo', code: 'blogexemplo/topo', link: 'Automática', synced: 'há 2 h', depth: 0 },
+    { name: 'blogexemplo_meio', code: 'blogexemplo/meio', link: 'Automática', synced: 'há 2 h', depth: 0 },
+    { name: 'blogexemplo_meio_2', code: 'blogexemplo/meio/2', link: 'Automática', synced: 'há 2 h', depth: 1 },
+    { name: 'blogexemplo_rodape', code: 'blogexemplo/rodape', link: 'Manual', synced: 'há 2 h', depth: 0 },
+    { name: 'blogexemplo_reward', code: 'blogexemplo/reward', link: 'Automática', synced: 'há 2 h', depth: 0 },
+  ]
+  return (
+    <>
+      <PageHeader title="blogexemplo.com" sub="Blog Exemplo · network Blog Exemplo Principal"
+        back={<button onClick={() => go('interno')} className="mb-3 inline-flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4" />Sites</button>}
+        actions={<>
+          <Button variant="outline" onClick={() => go('regrasiteinterno')}><CircleDollarSign className="h-4 w-4" />Regras de preço</Button>
+          <Button variant="outline" onClick={() => go('networks')}><Network className="h-4 w-4" />Abrir network</Button>
+          <Button variant="outline" onClick={() => go('cliente')}><Users className="h-4 w-4" />Abrir cliente</Button>
+        </>}
+      />
+      <Body className="lg:grid-cols-2 min-[1920px]:grid-cols-3">
+        <Card title="Situação" className="self-start">
+          <dl className="-my-2 grid divide-y text-[14px]">
+            {row('Aprovação no Ad Manager', <Status tone="ok">Aprovado</Status>)}
+            {row('Status', <Status tone="ok">Ativo</Status>)}
+            {row('Cliente', <span className="flex items-center gap-2"><CompanyIcon name="Blog Exemplo" image={null} size={20} /><button className="hover:underline" onClick={() => go('cliente')}>Blog Exemplo</button></span>)}
+            {row('Network', <button className="hover:underline" onClick={() => go('networks')}>Blog Exemplo Principal <span className="text-muted-foreground">· 21987654321</span></button>)}
+            {row('Revshare da Groone', '15% · origem GAM, desde 01/09/2026')}
+            {row('Faturamento', <RevenueStatus data={{ trend: 'scaling', perDay: 1210, change: 41 }} />)}
+            {row('Categoria', 'Culinária')}
+            {row('Responsável', 'Ana Souza')}
+            {row('Última sincronização', <span className="tnum">23/11/2026 16:02</span>)}
+          </dl>
+        </Card>
+        <Card title="Checklist de novembro de 2026" className="min-[1920px]:col-span-2" footerNote="Conferido em 23/11/2026, 09:00" footer={<Button size="sm" variant="outline" onClick={() => go('checklist')}>Abrir checklist</Button>}>
+          <div className="grid gap-5">
+            <div className="grid gap-2">
+              <div className="flex items-baseline justify-between gap-2"><span className="text-[28px] font-semibold tracking-[-0.03em] tnum">7/10</span><Status tone="ochre">3 para revisar</Status></div>
+              <div className="flex h-2 gap-[3px]">{[1, 1, 0, 1, 1, 1, 0, 1, 1, 0].map((ok, index) => <span key={index} className={cn('h-full flex-1 rounded-[2px]', ok ? 'bg-primary' : 'bg-muted-foreground/15')} />)}</div>
+            </div>
+            <div className="grid gap-2">
+              <h3 className="text-[13px] font-medium text-muted-foreground">Para revisar</h3>
+              <ul className="divide-y rounded-md border">
+                {[['Aviso legal', 'Falhou', 'bad', 'Procura na página inicial um link com uma das palavras.'], ['Buscador', 'Não deu para conferir', 'ochre', 'Formulário de busca na página inicial.'], ['ads.txt', 'Falhou', 'bad', 'O ads.txt do site tem a linha da Groone (DIRECT).']].map(([name, state, tone, desc]) => (
+                  <li key={name} className="grid gap-2 px-3 py-2.5 sm:grid-cols-[1fr_auto] sm:items-center">
+                    <div><div className="flex flex-wrap items-center gap-3"><span className="text-[14px] font-medium">{name}</span><Status tone={tone as 'bad' | 'ochre'}>{state}</Status>{name === 'Buscador' && <Badge>Endereço do site: /busca</Badge>}</div><p className="mt-0.5 text-[13px] text-muted-foreground">{desc}</p></div>
+                    <div className="flex gap-2"><Button size="sm" variant="ghost" onClick={() => setCustom(name)}><Pencil className="h-4 w-4" />Personalizar</Button><Button size="sm" variant="outline" onClick={() => toast.success('Item marcado como ok')}><Check className="h-4 w-4" />Marcar ok</Button></div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="grid gap-2">
+              <h3 className="text-[13px] font-medium text-muted-foreground">Ok</h3>
+              <ul className="flex flex-wrap gap-2">{['Cookies', 'Privacidade', 'Contato', 'Sobre nós', 'Categorias', 'Autor', 'Data'].map((name) => <li key={name}><button onClick={() => setCustom(name)} className="inline-flex items-center gap-1.5 rounded-md border bg-background px-2.5 py-1 text-[13px] hover:bg-muted"><Check className="h-3.5 w-3.5 text-ok" />{name}{name === 'Cookies' && <span className="text-muted-foreground">· palavras do site</span>}</button></li>)}</ul>
+            </div>
+            <div className="grid gap-2">
+              <h3 className="text-[13px] font-medium text-muted-foreground">Não se aplica neste site</h3>
+              <ul className="flex flex-wrap gap-2"><li><button onClick={() => setCustom('Paginação')} className="inline-flex items-center gap-1.5 rounded-md border border-dashed px-2.5 py-1 text-[13px] text-muted-foreground hover:bg-muted">Paginação</button></li></ul>
+            </div>
+            <p className="text-[13px] text-muted-foreground">Clique num item para conferir de outro jeito só neste site. Os outros sites seguem o padrão de Checklists › Itens.</p>
+          </div>
+        </Card>
+        <section className="grid gap-3 lg:col-span-2 min-[1920px]:col-span-3">
+          <h2 className="text-[13px] font-medium text-muted-foreground">Ad units ativos</h2>
+          <Table min={640}>
+            <thead><tr><th className={th}>Ad unit</th><th className={th}>Código</th><th className={th}>Ligação ao site</th><th className={th}>Sincronizado</th></tr></thead>
+            <tbody>
+              {units.map((unit) => (
+                <tr key={unit.code} className="hover:bg-muted">
+                  <td className={cn(td, 'font-medium')}><span style={{ paddingLeft: unit.depth * 20 }}>{unit.name}</span></td>
+                  <td className={td}><Code>{unit.code}</Code></td>
+                  <td className={cn(td, 'text-muted-foreground')}>{unit.link}</td>
+                  <td className={cn(td, 'text-muted-foreground')}>{unit.synced}</td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        </section>
+      </Body>
+      <ItemOverrideDialog item={custom} close={() => setCustom(null)} />
+    </>
+  )
+}
+
+/* Janela para conferir um item de outro jeito só neste site: padrão, palavras próprias, endereço, manual ou não se aplica. */
+function ItemOverrideDialog({ item, close }: { item: string | null; close: () => void }) {
+  const isLink = item !== null && ['Cookies', 'Privacidade', 'Aviso legal', 'Contato', 'Sobre nós'].includes(item)
+  const [mode, setMode] = useState('default')
+  const [words, setWords] = useState('galletas, cookies')
+  const [path, setPath] = useState('/busca')
+  useEffect(() => { setMode(item === 'Buscador' ? 'url' : item === 'Cookies' ? 'words' : item === 'Paginação' ? 'skip' : 'default') }, [item])
+  const options = [
+    ['default', 'Padrão', isLink ? 'Como em todos os sites: procura um link com cookies, cookie ou galletas.' : 'Como em todos os sites.'],
+    ...(isLink ? [['words', 'Palavras próprias', 'Procura um link com as palavras deste site.']] : []),
+    ['url', 'Endereço que precisa abrir', 'O Avant abre o endereço no site; ok se a página responder.'],
+    ['manual', 'Manual', 'A equipe marca à mão neste site.'],
+    ['skip', 'Não se aplica', 'Sai da conta do checklist deste site.'],
+  ]
+  return (
+    <Dialog open={item !== null} onOpenChange={(open) => !open && close()}>
+      <DialogContent className="max-w-[520px]">
+        <DialogHeader><DialogTitle>Personalizar “{item}” em blogexemplo.com</DialogTitle><DialogDescription>Vale só para este site. Os outros continuam com o padrão.</DialogDescription></DialogHeader>
+        <RadioGroup value={mode} onValueChange={setMode} className="grid gap-2">
+          {options.map(([value, label, desc]) => (
+            <label key={value} htmlFor={`override-${value}`} className={cn('flex cursor-pointer gap-3 rounded-md border p-3', mode === value && 'border-foreground')}>
+              <RadioGroupItem id={`override-${value}`} value={value} className="mt-0.5" />
+              <span className="grid gap-0.5"><span className="text-[14px] font-medium">{label}</span><span className="text-[13px] text-muted-foreground">{desc}</span></span>
+            </label>
+          ))}
+        </RadioGroup>
+        {mode === 'words' && <Field id="override-words" label="Palavras" hint="Separadas por vírgula."><Input id="override-words" value={words} onChange={(e) => setWords(e.target.value)} /></Field>}
+        {mode === 'url' && <Field id="override-path" label="Endereço" hint="Do próprio site, como /fale-conosco."><Input id="override-path" value={path} onChange={(e) => setPath(e.target.value)} className="font-mono" /></Field>}
+        <DialogFooter><Button variant="outline" onClick={close}>Cancelar</Button><Button onClick={() => { close(); toast.success('Item personalizado', { description: 'A próxima conferência já usa a configuração do site.' }) }}>Salvar</Button></DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }
 
@@ -2834,7 +2954,7 @@ function ReportViewScreen({ report, customs, pinned, onPin, onBack, onEdit, onDu
   return (
     <>
       <div className="border-b bg-background">
-        <div className="mx-auto flex max-w-[1200px] flex-wrap items-end justify-between gap-x-6 gap-y-4 px-4 py-10 sm:px-6">
+        <div className="mx-auto flex max-w-[1200px] min-[1600px]:max-w-[1440px] min-[1920px]:max-w-[1760px] min-[2560px]:max-w-[2160px] flex-wrap items-end justify-between gap-x-6 gap-y-4 px-4 py-10 sm:px-6">
           <div className="min-w-0 max-w-[72ch]">
             <Button variant="ghost" size="sm" onClick={onBack} className="-ml-2.5 mb-3 text-muted-foreground"><ArrowLeft className="h-4 w-4" />Relatórios customizados</Button>
             <h1 className="text-[32px] font-semibold leading-tight tracking-[-0.04em]">{report.name}</h1>
@@ -6683,7 +6803,7 @@ function AdTagEditScreen({ initial, staff, back, save, metrics, loaders, editLoa
           </DropdownMenu>
         </>} />
       <div className="border-b bg-background">
-        <div className="mx-auto flex max-w-[1200px] flex-wrap items-center gap-x-6 gap-y-2 px-4 sm:px-6">
+        <div className="mx-auto flex max-w-[1200px] min-[1600px]:max-w-[1440px] min-[1920px]:max-w-[1760px] min-[2560px]:max-w-[2160px] flex-wrap items-center gap-x-6 gap-y-2 px-4 sm:px-6">
           <nav className="-mb-px flex max-w-full gap-1 overflow-x-auto" aria-label="Partes da ad tag">
             {([['blocks', 'Blocos'], ['integrations', 'Integrações'], ['versions', 'Versões']] as const).map(([id, label]) => (
               <button key={id} onClick={() => setTab(id)} className={cn('border-b-2 px-3 py-3 text-[14px]', tab === id ? 'border-foreground font-medium text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground')} aria-current={tab === id ? 'page' : undefined}>{label}</button>
@@ -10384,6 +10504,7 @@ export default function App() {
       case 'configuracoes': return <SettingsScreen t={t} accent={accent} setAccent={setAccent} theme={theme} setTheme={setTheme} image={image} setImage={setImage} groups={groups} />
       case 'interno': return <InternalScreen t={t} go={go} />
       case 'cliente': return <ClientScreen go={go} />
+      case 'siteinterno': return <ClientSiteScreen go={go} />
       case 'fiscais': return <FiscalScreen />
       case 'contratos': return <ContractsScreen />
       case 'resultados': return <ClientsResultScreen />
