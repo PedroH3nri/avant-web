@@ -1,6 +1,7 @@
 <script setup lang="ts">
 /** Ferramentas do GAM: as ações e as execuções sempre na tela; as ações ativam quando a network
  * do cliente é escolhida, e a tabela mostra as execuções de todas até a escolha. */
+import OpenLink from '@/components/OpenLink.vue'
 import { saveFile } from '@/lib/utils'
 import { computed, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
@@ -251,10 +252,11 @@ async function copyAds() {
               <th :class="th">{{ t('gamt.col.who') }}</th>
               <th :class="th">{{ t('gamt.col.when') }}</th>
               <th :class="th">{{ t('gamt.col.state') }}</th>
+              <th :class="[th, 'w-px']"><span class="sr-only">{{ t('common.open') }}</span></th>
             </tr>
           </thead>
           <tbody>
-            <TableState :cols="networkId ? 5 : 6" :loading="!runs" :empty="runs?.length === 0" :icon="Wrench" :title="networkId ? t('gamt.runsEmpty') : t('gamt.runsEmptyAll')" />
+            <TableState :cols="(networkId ? 5 : 6) + 1" :loading="!runs" :empty="runs?.length === 0" :icon="Wrench" :title="networkId ? t('gamt.runsEmpty') : t('gamt.runsEmptyAll')" />
             <tr v-for="item in runs ?? []" :key="item.id" class="hover:bg-muted">
               <td :class="td">
                 <RouterLink :to="`/interno/ferramentas-gam/execucoes/${item.id}`" class="font-medium hover:underline focus-visible:underline focus-visible:outline-none">{{ toolName(item.kind) }}</RouterLink>
@@ -268,6 +270,7 @@ async function copyAds() {
               <td :class="td">{{ item.requested_by?.name ?? '–' }}</td>
               <td :class="[td, 'whitespace-nowrap tnum text-[13px] text-muted-foreground']">{{ formatDate(item.created_at) }}</td>
               <td :class="td"><Status :tone="RUN_TONE[item.state]">{{ runStateLabel(item.state) }}</Status></td>
+              <td :class="[td, 'text-right']"><OpenLink :to="`/interno/ferramentas-gam/execucoes/${item.id}`" :name="toolName(item.kind)" /></td>
             </tr>
           </tbody>
         </DataTable>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 /** Lista de sites e de ad units sem site, com cadastro manual. */
+import OpenLink from '@/components/OpenLink.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useDebounceFn } from '@vueuse/core'
 import { useRouter } from 'vue-router'
@@ -293,11 +294,12 @@ const tab = (on: boolean) =>
             <th :class="th">{{ t('sites.col.responsible') }}</th>
             <th :class="[th, 'text-right']">{{ t('sites.col.units') }}</th>
             <th :class="th">{{ t('sites.col.synced') }}</th>
+            <th :class="[th, 'w-px']"><span class="sr-only">{{ t('common.open') }}</span></th>
           </tr>
         </thead>
         <tbody>
           <TableState
-            :cols="(networks.length ? 7 : 6) + (canManage ? 1 : 0)"
+            :cols="((networks.length ? 7 : 6) + (canManage ? 1 : 0)) + 1"
             :loading="!sites"
             :empty="!!sites && sites.length === 0"
             :icon="Globe"
@@ -333,6 +335,7 @@ const tab = (on: boolean) =>
             <td :class="[td, 'text-muted-foreground']" :title="site.synced_at ? formatDate(site.synced_at) : undefined">
               {{ site.synced_at ? formatAgo(site.synced_at) : '' }}
             </td>
+            <td :class="[td, 'text-right']"><OpenLink :to="`/sites/${site.id}`" :name="site.domain" /></td>
           </tr>
         </tbody>
       </DataTable>

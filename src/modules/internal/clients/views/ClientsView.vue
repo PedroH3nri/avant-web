@@ -1,6 +1,7 @@
 <script setup lang="ts">
 /** Painel interno: clientes com visões salvas (colunas, filtros e ordem), cadastro de cliente novo
  * (sem e-mail) e convites de dono pendentes. */
+import OpenLink from '@/components/OpenLink.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useDebounceFn } from '@vueuse/core'
 import { toast } from 'vue-sonner'
@@ -336,7 +337,7 @@ const referrerName = (client: Client) => (client.profile?.referred_by_company_id
             <th v-if="shown('employees')" :class="th">{{ t('int.employees') }}</th>
             <th v-if="shown('status')" :class="th">{{ t('int.situation') }}</th>
             <th v-if="shown('revenue')" :class="th">{{ t('int.column.revenue') }}</th>
-            <th :class="[th, 'w-16']"><span class="sr-only">{{ t('int.open') }}</span></th>
+            <th :class="[th, 'w-px']"><span class="sr-only">{{ t('common.open') }}</span></th>
           </tr>
         </thead>
         <tbody>
@@ -387,14 +388,7 @@ const referrerName = (client: Client) => (client.profile?.referred_by_company_id
               <Status :tone="STATUS_TONE[client.status]">{{ t(`int.status.${client.status}`) }}</Status>
             </td>
             <td v-if="shown('revenue')" :class="td"><RevenueStatusBadge :status="client.revenue_status" /></td>
-            <td :class="td">
-              <RouterLink
-                :to="`/interno/clientes/${client.id}`"
-                class="inline-flex h-8 items-center rounded-md px-3 text-[13px] font-medium hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                :aria-label="`${t('int.open')} ${client.name}`"
-                >{{ t('int.open') }}</RouterLink
-              >
-            </td>
+            <td :class="[td, 'text-right']"><OpenLink :to="`/interno/clientes/${client.id}`" :name="client.name" /></td>
           </tr>
         </tbody>
       </DataTable>

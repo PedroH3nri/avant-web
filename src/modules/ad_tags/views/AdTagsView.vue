@@ -1,5 +1,6 @@
 <script setup lang="ts">
 /** Lista das ad tags agrupadas por site: no painel do cliente as da Empresa, no interno as de todos os clientes. */
+import OpenLink from '@/components/OpenLink.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useDebounceFn } from '@vueuse/core'
@@ -202,7 +203,7 @@ function seenText(tag: AdTag): string {
           <td :class="[td, 'text-right']">
             <div class="flex justify-end gap-2">
               <Button v-if="tag.live" size="sm" variant="outline" @click="router.push(`${base}/${tag.id}/metricas`)"><BarChart3 />{{ t('at.metrics') }}</Button>
-              <Button size="sm" variant="outline" @click="router.push(`${base}/${tag.id}`)">{{ t('at.open') }}</Button>
+              <OpenLink :to="`${base}/${tag.id}`" :name="tag.name" />
             </div>
           </td>
         </tr>
