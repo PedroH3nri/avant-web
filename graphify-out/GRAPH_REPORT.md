@@ -69,7 +69,7 @@
 - PerformanceView.vue
 - FacebookObjectView.vue
 - clients/rules.ts
-- toNumber
+- PageViewsView.vue
 - avant-web
 - lib/types.ts
 - scripts
@@ -235,10 +235,10 @@
   docs/superpowers/plans/2026-10-28-construtor-de-relatorios.md → src/modules/reports/types.ts
 - `Task 3: Web — tipos, serviço e regras do construtor` --references--> `Visibility`  [INFERRED]
   docs/superpowers/plans/2026-10-28-construtor-de-relatorios.md → src/modules/reports/types.ts
-- `Task 3: Web — tipos, serviço e regras do construtor` --references--> `ReportDraft`  [INFERRED]
+- `Task 6: Web — construtor` --references--> `toInput()`  [INFERRED]
   docs/superpowers/plans/2026-10-28-construtor-de-relatorios.md → src/modules/reports/rules.ts
-- `Task 3: Web — tipos, serviço e regras do construtor` --references--> `ChartType`  [INFERRED]
-  docs/superpowers/plans/2026-10-28-construtor-de-relatorios.md → src/modules/reports/types.ts
+- `Task 4: Web — cores das séries e gráficos do construtor` --references--> `shortDay()`  [INFERRED]
+  docs/superpowers/plans/2026-10-28-construtor-de-relatorios.md → src/lib/metrics.ts
 
 ## Import Cycles
 - None detected.
@@ -338,8 +338,8 @@ Cohesion: 0.13
 Nodes (16): amount, amountError, busy, chosen, description, emit, open, options (+8 more)
 
 ### Community 23 - "SavedViewsBar.vue"
-Cohesion: 0.11
-Nodes (20): active, activeView, busy, canUpdate, choose(), dialogOpen, editing, emit (+12 more)
+Cohesion: 0.09
+Nodes (28): active, activeView, busy, canUpdate, choose(), dialogOpen, editing, emit (+20 more)
 
 ### Community 24 - "GoogleAdsView.vue"
 Cohesion: 0.04
@@ -366,8 +366,8 @@ Cohesion: 0.04
 Nodes (53): adding, busy, canceling, cancelInvite(), cancelOpen, canManage, canSearchPeople, clientNames (+45 more)
 
 ### Community 30 - "InvoiceView.vue"
-Cohesion: 0.07
-Nodes (27): invoiceActions(), invoicePdfUrl(), act(), actions, backTo, busy, Confirm, confirm (+19 more)
+Cohesion: 0.08
+Nodes (23): invoiceActions(), invoicePdfUrl(), actions, backTo, busy, Confirm, confirm, confirmOpen (+15 more)
 
 ### Community 31 - "FacebookAccountDialog.vue"
 Cohesion: 0.07
@@ -482,8 +482,8 @@ Cohesion: 0.50
 Nodes (3): plugins, rules, $schema
 
 ### Community 59 - "metricColor"
-Cohesion: 0.20
-Nodes (16): colorVar(), FALLBACK, METRIC_COLOR, metricColor(), metricColors(), dayLabel, dayOptions, chart (+8 more)
+Cohesion: 0.21
+Nodes (15): colorVar(), FALLBACK, METRIC_COLOR, metricColor(), dayLabel, dayOptions, chart, hourLabel() (+7 more)
 
 ### Community 61 - "AccountManagerCard.vue"
 Cohesion: 0.11
@@ -494,8 +494,8 @@ Cohesion: 0.06
 Nodes (38): busy, canManage, catalog, counts, duplicate(), empty, firstPage(), Layout (+30 more)
 
 ### Community 66 - "TaskView.vue"
-Cohesion: 0.10
-Nodes (24): commentRecipients(), personName(), taskPlace(), assigneeOptions, change(), changeAssignee(), changePriority(), changeStatus() (+16 more)
+Cohesion: 0.11
+Nodes (22): commentRecipients(), personName(), assigneeOptions, change(), changeAssignee(), changePriority(), changeStatus(), comment (+14 more)
 
 ### Community 67 - "SchedulesView.vue"
 Cohesion: 0.05
@@ -610,6 +610,10 @@ Cohesion: 0.20
 Nodes (9): Avant: grupos na Empresa e imagem da Empresa, Decisões do Pedro (26/10), Herança de comissão e meta, Imagem da Empresa, Issues, Modelo de dados, Regras, Resumo (+1 more)
 
 ### Community 95 - "table.ts"
+Cohesion: 0.05
+Nodes (49): Key, td, th, events, loadError, open, page, pages (+41 more)
+
+### Community 96 - "ClientNetworkView.vue"
 Cohesion: 0.06
 Nodes (38): dot, td, th, events, load(), loadError, open, page (+30 more)
 
@@ -778,8 +782,8 @@ Cohesion: 0.04
 Nodes (56): hourPoints(), moneyText(), priceRulePermission(), tierOptions(), canManage, ladderText(), maxOptions, minOptions (+48 more)
 
 ### Community 137 - "ConnectView.vue"
-Cohesion: 0.09
-Nodes (27): FIRST_POLL_MS, LONGEST_POLL_MS, nextPollDelay(), POLL_LIMIT_MS, valid, valid, validCode(), awaiting (+19 more)
+Cohesion: 0.10
+Nodes (23): FIRST_POLL_MS, LONGEST_POLL_MS, nextPollDelay(), POLL_LIMIT_MS, awaiting, busy, Check, checks (+15 more)
 
 ### Community 138 - "PriceRuleSiteView.vue"
 Cohesion: 0.05
@@ -826,8 +830,8 @@ Cohesion: 0.40
 Nodes (4): 19. Cliente e Empresa em dois cadastros, Migrations, O que ficou decidido, Painel
 
 ### Community 149 - "NewTaskDialog.vue"
-Cohesion: 0.11
-Nodes (21): assignee, client, clientOptions, create(), description, domain, emit, open (+13 more)
+Cohesion: 0.12
+Nodes (16): assignee, client, clientOptions, create(), description, domain, emit, open (+8 more)
 
 ### Community 150 - "alerts/types.ts"
 Cohesion: 0.33
@@ -942,8 +946,8 @@ Cohesion: 0.20
 Nodes (8): choices, emit, invalid, name, open, props, roleIds, visibility
 
 ### Community 179 - "GoogleAdsHistoryPanel.vue"
-Cohesion: 0.17
-Nodes (12): changes, load(), loadError, origin, originOptions, page, pages, props (+4 more)
+Cohesion: 0.15
+Nodes (13): changes, load(), loadError, origin, originOptions, page, pages, props (+5 more)
 
 ### Community 180 - "overrides"
 Cohesion: 0.50
@@ -994,8 +998,8 @@ Cohesion: 0.08
 Nodes (28): errorText(), fill(), busy, complete, documentLabel, form, load(), loaded (+20 more)
 
 ### Community 194 - "tasks/types.ts"
-Cohesion: 0.15
-Nodes (15): taskService, SupportTask, SupportTaskDetail, TaskEvent, TaskEventKind, TaskFilters, TaskInput, TaskPatch (+7 more)
+Cohesion: 0.46
+Nodes (6): SupportTask, SupportTaskDetail, TaskFilters, TaskInput, TaskPatch, TaskScope
 
 ### Community 197 - "Button.vue"
 Cohesion: 0.13
