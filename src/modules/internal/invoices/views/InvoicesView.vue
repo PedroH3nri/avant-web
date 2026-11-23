@@ -1,6 +1,7 @@
 <script setup lang="ts">
 /** Invoices da equipe Groone, com filtros e visões salvas, para o financeiro devolver ou confirmar o
  * pagamento. */
+import OpenLink from '@/components/OpenLink.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import LoadError from '@/components/LoadError.vue'
@@ -145,10 +146,11 @@ const monthName = (iso: string) => new Intl.DateTimeFormat(locale.value, { month
             <th v-if="shown('status')" :class="th">{{ t('inv.col.status') }}</th>
             <th v-if="shown('issued_at')" :class="th">{{ t('inv.col.issued') }}</th>
             <th v-if="shown('paid_at')" :class="th">{{ t('inv.col.paid') }}</th>
+            <th :class="[th, 'w-px']"><span class="sr-only">{{ t('common.open') }}</span></th>
           </tr>
         </thead>
         <tbody>
-          <TableState :cols="columns.length" :empty="invoices.length === 0" :desc="t('inv.team.empty')" />
+          <TableState :cols="(columns.length) + 1" :empty="invoices.length === 0" :desc="t('inv.team.empty')" />
           <tr v-for="invoice in invoices" :key="invoice.id" class="hover:bg-muted">
             <td v-if="shown('number')" :class="td">
               <RouterLink :to="`/interno/invoices/${invoice.id}`" class="font-mono text-[13px] font-medium hover:underline focus-visible:underline focus-visible:outline-none">{{ invoice.number }}</RouterLink>
@@ -164,6 +166,7 @@ const monthName = (iso: string) => new Intl.DateTimeFormat(locale.value, { month
             </td>
             <td v-if="shown('issued_at')" :class="[td, 'tnum text-muted-foreground']">{{ invoice.issued_at ? formatDate(invoice.issued_at, false) : '–' }}</td>
             <td v-if="shown('paid_at')" :class="[td, 'tnum text-muted-foreground']">{{ invoice.paid_at ? formatDate(invoice.paid_at, false) : '–' }}</td>
+            <td :class="[td, 'text-right']"><OpenLink :to="`/interno/invoices/${invoice.id}`" :name="invoice.number" /></td>
           </tr>
         </tbody>
       </DataTable>

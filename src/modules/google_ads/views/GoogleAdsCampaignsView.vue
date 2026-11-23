@@ -1,5 +1,6 @@
 <script setup lang="ts">
 /** Campanhas, grupos e anúncios do Google Ads com gasto, receita, lucro e ROI do período; no interno, de todos os clientes. */
+import OpenLink from '@/components/OpenLink.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useDebounceFn } from '@vueuse/core'
@@ -173,7 +174,7 @@ watch([level, parent, accountId, companyId, days, withIssues], refilter)
           <td :class="[td, 'text-right tnum', Number(item.totals.profit) < 0 ? 'text-bad' : '']">{{ formatMoney(item.totals.profit, item.account.currency, locale) }}</td>
           <td :class="[td, 'text-right tnum']">{{ formatRatio(item.totals.roi, locale) }}</td>
           <td :class="[td, 'text-right']">
-            <button type="button" class="text-[13px] text-link hover:underline" @click="details(item)">{{ t('gads.details') }}</button>
+            <OpenLink :to="{ path: objectPath(internal, item), query: { dias: days } }" :name="item.name" />
           </td>
         </tr>
       </tbody>

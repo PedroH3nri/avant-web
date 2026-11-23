@@ -1,5 +1,6 @@
 <script setup lang="ts">
 /** Minhas invoices: os meses prontos para virar invoice, a lista das minhas e os dados de recebimento. */
+import OpenLink from '@/components/OpenLink.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
@@ -130,10 +131,11 @@ async function create() {
             <th :class="th">{{ t('inv.col.status') }}</th>
             <th :class="th">{{ t('inv.col.created') }}</th>
             <th :class="th">{{ t('inv.col.paid') }}</th>
+            <th :class="[th, 'w-px']"><span class="sr-only">{{ t('common.open') }}</span></th>
           </tr>
         </thead>
         <tbody>
-          <TableState :cols="6" :empty="invoices.length === 0" :desc="t('inv.mine.empty')" />
+          <TableState :cols="7" :empty="invoices.length === 0" :desc="t('inv.mine.empty')" />
           <tr v-for="invoice in invoices" :key="invoice.id" class="hover:bg-muted">
             <td :class="td">
               <RouterLink :to="`/interno/invoices/${invoice.id}`" class="font-mono text-[13px] font-medium hover:underline focus-visible:underline focus-visible:outline-none">{{ invoice.number }}</RouterLink>
@@ -146,6 +148,7 @@ async function create() {
             </td>
             <td :class="[td, 'tnum text-muted-foreground']">{{ formatDate(invoice.created_at, false) }}</td>
             <td :class="[td, 'tnum text-muted-foreground']">{{ invoice.paid_at ? formatDate(invoice.paid_at, false) : '–' }}</td>
+            <td :class="[td, 'text-right']"><OpenLink :to="`/interno/invoices/${invoice.id}`" :name="invoice.number" /></td>
           </tr>
         </tbody>
       </DataTable>

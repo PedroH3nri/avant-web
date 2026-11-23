@@ -1,5 +1,6 @@
 <script setup lang="ts">
 /** Lista dos rewards: no painel do cliente os da Empresa, no interno os de todos os clientes (com a coluna Cliente). */
+import OpenLink from '@/components/OpenLink.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useDebounceFn } from '@vueuse/core'
@@ -156,7 +157,10 @@ function state(reward: Reward): { tone: 'ok' | 'neutral' | 'bad'; label: string 
           <td :class="[td, 'text-right tnum']">{{ t('rw.minutes', { n: reward.cooldown_minutes }) }}</td>
           <td :class="[td, 'whitespace-nowrap text-[13px] text-muted-foreground tnum']">{{ formatDate(reward.deleted_at ?? reward.updated_at) }}</td>
           <td :class="[td, 'text-right']">
-            <Button size="sm" variant="outline" @click="router.push(`${base}/${reward.id}/metricas`)"><BarChart3 />{{ t('rw.metrics') }}</Button>
+            <div class="flex justify-end gap-2">
+              <Button size="sm" variant="outline" @click="router.push(`${base}/${reward.id}/metricas`)"><BarChart3 />{{ t('rw.metrics') }}</Button>
+              <OpenLink v-if="!reward.deleted_at" :to="`${base}/${reward.id}`" :name="reward.name" />
+            </div>
           </td>
         </tr>
       </tbody>

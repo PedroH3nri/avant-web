@@ -1,5 +1,6 @@
 <script setup lang="ts">
 /** Equipe › Grupos: os grupos da Empresa com as pessoas e a situação de cada um. */
+import OpenLink from '@/components/OpenLink.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
@@ -140,7 +141,7 @@ const openTab = (tab: 'members' | 'pending') => router.push(tab === 'pending' ? 
               <Status :tone="group.status === 'active' ? 'ok' : 'neutral'">{{ t(group.status === 'active' ? 'groups.active' : 'groups.inactive') }}</Status>
             </td>
             <td :class="td">
-              <Button variant="ghost" size="sm" @click="router.push(`/equipe/grupos/${group.id}`)">{{ t('groups.open') }}</Button>
+              <OpenLink :to="`/equipe/grupos/${group.id}`" :name="group.name" />
             </td>
           </tr>
         </tbody>
