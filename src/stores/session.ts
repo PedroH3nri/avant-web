@@ -25,8 +25,6 @@ export const useSession = defineStore('session', () => {
   // A API só devolve as permissões da Empresa ativa. Guardamos as de cada Empresa por onde a
   // pessoa passou, para o menu lateral não mudar quando ela troca de Empresa.
   const knownPermissions = ref<Record<string, string[]>>({})
-  /** A última Empresa cliente ativa: o menu volta para ela a partir do painel interno. */
-  const lastClientId = ref<string | null>(null)
 
   /** Mesma regra do avant-core: ``*`` cobre tudo e ``team.*`` cobre ``team.invite``. */
   function grants(granted: Iterable<string>, wanted: string): boolean {
@@ -55,10 +53,8 @@ export const useSession = defineStore('session', () => {
     loaded.value = true
     if (value === null) {
       knownPermissions.value = {}
-      lastClientId.value = null
     } else if (value.active_company_id) {
       knownPermissions.value = { ...knownPermissions.value, [value.active_company_id]: value.permissions }
-      if (!company.value?.is_internal) lastClientId.value = value.active_company_id
     }
     applyAccent(value?.accent)
     if (value) {
@@ -152,5 +148,5 @@ export const useSession = defineStore('session', () => {
     reconnectEvents()
   }
 
-  return { me, loaded, company, internalCompany, clientCompanies, lastClientId, displayCurrency, can, canIn, set, load, login, verifyMfa, logout, switchCompany, followOtherTab, acceptInvitation, setDisplayCurrency, setAppearance, setUser }
+  return { me, loaded, company, internalCompany, clientCompanies, displayCurrency, can, canIn, set, load, login, verifyMfa, logout, switchCompany, followOtherTab, acceptInvitation, setDisplayCurrency, setAppearance, setUser }
 })

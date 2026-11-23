@@ -18,6 +18,8 @@ const props = defineProps<{
   catalog: MetricCatalog
   /** Num bloco pequeno do dashboard: o KPI sem o rótulo (o bloco já tem título) e mais baixo. */
   compact?: boolean
+  /** Altura que o gráfico de linha ou de colunas deve ocupar (o bloco do dashboard). */
+  fillHeight?: number
 }>()
 
 const metrics = computed(() => {
@@ -103,8 +105,8 @@ const firstFormat = computed(() => formatter(first.value?.key ?? ''))
   </div>
   <FunnelChart v-else-if="draft.chart === 'funnel'" :steps="funnel" :format="(step) => formatter(step.key)(step.value)" :description="description" />
   <PieChart v-else-if="draft.chart === 'pie'" :items="items" :format="(value) => firstFormat(value)" :description="description" :color="first?.color" />
-  <GroupedBarChart v-else-if="draft.chart === 'bar' && layout.split" :labels="lines.labels" :series="lines.series" :format="firstFormat" :description="description" />
+  <GroupedBarChart v-else-if="draft.chart === 'bar' && layout.split" :labels="lines.labels" :series="lines.series" :format="firstFormat" :description="description" :fill-height="fillHeight" />
   <BarChart v-else-if="draft.chart === 'bar'" :items="items" :format="(value) => firstFormat(value)" :description="description" :color="first?.color" />
-  <LineChart v-else-if="draft.chart === 'line' || draft.chart === 'area'" :labels="lines.labels" :series="lines.series" :format="firstFormat" :description="description" :area="draft.chart === 'area'" />
+  <LineChart v-else-if="draft.chart === 'line' || draft.chart === 'area'" :labels="lines.labels" :series="lines.series" :format="firstFormat" :description="description" :area="draft.chart === 'area'" :fill-height="fillHeight" />
   <p v-if="lines.hidden > 0 && layout.split" class="mt-2 text-[13px] text-muted-foreground">{{ t('report.hiddenSeries', { shown: lines.series.length, total: lines.series.length + lines.hidden }) }}</p>
 </template>
