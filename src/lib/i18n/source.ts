@@ -2050,9 +2050,14 @@ export const dict = {
     'Plazas',
   ],
   'int.seatsDesc': [
-    'As vagas contam pessoas e convites pendentes, com o dono.',
-    'Seats count people and pending invites, including the owner.',
-    'Las plazas cuentan personas e invitaciones pendientes, con el dueño.',
+    'O limite de pessoas da Empresa deste cliente. Conta pessoas e convites pendentes, com o dono.',
+    "The people limit of this client's company. Counts people and pending invites, including the owner.",
+    'El límite de personas de la empresa de este cliente. Cuenta personas e invitaciones pendientes, con el dueño.',
+  ],
+  'int.companySeatsDesc': [
+    'Pessoas e convites pendentes, com o dono. O limite se muda no cliente.',
+    'People and pending invites, including the owner. The limit is changed on the client.',
+    'Personas e invitaciones pendientes, con el dueño. El límite se cambia en el cliente.',
   ],
   'int.situation': [
     'Situação',
@@ -2537,6 +2542,7 @@ export const dict = {
   'int.company': ['Empresa', 'Company', 'Empresa'],
   'int.seatsColumn': ['Vagas', 'Seats', 'Plazas'],
   'int.openClient': ['Abrir cliente', 'Open client', 'Abrir cliente'],
+  'int.openCompany': ['Abrir Empresa', 'Open company', 'Abrir empresa'],
   'int.companyGroups': ['Grupos', 'Groups', 'Grupos'],
   'int.companyGroupsDesc': [
     'Os grupos que a Empresa cadastrou em Equipe › Grupos. Só o cliente cria e muda.',
