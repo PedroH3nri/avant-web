@@ -1544,6 +1544,7 @@ function ClientNetworksCard() {
 
 /* Painel interno: um site de cliente com a situação (revshare e faturamento numa linha cada), o checklist do mês com os itens e os ad units ativos. */
 function ClientSiteScreen({ go }: { go: (s: Screen) => void }) {
+  const [custom, setCustom] = useState<string | null>(null)
   const row = (label: string, value: React.ReactNode) => <div className="grid gap-1 py-2 sm:grid-cols-[160px_1fr]"><dt className="text-muted-foreground">{label}</dt><dd className="min-w-0">{value}</dd></div>
   const units = [
     { name: 'blogexemplo_topo', code: 'blogexemplo/topo', link: 'Automática', synced: 'há 2 h', depth: 0 },
@@ -1587,16 +1588,21 @@ function ClientSiteScreen({ go }: { go: (s: Screen) => void }) {
               <ul className="divide-y rounded-md border">
                 {[['Aviso legal', 'Falhou', 'bad', 'Procura na página inicial um link com uma das palavras.'], ['Buscador', 'Não deu para conferir', 'ochre', 'Formulário de busca na página inicial.'], ['ads.txt', 'Falhou', 'bad', 'O ads.txt do site tem a linha da Groone (DIRECT).']].map(([name, state, tone, desc]) => (
                   <li key={name} className="grid gap-2 px-3 py-2.5 sm:grid-cols-[1fr_auto] sm:items-center">
-                    <div><div className="flex items-center gap-3"><span className="text-[14px] font-medium">{name}</span><Status tone={tone as 'bad' | 'ochre'}>{state}</Status></div><p className="mt-0.5 text-[13px] text-muted-foreground">{desc}</p></div>
-                    <Button size="sm" variant="outline" onClick={() => toast.success('Item marcado como ok')}><Check className="h-4 w-4" />Marcar ok</Button>
+                    <div><div className="flex flex-wrap items-center gap-3"><span className="text-[14px] font-medium">{name}</span><Status tone={tone as 'bad' | 'ochre'}>{state}</Status>{name === 'Buscador' && <Badge>Endereço do site: /busca</Badge>}</div><p className="mt-0.5 text-[13px] text-muted-foreground">{desc}</p></div>
+                    <div className="flex gap-2"><Button size="sm" variant="ghost" onClick={() => setCustom(name)}><Pencil className="h-4 w-4" />Personalizar</Button><Button size="sm" variant="outline" onClick={() => toast.success('Item marcado como ok')}><Check className="h-4 w-4" />Marcar ok</Button></div>
                   </li>
                 ))}
               </ul>
             </div>
             <div className="grid gap-2">
               <h3 className="text-[13px] font-medium text-muted-foreground">Ok</h3>
-              <ul className="flex flex-wrap gap-2">{['Cookies', 'Privacidade', 'Contato', 'Sobre nós', 'Categorias', 'Autor', 'Data'].map((name) => <li key={name} className="inline-flex items-center gap-1.5 rounded-md border bg-background px-2.5 py-1 text-[13px]"><Check className="h-3.5 w-3.5 text-ok" />{name}</li>)}</ul>
+              <ul className="flex flex-wrap gap-2">{['Cookies', 'Privacidade', 'Contato', 'Sobre nós', 'Categorias', 'Autor', 'Data'].map((name) => <li key={name}><button onClick={() => setCustom(name)} className="inline-flex items-center gap-1.5 rounded-md border bg-background px-2.5 py-1 text-[13px] hover:bg-muted"><Check className="h-3.5 w-3.5 text-ok" />{name}{name === 'Cookies' && <span className="text-muted-foreground">· palavras do site</span>}</button></li>)}</ul>
             </div>
+            <div className="grid gap-2">
+              <h3 className="text-[13px] font-medium text-muted-foreground">Não se aplica neste site</h3>
+              <ul className="flex flex-wrap gap-2"><li><button onClick={() => setCustom('Paginação')} className="inline-flex items-center gap-1.5 rounded-md border border-dashed px-2.5 py-1 text-[13px] text-muted-foreground hover:bg-muted">Paginação</button></li></ul>
+            </div>
+            <p className="text-[13px] text-muted-foreground">Clique num item para conferir de outro jeito só neste site. Os outros sites seguem o padrão de Checklists › Itens.</p>
           </div>
         </Card>
         <section className="grid gap-3 lg:col-span-2 min-[1920px]:col-span-3">
@@ -1616,7 +1622,42 @@ function ClientSiteScreen({ go }: { go: (s: Screen) => void }) {
           </Table>
         </section>
       </Body>
+      <ItemOverrideDialog item={custom} close={() => setCustom(null)} />
     </>
+  )
+}
+
+/* Janela para conferir um item de outro jeito só neste site: padrão, palavras próprias, endereço, manual ou não se aplica. */
+function ItemOverrideDialog({ item, close }: { item: string | null; close: () => void }) {
+  const isLink = item !== null && ['Cookies', 'Privacidade', 'Aviso legal', 'Contato', 'Sobre nós'].includes(item)
+  const [mode, setMode] = useState('default')
+  const [words, setWords] = useState('galletas, cookies')
+  const [path, setPath] = useState('/busca')
+  useEffect(() => { setMode(item === 'Buscador' ? 'url' : item === 'Cookies' ? 'words' : item === 'Paginação' ? 'skip' : 'default') }, [item])
+  const options = [
+    ['default', 'Padrão', isLink ? 'Como em todos os sites: procura um link com cookies, cookie ou galletas.' : 'Como em todos os sites.'],
+    ...(isLink ? [['words', 'Palavras próprias', 'Procura um link com as palavras deste site.']] : []),
+    ['url', 'Endereço que precisa abrir', 'O Avant abre o endereço no site; ok se a página responder.'],
+    ['manual', 'Manual', 'A equipe marca à mão neste site.'],
+    ['skip', 'Não se aplica', 'Sai da conta do checklist deste site.'],
+  ]
+  return (
+    <Dialog open={item !== null} onOpenChange={(open) => !open && close()}>
+      <DialogContent className="max-w-[520px]">
+        <DialogHeader><DialogTitle>Personalizar “{item}” em blogexemplo.com</DialogTitle><DialogDescription>Vale só para este site. Os outros continuam com o padrão.</DialogDescription></DialogHeader>
+        <RadioGroup value={mode} onValueChange={setMode} className="grid gap-2">
+          {options.map(([value, label, desc]) => (
+            <label key={value} htmlFor={`override-${value}`} className={cn('flex cursor-pointer gap-3 rounded-md border p-3', mode === value && 'border-foreground')}>
+              <RadioGroupItem id={`override-${value}`} value={value} className="mt-0.5" />
+              <span className="grid gap-0.5"><span className="text-[14px] font-medium">{label}</span><span className="text-[13px] text-muted-foreground">{desc}</span></span>
+            </label>
+          ))}
+        </RadioGroup>
+        {mode === 'words' && <Field id="override-words" label="Palavras" hint="Separadas por vírgula."><Input id="override-words" value={words} onChange={(e) => setWords(e.target.value)} /></Field>}
+        {mode === 'url' && <Field id="override-path" label="Endereço" hint="Do próprio site, como /fale-conosco."><Input id="override-path" value={path} onChange={(e) => setPath(e.target.value)} className="font-mono" /></Field>}
+        <DialogFooter><Button variant="outline" onClick={close}>Cancelar</Button><Button onClick={() => { close(); toast.success('Item personalizado', { description: 'A próxima conferência já usa a configuração do site.' }) }}>Salvar</Button></DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }
 
