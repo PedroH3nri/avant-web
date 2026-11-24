@@ -23,7 +23,6 @@ function me(companyId: string): Me {
     can_create_company: false,
     display_currency: 'USD',
     theme: 'system',
-    accent: 'default',
   }
 }
 
