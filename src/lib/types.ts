@@ -61,4 +61,9 @@ export interface Me {
   theme: Theme
   /** O tema personalizado em uso quando ``theme`` é ``custom`` (cores em /auth/me/themes). */
   custom_theme_id?: string | null
+  /** Áreas com animação de hover e foco (campos, botões, cards de métrica). */
+  animations?: AnimationArea[]
 }
+
+/** Áreas do painel que podem ter animação (``AnimationArea`` do avant-core). */
+export type AnimationArea = 'fields' | 'buttons' | 'cards'
