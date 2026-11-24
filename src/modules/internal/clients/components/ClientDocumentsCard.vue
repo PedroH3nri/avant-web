@@ -112,7 +112,7 @@ async function reject() {
           rows="3"
           maxlength="1000"
           :placeholder="t('doc.reasonPlaceholder')"
-          class="w-full rounded-md border border-input bg-field px-3 py-2 text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          class="w-full rounded-md border border-input bg-[hsl(var(--field))] px-3 py-2 text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         />
       </Field>
       <template #footer>

@@ -16,7 +16,7 @@ withDefaults(defineProps<{ title?: string; desc?: string; footerNote?: string; c
     </div>
     <div
       v-if="$slots.footer || footerNote || $slots.note"
-      class="flex flex-wrap items-center justify-between gap-3 border-t bg-card-footer px-6 py-3"
+      class="flex flex-wrap items-center justify-between gap-3 border-t bg-[hsl(var(--card-footer))] px-6 py-3"
     >
       <div class="text-[13px] text-muted-foreground"><slot name="note">{{ footerNote }}</slot></div>
       <div class="flex gap-2"><slot name="footer" /></div>

@@ -428,7 +428,7 @@ watch(period, load)
           </Field>
           <p v-if="limitsError" class="text-[13px] text-bad sm:col-span-2 lg:col-span-3">{{ t('pr.limitsInvalid') }}</p>
         </div>
-        <div v-if="limits && limitsDirty && canManage" class="flex flex-wrap items-center justify-between gap-3 border-t bg-card-footer px-6 py-3">
+        <div v-if="limits && limitsDirty && canManage" class="flex flex-wrap items-center justify-between gap-3 border-t bg-[hsl(var(--card-footer))] px-6 py-3">
           <div class="text-[13px] text-muted-foreground">{{ manual ? t('pr.cascadeLimitsNext.manual') : t('pr.limitsNext.automatic') }}</div>
           <div class="flex gap-2">
             <Button variant="outline" :disabled="busy" @click="discardLimits">{{ t('pr.discard') }}</Button>

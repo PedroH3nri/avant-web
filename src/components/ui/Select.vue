@@ -123,7 +123,7 @@ watch(query, () => highlight(0))
         :data-state="open ? 'open' : 'closed'"
         :class="
           cn(
-            'flex h-10 w-full min-w-0 items-center justify-between gap-2 rounded-md border border-input bg-field px-3 text-left text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 data-[state=open]:border-foreground/40',
+            'flex h-10 w-full min-w-0 items-center justify-between gap-2 rounded-md border border-input bg-[hsl(var(--field))] px-3 text-left text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 data-[state=open]:border-foreground/40',
             props.class,
           )
         "
