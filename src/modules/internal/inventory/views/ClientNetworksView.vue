@@ -27,7 +27,9 @@ import NetworkReviewActions from '@/modules/internal/inventory/components/Networ
 import { networkName, networkTone, statusKey } from '@/modules/networks/rules'
 import RevenueStatusBadge from '@/modules/revenue/components/RevenueStatusBadge.vue'
 import ColumnsMenu from '@/modules/views/components/ColumnsMenu.vue'
+import FiltersMenu from '@/modules/views/components/FiltersMenu.vue'
 import SavedViewsBar from '@/modules/views/components/SavedViewsBar.vue'
+import { useBarFilters } from '@/modules/views/barFilters'
 import { cleanFilters, firstValue, parseSort, sortValue } from '@/modules/views/rules'
 import type { ViewDefinition, ViewSort } from '@/modules/views/types'
 import { useSession } from '@/stores/session'
@@ -43,7 +45,15 @@ const SORTS: ViewSort[] = [
   { key: 'name', direction: 'asc' },
   { key: 'name', direction: 'desc' },
 ]
-const DEFAULT_VIEW: ViewDefinition = { columns: [...COLUMNS], filters: {}, sort: SORTS[0] ?? null }
+const FILTERS = ['status', 'company_id', 'account_manager_ids', 'awaiting']
+const DEFAULT_FILTERS = ['status', 'company_id', 'awaiting']
+const FILTER_LABELS: Record<string, Key> = {
+  status: 'inv.filter.status',
+  company_id: 'inv.filter.client',
+  account_manager_ids: 'inv.column.manager',
+  awaiting: 'inv.awaitingOnly',
+}
+const DEFAULT_VIEW: ViewDefinition = { columns: [...COLUMNS], filters: {}, sort: SORTS[0] ?? null, shown_filters: DEFAULT_FILTERS }
 
 const session = useSession()
 const canAssign = computed(() => session.can('internal.networks.assign'))
@@ -57,6 +67,12 @@ const awaitingOnly = ref(false)
 const networkStatus = ref(ALL)
 const company = ref(ALL)
 const manager = ref(ALL)
+const barFilters = useBarFilters(FILTERS, DEFAULT_FILTERS, {
+  status: () => (networkStatus.value = ALL),
+  company_id: () => (company.value = ALL),
+  account_manager_ids: () => (manager.value = ALL),
+  awaiting: () => (awaitingOnly.value = false),
+})
 const sort = ref(sortValue(SORTS[0] as ViewSort))
 const columns = ref<string[]>([...DEFAULT_VIEW.columns])
 const staff = ref<FilterOption[]>([])
@@ -75,6 +91,7 @@ const current = computed<ViewDefinition>(() => ({
     account_manager_ids: manager.value === ALL ? [] : [manager.value],
   }),
   sort: parseSort(sort.value),
+  shown_filters: barFilters.shown.value,
 }))
 const filtered = computed(() => Object.keys(current.value.filters).length > 0)
 
@@ -128,6 +145,8 @@ const statusOptions = computed(() => [{ value: ALL, label: t('int.allStatuses') 
 const companyOptions = computed(() => [{ value: ALL, label: t('int.allClients') }, ...companies.value])
 const managerOptions = computed(() => [{ value: ALL, label: t('int.allManagers') }, ...staff.value])
 const sortOptions = SORTS.map((option) => ({ value: sortValue(option), label: t(`int.sort.${option.key}.${option.direction}` as Key) }))
+/** O nome do filtro no menu de filtros. */
+const filterLabel = (filter: string) => t(FILTER_LABELS[filter] as Key)
 /** Diz se a coluna aparece na tabela. */
 const shown = (column: string) => columns.value.includes(column)
 /** O nome da coluna no menu de colunas. */
@@ -143,6 +162,7 @@ function applyView(definition: ViewDefinition) {
   awaitingOnly.value = firstValue(definition.filters.awaiting) === YES
   company.value = firstValue(definition.filters.company_id) || ALL
   manager.value = firstValue(definition.filters.account_manager_ids) || ALL
+  barFilters.apply(definition)
   const found = definition.sort && SORTS.find((option) => sortValue(option) === sortValue(definition.sort as ViewSort))
   sort.value = sortValue(found || (SORTS[0] as ViewSort))
 }
@@ -165,12 +185,13 @@ function clearFilters() {
         <Search class="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
         <Input v-model="searchText" type="search" :aria-label="t('inv.networksSearch')" class="h-9 bg-card pl-9" :placeholder="t('inv.networksSearch')" />
       </div>
-      <Select v-model="networkStatus" :options="statusOptions" :aria-label="t('inv.filter.status')" class="h-9 w-full sm:w-48" />
-      <Select v-model="company" :options="companyOptions" :aria-label="t('inv.filter.client')" class="h-9 w-full sm:w-52" />
-      <Select v-model="manager" :options="managerOptions" :aria-label="t('inv.column.manager')" class="h-9 w-full sm:w-52" />
+      <Select v-if="barFilters.isShown('status')" v-model="networkStatus" :options="statusOptions" :aria-label="t('inv.filter.status')" class="h-9 w-full sm:w-48" />
+      <Select v-if="barFilters.isShown('company_id')" v-model="company" :options="companyOptions" :aria-label="t('inv.filter.client')" class="h-9 w-full sm:w-52" />
+      <Select v-if="barFilters.isShown('account_manager_ids')" v-model="manager" :options="managerOptions" :aria-label="t('inv.column.manager')" class="h-9 w-full sm:w-52" />
       <Select v-model="sort" :options="sortOptions" :aria-label="t('views.sort')" class="h-9 w-full sm:w-52" />
+      <FiltersMenu v-model:shown="barFilters.shown.value" :filters="FILTERS" :label="filterLabel" />
       <ColumnsMenu v-model:shown="columns" :columns="COLUMNS" :label="columnLabel" />
-      <Checkbox id="networks-awaiting" v-model="awaitingOnly" :label="t('inv.awaitingOnly')" />
+      <Checkbox v-if="barFilters.isShown('awaiting')" id="networks-awaiting" v-model="awaitingOnly" :label="t('inv.awaitingOnly')" />
     </SavedViewsBar>
     <LoadError v-if="loadError" :message="loadError" @retry="load" />
     <DataTable v-else :min="900">

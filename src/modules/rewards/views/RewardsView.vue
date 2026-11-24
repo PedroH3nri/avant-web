@@ -18,13 +18,22 @@ import Pagination from '@/components/ui/Pagination.vue'
 import Status from '@/components/ui/Status.vue'
 import TableState from '@/components/ui/TableState.vue'
 import { ApiError } from '@/lib/api'
-import { errorText, formatDate, t, tn } from '@/lib/i18n'
+import { errorText, formatDate, t, tn, type Key } from '@/lib/i18n'
+import FiltersMenu from '@/modules/views/components/FiltersMenu.vue'
+import { useLocalBarFilters } from '@/modules/views/barFilters'
 import { td, th } from '@/lib/table'
 import { copy } from '@/modules/account/rules'
 import { installSnippet, rewardPermission, rewardsPath } from '@/modules/rewards/rules'
 import { rewardService } from '@/modules/rewards/service'
 import type { Reward, RewardSiteOption } from '@/modules/rewards/types'
 import { useSession } from '@/stores/session'
+
+const FILTERS = ['site', 'deleted']
+const DEFAULT_FILTERS = ['site', 'deleted']
+const FILTER_LABELS: Record<string, Key> = {
+  site: 'rw.site',
+  deleted: 'rw.showDeleted',
+}
 
 const route = useRoute()
 const router = useRouter()
@@ -40,6 +49,14 @@ const query = ref('')
 const siteId = ref('')
 const deleted = ref(false)
 const sites = ref<RewardSiteOption[]>([])
+const barFilters = useLocalBarFilters('rewards', FILTERS, DEFAULT_FILTERS, {
+  site: () => (siteId.value = ''),
+  deleted: () => (deleted.value = false),
+})
+/** O nome do filtro no menu de filtros. */
+const filterLabel = (filter: string) => t(FILTER_LABELS[filter] as Key)
+/** Os filtros que a pessoa pode pôr na barra: site só no painel do cliente com mais de um. */
+const availableFilters = computed(() => FILTERS.filter((key) => key !== 'site' || (!internal && sites.value.length > 1)))
 const loadError = ref<string | null>(null)
 const copied = ref(false)
 const snippet = installSnippet(window.location.origin)
@@ -112,8 +129,9 @@ function state(reward: Reward): { tone: 'ok' | 'neutral' | 'bad'; label: string 
         <Search class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
         <Input v-model="query" :aria-label="t('rw.search')" class="h-9 bg-card pl-9" :placeholder="t('rw.searchPlaceholder')" />
       </div>
-      <Select v-if="!internal && sites.length > 1" v-model="siteId" :aria-label="t('rw.site')" class="w-full sm:w-[240px]" :options="siteOptions" />
-      <Checkbox id="rw-deleted" v-model="deleted" :label="t('rw.showDeleted')" />
+      <Select v-if="!internal && sites.length > 1 && barFilters.isShown('site')" v-model="siteId" :aria-label="t('rw.site')" class="w-full sm:w-[240px]" :options="siteOptions" />
+      <Checkbox v-if="barFilters.isShown('deleted')" id="rw-deleted" v-model="deleted" :label="t('rw.showDeleted')" />
+      <FiltersMenu v-model:shown="barFilters.shown.value" :filters="availableFilters" :label="filterLabel" />
     </div>
     <LoadError v-if="loadError" :message="loadError" @retry="load" />
     <DataTable v-else :min="internal ? 900 : 760">

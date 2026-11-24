@@ -25,13 +25,22 @@ import { invoiceService } from '@/modules/internal/invoices/service'
 import type { InvoiceStatus, InvoiceSummary } from '@/modules/internal/invoices/types'
 import { staffService } from '@/modules/internal/staff/service'
 import ColumnsMenu from '@/modules/views/components/ColumnsMenu.vue'
+import FiltersMenu from '@/modules/views/components/FiltersMenu.vue'
 import SavedViewsBar from '@/modules/views/components/SavedViewsBar.vue'
+import { useBarFilters } from '@/modules/views/barFilters'
 import { cleanFilters, firstValue, monthPeriod, periodMonth, type Period } from '@/modules/views/rules'
 import type { ViewDefinition } from '@/modules/views/types'
 
 const ALL = 'all'
 const COLUMNS = ['number', 'person', 'month', 'total', 'status', 'issued_at', 'paid_at']
-const DEFAULT_VIEW: ViewDefinition = { columns: [...COLUMNS], filters: {}, sort: { key: 'created_at', direction: 'desc' } }
+const FILTERS = ['status', 'period', 'user_id']
+const DEFAULT_FILTERS = ['status', 'period', 'user_id']
+const FILTER_LABELS: Record<string, Key> = {
+  status: 'inv.col.status',
+  period: 'inv.col.month',
+  user_id: 'inv.col.person',
+}
+const DEFAULT_VIEW: ViewDefinition = { columns: [...COLUMNS], filters: {}, sort: { key: 'created_at', direction: 'desc' }, shown_filters: DEFAULT_FILTERS }
 const today = localToday()
 const invoices = ref<InvoiceSummary[] | null>(null)
 const page = ref(1)
@@ -40,6 +49,11 @@ const pages = ref(0)
 const status = ref<InvoiceStatus | typeof ALL>(ALL)
 const month = ref(ALL)
 const person = ref(ALL)
+const barFilters = useBarFilters(FILTERS, DEFAULT_FILTERS, {
+  status: () => (status.value = ALL),
+  period: () => (month.value = ALL),
+  user_id: () => (person.value = ALL),
+})
 const columns = ref<string[]>([...COLUMNS])
 const people = ref<{ value: string; label: string }[]>([])
 const current = computed<ViewDefinition>(() => ({
@@ -50,6 +64,7 @@ const current = computed<ViewDefinition>(() => ({
     user_id: person.value === ALL ? undefined : person.value,
   }),
   sort: DEFAULT_VIEW.sort,
+  shown_filters: barFilters.shown.value,
 }))
 const loadError = ref<string | null>(null)
 let ticket = 0
@@ -60,6 +75,8 @@ const statusOptions = computed(() => [
 ])
 const months = computed(() => [{ value: ALL, label: t('inv.team.allMonths') }, ...monthOptions(today, locale.value)])
 const personOptions = computed(() => [{ value: ALL, label: t('inv.team.allPeople') }, ...people.value])
+/** O nome do filtro no menu de filtros. */
+const filterLabel = (filter: string) => t(FILTER_LABELS[filter] as Key)
 /** Diz se a coluna aparece na tabela. */
 const shown = (column: string) => columns.value.includes(column)
 /** O nome da coluna no menu de colunas. */
@@ -73,6 +90,7 @@ function applyView(definition: ViewDefinition) {
   status.value = (['draft', 'issued', 'paid'] as string[]).includes(chosenStatus) ? (chosenStatus as InvoiceStatus) : ALL
   const period = firstValue(definition.filters.period)
   month.value = period ? periodMonth(period as Period, today) : ALL
+  barFilters.apply(definition)
   person.value = firstValue(definition.filters.user_id) || ALL
 }
 
@@ -128,9 +146,10 @@ const monthName = (iso: string) => new Intl.DateTimeFormat(locale.value, { month
   </PageHeader>
   <PageBody>
     <SavedViewsBar screen="invoices" :default-label="t('inv.team.allInvoices')" :current="current" :defaults="DEFAULT_VIEW" @apply="applyView">
-      <Select v-model="status" :options="statusOptions" :aria-label="t('inv.col.status')" class="w-full sm:w-[200px] h-9" />
-      <Select v-model="month" :options="months" :aria-label="t('inv.col.month')" class="w-full sm:w-[200px] h-9" />
-      <Select v-model="person" :options="personOptions" :aria-label="t('inv.col.person')" class="w-full sm:w-[220px] h-9" />
+      <Select v-if="barFilters.isShown('status')" v-model="status" :options="statusOptions" :aria-label="t('inv.col.status')" class="w-full sm:w-[200px] h-9" />
+      <Select v-if="barFilters.isShown('period')" v-model="month" :options="months" :aria-label="t('inv.col.month')" class="w-full sm:w-[200px] h-9" />
+      <Select v-if="barFilters.isShown('user_id')" v-model="person" :options="personOptions" :aria-label="t('inv.col.person')" class="w-full sm:w-[220px] h-9" />
+      <FiltersMenu v-model:shown="barFilters.shown.value" :filters="FILTERS" :label="filterLabel" />
       <ColumnsMenu v-model:shown="columns" :columns="COLUMNS" :label="columnLabel" />
     </SavedViewsBar>
     <LoadError v-if="loadError" :message="loadError" @retry="load" />

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-/** Menu dos filtros extras da tabela: a visão padrão fica enxuta e cada visão nova liga os
- * filtros que quiser. Desligar um filtro também tira o valor dele. */
+/** Menu dos filtros da tabela: adiciona e remove filtros da barra; a visão salva guarda a escolha.
+ * Remover um filtro também tira o valor dele. */
 import { DropdownMenuCheckboxItem, DropdownMenuItemIndicator, DropdownMenuRoot, DropdownMenuTrigger } from 'reka-ui'
 import { Check, ListFilter } from 'lucide-vue-next'
 import Button from '@/components/ui/Button.vue'
@@ -15,7 +15,7 @@ const props = defineProps<{ filters: string[]; label: (filter: string) => string
 <template>
   <DropdownMenuRoot>
     <DropdownMenuTrigger as-child>
-      <Button variant="outline" size="sm" class="h-9"><ListFilter />{{ t('views.moreFilters') }}</Button>
+      <Button variant="outline" size="sm" class="h-9"><ListFilter />{{ t('views.filters') }}</Button>
     </DropdownMenuTrigger>
     <MenuContent class="w-60">
       <DropdownMenuCheckboxItem

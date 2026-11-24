@@ -21,6 +21,8 @@ export interface ViewDefinition {
   columns: string[]
   filters: Record<string, FilterValue>
   sort: ViewSort | null
+  /** Os filtros que ficam na barra; ausente nas visões antigas, que usam os padrão da tela. */
+  shown_filters?: string[]
 }
 
 export interface SavedViewInput {

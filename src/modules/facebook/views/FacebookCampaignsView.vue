@@ -22,12 +22,21 @@ import Switch from '@/components/ui/Switch.vue'
 import TableState from '@/components/ui/TableState.vue'
 import { ApiError } from '@/lib/api'
 import { errorText, locale, t, type Key } from '@/lib/i18n'
+import FiltersMenu from '@/modules/views/components/FiltersMenu.vue'
+import { useLocalBarFilters } from '@/modules/views/barFilters'
 import { td, th } from '@/lib/table'
 import { clientService } from '@/modules/internal/clients/service'
 import { PERIODS, campaignsPath, childLevel, controlErrorText, formatCount, formatMoney, formatRatio, objectState, periodRange } from '@/modules/facebook/rules'
 import { facebookReader, facebookService } from '@/modules/facebook/service'
 import { useSession } from '@/stores/session'
 import type { FacebookAccount, FacebookLevel, FacebookObject } from '@/modules/facebook/types'
+
+const FILTERS = ['client', 'in_review']
+const DEFAULT_FILTERS = ['client', 'in_review']
+const FILTER_LABELS: Record<string, Key> = {
+  client: 'fb.col.client',
+  in_review: 'fb.inReview',
+}
 
 const route = useRoute()
 const router = useRouter()
@@ -46,6 +55,14 @@ const companyId = ref('')
 const days = ref('7')
 const query = ref('')
 const inReview = ref(false)
+const barFilters = useLocalBarFilters('fb-campaigns', FILTERS, DEFAULT_FILTERS, {
+  client: () => (companyId.value = ''),
+  in_review: () => (inReview.value = false),
+})
+/** O nome do filtro no menu de filtros. */
+const filterLabel = (filter: string) => t(FILTER_LABELS[filter] as Key)
+/** Os filtros que a pessoa pode pôr na barra: cliente só no painel interno. */
+const availableFilters = FILTERS.filter((key) => key !== 'client' || internal)
 const items = ref<FacebookObject[] | null>(null)
 const accounts = ref<FacebookAccount[]>([])
 const clients = ref<{ id: string; name: string }[]>([])
@@ -167,13 +184,14 @@ watch([level, parent, accountId, companyId, days, inReview], refilter)
     <div class="flex flex-wrap items-center gap-3">
       <Segmented :model-value="level" :label="t('fb.level')" :options="levelOptions" @update:model-value="pickLevel" />
       <Select v-model="days" :aria-label="t('fb.period')" class="w-full sm:w-[160px]" :options="periodOptions" />
-      <Select v-if="internal" v-model="companyId" :aria-label="t('fb.col.client')" class="w-full sm:w-[220px]" :options="clientOptions" />
+      <Select v-if="internal && barFilters.isShown('client')" v-model="companyId" :aria-label="t('fb.col.client')" class="w-full sm:w-[220px]" :options="clientOptions" />
       <Select v-model="accountId" :aria-label="t('fb.account')" class="w-full sm:w-[220px]" :options="accountOptions" />
       <div class="relative w-full sm:w-[240px]">
         <Search class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
         <Input v-model="query" :aria-label="t('fb.search')" class="h-9 bg-card pl-9" :placeholder="t('fb.searchPlaceholder')" />
       </div>
-      <Checkbox id="fb-in-review" v-model="inReview" :label="t('fb.inReview')" />
+      <Checkbox v-if="barFilters.isShown('in_review')" id="fb-in-review" v-model="inReview" :label="t('fb.inReview')" />
+      <FiltersMenu v-model:shown="barFilters.shown.value" :filters="availableFilters" :label="filterLabel" />
     </div>
     <p v-if="parent" class="flex flex-wrap items-center gap-1 text-[14px]">
       <button type="button" class="text-muted-foreground hover:text-foreground hover:underline" @click="pickLevel(parent.level)">{{ t(`fb.levelPlural.${parent.level}` as Key) }}</button>
