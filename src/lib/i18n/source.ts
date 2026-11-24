@@ -1003,9 +1003,9 @@ export const dict = {
   'theme.newTitle': ['Novo tema', 'New theme', 'Nuevo tema'],
   'theme.editTitle': ['Editar tema', 'Edit theme', 'Editar tema'],
   'theme.dialogDesc': [
-    'Escolha as cinco cores. O Avant calcula bordas, fundos suaves e texto secundário a partir delas.',
-    'Pick the five colors. Avant works out borders, soft backgrounds and secondary text from them.',
-    'Elige los cinco colores. Avant calcula bordes, fondos suaves y texto secundario a partir de ellos.',
+    'Escolha as seis cores. O Avant calcula fundos suaves, texto secundário, campos e rodapé dos cartões a partir delas.',
+    'Pick the six colors. Avant works out soft backgrounds, secondary text, fields and card footers from them.',
+    'Elige los seis colores. Avant calcula fondos suaves, texto secundario, campos y pie de las tarjetas a partir de ellos.',
   ],
   'theme.name': ['Nome', 'Name', 'Nombre'],
   'theme.namePlaceholder': ['Ex.: Noite verde', 'E.g. Green night', 'Ej.: Noche verde'],
@@ -1014,6 +1014,7 @@ export const dict = {
   'theme.color.card': ['Cartões', 'Cards', 'Tarjetas'],
   'theme.color.text': ['Texto', 'Text', 'Texto'],
   'theme.color.primary': ['Cor principal (botões)', 'Main color (buttons)', 'Color principal (botones)'],
+  'theme.color.border': ['Bordas', 'Borders', 'Bordes'],
   'theme.preview': ['Prévia', 'Preview', 'Vista previa'],
   'theme.invalidColor': [
     'Use a cor em rgba(31, 75, 255, 0.8), rgb(31, 75, 255) ou #1f4bff.',

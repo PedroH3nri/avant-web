@@ -1,6 +1,7 @@
 /** Chamadas da API da página Minha conta: senha, sessões, 2FA, Google, chaves de API, aparência e foto. */
 
 import { api, type Query } from '@/lib/api'
+import { withBorder, type SavedThemeColors } from '@/lib/customTheme'
 import type { Lang, Page, Theme, UserRef } from '@/lib/types'
 import type {
   ApiKey,
@@ -14,6 +15,14 @@ import type {
   MfaSetup,
   RecoveryCodes,
 } from '@/modules/account/types'
+
+/** O tema como a API devolve: temas antigos vêm sem a cor da borda. */
+type SavedTheme = Omit<CustomTheme, 'colors'> & { colors: SavedThemeColors }
+
+/** O tema com a borda preenchida (calculada quando o tema não tem). */
+function filled(saved: SavedTheme): CustomTheme {
+  return { ...saved, colors: withBorder(saved.colors) }
+}
 
 /** Serviço da conta da pessoa. */
 export const accountService = {
@@ -47,11 +56,14 @@ export const accountService = {
   appearance: (body: { theme?: Theme; locale?: Lang; custom_theme_id?: string | null }) =>
     api.patch<Appearance>('/auth/appearance', body),
   /** Os temas personalizados da pessoa e o limite. */
-  themes: () => api.get<CustomThemes>('/auth/me/themes'),
+  themes: async (): Promise<CustomThemes> => {
+    const saved = await api.get<Omit<CustomThemes, 'items'> & { items: SavedTheme[] }>('/auth/me/themes')
+    return { ...saved, items: saved.items.map(filled) }
+  },
   /** Cria um tema personalizado. */
-  createTheme: (body: CustomThemeInput) => api.post<CustomTheme>('/auth/me/themes', body),
+  createTheme: async (body: CustomThemeInput) => filled(await api.post<SavedTheme>('/auth/me/themes', body)),
   /** Troca o nome e as cores de um tema. */
-  updateTheme: (themeId: string, body: CustomThemeInput) => api.put<CustomTheme>(`/auth/me/themes/${themeId}`, body),
+  updateTheme: async (themeId: string, body: CustomThemeInput) => filled(await api.put<SavedTheme>(`/auth/me/themes/${themeId}`, body)),
   /** Apaga um tema; se era o em uso, a conta volta para o do sistema. */
   deleteTheme: (themeId: string) => api.delete(`/auth/me/themes/${themeId}`),
   /** Envia a foto de perfil (PNG, JPEG ou WebP até 2 MB). */

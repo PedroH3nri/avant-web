@@ -412,7 +412,7 @@ watch([hash, country], filterLater)
           </ul>
           <p v-else class="mt-4 rounded-md border px-3 py-6 text-center text-[13px] text-muted-foreground">{{ t('pr.noBlocks') }}</p>
         </div>
-        <div v-if="dirty && canManage" class="flex flex-wrap items-center justify-between gap-3 border-t bg-muted px-6 py-3">
+        <div v-if="dirty && canManage" class="flex flex-wrap items-center justify-between gap-3 border-t bg-card-footer px-6 py-3">
           <div class="text-[13px] text-muted-foreground">{{ t('pr.unsaved') }}</div>
           <div class="flex gap-2">
             <Button variant="outline" :disabled="busy" @click="discard">{{ t('pr.discard') }}</Button>

@@ -85,7 +85,7 @@ const field = (name: string) => `${props.idPrefix}-${name}`
         v-model="notes"
         maxlength="300"
         rows="2"
-        class="w-full rounded-md border border-input bg-background px-3 py-2 text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        class="w-full rounded-md border border-input bg-field px-3 py-2 text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       />
     </Field>
   </div>

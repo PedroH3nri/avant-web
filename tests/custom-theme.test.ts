@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { alphaOf, contrast, customThemeCss, flattenColors, isDarkBackground, isHexColor, mix, parseColor, readableOn, STARTER_COLORS, themeVariables, toHslTriplet, toRgba, withAlpha } from '@/lib/customTheme'
+import { alphaOf, luminance, withBorder, contrast, customThemeCss, flattenColors, isDarkBackground, isHexColor, mix, parseColor, readableOn, STARTER_COLORS, themeVariables, toHslTriplet, toRgba, withAlpha } from '@/lib/customTheme'
 
 describe('tema personalizado', () => {
   it('aceita só cores #rrggbb', () => {
@@ -68,5 +68,23 @@ describe('opacidade das cores', () => {
   it('compõe a opacidade sobre a camada de baixo', () => {
     const shown = flattenColors({ ...STARTER_COLORS, background: '#00000080' })
     expect(shown.background).toBe('#7f7f7f')
+  })
+})
+
+describe('bordas, campos e rodapé', () => {
+  /** Tema antigo sem borda ganha a borda calculada; a escolhida vira a borda e a dos campos. */
+  it('usa a borda escolhida ou calcula a de antes', () => {
+    const { border, ...older } = STARTER_COLORS
+    expect(border).toBe(withBorder(older).border)
+    const variables = themeVariables({ ...STARTER_COLORS, border: '#ff0000' })
+    expect([variables.border, variables.input]).toEqual(['#ff0000', '#ff0000'])
+  })
+
+  /** Rodapé dos cartões e campos são o cartão mais escuro; a janela é o cartão. */
+  it('escurece o cartão para o rodapé e os campos', () => {
+    const variables = themeVariables({ ...STARTER_COLORS, card: '#808080' })
+    expect(variables.dialog).toBe('#808080')
+    expect(luminance(variables['card-footer']!)).toBeLessThan(luminance('#808080'))
+    expect(luminance(variables.field!)).toBeLessThan(luminance(variables['card-footer']!))
   })
 })

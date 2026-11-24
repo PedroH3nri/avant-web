@@ -68,7 +68,7 @@ watch(
 
 <template>
   <Field :id="id" :label="label" :hint="hint" :error="failure">
-    <div class="flex min-h-10 flex-wrap items-center gap-1.5 rounded-md border border-input bg-background px-2 py-1.5 focus-within:ring-2 focus-within:ring-ring" :class="disabled && 'opacity-50'">
+    <div class="flex min-h-10 flex-wrap items-center gap-1.5 rounded-md border border-input bg-field px-2 py-1.5 focus-within:ring-2 focus-within:ring-ring" :class="disabled && 'opacity-50'">
       <span v-for="pick in model" :key="pick.id" class="inline-flex h-6 items-center gap-1 rounded-full bg-secondary pl-2.5 pr-1 text-[13px]">
         {{ pick.name || pick.id }}
         <button type="button" :aria-label="t('fb.create.remove', { name: pick.name || pick.id })" :disabled="disabled" class="rounded-full p-0.5 hover:bg-background" @click="remove(pick)"><X class="size-3" aria-hidden="true" /></button>

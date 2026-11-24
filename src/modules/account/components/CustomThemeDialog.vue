@@ -108,7 +108,7 @@ async function save() {
           <div class="flex items-center gap-2">
             <input
               type="color"
-              class="size-10 shrink-0 cursor-pointer rounded-md border border-input bg-background p-1"
+              class="size-10 shrink-0 cursor-pointer rounded-md border border-input bg-field p-1"
               :value="opaque(colors[key])"
               :aria-label="t(`theme.color.${key}`)"
               @input="pickColor(key, ($event.target as HTMLInputElement).value)"
