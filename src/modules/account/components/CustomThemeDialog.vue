@@ -71,10 +71,11 @@ function opacityOf(key: keyof ThemeColors): string {
   return String(Math.round(alphaOf(colors.value[key]) * PERCENT))
 }
 
-/** Troca a opacidade da cor pela porcentagem digitada. */
-function setOpacity(key: keyof ThemeColors, typed: string) {
-  const percent = Number(typed)
-  if (typed.trim() === '' || Number.isNaN(percent)) return
+/** Troca a opacidade da cor pela porcentagem digitada (o campo numérico entrega número). */
+function setOpacity(key: keyof ThemeColors, typed: string | number) {
+  const text = String(typed).trim()
+  const percent = Number(text)
+  if (text === '' || Number.isNaN(percent)) return
   setColor(key, withAlpha(colors.value[key], percent / PERCENT))
 }
 
