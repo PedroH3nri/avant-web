@@ -12,6 +12,9 @@
     --card-footer: var(--muted);
     --sidebar-hover: var(--accent);
     --sidebar-selected: var(--secondary);
+    --glow-color: var(--foreground);
+    --glow-alpha: 0;
+    --hover-border: var(--input);
   }
 
   :root {
@@ -207,4 +210,44 @@
   .scroll-thin::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 9999px; }
   .scroll-thin::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground) / 0.5); }
   @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+}
+
+/* Campo selecionado: a borda vira a cor de destaque (--ring) e um halo cresce em volta. Fica fora
+   das camadas para valer sobre o ring-2 de cada campo. */
+.border-input {
+  transition: border-color 0.2s ease, box-shadow 0.32s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.2s ease;
+  box-shadow: 0 0 0 0 hsl(var(--ring) / 0), 0 0 0 0 hsl(var(--ring) / 0);
+}
+.border-input:focus,
+.border-input:focus-visible,
+.border-input:focus-within {
+  outline: none;
+  border-color: hsl(var(--ring));
+  box-shadow: 0 0 0 1px hsl(var(--ring)), 0 0 0 4px hsl(var(--ring) / 0.2);
+}
+
+/* Botão sob o mouse: sobe 1 px e ganha sombra; no tema personalizado, um halo e a borda na cor de
+   destaque. Ao clicar, desce e encolhe de leve. */
+.btn-motion {
+  transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+.btn-motion:not(:disabled):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 0 3px hsl(var(--ring) / var(--glow-alpha)), 0 6px 16px -8px hsl(var(--glow-color) / 0.35);
+}
+.btn-motion[data-variant="default"]:not(:disabled):hover {
+  box-shadow: inset 0 0 0 1px hsl(var(--primary-edge)), 0 0 0 3px hsl(var(--ring) / var(--glow-alpha)),
+    0 6px 16px -8px hsl(var(--glow-color) / 0.35);
+}
+.btn-motion[data-variant="outline"]:not(:disabled):hover {
+  border-color: hsl(var(--hover-border));
+}
+.btn-motion:not(:disabled):active {
+  transform: translateY(0) scale(0.98);
+  transition-duration: 0.08s;
+}
+@media (prefers-reduced-motion: reduce) {
+  .btn-motion:not(:disabled):hover,
+  .btn-motion:not(:disabled):active { transform: none; }
 }
