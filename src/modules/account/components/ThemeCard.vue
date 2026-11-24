@@ -24,6 +24,7 @@ const DEFAULT_LIMIT = 3
 const session = useSession()
 const limit = ref(DEFAULT_LIMIT)
 const editorOpen = ref(false)
+const editor = ref<InstanceType<typeof CustomThemeDialog> | null>(null)
 const editing = ref<CustomTheme | null>(null)
 const removing = ref<CustomTheme | null>(null)
 const removeOpen = ref(false)
@@ -66,7 +67,9 @@ async function choose(value: unknown) {
 
 /** Abre o editor para um tema novo ou para editar um existente. */
 function openEditor(custom: CustomTheme | null) {
+  const previous = editing.value
   editing.value = custom
+  if (editorOpen.value) editor.value?.reopen(previous, custom)
   editorOpen.value = true
 }
 
@@ -170,7 +173,7 @@ async function remove() {
     </RadioGroupRoot>
     <template #note>{{ atLimit ? t('theme.limitNote', { limit }) : t('theme.customNote') }}</template>
   </Card>
-  <CustomThemeDialog v-model:open="editorOpen" :editing="editing" @saved="saved" />
+  <CustomThemeDialog ref="editor" v-model:open="editorOpen" :editing="editing" @saved="saved" />
   <ConfirmDialog
     v-model:open="removeOpen"
     :title="t('theme.removeTitle')"
