@@ -229,6 +229,8 @@ export function themeVariables(colors: ThemeColors): Record<string, string> {
     'sidebar-foreground': sidebarText,
     'sidebar-muted': mix(sidebarText, sidebar, 0.38),
     'sidebar-active': mix(sidebar, sidebarText, 0.1),
+    'sidebar-hover': mix(sidebar, sidebarText, 0.07),
+    'sidebar-selected': mix(sidebar, sidebarText, 0.12),
   }
 }
 
