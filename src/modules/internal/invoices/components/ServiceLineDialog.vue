@@ -64,7 +64,7 @@ async function save() {
           maxlength="500"
           rows="2"
           :placeholder="t('inv.line.descriptionPlaceholder')"
-          class="w-full rounded-md border border-input bg-background px-3 py-2 text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          class="w-full rounded-md border border-input bg-field px-3 py-2 text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         />
       </Field>
       <Field id="sl-amount" :label="t('inv.line.amount')" :error="amountError && t('inv.line.amountErr')">

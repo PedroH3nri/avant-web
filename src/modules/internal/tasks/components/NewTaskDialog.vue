@@ -15,7 +15,7 @@ import type { SupportTaskDetail, TaskPriority } from '@/modules/internal/tasks/t
 import { useSession } from '@/stores/session'
 
 const NONE = 'none'
-const TEXTAREA = 'w-full rounded-md border border-input bg-background px-3 py-2 text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+const TEXTAREA = 'w-full rounded-md border border-input bg-field px-3 py-2 text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
 
 const open = defineModel<boolean>('open', { default: false })
 const props = defineProps<{ clients: { value: string; label: string }[]; staff: { value: string; label: string }[] }>()

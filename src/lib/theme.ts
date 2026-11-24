@@ -5,7 +5,7 @@
  */
 
 import { ref, watch } from 'vue'
-import { customThemeCss, isDarkBackground, type ThemeColors } from '@/lib/customTheme'
+import { customThemeCss, isDarkBackground, withBorder, type SavedThemeColors, type ThemeColors } from '@/lib/customTheme'
 import type { Theme } from '@/lib/types'
 
 export type { Theme }
@@ -39,7 +39,7 @@ function savedTheme(): Theme {
 function savedCustomColors(): ThemeColors | null {
   try {
     const stored = localStorage.getItem(CUSTOM_STORAGE)
-    return stored ? (JSON.parse(stored) as ThemeColors) : null
+    return stored ? withBorder(JSON.parse(stored) as SavedThemeColors) : null
   } catch {
     return null
   }
