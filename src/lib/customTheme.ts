@@ -2,9 +2,12 @@
  * Tema personalizado da pessoa: das cinco cores escolhidas (fundo, menu lateral, cartões, texto e
  * cor principal) saem as variáveis do painel. Bordas, fundos suaves e texto secundário são
  * misturas do fundo com o texto; o texto dos botões fica branco ou quase preto, o que ler melhor.
+ * Cada cor pode ter opacidade (``#rrggbbaa``): a cor é composta sobre a camada de baixo (o fundo
+ * sobre o branco, menu e cartões sobre o fundo, texto e botão sobre os cartões), que é o que a
+ * tela mostraria com a transparência.
  */
 
-/** As cinco cores de um tema, em ``#rrggbb`` (iguais ao ``dto.py`` de themes). */
+/** As cinco cores de um tema, em ``#rrggbb`` ou ``#rrggbbaa`` (iguais ao ``dto.py`` de themes). */
 export interface ThemeColors {
   background: string
   sidebar: string
@@ -26,11 +29,69 @@ export const STARTER_COLORS: ThemeColors = {
 
 const WHITE = '#ffffff'
 const NEAR_BLACK = '#0a0a0a'
-const HEX = /^#[0-9a-f]{6}$/i
+const HEX = /^#[0-9a-f]{6}([0-9a-f]{2})?$/i
+const RGBA = /^rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*(?:,\s*(\d*\.?\d+)\s*)?\)$/i
+const OPAQUE_LENGTH = 7
+const MAX_CHANNEL = 255
 
-/** Diz se o texto é uma cor ``#rrggbb``. */
+/** Diz se o texto é uma cor ``#rrggbb`` ou ``#rrggbbaa``. */
 export function isHexColor(value: string): boolean {
   return HEX.test(value.trim())
+}
+
+/** A opacidade da cor, de 0 a 1 (``#rrggbb`` é 1). */
+export function alphaOf(hex: string): number {
+  const value = hex.trim()
+  return value.length > OPAQUE_LENGTH ? parseInt(value.slice(OPAQUE_LENGTH, OPAQUE_LENGTH + 2), 16) / MAX_CHANNEL : 1
+}
+
+/** A cor sem a opacidade, em ``#rrggbb`` (para o seletor de cor do navegador). */
+export function opaque(hex: string): string {
+  return hex.trim().slice(0, OPAQUE_LENGTH).toLowerCase()
+}
+
+/** A cor com a opacidade dada (0 a 1); opacidade total fica em ``#rrggbb``. */
+export function withAlpha(hex: string, alpha: number): string {
+  const clamped = Math.min(1, Math.max(0, alpha))
+  if (clamped >= 1) return opaque(hex)
+  return `${opaque(hex)}${Math.round(clamped * MAX_CHANNEL).toString(16).padStart(2, '0')}`
+}
+
+/** A cor como o CSS escreve: ``rgba(r, g, b, a)``. */
+export function toRgba(hex: string): string {
+  const [red, green, blue] = channels(hex)
+  return `rgba(${red}, ${green}, ${blue}, ${Math.round(alphaOf(hex) * 100) / 100})`
+}
+
+/** Lê uma cor em ``#rrggbb``, ``#rrggbbaa``, ``rgb()`` ou ``rgba()``; vazio se não for cor. */
+export function parseColor(text: string): string | null {
+  const value = text.trim().toLowerCase()
+  if (HEX.test(value)) return value.length > OPAQUE_LENGTH && value.endsWith('ff') ? opaque(value) : value
+  const match = RGBA.exec(value)
+  if (!match) return null
+  const parts = match.slice(1, 4).map(Number)
+  const alpha = match[4] === undefined ? 1 : Number(match[4])
+  if (parts.some((part) => part > MAX_CHANNEL) || alpha > 1) return null
+  return withAlpha(toHex(parts), alpha)
+}
+
+/** A cor composta sobre a camada de baixo (já opaca), como a tela mostra a transparência. */
+export function flatten(hex: string, under: string): string {
+  return mix(under, opaque(hex), alphaOf(hex))
+}
+
+/** As cinco cores já compostas, de baixo para cima: o fundo sobre o branco, menu e cartões sobre
+ * o fundo, texto e botão sobre os cartões. */
+export function flattenColors(colors: ThemeColors): ThemeColors {
+  const background = flatten(colors.background, WHITE)
+  const card = flatten(colors.card, background)
+  return {
+    background,
+    sidebar: flatten(colors.sidebar, background),
+    card,
+    text: flatten(colors.text, card),
+    primary: flatten(colors.primary, card),
+  }
 }
 
 /** A cor em vermelho, verde e azul, de 0 a 255. */
@@ -72,7 +133,7 @@ export function readableOn(background: string): string {
 
 /** Diz se o fundo é escuro: aí os avisos e os gráficos usam os tons do tema escuro. */
 export function isDarkBackground(background: string): boolean {
-  return readableOn(background) === WHITE
+  return readableOn(flatten(background, WHITE)) === WHITE
 }
 
 /** A cor no formato das variáveis do painel: ``h s% l%`` sem ``hsl()``. */
@@ -95,9 +156,9 @@ export function toHslTriplet(hex: string): string {
   return `${hue} ${Math.round(saturation * 1000) / 10}% ${Math.round(lightness * 1000) / 10}%`
 }
 
-/** As variáveis do painel tiradas das cinco cores, em ``#rrggbb``. */
+/** As variáveis do painel tiradas das cinco cores (já compostas), em ``#rrggbb``. */
 export function themeVariables(colors: ThemeColors): Record<string, string> {
-  const { background, sidebar, card, text, primary } = colors
+  const { background, sidebar, card, text, primary } = flattenColors(colors)
   const sidebarText = contrast(sidebar, text) >= 4.5 ? text : readableOn(sidebar)
   return {
     background,
