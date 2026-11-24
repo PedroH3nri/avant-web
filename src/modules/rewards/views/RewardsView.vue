@@ -17,6 +17,7 @@ import Select from '@/components/ui/Select.vue'
 import Pagination from '@/components/ui/Pagination.vue'
 import Status from '@/components/ui/Status.vue'
 import TableState from '@/components/ui/TableState.vue'
+import InstallCheckCell from '@/modules/install_checks/components/InstallCheckCell.vue'
 import { ApiError } from '@/lib/api'
 import { errorText, formatDate, t, tn, type Key } from '@/lib/i18n'
 import FiltersMenu from '@/modules/views/components/FiltersMenu.vue'
@@ -64,7 +65,7 @@ const guideNotes = computed(() => [t('rw.guideNoteTag'), t('rw.guideNoteOnce')])
 
 const canManage = computed(() => session.can(rewardPermission(internal, 'manage')))
 const siteOptions = computed(() => [{ value: '', label: t('rw.allSites') }, ...sites.value.map((site) => ({ value: site.id, label: site.domain }))])
-const columns = computed(() => (internal ? 7 : 6))
+const columns = computed(() => (internal ? 8 : 7))
 
 /** Carrega a página dos rewards com os filtros. */
 async function load() {
@@ -129,13 +130,14 @@ function state(reward: Reward): { tone: 'ok' | 'neutral' | 'bad'; label: string 
       <FiltersMenu v-model:shown="barFilters.shown.value" :filters="availableFilters" :label="filterLabel" />
     </div>
     <LoadError v-if="loadError" :message="loadError" @retry="load" />
-    <DataTable v-else :min="internal ? 900 : 760">
+    <DataTable v-else :min="internal ? 1080 : 940">
       <thead>
         <tr>
           <th :class="th">{{ t('rw.col.reward') }}</th>
           <th v-if="internal" :class="th">{{ t('rw.col.client') }}</th>
           <th :class="th">{{ t('rw.col.site') }}</th>
           <th :class="th">{{ t('rw.col.state') }}</th>
+          <th :class="th">{{ t('ic.col') }}</th>
           <th :class="[th, 'text-right']">{{ t('rw.col.cooldown') }}</th>
           <th :class="th">{{ t('rw.col.updated') }}</th>
           <th :class="th"><span class="sr-only">{{ t('rw.metrics') }}</span></th>
@@ -167,6 +169,10 @@ function state(reward: Reward): { tone: 'ok' | 'neutral' | 'bad'; label: string 
           <td v-if="internal" :class="td">{{ reward.client?.name ?? '—' }}</td>
           <td :class="[td, 'font-mono text-[13px]']">{{ reward.domain }}</td>
           <td :class="td"><Status :tone="state(reward).tone">{{ state(reward).label }}</Status></td>
+          <td :class="td">
+            <InstallCheckCell v-if="reward.active && !reward.deleted_at" target="reward" :id="reward.id" :name="reward.name" :internal="internal" :summary="reward.install" />
+            <span v-else class="text-[13px] text-muted-foreground">{{ reward.deleted_at ? '—' : t('ic.activateFirst') }}</span>
+          </td>
           <td :class="[td, 'text-right tnum']">{{ t('rw.minutes', { n: reward.cooldown_minutes }) }}</td>
           <td :class="[td, 'whitespace-nowrap text-[13px] text-muted-foreground tnum']">{{ formatDate(reward.deleted_at ?? reward.updated_at) }}</td>
           <td :class="[td, 'text-right']">

@@ -20,6 +20,7 @@ import Select from '@/components/ui/Select.vue'
 import Pagination from '@/components/ui/Pagination.vue'
 import Status from '@/components/ui/Status.vue'
 import TableState from '@/components/ui/TableState.vue'
+import InstallCheckCell from '@/modules/install_checks/components/InstallCheckCell.vue'
 import { ApiError } from '@/lib/api'
 import { errorText, formatDate, t, tn } from '@/lib/i18n'
 import { td, th } from '@/lib/table'
@@ -51,7 +52,7 @@ const busy = ref(false)
 const nameTaken = ref(false)
 
 const canManage = computed(() => session.can(adTagPermission(internal, 'manage')))
-const columns = computed(() => (internal ? 6 : 5))
+const columns = computed(() => (internal ? 7 : 6))
 const groups = computed(() => {
   const bySite = new Map<string, { siteId: string; domain: string; client: string | null; tags: AdTag[] }>()
   for (const tag of tags.value ?? []) {
@@ -177,12 +178,13 @@ const installOpen = computed({
       <Input v-model="query" :aria-label="t('at.search')" class="h-9 bg-card pl-9" :placeholder="internal ? t('at.searchPlaceholderInternal') : t('at.searchPlaceholder')" />
     </div>
     <LoadError v-if="loadError" :message="loadError" @retry="load" />
-    <DataTable v-else :min="internal ? 900 : 780">
+    <DataTable v-else :min="internal ? 1120 : 980">
       <thead>
         <tr>
           <th :class="th">{{ t('at.col.tag') }}</th>
           <th v-if="internal" :class="th">{{ t('at.col.client') }}</th>
           <th :class="th">{{ t('at.col.status') }}</th>
+          <th :class="th">{{ t('ic.col') }}</th>
           <th :class="th">{{ t('at.col.seen') }}</th>
           <th :class="th">{{ t('at.col.draft') }}</th>
           <th :class="th"><span class="sr-only">{{ t('at.col.actions') }}</span></th>
@@ -198,7 +200,7 @@ const installOpen = computed({
             <span v-if="internal && group.client" class="ml-2 text-[12px] text-muted-foreground">{{ group.client }}</span>
             <span class="ml-2 text-[12px] text-muted-foreground">· {{ tn('at.tagCount', group.tags.length) }}</span>
           </td>
-          <td :class="[td, 'py-2 text-right']" :colspan="4">
+          <td :class="[td, 'py-2 text-right']" :colspan="5">
             <Button v-if="canManage" size="sm" variant="ghost" @click="startNew(group.siteId)"><Plus />{{ t('at.newOnSite') }}</Button>
           </td>
         </tr>
@@ -209,6 +211,10 @@ const installOpen = computed({
           </td>
           <td :class="td">
             <Status :tone="tagStatus(tag, tag.live && tag.id in lastSeen ? lastSeen[tag.id] : undefined).tone">{{ tagStatus(tag, tag.live && tag.id in lastSeen ? lastSeen[tag.id] : undefined).label }}</Status>
+          </td>
+          <td :class="td">
+            <InstallCheckCell v-if="tag.live" target="ad_tag" :id="tag.id" :name="tag.name" :internal="internal" :summary="tag.install" />
+            <span v-else class="text-[13px] text-muted-foreground">{{ t('ic.publishFirst') }}</span>
           </td>
           <td :class="[td, 'whitespace-nowrap text-[13px] text-muted-foreground tnum']">{{ seenText(tag) }}</td>
           <td :class="td">
