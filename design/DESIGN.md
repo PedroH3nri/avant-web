@@ -141,7 +141,7 @@ Ink (#171717) is the primary: primary buttons, the active tab underline, the com
 White surface for headers, page bands and cards; #FAFAFA band behind the work area and inside card footers; #EBEBEB hairlines; #666666 secondary text.
 
 ### Named Rules
-- **Blue is for links and focus only** in the Light and Dark themes. The GroOne theme and custom themes are the exceptions, chosen by the person. Every theme animates focus (field border + halo, `.border-input`) and button hover (1px lift + shadow, `.btn-motion`, styles.css).
+- **Blue is for links and focus only** in the Light and Dark themes. The GroOne theme and custom themes are the exceptions, chosen by the person. Every theme animates fields (hover: border toward the highlight; focus: border + halo, `.border-input`), button hover (1px lift + shadow, `.btn-motion`) and metric cards (dashboard widgets `.card-motion`: 2px lift + highlight border; KPI tiles `.kpi-motion`: highlight line growing at the base). Cards with forms do not move.
 - **State is a dot plus a word.** Conectada (ok), Testando conexão (warn), Sem acesso (bad), Convite enviado / pendente (pending). Never color alone.
 
 ## Typography

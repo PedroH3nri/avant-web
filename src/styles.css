@@ -212,11 +212,16 @@
   @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
 }
 
-/* Campo selecionado: a borda vira a cor de destaque (--ring) e um halo cresce em volta. Fica fora
-   das camadas para valer sobre o ring-2 de cada campo. */
+/* Campo sob o mouse: a borda puxa para a cor de destaque (--ring) e aparece um halo leve. Campo
+   selecionado: a borda vira a cor de destaque e o halo cresce. Fica fora das camadas para valer
+   sobre o ring-2 de cada campo. */
 .border-input {
   transition: border-color 0.2s ease, box-shadow 0.32s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.2s ease;
   box-shadow: 0 0 0 0 hsl(var(--ring) / 0), 0 0 0 0 hsl(var(--ring) / 0);
+}
+.border-input:hover:not(:focus):not(:focus-within):not(:disabled) {
+  border-color: hsl(var(--ring) / 0.55);
+  box-shadow: 0 0 0 0 hsl(var(--ring) / 0), 0 0 0 3px hsl(var(--ring) / 0.08);
 }
 .border-input:focus,
 .border-input:focus-visible,
@@ -250,4 +255,33 @@
 @media (prefers-reduced-motion: reduce) {
   .btn-motion:not(:disabled):hover,
   .btn-motion:not(:disabled):active { transform: none; }
+}
+
+/* Cards de métrica (widgets do dashboard e KPIs): sob o mouse, a borda puxa para a cor de destaque,
+   o card sobe 2 px e ganha sombra. Cards com formulário não usam. */
+.card-motion {
+  transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.2s ease;
+}
+.card-motion:hover {
+  transform: translateY(-2px);
+  border-color: hsl(var(--ring) / 0.45);
+  box-shadow: 0 0 0 3px hsl(var(--ring) / calc(var(--glow-alpha) / 2)), 0 10px 24px -14px hsl(var(--glow-color) / 0.45);
+}
+
+/* KPI dentro da faixa de KPIs: sem subir (a faixa é uma peça só); uma linha na cor de destaque
+   cresce do centro na base. */
+.kpi-motion::before {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 2px;
+  background: hsl(var(--ring));
+  transform: scaleX(0);
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.kpi-motion:hover::before { transform: scaleX(1); }
+@media (prefers-reduced-motion: reduce) {
+  .card-motion:hover { transform: none; }
 }
