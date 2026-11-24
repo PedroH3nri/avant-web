@@ -4,12 +4,12 @@ import OpenLink from '@/components/OpenLink.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useDebounceFn } from '@vueuse/core'
-import { BarChart3, Check, Copy, Gift, Plus, Search } from 'lucide-vue-next'
+import { BarChart3, BookOpen, Gift, Plus, Search } from 'lucide-vue-next'
+import InstallGuideDialog from '@/components/InstallGuideDialog.vue'
 import LoadError from '@/components/LoadError.vue'
 import PageBody from '@/components/PageBody.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import Button from '@/components/ui/Button.vue'
-import Card from '@/components/ui/Card.vue'
 import Checkbox from '@/components/ui/Checkbox.vue'
 import DataTable from '@/components/ui/DataTable.vue'
 import Input from '@/components/ui/Input.vue'
@@ -22,7 +22,6 @@ import { errorText, formatDate, t, tn, type Key } from '@/lib/i18n'
 import FiltersMenu from '@/modules/views/components/FiltersMenu.vue'
 import { useLocalBarFilters } from '@/modules/views/barFilters'
 import { td, th } from '@/lib/table'
-import { copy } from '@/modules/account/rules'
 import { installSnippet, rewardPermission, rewardsPath } from '@/modules/rewards/rules'
 import { rewardService } from '@/modules/rewards/service'
 import type { Reward, RewardSiteOption } from '@/modules/rewards/types'
@@ -58,8 +57,10 @@ const filterLabel = (filter: string) => t(FILTER_LABELS[filter] as Key)
 /** Os filtros que a pessoa pode pôr na barra: site só no painel do cliente com mais de um. */
 const availableFilters = computed(() => FILTERS.filter((key) => key !== 'site' || (!internal && sites.value.length > 1)))
 const loadError = ref<string | null>(null)
-const copied = ref(false)
 const snippet = installSnippet(window.location.origin)
+const guideOpen = ref(false)
+const guideSteps = computed(() => [t('rw.guideStep1'), t('rw.guideStep2'), t('rw.guideStep3'), t('rw.guideStep4')])
+const guideNotes = computed(() => [t('rw.guideNoteTag'), t('rw.guideNoteOnce')])
 
 const canManage = computed(() => session.can(rewardPermission(internal, 'manage')))
 const siteOptions = computed(() => [{ value: '', label: t('rw.allSites') }, ...sites.value.map((site) => ({ value: site.id, label: site.domain }))])
@@ -103,13 +104,6 @@ function open(reward: Reward) {
   void router.push(reward.deleted_at ? `${base}/${reward.id}/metricas` : `${base}/${reward.id}`)
 }
 
-/** Copia a linha do script para a área de transferência. */
-async function copySnippet() {
-  if (!(await copy(snippet))) return
-  copied.value = true
-  setTimeout(() => (copied.value = false), 1600)
-}
-
 /** A situação do reward: apagado, ativo ou pausado. */
 function state(reward: Reward): { tone: 'ok' | 'neutral' | 'bad'; label: string } {
   if (reward.deleted_at) return { tone: 'bad', label: t('rw.state.deleted') }
@@ -119,8 +113,9 @@ function state(reward: Reward): { tone: 'ok' | 'neutral' | 'bad'; label: string 
 
 <template>
   <PageHeader :title="t('nav.rewards')" :sub="internal ? t('rw.subInternal') : t('rw.sub')">
-    <template v-if="canManage" #actions>
-      <Button @click="router.push(`${base}/novo`)"><Plus />{{ t('rw.new') }}</Button>
+    <template #actions>
+      <Button variant="outline" @click="guideOpen = true"><BookOpen />{{ t('rw.howToInstall') }}</Button>
+      <Button v-if="canManage" @click="router.push(`${base}/novo`)"><Plus />{{ t('rw.new') }}</Button>
     </template>
   </PageHeader>
   <PageBody>
@@ -184,11 +179,14 @@ function state(reward: Reward): { tone: 'ok' | 'neutral' | 'bad'; label: string 
       </tbody>
     </DataTable>
     <Pagination v-if="!loadError" v-model:page="page" :total="total" :pages="pages" />
-    <Card :title="t('rw.install')" :desc="t('rw.installDesc')">
-      <div class="flex items-center gap-2">
-        <code class="min-w-0 flex-1 overflow-x-auto whitespace-nowrap rounded-md border bg-muted px-3 py-2 font-mono text-[13px]">{{ snippet }}</code>
-        <Button variant="outline" size="icon" :aria-label="t('common.copy')" @click="copySnippet"><component :is="copied ? Check : Copy" /></Button>
-      </div>
-    </Card>
   </PageBody>
+  <InstallGuideDialog
+    v-model:open="guideOpen"
+    :title="t('rw.guideTitle')"
+    :desc="t('rw.guideDesc')"
+    :steps="guideSteps"
+    :line="snippet"
+    :line-hint="t('rw.guideLineHint')"
+    :notes="guideNotes"
+  />
 </template>
