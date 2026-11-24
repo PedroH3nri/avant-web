@@ -67,7 +67,7 @@ function statusPair(event: TaskEvent): { from: TaskStatus; to: TaskStatus } | nu
     <ol v-else class="relative grid gap-5 before:absolute before:bottom-2 before:left-[15px] before:top-2 before:w-px before:bg-border">
       <li v-for="event in shown" :key="event.id" class="relative grid grid-cols-[32px_1fr] gap-3">
         <template v-if="event.kind === 'comment'">
-          <Avatar :name="personName(event.author)" class="ring-4 ring-card" />
+          <Avatar :name="personName(event.author)" :image-url="event.author?.image_url ?? null" class="ring-4 ring-card" />
           <div class="min-w-0 rounded-lg border bg-background">
             <div class="flex flex-wrap items-baseline gap-x-2 border-b px-3 py-2 text-[13px]">
               <span class="font-medium">{{ personName(event.author) }}</span>
