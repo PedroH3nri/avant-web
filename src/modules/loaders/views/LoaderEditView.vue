@@ -8,6 +8,7 @@ import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import LoadError from '@/components/LoadError.vue'
 import PageBody from '@/components/PageBody.vue'
 import PageHeader from '@/components/PageHeader.vue'
+import InstallCheckCell from '@/modules/install_checks/components/InstallCheckCell.vue'
 import Button from '@/components/ui/Button.vue'
 import Card from '@/components/ui/Card.vue'
 import Field from '@/components/ui/Field.vue'
@@ -206,11 +207,12 @@ const segment = (selected: boolean) => ['h-8 rounded px-3 text-[13px] font-mediu
         <ArrowLeft class="size-4" />{{ t('nav.loaders') }}
       </RouterLink>
     </template>
-    <template v-if="input && canManage" #actions>
-      <Button v-if="loaderId" variant="outline" :disabled="busy || usedBy.length > 0" :title="usedBy.length ? t('ld.deleteInUse') : undefined" @click="removeOpen = true">
+    <template v-if="input && (canManage || loaderId)" #actions>
+      <InstallCheckCell v-if="loaderId && original" target="loader" :id="loaderId" :name="original.name" :internal="internal" large />
+      <Button v-if="loaderId && canManage" variant="outline" :disabled="busy || usedBy.length > 0" :title="usedBy.length ? t('ld.deleteInUse') : undefined" @click="removeOpen = true">
         <Trash2 />{{ t('common.delete') }}
       </Button>
-      <Button :disabled="busy" @click="save">{{ loaderId ? t('common.save') : t('ld.create') }}</Button>
+      <Button v-if="canManage" :disabled="busy" @click="save">{{ loaderId ? t('common.save') : t('ld.create') }}</Button>
     </template>
   </PageHeader>
   <PageBody>

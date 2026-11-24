@@ -10,6 +10,7 @@ import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import LoadError from '@/components/LoadError.vue'
 import PageBody from '@/components/PageBody.vue'
 import PageHeader from '@/components/PageHeader.vue'
+import InstallCheckCell from '@/modules/install_checks/components/InstallCheckCell.vue'
 import Button from '@/components/ui/Button.vue'
 import Card from '@/components/ui/Card.vue'
 import Checkbox from '@/components/ui/Checkbox.vue'
@@ -297,6 +298,7 @@ const segment = (selected: boolean) => ['h-8 rounded px-3 text-[13px] font-mediu
       </RouterLink>
     </template>
     <template v-if="input" #actions>
+      <InstallCheckCell v-if="rewardId && original?.active" target="reward" :id="rewardId" :name="original.name" :internal="internal" large />
       <Button v-if="rewardId" variant="outline" @click="router.push(`${base}/${rewardId}/metricas`)"><BarChart3 />{{ t('rw.metrics') }}</Button>
       <Button v-if="canManage" :disabled="busy" @click="save">{{ rewardId ? t('common.save') : t('rw.create') }}</Button>
       <DropdownMenuRoot v-if="rewardId && canManage">
