@@ -113,7 +113,7 @@ function add() {
           v-model="text"
           rows="4"
           :maxlength="TEXT_MAX"
-          class="w-full rounded-md border border-input bg-field px-3 py-2 text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          class="w-full rounded-md border border-input bg-[hsl(var(--field))] px-3 py-2 text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         />
       </Field>
       <Field v-else-if="kind === 'goal'" id="widget-goal" :label="t('dash.add.goalScope')">

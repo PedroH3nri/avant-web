@@ -178,7 +178,7 @@ const confirmText = computed(() => {
         maxlength="500"
         rows="3"
         :placeholder="t('inv.confirm.return.placeholder')"
-        class="w-full rounded-md border border-input bg-field px-3 py-2 text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        class="w-full rounded-md border border-input bg-[hsl(var(--field))] px-3 py-2 text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       />
     </Field>
     <div v-if="confirm === 'issue' && invoice" class="flex justify-between rounded-md bg-muted p-3 text-[14px]">

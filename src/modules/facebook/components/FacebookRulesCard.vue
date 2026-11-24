@@ -133,7 +133,7 @@ onMounted(load)
           </Field>
         </div>
       </div>
-      <div v-if="dirty && !readOnly" class="flex flex-wrap items-center justify-between gap-3 border-t bg-card-footer px-6 py-3">
+      <div v-if="dirty && !readOnly" class="flex flex-wrap items-center justify-between gap-3 border-t bg-[hsl(var(--card-footer))] px-6 py-3">
         <div class="text-[13px] text-muted-foreground">{{ t('fb.rules.unsaved') }}</div>
         <div class="flex gap-2">
           <Button variant="outline" @click="draft = saved ? { ...saved } : draft">{{ t('fb.rules.discard') }}</Button>

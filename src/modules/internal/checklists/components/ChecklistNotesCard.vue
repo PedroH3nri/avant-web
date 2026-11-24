@@ -16,7 +16,7 @@ import { NOTE_MAX, NOTE_MIN, languageName, personName } from '@/modules/internal
 import { checklistService } from '@/modules/internal/checklists/service'
 import type { ChecklistNote } from '@/modules/internal/checklists/types'
 
-const TEXTAREA = 'w-full rounded-md border border-input bg-field px-3 py-2 text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+const TEXTAREA = 'w-full rounded-md border border-input bg-[hsl(var(--field))] px-3 py-2 text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
 
 const props = defineProps<{ checklistId: string; notes: ChecklistNote[]; clientLocale: string | null; writable: boolean }>()
 const emit = defineEmits<{ changed: [] }>()
