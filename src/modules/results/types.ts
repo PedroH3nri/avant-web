@@ -18,6 +18,8 @@ export interface MonthResult {
   result: string
   deductions_pending: boolean
   cost_lines: CostLine[]
+  /** Só no painel interno: o que a Groone recebe no mês. */
+  groone_revenue?: string | null
 }
 
 export interface ResultTotals {
@@ -26,6 +28,7 @@ export interface ResultTotals {
   revenue: string
   costs: string
   result: string
+  groone_revenue?: string | null
 }
 
 export interface CompanyResults {

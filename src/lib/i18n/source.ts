@@ -776,6 +776,8 @@ export const dict = {
   'res.lastMonth': ['Mês passado', 'Last month', 'Mes pasado'],
   'res.deductions': ['Deduções', 'Deductions', 'Deducciones'],
   'res.revenue': ['Receita', 'Revenue', 'Ingresos'],
+  'res.grooneRevenue': ['Receita Groone', 'Groone revenue', 'Ingresos de Groone'],
+  'res.clientRevenue': ['Receita cliente', 'Client revenue', 'Ingresos del cliente'],
   'res.costs': ['Custos', 'Costs', 'Costos'],
   'res.result': ['Resultado', 'Result', 'Resultado'],
   'res.total': ['Total', 'Total', 'Total'],
