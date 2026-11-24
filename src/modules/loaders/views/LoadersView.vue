@@ -14,6 +14,7 @@ import DataTable from '@/components/ui/DataTable.vue'
 import Input from '@/components/ui/Input.vue'
 import Pagination from '@/components/ui/Pagination.vue'
 import TableState from '@/components/ui/TableState.vue'
+import InstallCheckCell from '@/modules/install_checks/components/InstallCheckCell.vue'
 import { ApiError } from '@/lib/api'
 import { errorText, formatDate, t } from '@/lib/i18n'
 import { td, th } from '@/lib/table'
@@ -36,7 +37,7 @@ const query = ref('')
 const loadError = ref<string | null>(null)
 
 const canManage = computed(() => session.can(loaderPermission(internal, 'manage')))
-const columns = computed(() => (internal ? 6 : 5))
+const columns = computed(() => (internal ? 7 : 6))
 
 /** Carrega a página dos loaders com a busca. */
 async function load() {
@@ -91,7 +92,7 @@ const guideNotes = computed(() => [t('ld.guideNoteEdit'), t('ld.guideNoteOne')])
       <Input v-model="query" :aria-label="t('ld.search')" class="h-9 bg-card pl-9" :placeholder="t('ld.searchPlaceholder')" />
     </div>
     <LoadError v-if="loadError" :message="loadError" @retry="load" />
-    <DataTable v-else :min="internal ? 860 : 720">
+    <DataTable v-else :min="internal ? 1040 : 900">
       <thead>
         <tr>
           <th :class="th">{{ t('ld.col.loader') }}</th>
@@ -99,6 +100,7 @@ const guideNotes = computed(() => [t('ld.guideNoteEdit'), t('ld.guideNoteOne')])
           <th :class="th">{{ t('ld.col.template') }}</th>
           <th :class="th">{{ t('ld.col.adblock') }}</th>
           <th :class="th">{{ t('ld.col.tags') }}</th>
+          <th :class="th">{{ t('ic.col') }}</th>
           <th :class="th">{{ t('ld.col.updated') }}</th>
           <th :class="[th, 'w-px']"><span class="sr-only">{{ t('common.open') }}</span></th>
         </tr>
@@ -124,6 +126,7 @@ const guideNotes = computed(() => [t('ld.guideNoteEdit'), t('ld.guideNoteOne')])
             <template v-if="loader.tags.length">{{ loader.tags.map((tag) => `${tag.domain} · ${tag.name}`).join(', ') }}</template>
             <span v-else class="text-muted-foreground">{{ t('ld.noTags') }}</span>
           </td>
+          <td :class="td"><InstallCheckCell target="loader" :id="loader.id" :name="loader.name" :internal="internal" :summary="loader.install" /></td>
           <td :class="[td, 'whitespace-nowrap text-[13px] text-muted-foreground tnum']">{{ formatDate(loader.updated_at) }}</td>
           <td :class="[td, 'text-right']"><OpenLink :to="`${base}/${loader.id}`" :name="loader.name" /></td>
         </tr>

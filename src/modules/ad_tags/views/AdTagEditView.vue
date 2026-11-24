@@ -9,6 +9,7 @@ import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import LoadError from '@/components/LoadError.vue'
 import PageBody from '@/components/PageBody.vue'
 import PageHeader from '@/components/PageHeader.vue'
+import InstallCheckCell from '@/modules/install_checks/components/InstallCheckCell.vue'
 import Badge from '@/components/ui/Badge.vue'
 import Button from '@/components/ui/Button.vue'
 import Card from '@/components/ui/Card.vue'
@@ -438,6 +439,7 @@ async function goToLoader(loaderId: string | null) {
       <RouterLink :to="base" class="mb-3 inline-flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-foreground"><ArrowLeft class="size-4" />{{ t('at.back') }}</RouterLink>
     </template>
     <template v-if="tag" #actions>
+      <InstallCheckCell v-if="tag.live" target="ad_tag" :id="tag.id" :name="tag.name" :internal="internal" large />
       <Button v-if="tag.live" variant="outline" @click="router.push(`${base}/${tagId}/metricas`)"><BarChart3 />{{ t('at.metrics') }}</Button>
       <Button variant="outline" @click="installOpen = true"><Code2 />{{ t('at.install') }}</Button>
       <Button v-if="canManage" :disabled="!canPublish" :title="blocking ? t('at.publishBlocked') : undefined" @click="publishOpen = true">
