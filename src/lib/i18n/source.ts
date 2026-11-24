@@ -5614,6 +5614,11 @@ export const errors: Record<string, readonly [string, string, string]> = {
     'This network is already connected to a company on Avant. If it is yours, contact Groone.',
     'Esta network ya está conectada a una empresa en Avant. Si es tuya, habla con Groone.',
   ],
+  staff_cannot_have_company: [
+    'Funcionário da Groone não pode ter Empresa de cliente, e cliente não entra na equipe Groone.',
+    'Groone staff cannot have a client company, and clients cannot join the Groone team.',
+    'El personal de Groone no puede tener una empresa cliente, y los clientes no entran en el equipo de Groone.',
+  ],
   client_company_exists: ['Esse cliente já tem uma Empresa.', 'This client already has a company.', 'Este cliente ya tiene una empresa.'],
   not_a_client: [
     'Só a conta do cliente cria a Empresa. Fale com quem convidou você.',
