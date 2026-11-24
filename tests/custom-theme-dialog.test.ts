@@ -53,3 +53,26 @@ describe('prévia no painel', () => {
     wrapper.unmount()
   })
 })
+
+describe('voltar da prévia', () => {
+  /** Editar o mesmo tema durante a prévia volta a janela com as mudanças; outro tema abre do zero. */
+  it('reabre a janela pelo Editar', async () => {
+    const saved = { id: 't1', name: 'Noite', colors: { ...STARTER_COLORS }, updated_at: '2026-11-24T00:00:00Z' }
+    const wrapper = mount(CustomThemeDialog, { props: { open: false, editing: saved }, attachTo: document.body })
+    await wrapper.setProps({ open: true })
+    await flushPromises()
+    const name = document.querySelector<HTMLInputElement>('#theme-name')!
+    name.value = 'Noite 2'
+    name.dispatchEvent(new Event('input'))
+    document.querySelector<HTMLButtonElement>('button:has(svg.lucide-eye)')!.click()
+    await flushPromises()
+    expect(document.querySelector('#theme-name')).toBeNull()
+    wrapper.vm.reopen(saved, saved)
+    await flushPromises()
+    expect(document.querySelector<HTMLInputElement>('#theme-name')?.value).toBe('Noite 2')
+    wrapper.vm.reopen(saved, { ...saved, id: 't2', name: 'Dia' })
+    await flushPromises()
+    expect(document.querySelector<HTMLInputElement>('#theme-name')?.value).toBe('Dia')
+    wrapper.unmount()
+  })
+})
