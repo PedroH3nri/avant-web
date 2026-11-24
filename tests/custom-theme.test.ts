@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { contrast, customThemeCss, isDarkBackground, isHexColor, mix, readableOn, STARTER_COLORS, themeVariables, toHslTriplet } from '@/lib/customTheme'
+import { alphaOf, contrast, customThemeCss, flattenColors, isDarkBackground, isHexColor, mix, parseColor, readableOn, STARTER_COLORS, themeVariables, toHslTriplet, toRgba, withAlpha } from '@/lib/customTheme'
 
 describe('tema personalizado', () => {
   it('aceita só cores #rrggbb', () => {
@@ -43,5 +43,30 @@ describe('tema personalizado', () => {
     expect(css.startsWith('html:root[data-custom-theme][data-custom-theme]{')).toBe(true)
     expect(css).toContain(`--background:${toHslTriplet(STARTER_COLORS.background)};`)
     expect(css).toContain('--primary-foreground:0 0% 100%;')
+  })
+})
+
+describe('opacidade das cores', () => {
+  /** Lê hex, rgb e rgba e guarda o alfa em dois dígitos. */
+  it('lê rgba, rgb e hex de 8 dígitos', () => {
+    expect(parseColor('rgba(31, 75, 255, 0.5)')).toBe('#1f4bff80')
+    expect(parseColor('rgb(31, 75, 255)')).toBe('#1f4bff')
+    expect(parseColor('#1F4BFF80')).toBe('#1f4bff80')
+    expect(parseColor('rgba(300, 0, 0, 1)')).toBeNull()
+    expect(parseColor('azul')).toBeNull()
+  })
+
+  /** Escreve a cor em rgba e troca só a opacidade. */
+  it('escreve em rgba e troca a opacidade', () => {
+    expect(toRgba('#1f4bff')).toBe('rgba(31, 75, 255, 1)')
+    expect(withAlpha('#1f4bff', 0.5)).toBe('#1f4bff80')
+    expect(withAlpha('#1f4bff80', 1)).toBe('#1f4bff')
+    expect(alphaOf('#1f4bff80')).toBeCloseTo(0.5, 1)
+  })
+
+  /** A cor transparente aparece misturada com a camada de baixo. */
+  it('compõe a opacidade sobre a camada de baixo', () => {
+    const shown = flattenColors({ ...STARTER_COLORS, background: '#00000080' })
+    expect(shown.background).toBe('#7f7f7f')
   })
 })
