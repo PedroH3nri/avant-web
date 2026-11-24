@@ -6,18 +6,17 @@ import { ApiError } from '@/lib/api'
 import { reconnectEvents } from '@/lib/events'
 import { chooseLang } from '@/lib/i18n'
 import { announceCompany } from '@/lib/tabs'
-import { applyAccent, customColors, theme } from '@/lib/theme'
-import type { AccentId, Lang, Me, Theme, UserRef } from '@/lib/types'
+import { customColors, theme } from '@/lib/theme'
+import type { Lang, Me, Theme, UserRef } from '@/lib/types'
 import { accountService } from '@/modules/account/service'
 import type { CustomTheme } from '@/modules/account/types'
 import type { LoginResult } from '@/modules/auth/types'
 import { authService } from '@/modules/auth/service'
 import { currencyService } from '@/modules/currencies/service'
 
-/** Tema, cor, idioma e o tema personalizado em uso, como a API guarda. */
+/** Tema, idioma e o tema personalizado em uso, como a API guarda. */
 interface AppearanceChoice {
   theme: Theme
-  accent: AccentId
   locale: Lang
   custom_theme_id: string | null
 }
@@ -58,7 +57,7 @@ export const useSession = defineStore('session', () => {
     return known ? grants(known, wanted) : true
   }
 
-  /** Guarda a pessoa da sessão e aplica idioma, tema e cor dela. */
+  /** Guarda a pessoa da sessão e aplica idioma e tema dela. */
   function set(value: Me | null) {
     me.value = value
     loaded.value = true
@@ -67,7 +66,6 @@ export const useSession = defineStore('session', () => {
     } else if (value.active_company_id) {
       knownPermissions.value = { ...knownPermissions.value, [value.active_company_id]: value.permissions }
     }
-    applyAccent(value?.accent)
     if (value) {
       theme.value = value.theme
       void chooseLang(value.user.locale)
@@ -111,12 +109,11 @@ export const useSession = defineStore('session', () => {
     if (me.value) me.value = { ...me.value, display_currency: saved.display_currency }
   }
 
-  /** Troca o tema, a cor ou o idioma da pessoa: aplica na hora e volta atrás se a API recusar. */
+  /** Troca o tema ou o idioma da pessoa: aplica na hora e volta atrás se a API recusar. */
   async function setAppearance(change: Partial<AppearanceChoice>) {
     if (!me.value) return
     const before: AppearanceChoice = {
       theme: me.value.theme,
-      accent: me.value.accent,
       locale: me.value.user.locale,
       custom_theme_id: me.value.custom_theme_id ?? null,
     }
@@ -130,7 +127,7 @@ export const useSession = defineStore('session', () => {
     }
   }
 
-  /** Coloca tema, cor e idioma na pessoa da sessão e aplica no painel. */
+  /** Coloca tema e idioma na pessoa da sessão e aplica no painel. */
   function applyAppearance(appearance: AppearanceChoice) {
     if (!me.value) return
     const { locale, ...rest } = appearance

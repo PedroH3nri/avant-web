@@ -10,7 +10,6 @@ export type SiteScope = 'all' | 'assigned'
 export type Theme = 'light' | 'dark' | 'groone' | 'system' | 'custom'
 
 /** Cor de destaque escolhida pela pessoa. */
-export type AccentId = 'default' | 'blue' | 'navy' | 'cyan' | 'green' | 'purple' | 'pink' | 'orange' | 'gold' | 'graphite'
 
 export interface Items<T> {
   items: T[]
@@ -60,7 +59,6 @@ export interface Me {
   display_currency: string
   /** Tema e cor que a pessoa escolheu; valem em todas as Empresas. */
   theme: Theme
-  accent: AccentId
   /** O tema personalizado em uso quando ``theme`` é ``custom`` (cores em /auth/me/themes). */
   custom_theme_id?: string | null
 }

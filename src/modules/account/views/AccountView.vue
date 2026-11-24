@@ -7,7 +7,6 @@ import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
 import { ShieldAlert } from 'lucide-vue-next'
-import AccentCard from '@/modules/account/components/AccentCard.vue'
 import ApiKeysCard from '@/modules/account/components/ApiKeysCard.vue'
 import CurrencyCard from '@/modules/account/components/CurrencyCard.vue'
 import GoogleCard from '@/modules/account/components/GoogleCard.vue'
@@ -77,7 +76,6 @@ onMounted(() => {
       <h2 class="text-[13px] font-medium text-muted-foreground">
         {{ t('set.appearance') }}
       </h2>
-      <AccentCard />
       <ThemeCard />
       <Card :title="t('set.language')" :desc="t('set.langDesc')">
         <LangSwitch class="max-w-[360px]" />

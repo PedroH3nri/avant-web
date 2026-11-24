@@ -1371,7 +1371,7 @@ function ProtoCustomThemes() {
         ))}
         <button type="button" className="grid min-h-[132px] place-items-center rounded-lg border border-dashed text-[14px] text-muted-foreground hover:bg-accent" onClick={() => { setEditing(null); setOpen(true) }}>+ Novo tema</button>
       </div>
-      <p className="text-[13px] text-muted-foreground">Até 3 temas com as suas cores. A cor secundária não muda os temas personalizados.</p>
+      <p className="text-[13px] text-muted-foreground">Até 3 temas com as suas cores.</p>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-[720px]">
           <DialogHeader><DialogTitle>{editing ? 'Editar tema' : 'Novo tema'}</DialogTitle><DialogDescription>Escolha as cinco cores. O Avant calcula bordas, fundos suaves e texto secundário a partir delas.</DialogDescription></DialogHeader>
@@ -1416,18 +1416,7 @@ function SettingsScreen({ t, accent, setAccent, theme, setTheme, image, setImage
           <Card title="E-mail de contato" desc="Para onde a Groone manda avisos da conta e da network." footerNote="Só a Groone usa esse e-mail." footer={<Button size="sm" onClick={() => saved('E-mail')}>Salvar</Button>}>
             <div className="max-w-md"><Input id="set-mail" aria-label="E-mail de contato" className="h-10" defaultValue="financeiro@blogexemplo.com" /></div>
           </Card>
-          <div id="cfg-aparencia" className="scroll-mt-8"><Card title="Cor secundária do sistema" desc="Usada nos botões principais, na seleção e nas vagas da equipe, num tom próprio para cada tema. Vale para todos da Empresa." footerNote="As amostras mostram a cor no seu tema de agora.">
-            <RadioGroup value={accent} onValueChange={setAccent} className="flex flex-wrap gap-2" aria-label="Cor secundária do sistema">
-              {ACCENTS.map((a) => (
-                <Label key={a.id} htmlFor={`accent-${a.id}`} className={cn('flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-[14px] font-normal hover:bg-accent has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring', accent === a.id && 'border-foreground')}>
-                  <RadioGroupItem id={`accent-${a.id}`} value={a.id} className="sr-only" />
-                  <span className="h-4 w-4 rounded-full ring-1 ring-inset ring-foreground/10" style={{ background: `hsl(${a[swatchTheme(theme)]})` }} />{a.label}
-                  {accent === a.id && <Check className="h-3.5 w-3.5" />}
-                </Label>
-              ))}
-            </RadioGroup>
-          </Card></div>
-          <Card title="Tema" desc="Só para você, neste navegador.">
+          <div id="cfg-aparencia" className="scroll-mt-8"><Card title="Tema" desc="Só para você, guardado na sua conta. Cada tema tem as próprias cores.">
             <RadioGroup value={theme} onValueChange={setTheme} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" aria-label="Tema">
               {[['light', 'Claro'], ['dark', 'Escuro'], ['groone', 'GroOne'], ['system', 'Sistema']].map(([v, l]) => (
                 <Label key={v} htmlFor={`theme-${v}`} className={cn('grid cursor-pointer gap-3 rounded-lg border p-3 font-normal hover:bg-accent has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring', theme === v && 'border-foreground')}>
@@ -1440,7 +1429,7 @@ function SettingsScreen({ t, accent, setAccent, theme, setTheme, image, setImage
               ))}
             </RadioGroup>
             <ProtoCustomThemes />
-          </Card>
+          </Card></div>
           <div id="cfg-comissao" className="grid scroll-mt-8 gap-6"><CompensationSettings groups={groups} /></div>
           <div id="cfg-idioma" className="scroll-mt-8"><Card title={t('company.lang')} desc="Idioma dos convites e de quem ainda não escolheu o seu. Cada pessoa pode trocar no menu da conta." footer={<Button size="sm" onClick={() => saved('Idioma')}>Salvar</Button>}>
             <div className="max-w-xs">
