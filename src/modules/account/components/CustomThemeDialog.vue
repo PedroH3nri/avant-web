@@ -9,8 +9,8 @@ import Dialog from '@/components/ui/Dialog.vue'
 import Field from '@/components/ui/Field.vue'
 import Input from '@/components/ui/Input.vue'
 import { ApiError } from '@/lib/api'
-import { alphaOf, COLOR_KEYS, contrast, flattenColors, opaque, parseColor, STARTER_COLORS, toRgba, withAlpha, type ThemeColors } from '@/lib/customTheme'
-import { errorText, t } from '@/lib/i18n'
+import { alphaOf, COLOR_KEYS, failedRules, opaque, parseColor, STARTER_COLORS, toRgba, withAlpha, type ThemeColors } from '@/lib/customTheme'
+import { errorText, lang, t } from '@/lib/i18n'
 import ThemePreview from '@/modules/account/components/ThemePreview.vue'
 import { accountService } from '@/modules/account/service'
 import type { CustomTheme } from '@/modules/account/types'
@@ -19,7 +19,6 @@ const open = defineModel<boolean>('open', { default: false })
 const props = defineProps<{ editing: CustomTheme | null }>()
 const emit = defineEmits<{ saved: [theme: CustomTheme, created: boolean] }>()
 
-const MINIMUM_CONTRAST = 4.5
 const name = ref('')
 const PERCENT = 100
 const colors = ref<ThemeColors>({ ...STARTER_COLORS })
@@ -39,14 +38,15 @@ function draftsOf(source: ThemeColors): Record<keyof ThemeColors, string> {
 }
 
 const validColors = computed(() => COLOR_KEYS.every((key) => parseColor(drafts.value[key]) !== null))
-const ready = computed(() => name.value.trim().length > 0 && validColors.value && !busy.value)
-/** O fundo e os cartões com pouco contraste para o texto (já com a opacidade): avisa, mas deixa salvar. */
-const lowContrast = computed(() => {
-  if (!validColors.value) return false
-  const shown = flattenColors(colors.value)
-  return contrast(shown.text, shown.background) < MINIMUM_CONTRAST || contrast(shown.text, shown.card) < MINIMUM_CONTRAST
-})
+/** As regras de legibilidade que as cores (já com a opacidade) não cumprem: com alguma, não salva. */
+const failures = computed(() => (validColors.value ? failedRules(colors.value) : []))
+const ready = computed(() => name.value.trim().length > 0 && validColors.value && failures.value.length === 0 && !busy.value)
 const previewColors = computed(() => (validColors.value ? colors.value : (props.editing?.colors ?? STARTER_COLORS)))
+
+/** O contraste como se lê (4,5:1), com uma casa decimal no idioma da tela. */
+function formatRatio(ratio: number): string {
+  return `${ratio.toLocaleString(lang.value, { maximumFractionDigits: 1 })}:1`
+}
 
 /** Troca uma cor e reescreve o campo dela em ``rgba()``. */
 function setColor(key: keyof ThemeColors, value: string) {
@@ -140,9 +140,12 @@ async function save() {
         <p class="text-[13px] font-medium text-muted-foreground">{{ t('theme.preview') }}</p>
         <ThemePreview :colors="previewColors" large />
         <p v-if="!validColors" class="text-[13px] text-bad">{{ t('theme.invalidColor') }}</p>
-        <p v-else-if="lowContrast" class="flex gap-2 text-[13px] text-warn">
-          <TriangleAlert class="mt-0.5 size-4 shrink-0" aria-hidden="true" />{{ t('theme.lowContrast') }}
-        </p>
+        <div v-else-if="failures.length" class="grid gap-1.5 text-[13px] text-bad" role="alert">
+          <p class="flex gap-2 font-medium"><TriangleAlert class="mt-0.5 size-4 shrink-0" aria-hidden="true" />{{ t('theme.lowContrast') }}</p>
+          <p v-for="failure in failures" :key="failure.rule.key" class="pl-6">
+            {{ t(`theme.rule.${failure.rule.key}`, { ratio: formatRatio(failure.ratio), minimum: formatRatio(failure.rule.minimum) }) }}
+          </p>
+        </div>
         <p class="text-[13px] text-muted-foreground">{{ t('theme.derivedNote') }}</p>
       </div>
     </form>

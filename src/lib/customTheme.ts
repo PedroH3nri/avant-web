@@ -105,6 +105,29 @@ export function flattenColors(colors: ThemeColors): ThemeColors {
   }
 }
 
+/** Um par de cores que precisa de contraste mínimo para o tema ser legível (igual ao
+ * ``theme_contrast.py`` do avant-core). */
+export interface ContrastRule {
+  key: 'textBackground' | 'textCard' | 'primaryCard'
+  front: keyof ThemeColors
+  back: keyof ThemeColors
+  minimum: number
+}
+
+export const CONTRAST_RULES: ContrastRule[] = [
+  { key: 'textBackground', front: 'text', back: 'background', minimum: 4.5 },
+  { key: 'textCard', front: 'text', back: 'card', minimum: 4.5 },
+  { key: 'primaryCard', front: 'primary', back: 'card', minimum: 3 },
+]
+
+/** As regras que o tema não cumpre, com o contraste medido nas cores já compostas. */
+export function failedRules(colors: ThemeColors): { rule: ContrastRule; ratio: number }[] {
+  const shown = flattenColors(colors)
+  return CONTRAST_RULES.map((rule) => ({ rule, ratio: contrast(shown[rule.front], shown[rule.back]) })).filter(
+    ({ rule, ratio }) => ratio < rule.minimum,
+  )
+}
+
 /** A borda calculada como antes: o fundo com um pouco do texto. */
 export function derivedBorder(colors: Omit<ThemeColors, 'border'>): string {
   const background = flatten(colors.background, WHITE)
