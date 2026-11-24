@@ -4,8 +4,9 @@ import OpenLink from '@/components/OpenLink.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useDebounceFn } from '@vueuse/core'
-import { BarChart3, Code2, Plus, Search } from 'lucide-vue-next'
+import { BarChart3, BookOpen, Code2, Plus, Search } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
+import InstallGuideDialog from '@/components/InstallGuideDialog.vue'
 import LoadError from '@/components/LoadError.vue'
 import PageBody from '@/components/PageBody.vue'
 import PageHeader from '@/components/PageHeader.vue'
@@ -22,7 +23,8 @@ import TableState from '@/components/ui/TableState.vue'
 import { ApiError } from '@/lib/api'
 import { errorText, formatDate, t, tn } from '@/lib/i18n'
 import { td, th } from '@/lib/table'
-import { adTagPermission, adTagsPath, LIMITS, tagStatus } from '@/modules/ad_tags/rules'
+import AdTagInstallDialog from '@/modules/ad_tags/components/AdTagInstallDialog.vue'
+import { adTagPermission, adTagsPath, installLine, LIMITS, tagStatus } from '@/modules/ad_tags/rules'
 import { adTagService } from '@/modules/ad_tags/service'
 import type { AdTag, AdTagSiteOption } from '@/modules/ad_tags/types'
 import { useSession } from '@/stores/session'
@@ -148,12 +150,25 @@ function seenText(tag: AdTag): string {
   const seen = lastSeen.value[tag.id]
   return seen ? formatDate(seen) : t('at.never')
 }
+
+const guideOpen = ref(false)
+const origin = window.location.origin
+const guideSteps = computed(() => [t('at.guideStep1'), t('at.guideStep2'), t('at.guideStep3'), t('at.guideStep4'), t('at.guideStep5')])
+const guideNotes = computed(() => [t('at.installOne'), t('at.installGenius'), t('at.installReward')])
+const installing = ref<AdTag | null>(null)
+const installOpen = computed({
+  get: () => installing.value !== null,
+  set: (value) => {
+    if (!value) installing.value = null
+  },
+})
 </script>
 
 <template>
   <PageHeader :title="t('nav.adTags')" :sub="internal ? t('at.subInternal') : t('at.sub')">
-    <template v-if="canManage" #actions>
-      <Button @click="startNew()"><Plus />{{ t('at.new') }}</Button>
+    <template #actions>
+      <Button variant="outline" @click="guideOpen = true"><BookOpen />{{ t('at.howToInstall') }}</Button>
+      <Button v-if="canManage" @click="startNew()"><Plus />{{ t('at.new') }}</Button>
     </template>
   </PageHeader>
   <PageBody>
@@ -202,6 +217,7 @@ function seenText(tag: AdTag): string {
           </td>
           <td :class="[td, 'text-right']">
             <div class="flex justify-end gap-2">
+              <Button size="sm" variant="outline" @click="installing = tag"><Code2 />{{ t('at.install') }}</Button>
               <Button v-if="tag.live" size="sm" variant="outline" @click="router.push(`${base}/${tag.id}/metricas`)"><BarChart3 />{{ t('at.metrics') }}</Button>
               <OpenLink :to="`${base}/${tag.id}`" :name="tag.name" />
             </div>
@@ -226,4 +242,14 @@ function seenText(tag: AdTag): string {
       <Button type="submit" form="at-new" :disabled="busy || !newSite || !newName.trim()">{{ t('at.create') }}</Button>
     </template>
   </Dialog>
+  <InstallGuideDialog
+    v-model:open="guideOpen"
+    :title="t('at.guideTitle')"
+    :desc="t('at.guideDesc')"
+    :steps="guideSteps"
+    :line="installLine(origin, t('at.guideKey'))"
+    :line-hint="t('at.guideLineHint')"
+    :notes="guideNotes"
+  />
+  <AdTagInstallDialog v-if="installing" v-model:open="installOpen" :name="installing.name" :domain="installing.domain" :tag-key="installing.key" />
 </template>
