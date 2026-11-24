@@ -54,7 +54,7 @@ const title = 'px-4 pb-1.5 pt-4 text-[12px] font-medium uppercase tracking-wide 
       </div>
     </div>
     <h3 :class="[title, 'shrink-0']">{{ t('report.metrics') }}</h3>
-    <div class="grid max-h-[min(360px,45vh)] content-start gap-0.5 overflow-y-auto overscroll-contain px-2 lg:max-h-none lg:min-h-[120px] lg:flex-[1_1_0]" tabindex="0" :aria-label="t('report.metrics')">
+    <div class="grid max-h-[min(360px,45vh)] content-start gap-0.5 overflow-y-auto overscroll-contain px-2 lg:max-h-none lg:min-h-[200px] lg:flex-[3_1_0]" tabindex="0" :aria-label="t('report.metrics')">
       <button
         v-for="field in metrics"
         :key="field.key"
@@ -102,7 +102,7 @@ const title = 'px-4 pb-1.5 pt-4 text-[12px] font-medium uppercase tracking-wide 
       <p v-if="!catalog.custom_metrics.length" class="px-2.5 py-1.5 text-[13px] text-muted-foreground">{{ t('report.myMetricsEmpty') }}</p>
     </div>
     <h3 :class="[title, 'shrink-0']">{{ t('report.dimensions') }}</h3>
-    <div class="grid max-h-[min(360px,45vh)] content-start gap-0.5 overflow-y-auto overscroll-contain px-2 lg:max-h-none lg:min-h-[120px] lg:flex-[0_1_auto]" tabindex="0" :aria-label="t('report.dimensions')">
+    <div class="grid max-h-[min(360px,45vh)] content-start gap-0.5 overflow-y-auto overscroll-contain px-2 lg:max-h-none lg:min-h-[120px] lg:flex-[2_1_0]" tabindex="0" :aria-label="t('report.dimensions')">
       <button
         v-for="field in dimensions"
         :key="field.key"
