@@ -2,6 +2,7 @@
  * Tema do painel, escolha de cada pessoa (vem do /auth/me como ``theme``).
  * O navegador lembra o tema (e as cores do personalizado) para a primeira tela não piscar. Cada
  * tema pronto tem as próprias cores (``styles.css``); o personalizado traz as que a pessoa escolheu.
+ * Enquanto a pessoa edita um tema, ``previewColors`` mostra as cores no painel sem salvar.
  */
 
 import { ref, watch } from 'vue'
@@ -16,6 +17,7 @@ export const THEMES: Theme[] = ['light', 'dark', 'groone', 'system']
 /** O tema que vale agora: o do sistema vira claro ou escuro pelo aparelho, e o personalizado vira
  * claro ou escuro pelo fundo dele. */
 export function shownTheme(value: Theme): 'light' | 'dark' | 'groone' {
+  if (previewColors.value) return isDarkBackground(previewColors.value.background) ? 'dark' : 'light'
   if (value === 'custom' && customColors.value) return isDarkBackground(customColors.value.background) ? 'dark' : 'light'
   if (value !== 'system' && value !== 'custom') return value
   return typeof matchMedia !== 'undefined' && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
@@ -48,6 +50,8 @@ function savedCustomColors(): ThemeColors | null {
 export const theme = ref<Theme>(savedTheme())
 /** As cores do tema personalizado em uso; vazio fora dele. */
 export const customColors = ref<ThemeColors | null>(savedCustomColors())
+/** Cores em edição, mostradas no painel inteiro antes de salvar; vazio fora do editor. */
+export const previewColors = ref<ThemeColors | null>(null)
 
 /** Guarda um valor no navegador, ou apaga quando vazio; sem localStorage, segue sem lembrar. */
 function remember(key: string, value: string | null) {
@@ -75,16 +79,17 @@ function applyCustomCss(colors: ThemeColors | null) {
 }
 
 watch(
-  [theme, customColors],
-  ([value, colors]) => {
-    const custom = value === 'custom' && colors !== null
+  [theme, customColors, previewColors],
+  ([value, colors, preview]) => {
+    const saved = value === 'custom' && colors !== null
     remember(STORAGE, value)
-    remember(CUSTOM_STORAGE, custom ? JSON.stringify(colors) : null)
-    applyCustomCss(custom ? colors : null)
+    remember(CUSTOM_STORAGE, saved ? JSON.stringify(colors) : null)
+    const shown = preview ?? (saved ? colors : null)
+    applyCustomCss(shown)
     const root = document.documentElement
-    if (custom) root.setAttribute('data-custom-theme', '')
+    if (shown) root.setAttribute('data-custom-theme', '')
     else root.removeAttribute('data-custom-theme')
-    const attribute = custom ? shownTheme(value) : value
+    const attribute = shown ? shownTheme(value) : value
     if (attribute === 'system' || attribute === 'custom') root.removeAttribute('data-theme')
     else root.setAttribute('data-theme', attribute)
   },
