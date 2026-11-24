@@ -1023,9 +1023,24 @@ export const dict = {
   ],
   'theme.opacityOf': ['Opacidade de {color}', 'Opacity of {color}', 'Opacidad de {color}'],
   'theme.lowContrast': [
-    'O texto tem pouco contraste com o fundo ou com os cartões e pode ficar difícil de ler.',
-    'The text has low contrast with the background or the cards and may be hard to read.',
-    'El texto tiene poco contraste con el fondo o con las tarjetas y puede ser difícil de leer.',
+    'Assim o painel fica difícil de ler. Ajuste as cores para salvar:',
+    'The panel would be hard to read. Adjust the colors to save:',
+    'Así el panel queda difícil de leer. Ajusta los colores para guardar:',
+  ],
+  'theme.rule.textBackground': [
+    'Texto sobre o fundo: {ratio} (mínimo {minimum}).',
+    'Text on the background: {ratio} (minimum {minimum}).',
+    'Texto sobre el fondo: {ratio} (mínimo {minimum}).',
+  ],
+  'theme.rule.textCard': [
+    'Texto sobre os cartões: {ratio} (mínimo {minimum}).',
+    'Text on the cards: {ratio} (minimum {minimum}).',
+    'Texto sobre las tarjetas: {ratio} (mínimo {minimum}).',
+  ],
+  'theme.rule.primaryCard': [
+    'Cor principal sobre os cartões: {ratio} (mínimo {minimum}).',
+    'Main color on the cards: {ratio} (minimum {minimum}).',
+    'Color principal sobre las tarjetas: {ratio} (mínimo {minimum}).',
   ],
   'theme.derivedNote': [
     'A opacidade mostra a camada de baixo: o fundo sobre o branco, o menu e os cartões sobre o fundo. Avisos e gráficos seguem o tom claro ou escuro do fundo.',
@@ -5658,6 +5673,11 @@ export const errors: Record<string, readonly [string, string, string]> = {
     'Você já tem 3 temas personalizados. Apague um para criar outro.',
     'You already have 3 custom themes. Delete one to create another.',
     'Ya tienes 3 temas personalizados. Borra uno para crear otro.',
+  ],
+  theme_low_contrast: [
+    'O tema ficaria difícil de ler: aumente o contraste do texto e da cor principal.',
+    'The theme would be hard to read: raise the contrast of the text and main color.',
+    'El tema quedaría difícil de leer: aumenta el contraste del texto y del color principal.',
   ],
   client_company_exists: ['Esse cliente já tem uma Empresa.', 'This client already has a company.', 'Este cliente ya tiene una empresa.'],
   not_a_client: [
