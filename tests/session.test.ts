@@ -5,9 +5,9 @@ import { lang } from '@/lib/i18n'
 import { theme } from '@/lib/theme'
 import { accountService } from '@/modules/account/service'
 import { authService } from '@/modules/auth/service'
-import type { AccentId, Me, Theme } from '@/lib/types'
+import type { Me, Theme } from '@/lib/types'
 
-function me(permissions: string[], accent: AccentId = 'default', chosenTheme: Theme = 'system'): Me {
+function me(permissions: string[], chosenTheme: Theme = 'system'): Me {
   return {
     user: { id: 'u', email: 'ana@a.com', name: 'Ana Lima', locale: 'pt', image_url: null },
     companies: [{ id: 'c', name: 'A', slug: 'a', is_owner: false, is_internal: false, image_url: null }],
@@ -20,7 +20,6 @@ function me(permissions: string[], accent: AccentId = 'default', chosenTheme: Th
     can_create_company: false,
     display_currency: 'USD',
     theme: chosenTheme,
-    accent,
   }
 }
 
@@ -40,14 +39,12 @@ describe('session.can', () => {
     expect(s.can('sites.view')).toBe(false)
   })
 
-  it('aplica a cor e o tema da pessoa', () => {
+  it('aplica o tema da pessoa', () => {
     const session = useSession()
-    session.set(me([], 'green', 'dark'))
+    session.set(me([], 'dark'))
     expect(session.company?.name).toBe('A')
-    expect(document.getElementById('avant-accent')?.textContent).toContain('--primary:152 76% 28%')
     expect(theme.value).toBe('dark')
     session.set(me([]))
-    expect(document.getElementById('avant-accent')?.textContent).toBe('')
     expect(theme.value).toBe('system')
   })
 
@@ -56,10 +53,10 @@ describe('session.can', () => {
   it('guarda a aparência na conta e volta atrás se a API recusar', async () => {
     const session = useSession()
     session.set(me([]))
-    vi.spyOn(accountService, 'appearance').mockResolvedValueOnce({ theme: 'system', accent: 'blue', locale: 'pt' })
-    await session.setAppearance({ accent: 'blue' })
-    expect(session.me?.accent).toBe('blue')
-    vi.spyOn(accountService, 'appearance').mockResolvedValueOnce({ theme: 'system', accent: 'blue', locale: 'es' })
+    vi.spyOn(accountService, 'appearance').mockResolvedValueOnce({ theme: 'groone', locale: 'pt' })
+    await session.setAppearance({ theme: 'groone' })
+    expect(session.me?.theme).toBe('groone')
+    vi.spyOn(accountService, 'appearance').mockResolvedValueOnce({ theme: 'system', locale: 'es' })
     await session.setAppearance({ locale: 'es' })
     expect(session.me?.user.locale).toBe('es')
     expect(lang.value).toBe('es')

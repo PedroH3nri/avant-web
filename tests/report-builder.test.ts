@@ -64,7 +64,6 @@ const me: Me = {
   can_create_company: false,
   display_currency: 'USD',
   theme: 'system',
-  accent: 'default',
 }
 
 /** Monta o construtor no relatório salvo e espera a primeira prévia. */

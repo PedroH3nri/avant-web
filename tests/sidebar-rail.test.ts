@@ -26,7 +26,6 @@ function me(active: string, permissions: string[]): Me {
     can_create_company: false,
     display_currency: 'USD',
     theme: 'system',
-    accent: 'default',
   }
 }
 

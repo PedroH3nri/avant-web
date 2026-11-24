@@ -1,7 +1,7 @@
 /** Chamadas da API da página Minha conta: senha, sessões, 2FA, Google, chaves de API, aparência e foto. */
 
 import { api, type Query } from '@/lib/api'
-import type { AccentId, Lang, Page, Theme, UserRef } from '@/lib/types'
+import type { Lang, Page, Theme, UserRef } from '@/lib/types'
 import type {
   ApiKey,
   ApiKeyCreated,
@@ -44,7 +44,7 @@ export const accountService = {
   /** Revoga uma chave de API. */
   revokeApiKey: (keyId: string) => api.delete(`/api-keys/${keyId}`),
   /** Salva o tema, a cor e o idioma que a pessoa escolheu. */
-  appearance: (body: { theme?: Theme; accent?: AccentId; locale?: Lang; custom_theme_id?: string | null }) =>
+  appearance: (body: { theme?: Theme; locale?: Lang; custom_theme_id?: string | null }) =>
     api.patch<Appearance>('/auth/appearance', body),
   /** Os temas personalizados da pessoa e o limite. */
   themes: () => api.get<CustomThemes>('/auth/me/themes'),

@@ -70,7 +70,6 @@ const me: Me = {
   can_create_company: false,
   display_currency: 'USD',
   theme: 'system',
-  accent: 'default',
 }
 
 /** Abre a leitura do relatório e espera a consulta. */
