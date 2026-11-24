@@ -27,7 +27,16 @@ import { cleanFilters, firstValue, monthPeriod, periodMonth, type Period } from 
 import type { ViewDefinition } from '@/modules/views/types'
 
 const MONTHS_TO_PICK = 12
-const COLUMNS = ['client', 'billing', 'deductions', 'revenue', 'costs', 'result']
+const COLUMNS = ['client', 'groone', 'billing', 'deductions', 'revenue', 'costs', 'result']
+const COLUMN_LABELS: Record<string, Key> = {
+  client: 'ct.client',
+  groone: 'res.grooneRevenue',
+  billing: 'res.billing',
+  deductions: 'res.deductions',
+  revenue: 'res.clientRevenue',
+  costs: 'res.costs',
+  result: 'res.result',
+}
 const DEFAULT_VIEW: ViewDefinition = { columns: [...COLUMNS], filters: { period: 'previous_month' }, sort: { key: 'result', direction: 'desc' } }
 const today = localToday()
 
@@ -56,7 +65,7 @@ const current = computed<ViewDefinition>(() => ({
 /** Diz se a coluna aparece na tabela. */
 const shown = (column: string) => columns.value.includes(column)
 /** O nome da coluna no menu de colunas. */
-const columnLabel = (column: string) => t((column === 'client' ? 'ct.client' : `res.${column}`) as Key)
+const columnLabel = (column: string) => t(COLUMN_LABELS[column] as Key)
 /** Quantas colunas de valor aparecem, para a linha sem dados. */
 const valueColumns = computed(() => columns.value.filter((column) => column !== 'client').length)
 
@@ -111,13 +120,14 @@ const valueClass = (value: number | string, strong = false) =>
       <ColumnsMenu v-model:shown="columns" :columns="COLUMNS" :label="columnLabel" />
     </SavedViewsBar>
     <LoadError v-if="loadError" :message="loadError" @retry="load" />
-    <DataTable v-else :min="860">
+    <DataTable v-else :min="980">
       <thead>
         <tr>
           <th v-if="shown('client')" :class="th">{{ t('ct.client') }}</th>
+          <th v-if="shown('groone')" :class="[th, 'text-right']">{{ t('res.grooneRevenue') }}</th>
           <th v-if="shown('billing')" :class="[th, 'text-right']">{{ t('res.billing') }}</th>
           <th v-if="shown('deductions')" :class="[th, 'text-right']">{{ t('res.deductions') }}</th>
-          <th v-if="shown('revenue')" :class="[th, 'text-right']">{{ t('res.revenue') }}</th>
+          <th v-if="shown('revenue')" :class="[th, 'text-right']">{{ t('res.clientRevenue') }}</th>
           <th v-if="shown('costs')" :class="[th, 'text-right']">{{ t('res.costs') }}</th>
           <th v-if="shown('result')" :class="[th, 'text-right']">{{ t('res.result') }}</th>
         </tr>
@@ -129,6 +139,7 @@ const valueClass = (value: number | string, strong = false) =>
             <RouterLink :to="`/interno/clientes/${row.client.company.id}`" class="hover:underline">{{ row.client.company.name }}</RouterLink>
           </td>
           <template v-if="row.month">
+            <td v-if="shown('groone')" :class="[td, 'text-right']"><span :class="valueClass(row.month.groone_revenue ?? 0)">{{ money(row.month.groone_revenue ?? 0) }}</span></td>
             <td v-if="shown('billing')" :class="[td, 'text-right']"><span :class="valueClass(row.month.billing)">{{ money(row.month.billing) }}</span></td>
             <td v-if="shown('deductions')" :class="[td, 'text-right']">
               <Status v-if="row.month.deductions_pending" tone="ochre">{{ t('res.pendingShort') }}</Status>
