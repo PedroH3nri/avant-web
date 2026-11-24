@@ -133,7 +133,7 @@ The Ápice (chosen by the owner on 2026-10-26, avant-web#56): an A without a cro
 ## Colors
 
 ### Primary
-Ink (#171717) is the primary: primary buttons, the active tab underline, the company's seats in the usage bar. In dark mode it flips to #EDEDED with dark text. Each theme has its own fixed colors (Claro, Escuro, GroOne; Sistema follows the device); there is no separate button color. A person may also create up to 3 **custom themes** in Minha conta with six colors (background, sidebar, cards, text, main color and borders), each with opacity; the panel derives soft backgrounds, secondary text and button text from them, dialogs take the card color, and card footers and fields (inputs, selects, outline buttons) are the card color darkened (`--card-footer`, `--field`, `--dialog`; in ready themes they follow muted and background), and alerts and charts follow the light or dark tone of the background.
+Ink (#171717) is the primary: primary buttons, the active tab underline, the company's seats in the usage bar. In dark mode it flips to #EDEDED with dark text. Each theme has its own fixed colors (Claro, Escuro, GroOne; Sistema follows the device); there is no separate button color. A person may also create up to 3 **custom themes** in Minha conta with seven colors (background, sidebar, cards, text, main color, borders and highlight), each with opacity; the highlight is the focus color (selected fields: border + growing halo) and the hovered-button halo/border; the panel derives soft backgrounds, secondary text and button text from them, dialogs take the card color, and card footers and fields (inputs, selects, outline buttons) are the card color darkened (`--card-footer`, `--field`, `--dialog`; in ready themes they follow muted and background), and alerts and charts follow the light or dark tone of the background.
 
 **GroOne theme** (Pedro, 04/11): a third theme beside Light and Dark, in the tones of the brand navy (#0A213D, from the GroOne logo). Background near-black navy, cards a step below #0A213D, the sidebar the same color as the top bar, and the default primary a deep blue (`215 78% 27%`) with white text. Marinho and Grafite get a light inner border on the primary button in this theme (`--primary-edge`), because they sink into the navy background. Charts use the dark-mode series colors.
 
@@ -141,7 +141,7 @@ Ink (#171717) is the primary: primary buttons, the active tab underline, the com
 White surface for headers, page bands and cards; #FAFAFA band behind the work area and inside card footers; #EBEBEB hairlines; #666666 secondary text.
 
 ### Named Rules
-- **Blue is for links and focus only** in the Light and Dark themes. The GroOne theme and custom themes are the exceptions, chosen by the person.
+- **Blue is for links and focus only** in the Light and Dark themes. The GroOne theme and custom themes are the exceptions, chosen by the person. Every theme animates focus (field border + halo, `.border-input`) and button hover (1px lift + shadow, `.btn-motion`, styles.css).
 - **State is a dot plus a word.** Conectada (ok), Testando conexão (warn), Sem acesso (bad), Convite enviado / pendente (pending). Never color alone.
 
 ## Typography
