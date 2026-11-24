@@ -113,7 +113,7 @@ watch(() => props.accountId, loadIdentity, { immediate: true })
       <div class="mt-4 grid gap-4">
         <Field v-for="(text, index) in ad.texts" :id="`fb-ad-text-${index}`" :key="`text-${index}`" :label="t('fb.create.text', { n: index + 1 })">
           <div class="flex gap-2">
-            <textarea :id="`fb-ad-text-${index}`" rows="2" maxlength="2000" class="min-h-16 w-full rounded-md border border-input bg-background px-3 py-2 text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" :value="text" @input="setLine('texts', index, ($event.target as HTMLTextAreaElement).value)" />
+            <textarea :id="`fb-ad-text-${index}`" rows="2" maxlength="2000" class="min-h-16 w-full rounded-md border border-input bg-field px-3 py-2 text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" :value="text" @input="setLine('texts', index, ($event.target as HTMLTextAreaElement).value)" />
             <Button v-if="ad.texts.length > 1" size="icon" variant="ghost" :aria-label="t('fb.create.removeText', { n: index + 1 })" @click="removeLine('texts', index)"><Trash2 aria-hidden="true" /></Button>
           </div>
         </Field>

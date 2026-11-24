@@ -368,7 +368,7 @@ const segment = (selected: boolean) => ['h-8 rounded px-3 text-[13px] font-mediu
                     v-model="input.icon_emoji"
                     :aria-label="t('rw.iconOther')"
                     :maxlength="LIMITS.emoji"
-                    class="h-9 w-20 rounded-md border border-input bg-background text-center text-[18px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    class="h-9 w-20 rounded-md border border-input bg-field text-center text-[18px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   />
                 </div>
                 <div v-if="input.icon_kind === 'image'" class="flex flex-wrap items-center gap-3">
@@ -390,7 +390,7 @@ const segment = (selected: boolean) => ['h-8 rounded px-3 text-[13px] font-mediu
                 v-model="input.description"
                 rows="3"
                 :maxlength="LIMITS.description"
-                class="w-full rounded-md border border-input bg-background px-3 py-2 text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                class="w-full rounded-md border border-input bg-field px-3 py-2 text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               />
             </Field>
             <Field id="rw-button" :label="t('rw.button')" :error="problem('button')">
@@ -560,7 +560,7 @@ const segment = (selected: boolean) => ['h-8 rounded px-3 text-[13px] font-mediu
                   v-model="input.click_selector"
                   :maxlength="LIMITS.selector"
                   placeholder="#ver-receita"
-                  class="h-10 w-full rounded-md border border-input bg-background px-3 font-mono text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  class="h-10 w-full rounded-md border border-input bg-field px-3 font-mono text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 />
               </Field>
             </div>
@@ -574,7 +574,7 @@ const segment = (selected: boolean) => ['h-8 rounded px-3 text-[13px] font-mediu
                 type="number"
                 min="5"
                 max="1440"
-                class="h-10 w-full rounded-md border border-input bg-background px-3 text-[14px] tnum focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:w-[200px]"
+                class="h-10 w-full rounded-md border border-input bg-field px-3 text-[14px] tnum focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:w-[200px]"
               />
             </Field>
             <div class="grid gap-3">

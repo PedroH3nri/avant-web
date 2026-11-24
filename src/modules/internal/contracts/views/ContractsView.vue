@@ -361,7 +361,7 @@ async function confirmRemove() {
           v-model="notes"
           maxlength="2000"
           rows="3"
-          class="w-full rounded-md border border-input bg-background px-3 py-2 text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          class="w-full rounded-md border border-input bg-field px-3 py-2 text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         />
       </Field>
     </form>
@@ -379,7 +379,7 @@ async function confirmRemove() {
           v-model="editNotes"
           maxlength="2000"
           rows="4"
-          class="w-full rounded-md border border-input bg-background px-3 py-2 text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          class="w-full rounded-md border border-input bg-field px-3 py-2 text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         />
       </Field>
     </form>

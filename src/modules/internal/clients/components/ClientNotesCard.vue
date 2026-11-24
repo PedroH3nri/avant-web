@@ -18,7 +18,7 @@ import type { ClientNote } from '@/modules/internal/clients/types'
 import { useSession } from '@/stores/session'
 import { clientService } from '@/modules/internal/clients/service'
 
-const TEXTAREA = 'w-full rounded-md border border-input bg-background px-3 py-2 text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+const TEXTAREA = 'w-full rounded-md border border-input bg-field px-3 py-2 text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
 
 const props = defineProps<{ companyId: string }>()
 const emit = defineEmits<{ changed: [] }>()

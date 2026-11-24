@@ -149,7 +149,7 @@ async function save() {
               placeholder="revenue / ad_requests * 1000"
               :aria-invalid="check ? !check.valid : undefined"
               aria-describedby="metric-formula-message"
-              class="w-full rounded-md border border-input bg-background px-3 py-2 font-mono text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-[invalid=true]:border-bad"
+              class="w-full rounded-md border border-input bg-field px-3 py-2 font-mono text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-[invalid=true]:border-bad"
               @input="track"
               @click="track"
               @keyup="track"

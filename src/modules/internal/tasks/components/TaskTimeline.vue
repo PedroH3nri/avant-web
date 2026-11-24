@@ -109,7 +109,7 @@ function statusPair(event: TaskEvent): { from: TaskStatus; to: TaskStatus } | nu
           :maxlength="COMMENT_MAX"
           :aria-label="t('task.newComment')"
           :placeholder="t('task.commentPlaceholder')"
-          class="w-full resize-y rounded-md border border-input bg-background px-3 py-2 text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          class="w-full resize-y rounded-md border border-input bg-field px-3 py-2 text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           @keydown.enter.ctrl.prevent="submit"
           @keydown.enter.meta.prevent="submit"
         />

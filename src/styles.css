@@ -4,6 +4,14 @@
 
 /* Tokens do DESIGN.md: quase monocromático, primária preta (ou a cor da Empresa), azul só para link e foco. */
 @layer base {
+  /* Campos, janelas e rodapé dos cartões: nos temas prontos seguem o fundo e o muted; o tema
+     personalizado os tira do cartão. */
+  :root {
+    --field: var(--background);
+    --dialog: var(--background);
+    --card-footer: var(--muted);
+  }
+
   :root {
     --background: 0 0% 100%;
     --foreground: 0 0% 9%;

@@ -47,7 +47,7 @@ function toggleRole(id: string) {
     <form id="save-report" class="grid gap-4" @submit.prevent="!invalid && emit('save', { name: name.trim(), description: description.trim() || null, visibility, roleIds: visibility === 'roles' ? roleIds : [] })">
       <Field id="report-name" :label="t('report.name')"><Input id="report-name" v-model="name" :maxlength="NAME_MAX" /></Field>
       <Field id="report-description" :label="t('report.descriptionOptional')">
-        <textarea id="report-description" v-model="description" rows="2" :maxlength="DESCRIPTION_MAX" class="w-full rounded-md border border-input bg-background px-3 py-2 text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
+        <textarea id="report-description" v-model="description" rows="2" :maxlength="DESCRIPTION_MAX" class="w-full rounded-md border border-input bg-field px-3 py-2 text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
       </Field>
       <fieldset class="grid gap-2">
         <legend class="mb-2 text-[13px] font-medium text-muted-foreground">{{ t('report.whoSees') }}</legend>
