@@ -1,9 +1,9 @@
 <script setup lang="ts">
-/** Criar ou editar um tema personalizado: nome, as cinco cores (seletor, código em rgba e
- * opacidade) e a prévia ao vivo. */
-import { computed, ref, watch } from 'vue'
+/** Criar ou editar um tema personalizado: nome, as seis cores (seletor, código em rgba e
+ * opacidade) e a prévia ao vivo no painel inteiro, com a opção de esconder a janela para ver. */
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
-import { TriangleAlert } from 'lucide-vue-next'
+import { Eye, TriangleAlert } from 'lucide-vue-next'
 import Button from '@/components/ui/Button.vue'
 import Dialog from '@/components/ui/Dialog.vue'
 import Field from '@/components/ui/Field.vue'
@@ -11,6 +11,7 @@ import Input from '@/components/ui/Input.vue'
 import { ApiError } from '@/lib/api'
 import { alphaOf, COLOR_KEYS, failedRules, opaque, parseColor, STARTER_COLORS, toRgba, withAlpha, type ThemeColors } from '@/lib/customTheme'
 import { errorText, lang, t } from '@/lib/i18n'
+import { previewColors as panelColors } from '@/lib/theme'
 import ThemePreview from '@/modules/account/components/ThemePreview.vue'
 import { accountService } from '@/modules/account/service'
 import type { CustomTheme } from '@/modules/account/types'
@@ -24,9 +25,14 @@ const PERCENT = 100
 const colors = ref<ThemeColors>({ ...STARTER_COLORS })
 const drafts = ref<Record<keyof ThemeColors, string>>(draftsOf(STARTER_COLORS))
 const busy = ref(false)
+const peeking = ref(false)
 
 watch(open, (value) => {
-  if (!value) return
+  peeking.value = false
+  if (!value) {
+    panelColors.value = null
+    return
+  }
   name.value = props.editing?.name ?? ''
   colors.value = { ...(props.editing?.colors ?? STARTER_COLORS) }
   drafts.value = draftsOf(colors.value)
@@ -79,6 +85,19 @@ function setOpacity(key: keyof ThemeColors, typed: string | number) {
   setColor(key, withAlpha(colors.value[key], percent / PERCENT))
 }
 
+/** O painel inteiro mostra as cores em edição enquanto o tema for legível; com alguma regra
+ * falhando, fica a última versão legível. */
+watch([open, colors, failures], () => {
+  if (open.value && validColors.value && failures.value.length === 0) panelColors.value = { ...colors.value }
+})
+
+onBeforeUnmount(() => (panelColors.value = null))
+
+/** A janela pede para fechar (X, Esc ou clique fora): fecha o editor e volta às cores salvas. */
+function closeDialog(value: boolean) {
+  if (!value) open.value = false
+}
+
 /** Cria ou salva o tema e devolve para o cartão. */
 async function save() {
   if (!ready.value) return
@@ -97,7 +116,7 @@ async function save() {
 </script>
 
 <template>
-  <Dialog v-model:open="open" :title="editing ? t('theme.editTitle') : t('theme.newTitle')" :desc="t('theme.dialogDesc')" class="max-w-[780px]">
+  <Dialog :open="open && !peeking" :title="editing ? t('theme.editTitle') : t('theme.newTitle')" :desc="t('theme.dialogDesc')" class="max-w-[780px]" @update:open="closeDialog">
     <form id="custom-theme-form" class="grid gap-6 md:grid-cols-[1fr_260px]" @submit.prevent="save">
       <div class="grid content-start gap-4">
         <Field id="theme-name" :label="t('theme.name')">
@@ -150,8 +169,29 @@ async function save() {
       </div>
     </form>
     <template #footer>
+      <Button variant="outline" class="mr-auto" :disabled="failures.length > 0 || !validColors" @click="peeking = true">
+        <Eye class="size-4" aria-hidden="true" />{{ t('theme.peek') }}
+      </Button>
       <Button variant="outline" @click="open = false">{{ t('common.cancel') }}</Button>
       <Button type="submit" form="custom-theme-form" :loading="busy" :disabled="!ready">{{ editing ? t('common.save') : t('theme.create') }}</Button>
     </template>
   </Dialog>
+  <Teleport to="body">
+    <div
+      v-if="open && peeking"
+      class="fixed inset-x-4 bottom-4 z-50 mx-auto flex max-w-[560px] flex-wrap items-center gap-3 rounded-lg border bg-[hsl(var(--dialog))] p-3 pl-4 shadow-lg"
+      role="region"
+      :aria-label="t('theme.peekTitle')"
+      @keydown.esc="peeking = false"
+    >
+      <p class="min-w-0 flex-1 text-[13px] text-muted-foreground">
+        <span class="font-medium text-foreground">{{ t('theme.peekTitle') }}</span> · {{ t('theme.peekNote') }}
+      </p>
+      <div class="flex gap-2">
+        <Button variant="outline" @click="open = false">{{ t('theme.discard') }}</Button>
+        <Button variant="outline" @click="peeking = false">{{ t('theme.keepEditing') }}</Button>
+        <Button :loading="busy" :disabled="!ready" @click="save">{{ editing ? t('common.save') : t('theme.create') }}</Button>
+      </div>
+    </div>
+  </Teleport>
 </template>

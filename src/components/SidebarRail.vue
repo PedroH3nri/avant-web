@@ -127,19 +127,19 @@ function blur(event: FocusEvent) {
 const railItem = (section: NavGroup) =>
   cn(
     'flex w-full flex-col items-center gap-1.5 rounded-md py-2.5 text-[12px] font-medium leading-none transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-[18px]',
-    groupActive(section) ? 'bg-secondary text-foreground' : open.value && shown.value?.id === section.id ? 'bg-accent text-foreground' : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+    groupActive(section) ? 'bg-[hsl(var(--sidebar-selected))] text-sidebar-foreground' : open.value && shown.value?.id === section.id ? 'bg-[hsl(var(--sidebar-hover))] text-sidebar-foreground' : 'text-sidebar-muted hover:bg-[hsl(var(--sidebar-hover))] hover:text-sidebar-foreground',
   )
 /** Classes do link no painel, ativo ou não. */
 const panelItem = (on: boolean) =>
   cn(
     'flex h-9 w-full items-center gap-2.5 rounded-md px-2.5 text-left text-[14px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-4',
-    on ? 'bg-secondary font-medium text-foreground' : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+    on ? 'bg-[hsl(var(--sidebar-selected))] font-medium text-sidebar-foreground' : 'text-sidebar-muted hover:bg-[hsl(var(--sidebar-hover))] hover:text-sidebar-foreground',
   )
 </script>
 
 <template>
   <div ref="container" class="relative flex h-full" @mouseleave="leave" @focusout="blur" @keydown.esc="hovered = null" @pointerdown="pointer">
-    <div class="relative z-10 flex w-[88px] shrink-0 flex-col items-center border-r bg-sidebar py-3">
+    <div class="relative z-10 flex w-[88px] shrink-0 flex-col items-center border-r bg-sidebar py-3 text-sidebar-foreground">
       <RouterLink to="/" class="rounded-md p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" @mouseenter="leave">
         <Mark :size="28" /><span class="sr-only">Avant</span>
       </RouterLink>
@@ -179,7 +179,7 @@ const panelItem = (on: boolean) =>
           <MenuContent side="right" align="end" class="w-56">
             <div class="px-2 py-1.5">
               <div class="truncate text-[13px] font-medium">{{ session.me?.user.name }}</div>
-              <div class="truncate text-[12px] text-muted-foreground">{{ session.me?.user.email }}</div>
+              <div class="truncate text-[12px] text-sidebar-muted">{{ session.me?.user.email }}</div>
             </div>
             <MenuItem @select="account">{{ t('nav.account') }}<UserRound class="ml-auto" /></MenuItem>
             <MenuItem @select="logout">{{ t('top.logout') }}<LogOut class="ml-auto" /></MenuItem>
@@ -193,9 +193,9 @@ const panelItem = (on: boolean) =>
       :inert="!open || undefined"
       :class="
         drawer
-          ? cn('w-[248px] max-w-[calc(92vw-88px)] flex-col bg-sidebar', open ? 'flex' : 'hidden')
+          ? cn('w-[248px] max-w-[calc(92vw-88px)] flex-col bg-sidebar text-sidebar-foreground', open ? 'flex' : 'hidden')
           : cn(
-          'absolute inset-y-0 left-[88px] flex w-[248px] flex-col border-r bg-sidebar shadow-[8px_0_24px_-12px_rgba(0,0,0,0.18)] transition-[opacity,transform] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none',
+          'absolute inset-y-0 left-[88px] flex w-[248px] flex-col border-r bg-sidebar text-sidebar-foreground shadow-[8px_0_24px_-12px_rgba(0,0,0,0.18)] transition-[opacity,transform] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none',
           open ? 'translate-x-0 opacity-100 duration-300' : 'pointer-events-none -translate-x-3 opacity-0 duration-200',
         )
       "
