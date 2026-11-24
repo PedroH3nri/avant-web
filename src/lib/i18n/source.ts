@@ -5374,6 +5374,23 @@ export const dict = {
   'ic.f.tag_not_seen_live': ['A tag não foi vista no ar nas últimas 48 horas', 'The tag was not seen live in the last 48 hours', 'La tag no se vio activa en las últimas 48 horas'],
   'ic.fix.tag_not_seen_live': ['Confira se a linha da tag está no site.', 'Check that the tag line is on the site.', 'Revisa que la línea de la tag esté en el sitio.'],
 
+  'ic.filter.all': ['Toda instalação', 'Any installation', 'Toda instalación'],
+  'ic.filter.error': ['Com erro', 'With errors', 'Con errores'],
+  'ic.filter.warning': ['Só com aviso', 'Warnings only', 'Solo con avisos'],
+  'ic.filter.ok': ['Tudo certo', 'All good', 'Todo bien'],
+  'ic.filter.unchecked': ['Não verificado', 'Not checked', 'Sin verificar'],
+  'at.filter.allStatus': ['No ar e rascunho', 'Live and draft', 'Publicadas y borrador'],
+  'at.filter.live': ['No ar', 'Live', 'Publicadas'],
+  'at.filter.draft': ['Só rascunho', 'Draft only', 'Solo borrador'],
+  'at.allTags': ['Todas as ad tags', 'All ad tags', 'Todas las ad tags'],
+  'at.filter.site': ['Site', 'Site', 'Sitio'],
+  'at.filter.allSites': ['Todos os sites', 'All sites', 'Todos los sitios'],
+  'ld.allLoaders': ['Todos os loaders', 'All loaders', 'Todos los loaders'],
+  'rw.allRewards': ['Todos os rewards', 'All rewards', 'Todos los rewards'],
+  'rw.filter.allStates': ['Ativos e pausados', 'Active and paused', 'Activos y en pausa'],
+  'pr.allSites': ['Todos os sites', 'All sites', 'Todos los sitios'],
+  'pr.filter.rule': ['Regra', 'Rule', 'Regla'],
+  'pr.filter.allRules': ['Ligadas e desligadas', 'On and off', 'Encendidas y apagadas'],
 } as const satisfies Record<string, readonly [string, string, string]>
 
 export type Key = keyof typeof dict
