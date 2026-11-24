@@ -27,7 +27,9 @@ import type { Client } from '@/modules/internal/clients/types'
 import { clientInventoryService, type FilterOption } from '@/modules/internal/inventory/service'
 import RevenueStatusBadge from '@/modules/revenue/components/RevenueStatusBadge.vue'
 import ColumnsMenu from '@/modules/views/components/ColumnsMenu.vue'
+import FiltersMenu from '@/modules/views/components/FiltersMenu.vue'
 import SavedViewsBar from '@/modules/views/components/SavedViewsBar.vue'
+import { useBarFilters } from '@/modules/views/barFilters'
 import { cleanFilters, firstValue, parseSort, sortValue } from '@/modules/views/rules'
 import type { ViewDefinition, ViewSort } from '@/modules/views/types'
 
@@ -41,7 +43,13 @@ const SORTS: ViewSort[] = [
   { key: 'name', direction: 'asc' },
   { key: 'name', direction: 'desc' },
 ]
-const DEFAULT_VIEW: ViewDefinition = { columns: ['company', 'owner', 'seats', 'status'], filters: {}, sort: SORTS[0] ?? null }
+const FILTERS = ['status', 'account_manager_ids']
+const DEFAULT_FILTERS = ['status', 'account_manager_ids']
+const FILTER_LABELS: Record<string, Key> = {
+  status: 'inv.filter.status',
+  account_manager_ids: 'inv.column.manager',
+}
+const DEFAULT_VIEW: ViewDefinition = { columns: ['company', 'owner', 'seats', 'status'], filters: {}, sort: SORTS[0] ?? null, shown_filters: DEFAULT_FILTERS }
 
 const companies = ref<Client[] | null>(null)
 const page = ref(1)
@@ -51,6 +59,10 @@ const loadError = ref<string | null>(null)
 const searchText = ref('')
 const companyStatus = ref(ALL)
 const manager = ref(ALL)
+const barFilters = useBarFilters(FILTERS, DEFAULT_FILTERS, {
+  status: () => (companyStatus.value = ALL),
+  account_manager_ids: () => (manager.value = ALL),
+})
 const sort = ref(sortValue(SORTS[0] as ViewSort))
 const columns = ref<string[]>([...DEFAULT_VIEW.columns])
 const staff = ref<FilterOption[]>([])
@@ -64,6 +76,7 @@ const current = computed<ViewDefinition>(() => ({
     account_manager_ids: manager.value === ALL ? [] : [manager.value],
   }),
   sort: parseSort(sort.value),
+  shown_filters: barFilters.shown.value,
 }))
 const filtered = computed(() => Object.keys(current.value.filters).length > 0)
 
@@ -112,6 +125,8 @@ watch(page, load)
 const statusOptions = computed(() => [{ value: ALL, label: t('int.allStatuses') }, ...STATUSES.map((value) => ({ value, label: t(`int.tab.${value}` as Key) }))])
 const managerOptions = computed(() => [{ value: ALL, label: t('int.allManagers') }, ...staff.value])
 const sortOptions = SORTS.map((option) => ({ value: sortValue(option), label: t(`int.sort.${option.key}.${option.direction}` as Key) }))
+/** O nome do filtro no menu de filtros. */
+const filterLabel = (filter: string) => t(FILTER_LABELS[filter] as Key)
 /** Diz se a coluna aparece na tabela. */
 const shown = (column: string) => columns.value.includes(column)
 /** O nome da coluna no menu de colunas. */
@@ -125,6 +140,7 @@ function applyView(definition: ViewDefinition) {
   const status = firstValue(definition.filters.status)
   companyStatus.value = (STATUSES as string[]).includes(status) ? status : ALL
   manager.value = firstValue(definition.filters.account_manager_ids) || ALL
+  barFilters.apply(definition)
   const found = definition.sort && SORTS.find((option) => sortValue(option) === sortValue(definition.sort as ViewSort))
   sort.value = sortValue(found || (SORTS[0] as ViewSort))
 }
@@ -150,9 +166,10 @@ const managerName = (row: Client) => (row.profile?.account_manager_id ? staffNam
         <Search class="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
         <Input v-model="searchText" type="search" :aria-label="t('int.companiesSearch')" class="h-9 bg-card pl-9" :placeholder="t('int.companiesSearch')" />
       </div>
-      <Select v-model="companyStatus" :options="statusOptions" :aria-label="t('inv.filter.status')" class="h-9 w-full sm:w-44" />
-      <Select v-model="manager" :options="managerOptions" :aria-label="t('inv.column.manager')" class="h-9 w-full sm:w-52" />
+      <Select v-if="barFilters.isShown('status')" v-model="companyStatus" :options="statusOptions" :aria-label="t('inv.filter.status')" class="h-9 w-full sm:w-44" />
+      <Select v-if="barFilters.isShown('account_manager_ids')" v-model="manager" :options="managerOptions" :aria-label="t('inv.column.manager')" class="h-9 w-full sm:w-52" />
       <Select v-model="sort" :options="sortOptions" :aria-label="t('views.sort')" class="h-9 w-full sm:w-52" />
+      <FiltersMenu v-model:shown="barFilters.shown.value" :filters="FILTERS" :label="filterLabel" />
       <ColumnsMenu v-model:shown="columns" :columns="COLUMNS" :label="columnLabel" />
     </SavedViewsBar>
     <LoadError v-if="loadError" :message="loadError" @retry="load" />

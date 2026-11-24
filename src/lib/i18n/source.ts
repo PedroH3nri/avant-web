@@ -2545,7 +2545,7 @@ export const dict = {
   'views.removeTitle': ['Apagar a visão {name}?', 'Delete the view {name}?', '¿Eliminar la vista {name}?'],
   'views.removeDesc': ['Some para todos que a veem. Os dados da tabela não mudam.', 'It disappears for everyone who sees it. The table data does not change.', 'Desaparece para todos los que la ven. Los datos de la tabla no cambian.'],
   'views.columns': ['Colunas', 'Columns', 'Columnas'],
-  'views.moreFilters': ['Mais filtros', 'More filters', 'Más filtros'],
+  'views.filters': ['Filtros', 'Filters', 'Filtros'],
   'views.sort': ['Ordem', 'Sort', 'Orden'],
   'views.whoEdits': ['Só você edita e apaga esta visão.', 'Only you can edit and delete this view.', 'Solo tú editas y eliminas esta vista.'],
   'views.visibilityHint.private': ['Só você vê.', 'Only you see it.', 'Solo tú la ves.'],

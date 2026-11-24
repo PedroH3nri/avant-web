@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { cleanFilters, firstValue, monthPeriod, parseSort, periodMonth, sameDefinition, sortValue, toggleColumn, toggleFilter } from '@/modules/views/rules'
+import { cleanFilters, firstValue, monthPeriod, parseSort, periodMonth, sameDefinition, shownFromView, sortValue, toggleColumn, toggleFilter } from '@/modules/views/rules'
 
 describe('visões salvas', () => {
   it('tira os filtros vazios', () => {
@@ -25,6 +25,15 @@ describe('visões salvas', () => {
     expect(toggleColumn(['client'], 'client', order)).toEqual(['client'])
     expect(toggleFilter([], 'manager', ['responsible', 'manager'])).toEqual(['manager'])
     expect(toggleFilter(['manager'], 'manager', ['responsible', 'manager'])).toEqual([])
+  })
+
+  it('escolhe os filtros da barra pela visão, com as antigas nos padrão e nos que têm valor', () => {
+    const all = ['status', 'company_id', 'account_manager_ids']
+    expect(shownFromView({ columns: [], filters: {}, sort: null, shown_filters: ['account_manager_ids'] }, all, ['status'])).toEqual(['account_manager_ids'])
+    expect(shownFromView({ columns: [], filters: { account_manager_ids: ['id'] }, sort: null }, all, ['status'])).toEqual(['status', 'account_manager_ids'])
+    const lean = { columns: ['client'], filters: {}, sort: null, shown_filters: ['status'] }
+    expect(sameDefinition(lean, { ...lean, shown_filters: ['status', 'company_id'] })).toBe(false)
+    expect(sameDefinition(lean, { columns: ['client'], filters: {}, sort: null })).toBe(true)
     expect(firstValue(['a', 'b'])).toBe('a')
     expect(firstValue(undefined)).toBe('')
   })

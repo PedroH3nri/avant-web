@@ -18,11 +18,20 @@ import Status from '@/components/ui/Status.vue'
 import TableState from '@/components/ui/TableState.vue'
 import { ApiError } from '@/lib/api'
 import { errorText, locale, t, type Key } from '@/lib/i18n'
+import FiltersMenu from '@/modules/views/components/FiltersMenu.vue'
+import { useLocalBarFilters } from '@/modules/views/barFilters'
 import { td, th } from '@/lib/table'
 import { clientService } from '@/modules/internal/clients/service'
 import { PERIODS, channelKey, childLevel, formatCount, formatMoney, formatRatio, objectPath, objectState, periodRange } from '@/modules/google_ads/rules'
 import { googleAdsReader } from '@/modules/google_ads/service'
 import type { GoogleAdsAccount, GoogleAdsLevel, GoogleAdsObject } from '@/modules/google_ads/types'
+
+const FILTERS = ['client', 'with_issues']
+const DEFAULT_FILTERS = ['client', 'with_issues']
+const FILTER_LABELS: Record<string, Key> = {
+  client: 'gads.col.client',
+  with_issues: 'gads.withIssues',
+}
 
 const route = useRoute()
 const router = useRouter()
@@ -36,6 +45,14 @@ const companyId = ref('')
 const days = ref('7')
 const query = ref('')
 const withIssues = ref(false)
+const barFilters = useLocalBarFilters('gads-campaigns', FILTERS, DEFAULT_FILTERS, {
+  client: () => (companyId.value = ''),
+  with_issues: () => (withIssues.value = false),
+})
+/** O nome do filtro no menu de filtros. */
+const filterLabel = (filter: string) => t(FILTER_LABELS[filter] as Key)
+/** Os filtros que a pessoa pode pôr na barra: cliente só no painel interno. */
+const availableFilters = FILTERS.filter((key) => key !== 'client' || internal)
 const items = ref<GoogleAdsObject[] | null>(null)
 const accounts = ref<GoogleAdsAccount[]>([])
 const clients = ref<{ id: string; name: string }[]>([])
@@ -127,13 +144,14 @@ watch([level, parent, accountId, companyId, days, withIssues], refilter)
     <div class="flex flex-wrap items-center gap-3">
       <Segmented :model-value="level" :label="t('gads.level')" :options="levelOptions" @update:model-value="pickLevel" />
       <Select v-model="days" :aria-label="t('gads.period')" class="w-full sm:w-[160px]" :options="periodOptions" />
-      <Select v-if="internal" v-model="companyId" :aria-label="t('gads.col.client')" class="w-full sm:w-[220px]" :options="clientOptions" />
+      <Select v-if="internal && barFilters.isShown('client')" v-model="companyId" :aria-label="t('gads.col.client')" class="w-full sm:w-[220px]" :options="clientOptions" />
       <Select v-model="accountId" :aria-label="t('gads.account')" class="w-full sm:w-[220px]" :options="accountOptions" />
       <div class="relative w-full sm:w-[240px]">
         <Search class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
         <Input v-model="query" :aria-label="t('gads.search')" class="h-9 bg-card pl-9" :placeholder="t('gads.searchPlaceholder')" />
       </div>
-      <Checkbox id="gads-with-issues" v-model="withIssues" :label="t('gads.withIssues')" />
+      <Checkbox v-if="barFilters.isShown('with_issues')" id="gads-with-issues" v-model="withIssues" :label="t('gads.withIssues')" />
+      <FiltersMenu v-model:shown="barFilters.shown.value" :filters="availableFilters" :label="filterLabel" />
     </div>
     <p v-if="parent" class="flex flex-wrap items-center gap-1 text-[14px]">
       <button type="button" class="text-muted-foreground hover:text-foreground hover:underline" @click="pickLevel(parent.level)">{{ t(`gads.levelPlural.${parent.level}` as Key) }}</button>
