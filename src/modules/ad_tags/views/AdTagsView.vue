@@ -154,7 +154,7 @@ function seenText(tag: AdTag): string {
 const guideOpen = ref(false)
 const origin = window.location.origin
 const guideSteps = computed(() => [t('at.guideStep1'), t('at.guideStep2'), t('at.guideStep3'), t('at.guideStep4'), t('at.guideStep5')])
-const guideNotes = computed(() => [t('at.installOne'), t('at.installGenius'), t('at.installReward')])
+const guideNotes = computed(() => [t('at.installReward'), t('at.installOne'), t('at.installGenius')])
 const installing = ref<AdTag | null>(null)
 const installOpen = computed({
   get: () => installing.value !== null,
