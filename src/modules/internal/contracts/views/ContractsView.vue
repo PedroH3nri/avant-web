@@ -31,7 +31,9 @@ import { useSession } from '@/stores/session'
 import { contractService } from '@/modules/internal/contracts/service'
 import { clientService } from '@/modules/internal/clients/service'
 import ColumnsMenu from '@/modules/views/components/ColumnsMenu.vue'
+import FiltersMenu from '@/modules/views/components/FiltersMenu.vue'
 import SavedViewsBar from '@/modules/views/components/SavedViewsBar.vue'
+import { useBarFilters } from '@/modules/views/barFilters'
 import { cleanFilters, firstValue } from '@/modules/views/rules'
 import type { ViewDefinition } from '@/modules/views/types'
 
@@ -39,7 +41,13 @@ type Filter = ContractStatus | 'all'
 
 const ALL = 'all'
 const COLUMNS = ['client', 'network', 'revshare', 'status', 'source', 'starts_at', 'ends_at']
-const DEFAULT_VIEW: ViewDefinition = { columns: [...COLUMNS], filters: {}, sort: { key: 'created_at', direction: 'desc' } }
+const FILTERS = ['status', 'company_id']
+const DEFAULT_FILTERS = ['status', 'company_id']
+const FILTER_LABELS: Record<string, Key> = {
+  status: 'ct.filterLabel',
+  company_id: 'ct.client',
+}
+const DEFAULT_VIEW: ViewDefinition = { columns: [...COLUMNS], filters: {}, sort: { key: 'created_at', direction: 'desc' }, shown_filters: DEFAULT_FILTERS }
 
 const session = useSession()
 const networks = ref<ContractNetwork[] | null>(null)
@@ -51,15 +59,22 @@ const loadError = ref<string | null>(null)
 const filter = ref<Filter>('all')
 const filters: Filter[] = ['active', 'ended', 'all']
 const client = ref(ALL)
+const barFilters = useBarFilters(FILTERS, DEFAULT_FILTERS, {
+  status: () => (choose('all')),
+  company_id: () => (client.value = ALL),
+})
 const clients = ref<{ value: string; label: string }[]>([])
 const columns = ref<string[]>([...COLUMNS])
 const current = computed<ViewDefinition>(() => ({
   columns: columns.value,
   filters: cleanFilters({ status: filter.value === 'all' ? undefined : filter.value, company_id: client.value === ALL ? undefined : client.value }),
   sort: DEFAULT_VIEW.sort,
+  shown_filters: barFilters.shown.value,
 }))
 const filterOptions = computed(() => filters.map((option) => ({ value: option, label: t(`ct.filter.${option}`) })))
 const clientOptions = computed(() => [{ value: ALL, label: t('int.allClients') }, ...clients.value])
+/** O nome do filtro no menu de filtros. */
+const filterLabel = (filter: string) => t(FILTER_LABELS[filter] as Key)
 /** Diz se a coluna aparece na tabela de contratos. */
 const shown = (column: string) => columns.value.includes(column)
 /** O nome da coluna no menu de colunas. */
@@ -71,6 +86,7 @@ function applyView(definition: ViewDefinition) {
   columns.value = known.length ? known : [...COLUMNS]
   const status = firstValue(definition.filters.status)
   client.value = firstValue(definition.filters.company_id) || ALL
+  barFilters.apply(definition)
   choose(status === 'active' || status === 'ended' ? status : 'all')
 }
 
@@ -274,8 +290,9 @@ async function confirmRemove() {
     <template v-else>
       <section class="grid gap-3">
         <SavedViewsBar screen="contracts" :default-label="t('ct.allContracts')" :current="current" :defaults="DEFAULT_VIEW" @apply="applyView">
-          <Select :model-value="filter" :options="filterOptions" :aria-label="t('ct.filterLabel')" class="w-full sm:w-44 h-9" @update:model-value="choose($event as Filter)" />
-          <Select v-model="client" :options="clientOptions" :aria-label="t('ct.client')" class="w-full sm:w-56 h-9" />
+          <Select v-if="barFilters.isShown('status')" :model-value="filter" :options="filterOptions" :aria-label="t('ct.filterLabel')" class="w-full sm:w-44 h-9" @update:model-value="choose($event as Filter)" />
+          <Select v-if="barFilters.isShown('company_id')" v-model="client" :options="clientOptions" :aria-label="t('ct.client')" class="w-full sm:w-56 h-9" />
+          <FiltersMenu v-model:shown="barFilters.shown.value" :filters="FILTERS" :label="filterLabel" />
           <ColumnsMenu v-model:shown="columns" :columns="COLUMNS" :label="columnLabel" />
         </SavedViewsBar>
         <DataTable :min="900">

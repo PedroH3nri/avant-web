@@ -16,17 +16,30 @@ import Pagination from '@/components/ui/Pagination.vue'
 import Status from '@/components/ui/Status.vue'
 import TableState from '@/components/ui/TableState.vue'
 import { ApiError } from '@/lib/api'
-import { errorText, formatDate, t } from '@/lib/i18n'
+import { errorText, formatDate, t, type Key } from '@/lib/i18n'
+import FiltersMenu from '@/modules/views/components/FiltersMenu.vue'
+import { useLocalBarFilters } from '@/modules/views/barFilters'
 import { latestCall } from '@/lib/latest'
 import { td, th } from '@/lib/table'
 import { STATES, dollars, monthName, previousMonth, progressPercent, stateLabel } from '@/modules/internal/checklists/rules'
 import { checklistService } from '@/modules/internal/checklists/service'
 import type { ChecklistMonth, ChecklistState, SiteChecklist } from '@/modules/internal/checklists/types'
 
+const FILTERS = ['state']
+const DEFAULT_FILTERS = ['state']
+const FILTER_LABELS: Record<string, Key> = {
+  state: 'check.state',
+}
+
 const SEARCH_DELAY_MS = 300
 const months = ref<string[]>([])
 const month = ref('')
 const state = ref<ChecklistState>('all')
+const barFilters = useLocalBarFilters('checklists', FILTERS, DEFAULT_FILTERS, {
+  state: () => (state.value = 'all'),
+})
+/** O nome do filtro no menu de filtros. */
+const filterLabel = (filter: string) => t(FILTER_LABELS[filter] as Key)
 const query = ref('')
 const checklists = ref<SiteChecklist[] | null>(null)
 const summary = ref<ChecklistMonth | null>(null)
@@ -135,7 +148,8 @@ function retry() {
         <Input v-model="query" type="search" :aria-label="t('check.search')" class="h-9 pl-9" :placeholder="t('check.searchPlaceholder')" />
       </div>
       <Select v-model="month" :options="monthOptions" :aria-label="t('check.month')" class="w-full sm:w-[220px] h-9" />
-      <Select v-model="state" :options="stateOptions" :aria-label="t('check.state')" class="w-full sm:w-[180px] h-9" />
+      <Select v-if="barFilters.isShown('state')" v-model="state" :options="stateOptions" :aria-label="t('check.state')" class="w-full sm:w-[180px] h-9" />
+      <FiltersMenu v-model:shown="barFilters.shown.value" :filters="FILTERS" :label="filterLabel" />
     </div>
     <LoadError v-if="loadError" :message="loadError" @retry="retry" />
     <template v-else>

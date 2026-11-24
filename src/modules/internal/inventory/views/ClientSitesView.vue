@@ -27,6 +27,7 @@ import { SITE_CATEGORIES, approval, categoryLabel } from '@/modules/sites/rules'
 import ColumnsMenu from '@/modules/views/components/ColumnsMenu.vue'
 import FiltersMenu from '@/modules/views/components/FiltersMenu.vue'
 import SavedViewsBar from '@/modules/views/components/SavedViewsBar.vue'
+import { useBarFilters } from '@/modules/views/barFilters'
 import { cleanFilters, firstValue, parseSort, sortValue } from '@/modules/views/rules'
 import type { ViewDefinition, ViewSort } from '@/modules/views/types'
 import { useSession } from '@/stores/session'
@@ -42,7 +43,15 @@ const APPROVAL_LABELS: Record<string, Key> = {
   review: 'sites.approval.review',
   awaiting_gam: 'inv.awaitingGam',
 }
-const EXTRA_FILTERS = ['responsible', 'manager']
+const FILTERS = ['approval', 'company_id', 'category', 'responsible_user_id', 'account_manager_ids']
+const DEFAULT_FILTERS = ['approval', 'company_id', 'category']
+const FILTER_LABELS: Record<string, Key> = {
+  approval: 'inv.filter.approval',
+  company_id: 'inv.filter.client',
+  category: 'inv.filter.category',
+  responsible_user_id: 'inv.filter.responsible',
+  account_manager_ids: 'inv.column.manager',
+}
 const COLUMNS = ['site', 'client', 'approval', 'revenue', 'units', 'checklist', 'category', 'responsible']
 const SORTS: ViewSort[] = [
   { key: 'created_at', direction: 'desc' },
@@ -50,7 +59,12 @@ const SORTS: ViewSort[] = [
   { key: 'domain', direction: 'asc' },
   { key: 'domain', direction: 'desc' },
 ]
-const DEFAULT_VIEW: ViewDefinition = { columns: ['site', 'client', 'approval', 'revenue', 'units', 'checklist'], filters: {}, sort: SORTS[0] ?? null }
+const DEFAULT_VIEW: ViewDefinition = {
+  columns: ['site', 'client', 'approval', 'revenue', 'units', 'checklist'],
+  filters: {},
+  sort: SORTS[0] ?? null,
+  shown_filters: DEFAULT_FILTERS,
+}
 
 const session = useSession()
 const canSeeChecklists = computed(() => session.can('internal.checklists.view'))
@@ -65,7 +79,13 @@ const company = ref(ALL)
 const category = ref(ALL)
 const responsible = ref(ALL)
 const manager = ref(ALL)
-const extraFilters = ref<string[]>([])
+const barFilters = useBarFilters(FILTERS, DEFAULT_FILTERS, {
+  approval: () => (approvalFilter.value = ALL),
+  company_id: () => (company.value = ALL),
+  category: () => (category.value = ALL),
+  responsible_user_id: () => (responsible.value = ALL),
+  account_manager_ids: () => (manager.value = ALL),
+})
 const sort = ref(sortValue(SORTS[0] as ViewSort))
 const columns = ref<string[]>([...DEFAULT_VIEW.columns])
 const staff = ref<FilterOption[]>([])
@@ -88,6 +108,7 @@ const current = computed<ViewDefinition>(() => ({
     account_manager_ids: manager.value === ALL ? [] : [manager.value],
   }),
   sort: parseSort(sort.value),
+  shown_filters: barFilters.shown.value,
 }))
 
 const sitesCall = latestCall()
@@ -175,20 +196,13 @@ function applyView(definition: ViewDefinition) {
   category.value = known(firstValue(definition.filters.category), categoryOptions.value)
   responsible.value = firstValue(definition.filters.responsible_user_id) || ALL
   manager.value = firstValue(definition.filters.account_manager_ids) || ALL
-  extraFilters.value = EXTRA_FILTERS.filter((filter) => (filter === 'responsible' ? responsible.value : manager.value) !== ALL)
+  barFilters.apply(definition)
   const found = definition.sort && SORTS.find((option) => sortValue(option) === sortValue(definition.sort as ViewSort))
   sort.value = sortValue(found || (SORTS[0] as ViewSort))
 }
 
-/** Diz se o filtro extra está ligado na tabela. */
-const extraShown = (filter: string) => extraFilters.value.includes(filter)
-/** O nome do filtro extra no menu de filtros. */
-const extraLabel = (filter: string) => t(filter === 'responsible' ? 'inv.filter.responsible' : 'inv.column.manager')
-/** Desligar um filtro extra tira o valor dele, para não filtrar escondido. */
-watch(extraFilters, (shown) => {
-  if (!shown.includes('responsible')) responsible.value = ALL
-  if (!shown.includes('manager')) manager.value = ALL
-})
+/** O nome do filtro no menu de filtros. */
+const filterLabel = (filter: string) => t(FILTER_LABELS[filter] as Key)
 
 /** Limpa a busca e os filtros. */
 function clearFilters() {
@@ -209,13 +223,13 @@ function clearFilters() {
         <Search class="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
         <Input v-model="searchText" type="search" :aria-label="t('inv.sitesSearch')" class="h-9 bg-card pl-9" :placeholder="t('inv.sitesSearch')" />
       </div>
-      <Select v-model="approvalFilter" :options="approvalOptions" :aria-label="t('inv.filter.approval')" class="h-9 w-full sm:w-52" />
-      <Select v-model="company" :options="companyOptions" :aria-label="t('inv.filter.client')" class="h-9 w-full sm:w-52" />
-      <Select v-model="category" :options="categoryOptions" :aria-label="t('inv.filter.category')" class="h-9 w-full sm:w-48" />
-      <Select v-if="extraShown('responsible')" v-model="responsible" :options="responsibleOptions" :aria-label="t('inv.filter.responsible')" class="h-9 w-full sm:w-60" />
-      <Select v-if="extraShown('manager')" v-model="manager" :options="managerOptions" :aria-label="t('inv.column.manager')" class="h-9 w-full sm:w-60" />
+      <Select v-if="barFilters.isShown('approval')" v-model="approvalFilter" :options="approvalOptions" :aria-label="t('inv.filter.approval')" class="h-9 w-full sm:w-52" />
+      <Select v-if="barFilters.isShown('company_id')" v-model="company" :options="companyOptions" :aria-label="t('inv.filter.client')" class="h-9 w-full sm:w-52" />
+      <Select v-if="barFilters.isShown('category')" v-model="category" :options="categoryOptions" :aria-label="t('inv.filter.category')" class="h-9 w-full sm:w-48" />
+      <Select v-if="barFilters.isShown('responsible_user_id')" v-model="responsible" :options="responsibleOptions" :aria-label="t('inv.filter.responsible')" class="h-9 w-full sm:w-60" />
+      <Select v-if="barFilters.isShown('account_manager_ids')" v-model="manager" :options="managerOptions" :aria-label="t('inv.column.manager')" class="h-9 w-full sm:w-60" />
       <Select v-model="sort" :options="sortOptions" :aria-label="t('views.sort')" class="h-9 w-full sm:w-52" />
-      <FiltersMenu v-model:shown="extraFilters" :filters="EXTRA_FILTERS" :label="extraLabel" />
+      <FiltersMenu v-model:shown="barFilters.shown.value" :filters="FILTERS" :label="filterLabel" />
       <ColumnsMenu v-model:shown="columns" :columns="COLUMNS" :label="columnLabel" />
     </SavedViewsBar>
     <LoadError v-if="loadError" :message="loadError" @retry="load" />
