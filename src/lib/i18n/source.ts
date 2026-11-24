@@ -4303,6 +4303,8 @@ export const dict = {
   'at.rewardOffHint': ['Esta tag não carrega reward, mesmo com reward ativo no site.', 'This tag does not load rewards, even with an active reward on the site.', 'Esta tag no carga reward, aunque haya un reward activo en el sitio.'],
   'at.priceRules': ['Regras de preço', 'Price rules', 'Reglas de precio'],
   'at.priceRulesDesc': ['Floor por bloco, das regras de preço do site.', 'Floor per block, from the site’s price rules.', 'Floor por bloque, de las reglas de precio del sitio.'],
+  'at.integrationOn': ['Ligado', 'On', 'Activado'],
+  'at.integrationOff': ['Desligado', 'Off', 'Desactivado'],
   'at.priceRulesOn': ['Usar', 'Use', 'Usar'],
   'at.priceRulesOnHint': ['A tag manda o floor de cada bloco para o GAM.', 'The tag sends each block’s floor to GAM.', 'La tag envía el floor de cada bloque a GAM.'],
   'at.priceRulesOff': ['Não usar', 'Do not use', 'No usar'],
