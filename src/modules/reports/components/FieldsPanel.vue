@@ -46,15 +46,15 @@ const title = 'px-4 pb-1.5 pt-4 text-[12px] font-medium uppercase tracking-wide 
 </script>
 
 <template>
-  <div class="pb-4">
-    <div class="p-3 pb-0">
+  <div class="flex flex-col pb-4 lg:h-full">
+    <div class="shrink-0 p-3 pb-0">
       <div class="relative">
         <Search class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input v-model="search" :placeholder="t('report.searchFields')" :aria-label="t('report.searchFields')" class="pl-9" />
       </div>
     </div>
-    <h3 :class="title">{{ t('report.metrics') }}</h3>
-    <div class="grid max-h-[min(360px,45vh)] gap-0.5 overflow-y-auto overscroll-contain px-2" tabindex="0" :aria-label="t('report.metrics')">
+    <h3 :class="[title, 'shrink-0']">{{ t('report.metrics') }}</h3>
+    <div class="grid max-h-[min(360px,45vh)] content-start gap-0.5 overflow-y-auto overscroll-contain px-2 lg:max-h-none lg:min-h-[120px] lg:flex-[1_1_0]" tabindex="0" :aria-label="t('report.metrics')">
       <button
         v-for="field in metrics"
         :key="field.key"
@@ -69,13 +69,13 @@ const title = 'px-4 pb-1.5 pt-4 text-[12px] font-medium uppercase tracking-wide 
         <span class="min-w-0 flex-1 truncate">{{ field.name }}</span>
       </button>
     </div>
-    <div class="flex items-center justify-between pr-2">
+    <div class="flex shrink-0 items-center justify-between pr-2">
       <h3 :class="title">{{ t('report.myMetrics') }}</h3>
       <button v-if="canManageMetrics" type="button" class="mt-3 flex h-7 items-center gap-1 rounded-md px-2 text-[13px] hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" @click="emit('newMetric')">
         <Plus class="size-3.5" />{{ t('report.newMetric') }}
       </button>
     </div>
-    <div class="grid gap-0.5 px-2">
+    <div class="grid max-h-[160px] shrink-0 content-start gap-0.5 overflow-y-auto overscroll-contain px-2">
       <div v-for="field in customs" :key="field.key" class="group flex items-center">
         <button
           type="button"
@@ -101,8 +101,8 @@ const title = 'px-4 pb-1.5 pt-4 text-[12px] font-medium uppercase tracking-wide 
       </div>
       <p v-if="!catalog.custom_metrics.length" class="px-2.5 py-1.5 text-[13px] text-muted-foreground">{{ t('report.myMetricsEmpty') }}</p>
     </div>
-    <h3 :class="title">{{ t('report.dimensions') }}</h3>
-    <div class="grid max-h-[min(360px,45vh)] gap-0.5 overflow-y-auto overscroll-contain px-2" tabindex="0" :aria-label="t('report.dimensions')">
+    <h3 :class="[title, 'shrink-0']">{{ t('report.dimensions') }}</h3>
+    <div class="grid max-h-[min(360px,45vh)] content-start gap-0.5 overflow-y-auto overscroll-contain px-2 lg:max-h-none lg:min-h-[120px] lg:flex-[0_1_auto]" tabindex="0" :aria-label="t('report.dimensions')">
       <button
         v-for="field in dimensions"
         :key="field.key"
