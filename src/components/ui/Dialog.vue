@@ -16,7 +16,7 @@ defineProps<{ title: string; desc?: string; class?: string }>()
       <DialogContent
         :class="
           cn(
-            'fixed left-1/2 top-1/2 z-50 grid max-h-[calc(100dvh-32px)] w-[calc(100vw-32px)] max-w-[480px] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-lg border bg-dialog shadow-lg data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
+            'fixed left-1/2 top-1/2 z-50 grid max-h-[calc(100dvh-32px)] w-[calc(100vw-32px)] max-w-[480px] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-lg border bg-[hsl(var(--dialog))] shadow-lg data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
             $props.class,
           )
         "
@@ -28,7 +28,7 @@ defineProps<{ title: string; desc?: string; class?: string }>()
           </DialogDescription>
           <div v-if="$slots.default" class="mt-5"><slot /></div>
         </div>
-        <div v-if="$slots.footer" class="flex flex-wrap justify-end gap-2 border-t bg-card-footer px-6 py-3"><slot name="footer" /></div>
+        <div v-if="$slots.footer" class="flex flex-wrap justify-end gap-2 border-t bg-[hsl(var(--card-footer))] px-6 py-3"><slot name="footer" /></div>
         <DialogClose
           class="absolute right-4 top-4 rounded-md p-1 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           :aria-label="t('common.close')"
