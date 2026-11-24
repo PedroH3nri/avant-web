@@ -7,7 +7,7 @@
 
 import { ref, watch } from 'vue'
 import { customThemeCss, isDarkBackground, withBorder, type SavedThemeColors, type ThemeColors } from '@/lib/customTheme'
-import type { Theme } from '@/lib/types'
+import type { AnimationArea, Theme } from '@/lib/types'
 
 export type { Theme }
 
@@ -24,6 +24,9 @@ export function shownTheme(value: Theme): 'light' | 'dark' | 'groone' {
 }
 
 const STORAGE = 'avant.theme'
+const ANIMATIONS_STORAGE = 'avant.animations'
+/** As áreas com animação, na ordem da tela; por padrão, todas. */
+export const ANIMATION_AREAS: AnimationArea[] = ['fields', 'buttons', 'cards']
 const CUSTOM_STORAGE = 'avant.customTheme'
 
 /** Tema lembrado no navegador, ou o do sistema. */
@@ -47,7 +50,20 @@ function savedCustomColors(): ThemeColors | null {
   }
 }
 
+/** Áreas com animação lembradas no navegador, ou todas. */
+function savedAnimations(): AnimationArea[] {
+  try {
+    const stored = localStorage.getItem(ANIMATIONS_STORAGE)
+    if (stored !== null) return ANIMATION_AREAS.filter((area) => stored.split(',').includes(area))
+  } catch {
+    // sem localStorage
+  }
+  return [...ANIMATION_AREAS]
+}
+
 export const theme = ref<Theme>(savedTheme())
+/** Áreas com animação de hover e foco que a pessoa deixou ligadas. */
+export const animations = ref<AnimationArea[]>(savedAnimations())
 /** As cores do tema personalizado em uso; vazio fora dele. */
 export const customColors = ref<ThemeColors | null>(savedCustomColors())
 /** Cores em edição, mostradas no painel inteiro antes de salvar; vazio fora do editor. */
@@ -92,6 +108,17 @@ watch(
     const attribute = shown ? shownTheme(value) : value
     if (attribute === 'system' || attribute === 'custom') root.removeAttribute('data-theme')
     else root.setAttribute('data-theme', attribute)
+  },
+  { immediate: true },
+)
+
+watch(
+  animations,
+  (areas) => {
+    remember(ANIMATIONS_STORAGE, areas.join(','))
+    const off = ANIMATION_AREAS.filter((area) => !areas.includes(area))
+    if (off.length) document.documentElement.setAttribute('data-motion-off', off.join(' '))
+    else document.documentElement.removeAttribute('data-motion-off')
   },
   { immediate: true },
 )

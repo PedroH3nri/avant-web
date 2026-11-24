@@ -2,7 +2,7 @@
 
 import { api, type Query } from '@/lib/api'
 import { withBorder, type SavedThemeColors } from '@/lib/customTheme'
-import type { Lang, Page, Theme, UserRef } from '@/lib/types'
+import type { AnimationArea, Lang, Page, Theme, UserRef } from '@/lib/types'
 import type {
   ApiKey,
   ApiKeyCreated,
@@ -53,7 +53,7 @@ export const accountService = {
   /** Revoga uma chave de API. */
   revokeApiKey: (keyId: string) => api.delete(`/api-keys/${keyId}`),
   /** Salva o tema, a cor e o idioma que a pessoa escolheu. */
-  appearance: (body: { theme?: Theme; locale?: Lang; custom_theme_id?: string | null }) =>
+  appearance: (body: { theme?: Theme; locale?: Lang; custom_theme_id?: string | null; animations?: AnimationArea[] }) =>
     api.patch<Appearance>('/auth/appearance', body),
   /** Os temas personalizados da pessoa e o limite. */
   themes: async (): Promise<CustomThemes> => {

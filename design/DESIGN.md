@@ -141,7 +141,7 @@ Ink (#171717) is the primary: primary buttons, the active tab underline, the com
 White surface for headers, page bands and cards; #FAFAFA band behind the work area and inside card footers; #EBEBEB hairlines; #666666 secondary text.
 
 ### Named Rules
-- **Blue is for links and focus only** in the Light and Dark themes. The GroOne theme and custom themes are the exceptions, chosen by the person. Every theme animates fields (hover: border toward the highlight; focus: border + halo, `.border-input`), button hover (1px lift + shadow, `.btn-motion`) and metric cards (dashboard widgets `.card-motion`: 2px lift + highlight border; KPI tiles `.kpi-motion`: highlight line growing at the base). Cards with forms do not move.
+- **Blue is for links and focus only** in the Light and Dark themes. The GroOne theme and custom themes are the exceptions, chosen by the person. Every theme animates fields (hover: border toward the highlight; focus: border + halo, `.border-input`), button hover (1px lift + shadow, `.btn-motion`) and metric cards (dashboard widgets `.card-motion`: 2px lift + highlight border; KPI tiles `.kpi-motion`: highlight line growing at the base). Cards with forms do not move. Each person can turn the motion off per area in Minha conta > Animações (Campos e seletores, Botões, Cards de métricas; all on by default, saved in the account as `animations`): the panel writes the areas turned off to `data-motion-off` on `<html>` and the motion selectors in `styles.css` skip them. The focus ring stays even with field motion off.
 - **State is a dot plus a word.** Conectada (ok), Testando conexão (warn), Sem acesso (bad), Convite enviado / pendente (pending). Never color alone.
 
 ## Typography
