@@ -33,10 +33,24 @@ watch(open, (value) => {
     panelColors.value = null
     return
   }
-  name.value = props.editing?.name ?? ''
-  colors.value = { ...(props.editing?.colors ?? STARTER_COLORS) }
-  drafts.value = draftsOf(colors.value)
+  load(props.editing)
 })
+
+/** Põe no editor o nome e as cores do tema (ou as do tema novo). */
+function load(target: CustomTheme | null) {
+  name.value = target?.name ?? ''
+  colors.value = { ...(target?.colors ?? STARTER_COLORS) }
+  drafts.value = draftsOf(colors.value)
+}
+
+/** Editar ou Novo tema clicado durante a prévia: volta a janela; o mesmo tema segue com as
+ * mudanças ainda não salvas, outro tema abre do zero. */
+function reopen(previous: CustomTheme | null, target: CustomTheme | null) {
+  if (previous?.id !== target?.id) load(target)
+  peeking.value = false
+}
+
+defineExpose({ reopen })
 
 /** O texto de cada campo de cor, em ``rgba()``. */
 function draftsOf(source: ThemeColors): Record<keyof ThemeColors, string> {
