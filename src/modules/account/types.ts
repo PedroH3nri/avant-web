@@ -1,6 +1,7 @@
 /** Formatos da API do domínio account (iguais ao dto.py dele no avant-api). Datas em ISO 8601 UTC. */
 
-import type { UserRef } from '@/lib/types'
+import type { ThemeColors } from '@/lib/customTheme'
+import type { AccentId, Lang, Theme, UserRef } from '@/lib/types'
 
 export interface AuthSession {
   id: string
@@ -40,4 +41,32 @@ export interface ApiKey {
 
 export interface ApiKeyCreated extends ApiKey {
   token: string
+}
+
+/** Um tema personalizado da pessoa (``CustomThemeOut``). */
+export interface CustomTheme {
+  id: string
+  name: string
+  colors: ThemeColors
+  updated_at: string
+}
+
+/** Os temas personalizados da pessoa e quantos ela pode ter (``CustomThemesOut``). */
+export interface CustomThemes {
+  items: CustomTheme[]
+  limit: number
+}
+
+/** O que a tela manda para criar ou editar um tema (``CustomThemeIn``). */
+export interface CustomThemeInput {
+  name: string
+  colors: ThemeColors
+}
+
+/** Aparência salva na conta (``AppearanceOut``). */
+export interface Appearance {
+  theme: Theme
+  accent: AccentId
+  locale: Lang
+  custom_theme_id?: string | null
 }

@@ -7,7 +7,7 @@ export type Localized = Partial<Record<Lang, string>>
 export type SiteScope = 'all' | 'assigned'
 
 /** Tema do painel escolhido pela pessoa. */
-export type Theme = 'light' | 'dark' | 'groone' | 'system'
+export type Theme = 'light' | 'dark' | 'groone' | 'system' | 'custom'
 
 /** Cor de destaque escolhida pela pessoa. */
 export type AccentId = 'default' | 'blue' | 'navy' | 'cyan' | 'green' | 'purple' | 'pink' | 'orange' | 'gold' | 'graphite'
@@ -61,4 +61,6 @@ export interface Me {
   /** Tema e cor que a pessoa escolheu; valem em todas as Empresas. */
   theme: Theme
   accent: AccentId
+  /** O tema personalizado em uso quando ``theme`` é ``custom`` (cores em /auth/me/themes). */
+  custom_theme_id?: string | null
 }

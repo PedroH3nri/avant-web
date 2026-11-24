@@ -1329,6 +1329,70 @@ function ConnectScreen({ t, go }: { t: T; go: (s: Screen) => void }) {
 
 /* ---------- Configurações ---------- */
 
+// Temas personalizados (até 3): prévia com as cinco cores, editar, apagar e o "Novo tema".
+const PROTO_CUSTOM_THEMES = [
+  { name: 'Noite verde', background: '#0b1220', sidebar: '#0f172a', card: '#111a2e', text: '#e6edf7', primary: '#22c55e' },
+  { name: 'Areia', background: '#faf7f0', sidebar: '#f1ebdd', card: '#ffffff', text: '#2b2417', primary: '#b45309' },
+]
+
+/** Seção "Seus temas" do cartão Tema e o editor com nome, cinco cores e prévia. */
+function ProtoCustomThemes() {
+  const [editing, setEditing] = useState<(typeof PROTO_CUSTOM_THEMES)[number] | null>(null)
+  const [open, setOpen] = useState(false)
+  const preview = (colors: (typeof PROTO_CUSTOM_THEMES)[number], large = false) => (
+    <span className={cn('flex overflow-hidden rounded-md border', large ? 'h-40' : 'h-16')} style={{ background: colors.background }} aria-hidden="true">
+      <span className={cn('grid shrink-0 content-start', large ? 'w-16 gap-2 p-3' : 'w-6 gap-1 p-1.5')} style={{ background: colors.sidebar }}>
+        <span className="block h-1.5 rounded-full" style={{ background: colors.text }} />
+        <span className="block h-1.5 rounded-full opacity-50" style={{ background: colors.text }} />
+      </span>
+      <span className={cn('grid min-w-0 flex-1 content-start', large ? 'gap-3 p-4' : 'gap-1.5 p-2')}>
+        <span className={cn('block rounded-full', large ? 'h-2.5 w-24' : 'h-2 w-10')} style={{ background: colors.text }} />
+        <span className={cn('grid content-start rounded-md border', large ? 'gap-2 p-3' : 'gap-1 p-1.5')} style={{ background: colors.card }}>
+          <span className={cn('block rounded-full opacity-60', large ? 'h-2 w-32' : 'h-1.5 w-12')} style={{ background: colors.text }} />
+          <span className={cn('block rounded', large ? 'h-6 w-20' : 'h-2 w-8')} style={{ background: colors.primary }} />
+        </span>
+      </span>
+    </span>
+  )
+  const shown = editing ?? { name: '', background: '#0b1220', sidebar: '#0f172a', card: '#111a2e', text: '#e6edf7', primary: '#2563eb' }
+  return (
+    <div className="mt-6 grid gap-3">
+      <div className="flex items-baseline justify-between"><h3 className="text-[14px] font-semibold">Seus temas</h3><span className="text-[13px] text-muted-foreground">2 de 3</span></div>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {PROTO_CUSTOM_THEMES.map((custom) => (
+          <div key={custom.name} className="grid content-start gap-3 rounded-lg border p-3">
+            {preview(custom)}
+            <span className="text-[14px]">{custom.name}</span>
+            <div className="-mb-1 -ml-2 flex gap-1">
+              <Button variant="ghost" size="sm" onClick={() => { setEditing(custom); setOpen(true) }}>Editar</Button>
+              <Button variant="ghost" size="sm" className="text-bad">Apagar</Button>
+            </div>
+          </div>
+        ))}
+        <button type="button" className="grid min-h-[132px] place-items-center rounded-lg border border-dashed text-[14px] text-muted-foreground hover:bg-accent" onClick={() => { setEditing(null); setOpen(true) }}>+ Novo tema</button>
+      </div>
+      <p className="text-[13px] text-muted-foreground">Até 3 temas com as suas cores. A cor secundária não muda os temas personalizados.</p>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-[720px]">
+          <DialogHeader><DialogTitle>{editing ? 'Editar tema' : 'Novo tema'}</DialogTitle><DialogDescription>Escolha as cinco cores. O Avant calcula bordas, fundos suaves e texto secundário a partir delas.</DialogDescription></DialogHeader>
+          <div className="grid gap-6 md:grid-cols-[1fr_280px]">
+            <div className="grid content-start gap-3">
+              <Label htmlFor="proto-theme-name">Nome</Label><Input id="proto-theme-name" defaultValue={shown.name} placeholder="Ex.: Noite verde" />
+              {([['background', 'Fundo'], ['sidebar', 'Menu lateral'], ['card', 'Cartões'], ['text', 'Texto'], ['primary', 'Cor principal (botões)']] as const).map(([key, label]) => (
+                <div key={key} className="grid gap-2"><Label htmlFor={`proto-theme-${key}`}>{label}</Label>
+                  <div className="flex gap-2"><span className="size-10 shrink-0 rounded-md border" style={{ background: shown[key] }} /><Input id={`proto-theme-${key}`} className="font-mono" defaultValue={shown[key]} /></div>
+                </div>
+              ))}
+            </div>
+            <div className="grid content-start gap-3"><span className="text-[13px] font-medium text-muted-foreground">Prévia</span>{preview(shown, true)}<p className="text-[13px] text-muted-foreground">Avisos e gráficos seguem o tom claro ou escuro do fundo.</p></div>
+          </div>
+          <DialogFooter><Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button><Button onClick={() => setOpen(false)}>{editing ? 'Salvar' : 'Criar tema'}</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+}
+
 function SettingsScreen({ t, accent, setAccent, theme, setTheme, image, setImage, groups }: { t: T; accent: string; setAccent: (g: string) => void; theme: string; setTheme: (t: string) => void; image: string | null; setImage: (v: string | null) => void; groups: ProtoGroup[] }) {
   const [section, setSection] = useState('geral')
   const [name, setName] = useState('Blog Exemplo')
@@ -1375,6 +1439,7 @@ function SettingsScreen({ t, accent, setAccent, theme, setTheme, image, setImage
                 </Label>
               ))}
             </RadioGroup>
+            <ProtoCustomThemes />
           </Card>
           <div id="cfg-comissao" className="grid scroll-mt-8 gap-6"><CompensationSettings groups={groups} /></div>
           <div id="cfg-idioma" className="scroll-mt-8"><Card title={t('company.lang')} desc="Idioma dos convites e de quem ainda não escolheu o seu. Cada pessoa pode trocar no menu da conta." footer={<Button size="sm" onClick={() => saved('Idioma')}>Salvar</Button>}>

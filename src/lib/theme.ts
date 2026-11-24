@@ -1,10 +1,11 @@
 /**
  * Tema e cor do sistema, escolhas de cada pessoa (vêm do /auth/me como ``theme`` e ``accent``).
- * O navegador lembra o tema para a primeira tela não piscar. A cor secundária muda ``--primary``
- * com um tom por tema.
+ * O navegador lembra o tema (e as cores do personalizado) para a primeira tela não piscar. A cor
+ * secundária muda ``--primary`` com um tom por tema; o tema personalizado traz a própria.
  */
 
 import { ref, watch } from 'vue'
+import { customThemeCss, isDarkBackground, type ThemeColors } from '@/lib/customTheme'
 import type { AccentId, Theme } from '@/lib/types'
 
 export type { AccentId, Theme }
@@ -38,6 +39,7 @@ export const ACCENTS: Accent[] = [
   { id: 'graphite', hex: '#45505f', light: '215 16% 32%', lightText: '0 0% 100%', dark: '215 16% 70%', darkText: '0 0% 4%', groone: '215 25% 30%', grooneText: '0 0% 100%', grooneEdge: '215 25% 65%' },
 ]
 
+/** Os temas prontos; os personalizados vêm da conta da pessoa. */
 export const THEMES: Theme[] = ['light', 'dark', 'groone', 'system']
 
 /** Cor de destaque com o id, ou a padrão. */
@@ -61,9 +63,11 @@ export function swatchColor(accent: Accent, shown: 'light' | 'dark' | 'groone'):
   return `hsl(${accent[shown]})`
 }
 
-/** O tema que vale agora: o do sistema vira claro ou escuro pelo aparelho. */
+/** O tema que vale agora: o do sistema vira claro ou escuro pelo aparelho, e o personalizado vira
+ * claro ou escuro pelo fundo dele. */
 export function shownTheme(value: Theme): 'light' | 'dark' | 'groone' {
-  if (value !== 'system') return value
+  if (value === 'custom' && customColors.value) return isDarkBackground(customColors.value.background) ? 'dark' : 'light'
+  if (value !== 'system' && value !== 'custom') return value
   return typeof matchMedia !== 'undefined' && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
 }
 
@@ -79,31 +83,71 @@ export function applyAccent(id: string | null | undefined) {
 }
 
 const STORAGE = 'avant.theme'
+const CUSTOM_STORAGE = 'avant.customTheme'
 
 /** Tema lembrado no navegador, ou o do sistema. */
 function savedTheme(): Theme {
   try {
     const stored = localStorage.getItem(STORAGE)
-    if (stored && (THEMES as string[]).includes(stored)) return stored as Theme
+    if (stored && ([...THEMES, 'custom'] as string[]).includes(stored)) return stored as Theme
   } catch {
     // sem localStorage
   }
   return 'system'
 }
 
+/** Cores do tema personalizado lembradas no navegador, ou vazio. */
+function savedCustomColors(): ThemeColors | null {
+  try {
+    const stored = localStorage.getItem(CUSTOM_STORAGE)
+    return stored ? (JSON.parse(stored) as ThemeColors) : null
+  } catch {
+    return null
+  }
+}
+
 export const theme = ref<Theme>(savedTheme())
+/** As cores do tema personalizado em uso; vazio fora dele. */
+export const customColors = ref<ThemeColors | null>(savedCustomColors())
+
+/** Guarda um valor no navegador, ou apaga quando vazio; sem localStorage, segue sem lembrar. */
+function remember(key: string, value: string | null) {
+  try {
+    if (value === null) localStorage.removeItem(key)
+    else localStorage.setItem(key, value)
+  } catch {
+    // segue sem lembrar
+  }
+}
+
+/** Põe ou tira o CSS do tema personalizado na página. */
+function applyCustomCss(colors: ThemeColors | null) {
+  let element = document.getElementById('avant-custom-theme') as HTMLStyleElement | null
+  if (!colors) {
+    element?.remove()
+    return
+  }
+  if (!element) {
+    element = document.createElement('style')
+    element.id = 'avant-custom-theme'
+    document.head.appendChild(element)
+  }
+  element.textContent = customThemeCss(colors)
+}
 
 watch(
-  theme,
-  (value) => {
-    try {
-      localStorage.setItem(STORAGE, value)
-    } catch {
-      // segue sem lembrar
-    }
+  [theme, customColors],
+  ([value, colors]) => {
+    const custom = value === 'custom' && colors !== null
+    remember(STORAGE, value)
+    remember(CUSTOM_STORAGE, custom ? JSON.stringify(colors) : null)
+    applyCustomCss(custom ? colors : null)
     const root = document.documentElement
-    if (value === 'system') root.removeAttribute('data-theme')
-    else root.setAttribute('data-theme', value)
+    if (custom) root.setAttribute('data-custom-theme', '')
+    else root.removeAttribute('data-custom-theme')
+    const attribute = custom ? shownTheme(value) : value
+    if (attribute === 'system' || attribute === 'custom') root.removeAttribute('data-theme')
+    else root.setAttribute('data-theme', attribute)
   },
   { immediate: true },
 )
