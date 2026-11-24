@@ -54,7 +54,7 @@ const title = 'px-4 pb-1.5 pt-4 text-[12px] font-medium uppercase tracking-wide 
       </div>
     </div>
     <h3 :class="title">{{ t('report.metrics') }}</h3>
-    <div class="grid gap-0.5 px-2">
+    <div class="grid max-h-[min(360px,45vh)] gap-0.5 overflow-y-auto overscroll-contain px-2" tabindex="0" :aria-label="t('report.metrics')">
       <button
         v-for="field in metrics"
         :key="field.key"
