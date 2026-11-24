@@ -197,6 +197,143 @@ function Status({ tone, children }: { tone: 'ok' | 'warn' | 'bad' | 'neutral' | 
   )
 }
 
+/* ---------- Verificação de instalação (decisão 21) ---------- */
+
+type InstallKind = 'tag' | 'loader' | 'reward'
+type InstallSeverity = 'error' | 'warn' | 'ok'
+type InstallFinding = { severity: InstallSeverity; title: string; page: string; snippet?: string; fix?: string }
+type InstallResult = { checkedAt: string; by: string; pages: string[]; findings: InstallFinding[] }
+const INSTALL_COOLDOWN = 60
+const INSTALL_SEVERITY: Record<InstallSeverity, { label: string; tone: 'bad' | 'warn' | 'ok' }> = {
+  error: { label: 'Erros', tone: 'bad' },
+  warn: { label: 'Avisos', tone: 'warn' },
+  ok: { label: 'Tudo certo', tone: 'ok' },
+}
+
+/** Um número fixo a partir do id, para o exemplo dar sempre o mesmo resultado. */
+function installSeed(id: string) { return [...id].reduce((total, char) => total + char.charCodeAt(0), 0) % 3 }
+
+/** Os achados de exemplo de cada produto: um item sem problema, um com avisos e um com erros. */
+function mockInstallResult(kind: InstallKind, id: string, domain: string, page: string, by: string): InstallResult {
+  const seed = installSeed(id)
+  const home = `https://${domain}/`
+  const article = `https://${domain}/receitas/bolo-de-cenoura`
+  const target = kind === 'reward' ? `https://${domain}/${page}` : home
+  const ok = (title: string, where = target): InstallFinding => ({ severity: 'ok', title, page: where })
+  const findings: InstallFinding[] = []
+  if (kind === 'tag') {
+    findings.push(ok('A tag está no <head> das duas páginas, com async e a chave desta tag', home), ok('O ads.txt tem as linhas da Groone', `https://${domain}/ads.txt`), ok('Só uma ad tag na página'))
+    if (seed === 1) findings.unshift({ severity: 'warn', title: 'A linha ainda usa o endereço antigo', page: article, snippet: '<script async src="https://avant.groone.com/tag.js" data-tag="…">', fix: 'Troque o endereço por https://cdn.groone.com/tag.js. A linha antiga continua funcionando por enquanto.' }, { severity: 'warn', title: 'O site carrega o gpt.js por conta própria', page: home, snippet: '<script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js">', fix: 'A tag já carrega o GPT. Tire a linha do site para não carregar duas vezes.' })
+    if (seed === 2) findings.unshift({ severity: 'error', title: 'A tag antiga do Genius ainda está no site', page: home, snippet: '<script id="groone" src="https://genius.groone.com/g-tag.min.js" data-key="…">', fix: 'Tire a linha do g-tag.min.js. Com as duas, os anúncios aparecem duas vezes.' }, { severity: 'error', title: 'O reward.js está junto com a tag', page: article, snippet: '<script async src="https://cdn.groone.com/reward.js">', fix: 'O reward já vem dentro da tag. Tire a linha do reward.js.' }, { severity: 'warn', title: 'A tag está no <body>, não no <head>', page: article, fix: 'Mova a linha para o <head>, para a tag começar antes do conteúdo.' })
+  }
+  if (kind === 'loader') {
+    findings.push(ok('A ad tag que usa este loader está publicada e no site', home), ok('Nenhuma tela de carregamento antiga no site'))
+    if (seed === 1) findings.unshift({ severity: 'warn', title: 'Uma das tags que usam o loader não foi vista nas páginas', page: article, fix: 'Confira se a linha da tag "Landing de campanhas" está nessas páginas.' })
+    if (seed === 2) findings.unshift({ severity: 'error', title: 'Nenhuma ad tag publicada usa este loader', page: '—', fix: 'Escolha o loader no card Integrações de uma ad tag e publique a tag.' })
+  }
+  if (kind === 'reward') {
+    findings.push(ok('A página do reward abre', target), ok('A ad tag está na página e abre o reward'))
+    if (seed === 1) findings.unshift({ severity: 'warn', title: 'O reward.js está sem async', page: target, snippet: '<script src="https://cdn.groone.com/reward.js">', fix: 'Ponha async na linha para não atrasar a página.' })
+    if (seed === 2) findings.unshift({ severity: 'error', title: 'O rewards.min.js antigo do Genius ainda está na página', page: target, snippet: '<script src="https://genius.groone.com/rewards.min.js">', fix: 'Tire a linha antiga. Com as duas, a janela abre duas vezes.' })
+  }
+  return { checkedAt: 'agora', by, pages: kind === 'reward' ? [target] : [home, article, `https://${domain}/ads.txt`], findings }
+}
+
+/** O resumo da última verificação: erros vencem avisos, e sem verificação fica "Não verificado". */
+function installSummary(result: InstallResult | null): { tone: 'bad' | 'warn' | 'ok' | 'neutral'; label: string } {
+  if (!result) return { tone: 'neutral', label: 'Não verificado' }
+  const errors = result.findings.filter((item) => item.severity === 'error').length
+  const warnings = result.findings.filter((item) => item.severity === 'warn').length
+  if (errors) return { tone: 'bad', label: `${errors} ${errors === 1 ? 'erro' : 'erros'}` }
+  if (warnings) return { tone: 'warn', label: `${warnings} ${warnings === 1 ? 'aviso' : 'avisos'}` }
+  return { tone: 'ok', label: 'Tudo certo' }
+}
+
+/** O resultado de ontem, da rotina diária; um item de cada três ainda não foi verificado. */
+function initialInstallResult(kind: InstallKind, id: string, domain: string, page: string): InstallResult | null {
+  if ((installSeed(`${id}x`) === 0 && kind !== 'tag')) return null
+  return { ...mockInstallResult(kind, id, domain, page, 'Rotina diária'), checkedAt: 'hoje, 04:12' }
+}
+
+/** A célula "Instalação" da tabela: o resumo abre o resultado e o botão verifica na hora, com 1 minuto de espera. */
+function InstallCheck({ kind, id, domain, page = '', name }: { kind: InstallKind; id: string; domain: string; page?: string; name: string }) {
+  const [result, setResult] = useState<InstallResult | null>(() => initialInstallResult(kind, id, domain, page))
+  const [running, setRunning] = useState(false)
+  const [wait, setWait] = useState(0)
+  const [open, setOpen] = useState(false)
+  useEffect(() => {
+    if (wait <= 0) return
+    const timer = setTimeout(() => setWait((left) => left - 1), 1000)
+    return () => clearTimeout(timer)
+  }, [wait])
+  /** Pede a verificação: o worker busca as páginas e o resultado chega em alguns segundos. */
+  const run = () => {
+    if (running || wait > 0) return
+    setRunning(true)
+    setWait(INSTALL_COOLDOWN)
+    setTimeout(() => { setResult(mockInstallResult(kind, id, domain, page, 'Você')); setRunning(false); setOpen(true) }, 1800)
+  }
+  const summary = installSummary(result)
+  const label = running ? 'Verificando…' : wait > 0 ? `Verificar em ${wait} s` : 'Verificar'
+  return (
+    <>
+      <div className="flex items-center gap-2">
+        <button className="text-left hover:underline disabled:no-underline" disabled={!result} onClick={() => setOpen(true)}><Status tone={summary.tone}>{summary.label}</Status></button>
+        <Button size="sm" variant="ghost" className="h-7 px-2 text-[12px] tnum" disabled={running || wait > 0} onClick={run} title="Verificar a instalação no site agora">{running ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}{label}</Button>
+      </div>
+      <InstallResultDialog open={open} onOpenChange={setOpen} result={result} name={name} kind={kind} running={running} wait={wait} run={run} />
+    </>
+  )
+}
+
+/** A janela com o resultado: achados por gravidade, a página, o trecho encontrado e o que fazer. */
+function InstallResultDialog({ open, onOpenChange, result, name, kind, running, wait, run }: { open: boolean; onOpenChange: (open: boolean) => void; result: InstallResult | null; name: string; kind: InstallKind; running: boolean; wait: number; run: () => void }) {
+  const what = { tag: 'da ad tag', loader: 'do loader', reward: 'do reward' }[kind]
+  const order: InstallSeverity[] = ['error', 'warn', 'ok']
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-[640px]">
+        <DialogHeader>
+          <DialogTitle>Instalação {what} {name}</DialogTitle>
+          <DialogDescription>{result ? `Verificado ${result.checkedAt} · ${result.by}. Lemos o <head> e o <body> de ${result.pages.length === 1 ? 'uma página' : `${result.pages.length} endereços`} do site, sem executar JavaScript.` : 'Ainda não verificado.'}</DialogDescription>
+        </DialogHeader>
+        {result && (
+          <div className="grid max-h-[60vh] gap-5 overflow-y-auto pr-1">
+            {order.map((severity) => {
+              const items = result.findings.filter((item) => item.severity === severity)
+              if (!items.length) return null
+              return (
+                <section key={severity} className="grid gap-2">
+                  <h3 className="text-[13px] font-medium text-muted-foreground">{INSTALL_SEVERITY[severity].label} · {items.length}</h3>
+                  <ul className="grid gap-2">
+                    {items.map((item) => (
+                      <li key={item.title} className="rounded-md border p-3">
+                        <div className="flex items-start gap-2">
+                          {severity === 'error' ? <X className="mt-0.5 h-4 w-4 shrink-0 text-bad" /> : severity === 'warn' ? <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warn" /> : <Check className="mt-0.5 h-4 w-4 shrink-0 text-ok" />}
+                          <div className="min-w-0 flex-1">
+                            <p className="text-[14px] font-medium">{item.title}</p>
+                            {severity !== 'ok' && <p className="mt-0.5 break-all font-mono text-[12px] text-muted-foreground">{item.page}</p>}
+                            {item.snippet && <code className="mt-2 block break-all rounded bg-muted px-2 py-1 font-mono text-[12px]">{item.snippet}</code>}
+                            {item.fix && <p className="mt-2 text-[13px]">{item.fix}</p>}
+                          </div>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )
+            })}
+          </div>
+        )}
+        <DialogFooter>
+          <Button variant="outline" disabled={running || wait > 0} onClick={run} className="tnum">{running ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}{running ? 'Verificando…' : wait > 0 ? `Verificar de novo em ${wait} s` : 'Verificar de novo'}</Button>
+          <Button onClick={() => onOpenChange(false)}>Fechar</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 /* ---------- Status de faturamento ---------- */
 
 type RevenueTrend = 'scaling' | 'steady' | 'reducing' | 'stopped'
@@ -5514,8 +5651,8 @@ function RewardsScreen({ rewards, staff, open, metrics }: { rewards: ProtoReward
           <div className="relative w-full sm:w-[280px]"><Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input aria-label="Buscar rewards" className="h-9 pl-9" placeholder={staff ? 'Nome, página ou cliente' : 'Nome ou página'} value={query} onChange={(event) => setQuery(event.target.value)} /></div>
           <Select value={site} onValueChange={setSite}><SelectTrigger aria-label="Site" className="h-9 w-[240px]"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Todos os sites</SelectItem>{sites.map((item) => <SelectItem key={item.domain} value={item.domain}>{item.domain}</SelectItem>)}</SelectContent></Select>
         </div>
-        <Table min={staff ? 900 : 760}>
-          <thead><tr><th className={th}>Reward</th>{staff && <th className={th}>Cliente</th>}<th className={th}>Site</th><th className={th}>Situação</th><th className={cn(th, 'text-right')}>Intervalo</th><th className={th}>Atualizado</th><th className={th}><span className="sr-only">Métricas</span></th></tr></thead>
+        <Table min={staff ? 1080 : 940}>
+          <thead><tr><th className={th}>Reward</th>{staff && <th className={th}>Cliente</th>}<th className={th}>Site</th><th className={th}>Situação</th><th className={th}>Instalação</th><th className={cn(th, 'text-right')}>Intervalo</th><th className={th}>Atualizado</th><th className={th}><span className="sr-only">Métricas</span></th></tr></thead>
           <tbody>
             {visible.map((reward) => (
               <tr key={reward.id} className="hover:bg-muted">
@@ -5528,12 +5665,13 @@ function RewardsScreen({ rewards, staff, open, metrics }: { rewards: ProtoReward
                 {staff && <td className={td}>{reward.client}</td>}
                 <td className={cn(td, 'font-mono text-[13px]')}>{reward.domain}</td>
                 <td className={td}>{reward.active ? <Status tone="ok">Ativo</Status> : <Status tone="neutral">Pausado</Status>}</td>
+                <td className={td}>{reward.active ? <InstallCheck kind="reward" id={String(reward.id)} domain={reward.domain} page={reward.page} name={reward.name} /> : <span className="text-[13px] text-muted-foreground">Ative para verificar</span>}</td>
                 <td className={cn(td, 'text-right tnum')}>{reward.cooldown} min</td>
                 <td className={cn(td, 'whitespace-nowrap tnum text-[13px] text-muted-foreground')}>{reward.updated}</td>
                 <td className={cn(td, 'text-right')}><Button size="sm" variant="outline" onClick={() => metrics(reward.id)}><BarChart3 className="h-4 w-4" />Métricas</Button></td>
               </tr>
             ))}
-            {!visible.length && <tr><td className={cn(td, 'py-12 text-center')} colSpan={staff ? 7 : 6}><Gift className="mx-auto h-5 w-5 text-muted-foreground" /><p className="mt-2 font-medium">Nenhum reward {query || site !== 'all' ? 'com esses filtros' : 'ainda'}</p><p className="text-[14px] text-muted-foreground">Crie um reward numa página do site e acompanhe aqui.</p></td></tr>}
+            {!visible.length && <tr><td className={cn(td, 'py-12 text-center')} colSpan={staff ? 8 : 7}><Gift className="mx-auto h-5 w-5 text-muted-foreground" /><p className="mt-2 font-medium">Nenhum reward {query || site !== 'all' ? 'com esses filtros' : 'ainda'}</p><p className="text-[14px] text-muted-foreground">Crie um reward numa página do site e acompanhe aqui.</p></td></tr>}
           </tbody>
         </Table>
       </Body>
@@ -6157,8 +6295,8 @@ function LoadersScreen({ loaders, tags, staff, open }: { loaders: ProtoLoader[];
         actions={<Button onClick={() => open(null)}><Plus className="h-4 w-4" />Novo loader</Button>} />
       <Body>
         <div className="relative w-full sm:w-[280px]"><Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input aria-label="Buscar loaders" className="h-9 pl-9" placeholder={staff ? 'Nome ou cliente' : 'Nome'} value={query} onChange={(event) => setQuery(event.target.value)} /></div>
-        <Table min={staff ? 860 : 720}>
-          <thead><tr><th className={th}>Loader</th>{staff && <th className={th}>Cliente</th>}<th className={th}>Modelo</th><th className={th}>Adblock</th><th className={th}>Nas ad tags</th><th className={th}>Atualizado</th></tr></thead>
+        <Table min={staff ? 1040 : 900}>
+          <thead><tr><th className={th}>Loader</th>{staff && <th className={th}>Cliente</th>}<th className={th}>Modelo</th><th className={th}>Adblock</th><th className={th}>Nas ad tags</th><th className={th}>Instalação</th><th className={th}>Atualizado</th></tr></thead>
           <tbody>
             {visible.map((loader) => {
               const used = tags.filter((tag) => (tag.draft?.settings ?? tag.versions[0]?.settings)?.loader === loader.id)
@@ -6174,11 +6312,12 @@ function LoadersScreen({ loaders, tags, staff, open }: { loaders: ProtoLoader[];
                   <td className={td}>{loader.template === 'groone' ? `GroOne · blur ${loader.blur}` : `Tela cheia · ${LOADER_STYLE_LABEL[loader.style].toLowerCase()}`} · até {loader.maxSeconds} s</td>
                   <td className={td}>{loader.adblock === 'off' ? <span className="text-muted-foreground">Sem aviso</span> : loader.adblock === 'warn' ? 'Avisa' : 'Bloqueia'}</td>
                   <td className={cn(td, 'text-[13px]')}>{used.length ? used.map((tag) => `${tag.domain} · ${tag.name}`).join(', ') : <span className="text-muted-foreground">Nenhuma</span>}</td>
+                  <td className={td}><InstallCheck kind="loader" id={loader.id} domain={used[0]?.domain ?? 'site.com.br'} name={loader.name} /></td>
                   <td className={cn(td, 'whitespace-nowrap tnum text-[13px] text-muted-foreground')}>{loader.updated}</td>
                 </tr>
               )
             })}
-            {!visible.length && <tr><td className={cn(td, 'py-12 text-center')} colSpan={staff ? 6 : 5}><Loader2 className="mx-auto h-5 w-5 text-muted-foreground" /><p className="mt-2 font-medium">Nenhum loader {query ? 'com esse nome' : 'ainda'}</p><p className="text-[14px] text-muted-foreground">Crie um loader e escolha ele na ad tag do site.</p></td></tr>}
+            {!visible.length && <tr><td className={cn(td, 'py-12 text-center')} colSpan={staff ? 7 : 6}><Loader2 className="mx-auto h-5 w-5 text-muted-foreground" /><p className="mt-2 font-medium">Nenhum loader {query ? 'com esse nome' : 'ainda'}</p><p className="text-[14px] text-muted-foreground">Crie um loader e escolha ele na ad tag do site.</p></td></tr>}
           </tbody>
         </Table>
       </Body>
@@ -6416,15 +6555,15 @@ function AdTagsScreen({ tags, staff, open, metrics, create }: { tags: ProtoAdTag
         actions={<Button onClick={() => startNew()}><Plus className="h-4 w-4" />Nova tag</Button>} />
       <Body>
         <div className="relative w-full sm:w-[280px]"><Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input aria-label="Buscar tags" className="h-9 pl-9" placeholder={staff ? 'Site, tag ou cliente' : 'Site ou tag'} value={query} onChange={(event) => setQuery(event.target.value)} /></div>
-        <Table min={staff ? 960 : 820}>
-          <thead><tr><th className={th}>Tag</th>{staff && <th className={th}>Cliente</th>}<th className={th}>Situação</th><th className={cn(th, 'text-right')}>Blocos</th><th className={th}>Visto por último</th><th className={th}>Rascunho</th><th className={th}><span className="sr-only">Ação</span></th></tr></thead>
+        <Table min={staff ? 1120 : 980}>
+          <thead><tr><th className={th}>Tag</th>{staff && <th className={th}>Cliente</th>}<th className={th}>Situação</th><th className={cn(th, 'text-right')}>Blocos</th><th className={th}>Visto por último</th><th className={th}>Instalação</th><th className={th}>Rascunho</th><th className={th}><span className="sr-only">Ação</span></th></tr></thead>
           {shown.map((site) => {
             const siteTags = tags.filter((tag) => tag.domain === site.domain)
             return (
               <tbody key={site.domain} className="border-t first:border-t-0">
                 <tr className="bg-muted/60">
                   <td className={cn(td, 'py-2')} colSpan={staff ? 2 : 1}><span className="font-mono text-[13px] font-medium">{site.domain}</span>{staff && <span className="ml-2 text-[12px] text-muted-foreground">{site.client}</span>}<span className="ml-2 text-[12px] text-muted-foreground">· {siteTags.length ? `${siteTags.length} ${siteTags.length === 1 ? 'tag' : 'tags'}` : 'sem tag'}</span></td>
-                  <td className={cn(td, 'py-2 text-right')} colSpan={5}><Button size="sm" variant="ghost" onClick={() => startNew(site.domain)}><Plus className="h-4 w-4" />Tag neste site</Button></td>
+                  <td className={cn(td, 'py-2 text-right')} colSpan={6}><Button size="sm" variant="ghost" onClick={() => startNew(site.domain)}><Plus className="h-4 w-4" />Tag neste site</Button></td>
                 </tr>
                 {siteTags.map((tag) => {
                   const status = tagStatus(tag)
@@ -6436,6 +6575,7 @@ function AdTagsScreen({ tags, staff, open, metrics, create }: { tags: ProtoAdTag
                       <td className={td}><Status tone={status.tone}>{status.label}</Status></td>
                       <td className={cn(td, 'text-right tnum')}>{live ? live.blocks.length : '—'}</td>
                       <td className={cn(td, 'whitespace-nowrap text-[13px] text-muted-foreground')}>{tag.lastSeen ?? 'Nunca'}</td>
+                      <td className={td}>{tag.versions.length > 0 ? <InstallCheck kind="tag" id={tag.id} domain={tag.domain} name={tag.name} /> : <span className="text-[13px] text-muted-foreground">Publique para verificar</span>}</td>
                       <td className={td}>{pending > 0 ? <Badge tone="ochre">{pending} {pending === 1 ? 'alteração' : 'alterações'}</Badge> : <span className="text-[13px] text-muted-foreground">—</span>}</td>
                       <td className={cn(td, 'text-right')}><div className="flex justify-end gap-2">{tag.versions.length > 0 && <Button size="sm" variant="outline" onClick={() => metrics(tag.id)}><BarChart3 className="h-4 w-4" />Métricas</Button>}<Button size="sm" variant="outline" onClick={() => open(tag.id)}>Abrir</Button></div></td>
                     </tr>
@@ -6444,7 +6584,7 @@ function AdTagsScreen({ tags, staff, open, metrics, create }: { tags: ProtoAdTag
               </tbody>
             )
           })}
-          {!shown.length && <tbody><tr><td className={cn(td, 'py-12 text-center')} colSpan={staff ? 7 : 6}><Code2 className="mx-auto h-5 w-5 text-muted-foreground" /><p className="mt-2 font-medium">Nenhuma tag ou site com esse nome</p></td></tr></tbody>}
+          {!shown.length && <tbody><tr><td className={cn(td, 'py-12 text-center')} colSpan={staff ? 8 : 7}><Code2 className="mx-auto h-5 w-5 text-muted-foreground" /><p className="mt-2 font-medium">Nenhuma tag ou site com esse nome</p></td></tr></tbody>}
         </Table>
         <Dialog open={newOpen} onOpenChange={setNewOpen}>
           <DialogContent className="max-w-[460px]">
@@ -6477,7 +6617,7 @@ function InstallDialog({ open, onOpenChange, tag }: { open: boolean; onOpenChang
         <DialogHeader><DialogTitle>Instalar a tag {tag.name}</DialogTitle><DialogDescription>Cole esta linha no &lt;head&gt; das páginas de {tag.domain} que devem usar esta tag. Cada tag tem a sua chave.</DialogDescription></DialogHeader>
         <div className="flex items-start gap-2 rounded-md border bg-muted p-3"><code className="min-w-0 flex-1 break-all font-mono text-[13px]">{script}</code><Button size="sm" variant="outline" onClick={() => { void navigator.clipboard?.writeText(script); toast.success('Linha copiada') }}><Copy className="h-4 w-4" />Copiar</Button></div>
         <ul className="grid gap-2 text-[14px] text-muted-foreground">
-          <li>• O reward já vem dentro da tag. Se o site usa só o reward, a linha é a do <span className="font-mono text-[13px]">reward.js</span>; com a tag, tire a do reward.</li>
+          <li>• O loader, a contagem de visitas (page views) e o reward já vêm dentro da tag. Com a tag no site, não instale outras linhas para eles (tire a do <span className="font-mono text-[13px]">reward.js</span>, se houver).</li>
           <li>• Tire a tag antiga do Genius (<span className="font-mono text-[13px]">g-tag.min.js</span>) para os anúncios não aparecerem duas vezes.</li>
           <li>• Uma página deve ter só uma tag. Com duas, a primeira que carregar vale e a outra fica parada.</li>
           <li>• Depois de instalar, as Métricas mostram a tag rodando em poucos minutos.</li>
