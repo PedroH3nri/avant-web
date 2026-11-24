@@ -2,7 +2,18 @@
 
 import { api, type Query } from '@/lib/api'
 import type { AccentId, Lang, Page, Theme, UserRef } from '@/lib/types'
-import type { ApiKey, ApiKeyCreated, AuthSession, GoogleStatus, MfaSetup, RecoveryCodes } from '@/modules/account/types'
+import type {
+  ApiKey,
+  ApiKeyCreated,
+  Appearance,
+  AuthSession,
+  CustomTheme,
+  CustomThemeInput,
+  CustomThemes,
+  GoogleStatus,
+  MfaSetup,
+  RecoveryCodes,
+} from '@/modules/account/types'
 
 /** Serviço da conta da pessoa. */
 export const accountService = {
@@ -33,8 +44,16 @@ export const accountService = {
   /** Revoga uma chave de API. */
   revokeApiKey: (keyId: string) => api.delete(`/api-keys/${keyId}`),
   /** Salva o tema, a cor e o idioma que a pessoa escolheu. */
-  appearance: (body: { theme?: Theme; accent?: AccentId; locale?: Lang }) =>
-    api.patch<{ theme: Theme; accent: AccentId; locale: Lang }>('/auth/appearance', body),
+  appearance: (body: { theme?: Theme; accent?: AccentId; locale?: Lang; custom_theme_id?: string | null }) =>
+    api.patch<Appearance>('/auth/appearance', body),
+  /** Os temas personalizados da pessoa e o limite. */
+  themes: () => api.get<CustomThemes>('/auth/me/themes'),
+  /** Cria um tema personalizado. */
+  createTheme: (body: CustomThemeInput) => api.post<CustomTheme>('/auth/me/themes', body),
+  /** Troca o nome e as cores de um tema. */
+  updateTheme: (themeId: string, body: CustomThemeInput) => api.put<CustomTheme>(`/auth/me/themes/${themeId}`, body),
+  /** Apaga um tema; se era o em uso, a conta volta para o do sistema. */
+  deleteTheme: (themeId: string) => api.delete(`/auth/me/themes/${themeId}`),
   /** Envia a foto de perfil (PNG, JPEG ou WebP até 2 MB). */
   setImage: (file: File) => api.putFile<UserRef>('/auth/me/image', file),
   /** Tira a foto de perfil. */
