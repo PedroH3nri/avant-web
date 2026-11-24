@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { alphaOf, luminance, withBorder, contrast, customThemeCss, flattenColors, isDarkBackground, isHexColor, mix, parseColor, readableOn, STARTER_COLORS, themeVariables, toHslTriplet, toRgba, withAlpha } from '@/lib/customTheme'
+import { alphaOf, failedRules, luminance, withBorder, contrast, customThemeCss, flattenColors, isDarkBackground, isHexColor, mix, parseColor, readableOn, STARTER_COLORS, themeVariables, toHslTriplet, toRgba, withAlpha } from '@/lib/customTheme'
 
 describe('tema personalizado', () => {
   it('aceita só cores #rrggbb', () => {
@@ -86,5 +86,16 @@ describe('bordas, campos e rodapé', () => {
     expect(variables.dialog).toBe('#808080')
     expect(luminance(variables['card-footer']!)).toBeLessThan(luminance('#808080'))
     expect(luminance(variables.field!)).toBeLessThan(luminance(variables['card-footer']!))
+  })
+})
+
+describe('regras de legibilidade', () => {
+  /** O tema novo passa; tudo preto e botão sumido no cartão não passam. */
+  it('aponta os pares sem contraste mínimo', () => {
+    expect(failedRules(STARTER_COLORS)).toEqual([])
+    const black = '#000000'
+    const allBlack = { background: black, sidebar: black, card: black, text: black, primary: black, border: black }
+    expect(failedRules(allBlack).map(({ rule }) => rule.key)).toEqual(['textBackground', 'textCard', 'primaryCard'])
+    expect(failedRules({ ...STARTER_COLORS, text: '#e6edf710' }).map(({ rule }) => rule.key)).toEqual(['textBackground', 'textCard'])
   })
 })
