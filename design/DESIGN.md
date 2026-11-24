@@ -185,6 +185,8 @@ One segment per seat of the Groone staff limit: ink for people, amber for pendin
 ### Filters and long lists in dialogs
 **Filters on records tables** (Pedro, 23/11): every records table has filter selectors to add and to remove filters. The default view shows only search plus a few basic selects; a "Filtros" menu (`FiltersMenu`) next to "Colunas" adds and removes any filter, turning one off clears its value, and a saved view keeps the filters that have a value. Never one select per column in the default view.
 
+**Install guides** (Pedro, 23/11): lists of things that go on the client site (Ad tags, Loaders) have a "Como instalar" outline button in the page header that opens a numbered step-by-step dialog (`InstallGuideDialog`), and each ad tag row has its own "Instalar" with the tag key.
+
 Category filters are 28px pill chips: "Todas" first, the active chip ink-filled, the others outlined in gray, with `aria-pressed`. A long list inside a dialog (the role permissions) scrolls on its own inside a hairline box capped at about 44% of the screen height, with the thin `.scroll-thin` scrollbar, so the dialog never grows past the screen. Status filters above a table stay as the segmented tablist.
 
 ### Metrics and charts

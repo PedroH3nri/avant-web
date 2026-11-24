@@ -4,7 +4,8 @@ import OpenLink from '@/components/OpenLink.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useDebounceFn } from '@vueuse/core'
-import { LoaderCircle, Plus, Search } from 'lucide-vue-next'
+import { BookOpen, LoaderCircle, Plus, Search } from 'lucide-vue-next'
+import InstallGuideDialog from '@/components/InstallGuideDialog.vue'
 import LoadError from '@/components/LoadError.vue'
 import PageBody from '@/components/PageBody.vue'
 import PageHeader from '@/components/PageHeader.vue'
@@ -71,12 +72,17 @@ function templateText(loader: Loader): string {
   const look = loader.template === 'groone' ? t('ld.summary.groone', { n: loader.blur }) : t('ld.summary.solid', { style: t(STYLE_LABEL[loader.style]).toLowerCase() })
   return t('ld.summary.upTo', { look, n: loader.max_seconds })
 }
+
+const guideOpen = ref(false)
+const guideSteps = computed(() => [t('ld.guideStep1'), t('ld.guideStep2'), t('ld.guideStep3'), t('ld.guideStep4')])
+const guideNotes = computed(() => [t('ld.guideNoteEdit'), t('ld.guideNoteOne')])
 </script>
 
 <template>
   <PageHeader :title="t('nav.loaders')" :sub="internal ? t('ld.subInternal') : t('ld.sub')">
-    <template v-if="canManage" #actions>
-      <Button @click="router.push(`${base}/novo`)"><Plus />{{ t('ld.new') }}</Button>
+    <template #actions>
+      <Button variant="outline" @click="guideOpen = true"><BookOpen />{{ t('ld.howToInstall') }}</Button>
+      <Button v-if="canManage" @click="router.push(`${base}/novo`)"><Plus />{{ t('ld.new') }}</Button>
     </template>
   </PageHeader>
   <PageBody>
@@ -125,4 +131,5 @@ function templateText(loader: Loader): string {
     </DataTable>
     <Pagination v-if="!loadError" v-model:page="page" :total="total" :pages="pages" />
   </PageBody>
+  <InstallGuideDialog v-model:open="guideOpen" :title="t('ld.guideTitle')" :desc="t('ld.guideDesc')" :steps="guideSteps" :notes="guideNotes" />
 </template>
