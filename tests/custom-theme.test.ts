@@ -94,8 +94,19 @@ describe('regras de legibilidade', () => {
   it('aponta os pares sem contraste mínimo', () => {
     expect(failedRules(STARTER_COLORS)).toEqual([])
     const black = '#000000'
-    const allBlack = { background: black, sidebar: black, card: black, text: black, primary: black, border: black }
-    expect(failedRules(allBlack).map(({ rule }) => rule.key)).toEqual(['textBackground', 'textCard', 'primaryCard'])
+    const allBlack = { background: black, sidebar: black, card: black, text: black, primary: black, border: black, highlight: black }
+    expect(failedRules(allBlack).map(({ rule }) => rule.key)).toEqual(['textBackground', 'textCard', 'primaryCard', 'highlightCard'])
     expect(failedRules({ ...STARTER_COLORS, text: '#e6edf710' }).map(({ rule }) => rule.key)).toEqual(['textBackground', 'textCard'])
+  })
+})
+
+describe('cor de destaque', () => {
+  /** Tema antigo sem destaque usa a cor principal; o destaque vira o foco e o halo dos botões. */
+  it('vira o foco dos campos e o halo dos botões', () => {
+    const { highlight: _unused, ...older } = STARTER_COLORS
+    expect(withBorder(older).highlight).toBe(STARTER_COLORS.primary)
+    const variables = themeVariables({ ...STARTER_COLORS, highlight: '#f59e0b' })
+    expect([variables.ring, variables['glow-color'], variables['hover-border']]).toEqual(['#f59e0b', '#f59e0b', '#f59e0b'])
+    expect(customThemeCss(STARTER_COLORS)).toContain('--glow-alpha:0.3;')
   })
 })

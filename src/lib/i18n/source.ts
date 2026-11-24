@@ -1003,9 +1003,9 @@ export const dict = {
   'theme.newTitle': ['Novo tema', 'New theme', 'Nuevo tema'],
   'theme.editTitle': ['Editar tema', 'Edit theme', 'Editar tema'],
   'theme.dialogDesc': [
-    'Escolha as seis cores; o painel já mostra cada mudança antes de salvar. O Avant calcula fundos suaves, texto secundário, campos e rodapé dos cartões a partir delas.',
-    'Pick the six colors; the panel shows each change before you save. Avant works out soft backgrounds, secondary text, fields and card footers from them.',
-    'Elige los seis colores; el panel muestra cada cambio antes de guardar. Avant calcula fondos suaves, texto secundario, campos y pie de las tarjetas a partir de ellos.',
+    'Escolha as sete cores; o painel já mostra cada mudança antes de salvar. O Avant calcula fundos suaves, texto secundário, campos e rodapé dos cartões a partir delas.',
+    'Pick the seven colors; the panel shows each change before you save. Avant works out soft backgrounds, secondary text, fields and card footers from them.',
+    'Elige los siete colores; el panel muestra cada cambio antes de guardar. Avant calcula fondos suaves, texto secundario, campos y pie de las tarjetas a partir de ellos.',
   ],
   'theme.name': ['Nome', 'Name', 'Nombre'],
   'theme.namePlaceholder': ['Ex.: Noite verde', 'E.g. Green night', 'Ej.: Noche verde'],
@@ -1015,6 +1015,11 @@ export const dict = {
   'theme.color.text': ['Texto', 'Text', 'Texto'],
   'theme.color.primary': ['Cor principal (botões)', 'Main color (buttons)', 'Color principal (botones)'],
   'theme.color.border': ['Bordas', 'Borders', 'Bordes'],
+  'theme.color.highlight': [
+    'Destaque (campo selecionado e botão sob o mouse)',
+    'Highlight (selected field and hovered button)',
+    'Destaque (campo seleccionado y botón bajo el ratón)',
+  ],
   'theme.preview': ['Prévia', 'Preview', 'Vista previa'],
   'theme.invalidColor': [
     'Use a cor em rgba(31, 75, 255, 0.8), rgb(31, 75, 255) ou #1f4bff.',
@@ -1041,6 +1046,11 @@ export const dict = {
     'Texto sobre os cartões: {ratio} (mínimo {minimum}).',
     'Text on the cards: {ratio} (minimum {minimum}).',
     'Texto sobre las tarjetas: {ratio} (mínimo {minimum}).',
+  ],
+  'theme.rule.highlightCard': [
+    'Destaque sobre os cartões: {ratio} (mínimo {minimum}).',
+    'Highlight on the cards: {ratio} (minimum {minimum}).',
+    'Destaque sobre las tarjetas: {ratio} (mínimo {minimum}).',
   ],
   'theme.rule.primaryCard': [
     'Cor principal sobre os cartões: {ratio} (mínimo {minimum}).',

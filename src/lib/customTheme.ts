@@ -1,6 +1,6 @@
 /**
- * Tema personalizado da pessoa: das seis cores escolhidas (fundo, menu lateral, cartões, texto,
- * cor principal e bordas) saem as variáveis do painel. Fundos suaves e texto secundário são
+ * Tema personalizado da pessoa: das sete cores escolhidas (fundo, menu lateral, cartões, texto,
+ * cor principal, bordas e destaque do foco e do hover) saem as variáveis do painel. Fundos suaves e texto secundário são
  * misturas do fundo com o texto; rodapé dos cartões e campos são o cartão mais escuro; o texto
  * dos botões fica branco ou quase preto, o que ler melhor. Tema sem borda guardada usa a mistura
  * do fundo com o texto.
@@ -17,12 +17,13 @@ export interface ThemeColors {
   text: string
   primary: string
   border: string
+  highlight: string
 }
 
 /** As cores como a API devolve: temas antigos vêm sem borda. */
-export type SavedThemeColors = Omit<ThemeColors, 'border'> & { border?: string | null }
+export type SavedThemeColors = Omit<ThemeColors, 'border' | 'highlight'> & { border?: string | null; highlight?: string | null }
 
-export const COLOR_KEYS: (keyof ThemeColors)[] = ['background', 'sidebar', 'card', 'text', 'primary', 'border']
+export const COLOR_KEYS: (keyof ThemeColors)[] = ['background', 'sidebar', 'card', 'text', 'primary', 'border', 'highlight']
 
 /** Cores do tema novo: as do tema escuro com o azul dos links como cor principal. */
 export const STARTER_COLORS: ThemeColors = {
@@ -32,6 +33,7 @@ export const STARTER_COLORS: ThemeColors = {
   text: '#e6edf7',
   primary: '#2563eb',
   border: '#252c3a',
+  highlight: '#60a5fa',
 }
 
 const WHITE = '#ffffff'
@@ -42,6 +44,7 @@ const OPAQUE_LENGTH = 7
 const BORDER_WEIGHT = 0.12
 const FOOTER_SHADE = 0.1
 const FIELD_SHADE = 0.18
+const GLOW_ALPHA = 0.3
 const MAX_CHANNEL = 255
 
 /** Diz se o texto é uma cor ``#rrggbb`` ou ``#rrggbbaa``. */
@@ -90,8 +93,8 @@ export function flatten(hex: string, under: string): string {
   return mix(under, opaque(hex), alphaOf(hex))
 }
 
-/** As seis cores já compostas, de baixo para cima: o fundo sobre o branco, menu e cartões sobre
- * o fundo, texto, botão e borda sobre os cartões. */
+/** As sete cores já compostas, de baixo para cima: o fundo sobre o branco, menu e cartões sobre
+ * o fundo, texto, botão, borda e destaque sobre os cartões. */
 export function flattenColors(colors: ThemeColors): ThemeColors {
   const background = flatten(colors.background, WHITE)
   const card = flatten(colors.card, background)
@@ -102,13 +105,14 @@ export function flattenColors(colors: ThemeColors): ThemeColors {
     text: flatten(colors.text, card),
     primary: flatten(colors.primary, card),
     border: flatten(colors.border, card),
+    highlight: flatten(colors.highlight, card),
   }
 }
 
 /** Um par de cores que precisa de contraste mínimo para o tema ser legível (igual ao
  * ``theme_contrast.py`` do avant-core). */
 export interface ContrastRule {
-  key: 'textBackground' | 'textCard' | 'primaryCard'
+  key: 'textBackground' | 'textCard' | 'primaryCard' | 'highlightCard'
   front: keyof ThemeColors
   back: keyof ThemeColors
   minimum: number
@@ -118,6 +122,7 @@ export const CONTRAST_RULES: ContrastRule[] = [
   { key: 'textBackground', front: 'text', back: 'background', minimum: 4.5 },
   { key: 'textCard', front: 'text', back: 'card', minimum: 4.5 },
   { key: 'primaryCard', front: 'primary', back: 'card', minimum: 3 },
+  { key: 'highlightCard', front: 'highlight', back: 'card', minimum: 3 },
 ]
 
 /** As regras que o tema não cumpre, com o contraste medido nas cores já compostas. */
@@ -129,14 +134,15 @@ export function failedRules(colors: ThemeColors): { rule: ContrastRule; ratio: n
 }
 
 /** A borda calculada como antes: o fundo com um pouco do texto. */
-export function derivedBorder(colors: Omit<ThemeColors, 'border'>): string {
+export function derivedBorder(colors: Omit<ThemeColors, 'border' | 'highlight'>): string {
   const background = flatten(colors.background, WHITE)
   return mix(background, flatten(colors.text, flatten(colors.card, background)), BORDER_WEIGHT)
 }
 
-/** As cores salvas com a borda preenchida (calculada quando o tema não tem). */
+/** As cores salvas com borda e destaque preenchidos: a borda calculada e, no destaque, a cor
+ * principal, quando o tema não tem. */
 export function withBorder(colors: SavedThemeColors): ThemeColors {
-  return { ...colors, border: colors.border || derivedBorder(colors) }
+  return { ...colors, border: colors.border || derivedBorder(colors), highlight: colors.highlight || colors.primary }
 }
 
 /** A cor em vermelho, verde e azul, de 0 a 255. */
@@ -201,9 +207,9 @@ export function toHslTriplet(hex: string): string {
   return `${hue} ${Math.round(saturation * 1000) / 10}% ${Math.round(lightness * 1000) / 10}%`
 }
 
-/** As variáveis do painel tiradas das seis cores (já compostas), em ``#rrggbb``. */
+/** As variáveis do painel tiradas das sete cores (já compostas), em ``#rrggbb``. */
 export function themeVariables(colors: ThemeColors): Record<string, string> {
-  const { background, sidebar, card, text, primary, border } = flattenColors(colors)
+  const { background, sidebar, card, text, primary, border, highlight } = flattenColors(colors)
   const sidebarText = contrast(sidebar, text) >= 4.5 ? text : readableOn(sidebar)
   return {
     background,
@@ -222,6 +228,9 @@ export function themeVariables(colors: ThemeColors): Record<string, string> {
     'accent-foreground': text,
     border,
     input: border,
+    ring: highlight,
+    'glow-color': highlight,
+    'hover-border': highlight,
     field: mix(card, NEAR_BLACK, FIELD_SHADE),
     dialog: card,
     'card-footer': mix(card, NEAR_BLACK, FOOTER_SHADE),
@@ -240,5 +249,5 @@ export function customThemeCss(colors: ThemeColors): string {
   const variables = Object.entries(themeVariables(colors))
     .map(([name, hex]) => `--${name}:${toHslTriplet(hex)};`)
     .join('')
-  return `html:root[data-custom-theme][data-custom-theme]{${variables}}`
+  return `html:root[data-custom-theme][data-custom-theme]{${variables}--glow-alpha:${GLOW_ALPHA};}`
 }
