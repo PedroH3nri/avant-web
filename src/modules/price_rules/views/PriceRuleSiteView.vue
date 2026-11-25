@@ -278,7 +278,7 @@ watch([hash, country], filterLater)
         <AlertTriangle class="mt-0.5 size-4 shrink-0 text-warn" />{{ t('pr.unsupportedCurrency', { currency: site.currency }) }}
       </div>
       <div v-if="site.active" class="grid grid-cols-2 gap-px overflow-hidden rounded-lg border bg-border lg:grid-cols-4">
-        <div v-for="tile in summary" :key="tile.label" class="bg-card p-4">
+        <div v-for="tile in summary" :key="tile.label" class="kpi-motion relative bg-card p-4 transition-colors hover:bg-muted">
           <div class="text-[13px] text-muted-foreground">{{ tile.label }}</div>
           <div :class="['mt-1 text-[24px] font-semibold tracking-[-0.03em] tnum max-sm:text-[20px]', tile.tone]">{{ tile.value }}</div>
           <div class="mt-1 text-[12px] text-muted-foreground">{{ tile.hint }}</div>

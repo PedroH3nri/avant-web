@@ -336,7 +336,7 @@ watch(period, load)
         <AlertTriangle class="mt-0.5 size-4 shrink-0" />{{ t(rule.status === 'paused' ? 'pr.cascadeInactive.paused' : 'pr.inactive.disabled') }}
       </div>
       <div class="grid grid-cols-2 gap-px overflow-hidden rounded-lg border bg-border lg:grid-cols-4">
-        <div v-for="(tile, index) in tiles" :key="tile.label" class="bg-card p-4">
+        <div v-for="(tile, index) in tiles" :key="tile.label" class="kpi-motion relative bg-card p-4 transition-colors hover:bg-muted">
           <div class="flex flex-wrap items-center gap-2 text-[13px] text-muted-foreground">
             {{ tile.label }}<Status v-if="index === 0" :tone="STATUS_TONE[rule.status]">{{ t(`pr.ruleStatus.${rule.status}`) }}</Status>
           </div>

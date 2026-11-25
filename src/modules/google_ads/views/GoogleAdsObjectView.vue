@@ -156,7 +156,7 @@ watch(termKind, loadTerms)
       </div>
       <p v-if="detail.final_url" class="text-[13px] text-muted-foreground">{{ t('gads.finalUrl') }}: <span class="font-mono">{{ detail.final_url }}</span></p>
       <dl class="grid grid-cols-2 gap-px overflow-hidden rounded-lg border bg-border sm:grid-cols-4">
-        <div v-for="item in summary" :key="item.key" class="bg-card p-4">
+        <div v-for="item in summary" :key="item.key" class="kpi-motion relative bg-card p-4 transition-colors hover:bg-muted">
           <dt class="text-[13px] text-muted-foreground">{{ t(item.key) }}</dt>
           <dd class="mt-1 text-[20px] font-semibold tracking-tight tnum">{{ item.value }}</dd>
         </div>
