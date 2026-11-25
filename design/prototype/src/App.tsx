@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import { Toaster, toast } from 'sonner'
-import { Check, ChevronsUpDown, Copy, Plug, Loader2, Plus, RefreshCw, Search, X, AlertTriangle, ArrowLeft, MoreHorizontal, Lock, Mail, ExternalLink, Home, Users, Network, Settings, ShieldCheck, Menu, BarChart3, Wallet, Download, Trash2, Pin, PinOff, Pencil, LayoutGrid, List, Wrench, Gift, Monitor, Smartphone, Code2, MousePointerClick, ChevronUp, ChevronDown, History, PanelBottom, PanelTop, Maximize, TextQuote, CircleDollarSign, GripVertical } from 'lucide-react'
+import { Check, ChevronsUpDown, Copy, Plug, Loader2, Plus, RefreshCw, Search, X, AlertTriangle, ArrowLeft, MoreHorizontal, Lock, Mail, ExternalLink, Home, Users, Network, Settings, ShieldCheck, Menu, BarChart3, Wallet, Download, Trash2, Pin, PinOff, Pencil, LayoutGrid, List, Wrench, Gift, Monitor, Smartphone, Code2, MousePointerClick, ChevronUp, ChevronDown, History, PanelBottom, PanelTop, Maximize, TextQuote, CircleDollarSign, GripVertical, LifeBuoy } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -19,6 +19,7 @@ import { translate, type Key, type Lang } from './i18n'
 import { Mark, SeatBar, SeatDot, SeatStrip, type SeatState } from './tiles'
 import { DateField, MonthField, PeriodPicker, PRESETS } from './date-pickers'
 import { DollarRate, NotificationCenter } from './navbar-extras'
+import { HelpCenterScreen, HubspotClientCard, HubspotScreen, NpsScreen, ProspectsScreen, TicketsScreen } from './hubspot'
 
 /* ---------- prototype routing ---------- */
 
@@ -35,6 +36,11 @@ const SCREENS = [
   ['resultado', 'Resultado'],
   ['custos', 'Custos'],
   ['controlecustos', 'Financeiro · Controle de custos'],
+  ['chamados', 'Ajuda · Chamados (HubSpot)'],
+  ['ajuda', 'Ajuda · Central de ajuda, gerente e NPS (HubSpot)'],
+  ['hubspotinterno', 'Painel interno · Integrações · HubSpot'],
+  ['prospeccao', 'Painel interno · Prospecção (HubSpot)'],
+  ['npsinterno', 'Painel interno · NPS dos clientes (HubSpot)'],
   ['equipe', 'Equipe'],
   ['grupos', 'Equipe · Grupos'],
   ['grupo', 'Equipe · Página do grupo'],
@@ -126,7 +132,7 @@ const SCREENS = [
   ['seletordatas', 'Componentes · Seletor de datas'],
 ] as const
 type Screen = (typeof SCREENS)[number][0]
-const INTERNAL_SCREENS: Screen[] = ['gadsinterno', 'gadscampanhasinterno', 'gadscampanhainterno', 'gadsgrupointerno', 'gadsanunciointerno', 'fbinterno', 'fbcampanhasinterno', 'fbcampanhainterno', 'fbconjuntointerno', 'fbanunciointerno', 'interno', 'cliente', 'siteinterno', 'contratos', 'resultados', 'papelcomissao', 'minhacomissao', 'comissoes', 'minhasinvoices', 'invoice', 'invoices', 'servicosinvoice', 'modelosdash', 'tarefas', 'tarefa', 'checklists', 'checklist', 'checklistitens', 'ferramentasgam', 'execucaogam', 'rewardsinterno', 'rewardinterno', 'rewardmetricasinterno', 'adtagsinterno', 'adtaginterno', 'adtagmetricasinterno', 'loadersinterno', 'loaderinterno', 'regrasprecointerno', 'regrasiteinterno', 'regrainterno', 'cascatainterno']
+const INTERNAL_SCREENS: Screen[] = ['hubspotinterno', 'prospeccao', 'npsinterno', 'gadsinterno', 'gadscampanhasinterno', 'gadscampanhainterno', 'gadsgrupointerno', 'gadsanunciointerno', 'fbinterno', 'fbcampanhasinterno', 'fbcampanhainterno', 'fbconjuntointerno', 'fbanunciointerno', 'interno', 'cliente', 'siteinterno', 'contratos', 'resultados', 'papelcomissao', 'minhacomissao', 'comissoes', 'minhasinvoices', 'invoice', 'invoices', 'servicosinvoice', 'modelosdash', 'tarefas', 'tarefa', 'checklists', 'checklist', 'checklistitens', 'ferramentasgam', 'execucaogam', 'rewardsinterno', 'rewardinterno', 'rewardmetricasinterno', 'adtagsinterno', 'adtaginterno', 'adtagmetricasinterno', 'loadersinterno', 'loaderinterno', 'regrasprecointerno', 'regrasiteinterno', 'regrainterno', 'cascatainterno']
 const isScreen = (s: string): s is Screen => SCREENS.some(([k]) => k === s)
 type T = (k: Key) => string
 
@@ -190,7 +196,7 @@ function swatchTheme(theme: string): 'light' | 'dark' | 'groone' {
 
 /* ---------- building blocks ---------- */
 
-function Status({ tone, children }: { tone: 'ok' | 'warn' | 'bad' | 'neutral' | 'ochre'; children: React.ReactNode }) {
+export function Status({ tone, children }: { tone: 'ok' | 'warn' | 'bad' | 'neutral' | 'ochre'; children: React.ReactNode }) {
   const dot = { ok: 'bg-ok', warn: 'bg-warn', bad: 'bg-bad', ochre: 'bg-ochre', neutral: 'bg-muted-foreground/60' }[tone]
   return (
     <span className="inline-flex items-center gap-2 whitespace-nowrap text-[13px]">
@@ -369,7 +375,7 @@ function RevenueStatus({ data }: { data: RevenueStatusData | null }) {
   )
 }
 
-function Badge({ children, tone = 'neutral' }: { children: React.ReactNode; tone?: 'neutral' | 'ochre' | 'bad' }) {
+export function Badge({ children, tone = 'neutral' }: { children: React.ReactNode; tone?: 'neutral' | 'ochre' | 'bad' }) {
   return (
     <span className={cn('inline-flex h-5 items-center whitespace-nowrap rounded-full px-2 text-[12px] font-medium',
       tone === 'neutral' && 'bg-secondary text-secondary-foreground',
@@ -382,7 +388,7 @@ function Code({ children }: { children: React.ReactNode }) {
   return <span className="font-mono text-[13px] tnum">{children}</span>
 }
 
-function Field({ id, label, hint, error, children }: { id: string; label: string; hint?: string; error?: string | false; children: React.ReactNode }) {
+export function Field({ id, label, hint, error, children }: { id: string; label: string; hint?: string; error?: string | false; children: React.ReactNode }) {
   return (
     <div className="grid min-w-0 gap-2">
       <Label htmlFor={id} className="text-[13px] font-medium text-muted-foreground">{label}</Label>
@@ -392,7 +398,7 @@ function Field({ id, label, hint, error, children }: { id: string; label: string
   )
 }
 
-function Avatar({ name, size = 32 }: { name: string; size?: number }) {
+export function Avatar({ name, size = 32 }: { name: string; size?: number }) {
   const initials = name.split(' ').filter((p) => /^[A-ZÀ-Ý]/.test(p)).map((p) => p[0]).slice(0, 2).join('')
   const hue = [...name].reduce((h, c) => h + c.charCodeAt(0), 0) % 360
   return (
@@ -404,7 +410,7 @@ function Avatar({ name, size = 32 }: { name: string; size?: number }) {
 }
 
 /** Vercel-style card: body plus an optional muted footer with a note and the action. */
-function Card({ title, desc, footerNote, footer, className, children, pad = true }: { title?: string; desc?: React.ReactNode; footerNote?: React.ReactNode; footer?: React.ReactNode; className?: string; children?: React.ReactNode; pad?: boolean }) {
+export function Card({ title, desc, footerNote, footer, className, children, pad = true }: { title?: string; desc?: React.ReactNode; footerNote?: React.ReactNode; footer?: React.ReactNode; className?: string; children?: React.ReactNode; pad?: boolean }) {
   return (
     <section className={cn('overflow-hidden rounded-lg border bg-card', className)}>
       {(title || desc || children) && (
@@ -557,11 +563,12 @@ const CLIENT_RAIL: RailGroup[] = [
   { key: 'financeiro', label: 'Financeiro', icon: Wallet, items: [{ id: 'resultado', label: 'Resultado' }, { id: 'custos', label: 'Custos' }, { id: 'controlecustos', label: 'Controle de custos' }] },
   { key: 'inventario', label: 'Inventário', icon: Network, items: [{ id: 'networks', label: 'Networks do GAM', also: ['conectar'] }, { id: 'rewards', label: 'Rewards', also: ['reward', 'rewardmetricas'] }, { id: 'adtags', label: 'Ad tags', also: ['adtag', 'adtagmetricas'] }, { id: 'loaders', label: 'Loaders', also: ['loader'] }, { id: 'regraspreco', label: 'Regras de preço', also: ['regrasite', 'regra', 'cascata'] }] },
   { key: 'equipe', label: 'Equipe', icon: Users, items: [{ id: 'equipe', label: 'Membros', also: ['membro'] }, { id: 'grupos', label: 'Grupos', also: ['grupo', 'grupoinativo'] }] },
+  { key: 'ajuda', label: 'Ajuda', icon: LifeBuoy, items: [{ id: 'ajuda', label: 'Central de ajuda' }, { id: 'chamados', label: 'Chamados' }] },
   { key: 'empresa', label: 'Empresa', icon: Settings, items: [{ id: 'configuracoes', label: 'Configurações' }, { id: 'fiscais', label: 'Dados fiscais' }] },
 ]
 const INTERNAL_RAIL: RailGroup[] = [
-  { key: 'clientes', label: 'Inventário', icon: Users, items: [{ id: 'interno', label: 'Clientes', also: ['cliente', 'siteinterno'] }, { id: 'contratos', label: 'Contratos' }, { id: 'resultados', label: 'Resultado dos clientes' }, { id: 'checklists', label: 'Checklists', also: ['checklist', 'checklistitens'] }, { id: 'rewardsinterno', label: 'Rewards', also: ['rewardinterno', 'rewardmetricasinterno'] }, { id: 'adtagsinterno', label: 'Ad tags', also: ['adtaginterno', 'adtagmetricasinterno'] }, { id: 'loadersinterno', label: 'Loaders', also: ['loaderinterno'] }, { id: 'regrasprecointerno', label: 'Regras de preço', also: ['regrasiteinterno', 'regrainterno', 'cascatainterno'] }] },
-  { key: 'integracoes', label: 'Integrações', icon: Plug, items: [{ id: 'fbinterno', label: 'Facebook' }, { id: 'fbcampanhasinterno', label: 'Campanhas do Facebook', also: ['fbcampanhainterno', 'fbconjuntointerno', 'fbanunciointerno'] }, { id: 'gadsinterno', label: 'Google Ads' }, { id: 'gadscampanhasinterno', label: 'Campanhas do Google Ads', also: ['gadscampanhainterno', 'gadsgrupointerno', 'gadsanunciointerno'] }] },
+  { key: 'clientes', label: 'Inventário', icon: Users, items: [{ id: 'interno', label: 'Clientes', also: ['cliente', 'siteinterno'] }, { id: 'prospeccao', label: 'Prospecção' }, { id: 'npsinterno', label: 'NPS dos clientes' }, { id: 'contratos', label: 'Contratos' }, { id: 'resultados', label: 'Resultado dos clientes' }, { id: 'checklists', label: 'Checklists', also: ['checklist', 'checklistitens'] }, { id: 'rewardsinterno', label: 'Rewards', also: ['rewardinterno', 'rewardmetricasinterno'] }, { id: 'adtagsinterno', label: 'Ad tags', also: ['adtaginterno', 'adtagmetricasinterno'] }, { id: 'loadersinterno', label: 'Loaders', also: ['loaderinterno'] }, { id: 'regrasprecointerno', label: 'Regras de preço', also: ['regrasiteinterno', 'regrainterno', 'cascatainterno'] }] },
+  { key: 'integracoes', label: 'Integrações', icon: Plug, items: [{ id: 'hubspotinterno', label: 'HubSpot' }, { id: 'fbinterno', label: 'Facebook' }, { id: 'fbcampanhasinterno', label: 'Campanhas do Facebook', also: ['fbcampanhainterno', 'fbconjuntointerno', 'fbanunciointerno'] }, { id: 'gadsinterno', label: 'Google Ads' }, { id: 'gadscampanhasinterno', label: 'Campanhas do Google Ads', also: ['gadscampanhainterno', 'gadsgrupointerno', 'gadsanunciointerno'] }] },
   { key: 'comissoes', label: 'Comissões', icon: Wallet, items: [{ id: 'minhacomissao', label: 'Minha comissão' }, { id: 'minhasinvoices', label: 'Minhas invoices' }, { id: 'comissoes', label: 'Comissões da equipe' }, { id: 'invoices', label: 'Invoices', also: ['servicosinvoice', 'invoice'] }] },
   { key: 'ferramentas', label: 'Ferramentas', icon: Wrench, items: [{ id: 'tarefas', label: 'Tarefas', also: ['tarefa'] }, { id: 'modelosdash', label: 'Modelos de dashboard' }, { id: 'ferramentasgam', label: 'Ferramentas do GAM', also: ['execucaogam'] }] },
   { key: 'equipegroone', label: 'Equipe', icon: ShieldCheck, items: [{ id: 'papelcomissao', label: 'Papéis da Equipe Groone' }] },
@@ -678,7 +685,7 @@ function Shell({ t, lang, setLang, screen, go, image, children }: { t: T; lang: 
   )
 }
 
-function PageHeader({ title, sub, actions, back }: { title: string; sub?: string; actions?: React.ReactNode; back?: React.ReactNode }) {
+export function PageHeader({ title, sub, actions, back }: { title: string; sub?: string; actions?: React.ReactNode; back?: React.ReactNode }) {
   return (
     <div className="border-b bg-background">
       <div className="mx-auto flex max-w-[1200px] min-[1600px]:max-w-[1440px] min-[1920px]:max-w-[1760px] min-[2560px]:max-w-[2160px] flex-wrap items-end justify-between gap-x-6 gap-y-4 px-4 py-10 sm:px-6">
@@ -692,7 +699,7 @@ function PageHeader({ title, sub, actions, back }: { title: string; sub?: string
     </div>
   )
 }
-function Body({ children, className }: { children: React.ReactNode; className?: string }) {
+export function Body({ children, className }: { children: React.ReactNode; className?: string }) {
   return <div className="flex-1 bg-muted"><div className={cn('mx-auto grid max-w-[1200px] min-[1600px]:max-w-[1440px] min-[1920px]:max-w-[1760px] min-[2560px]:max-w-[2160px] content-start gap-6 px-4 py-8 sm:px-6 [&>*]:min-w-0', className)}>{children}</div></div>
 }
 
@@ -1904,6 +1911,7 @@ function ClientScreen({ go }: { go: (s: Screen) => void }) {
           <dl className="-my-2 divide-y">{row('Nome', 'Caio Prado')}{row('E-mail', 'contato@technoticias.com')}{row('Telefone', <span className="tnum">+55 11 98888-7777</span>)}{row('Idioma', 'Português')}{row('Convite', sent ? <Status tone="ochre">Enviado {sent}</Status> : <span className="text-muted-foreground">Ainda não enviado</span>)}</dl>
         </Card>
         <AccountManagerCard />
+        <HubspotClientCard />
         <Card title="Indicação" footer={<Button size="sm" variant="outline">Editar</Button>}>
           <dl className="-my-2 divide-y">{row('Indicado por', 'Blog Exemplo')}{row('Comissão', <span className="tnum">2%</span>)}{row('Observações', <span className="text-muted-foreground">Veio do evento de setembro.</span>)}</dl>
         </Card>
@@ -10695,6 +10703,11 @@ export default function App() {
       case 'resultado': return <ResultScreen go={go} />
       case 'custos': return <CostsScreen />
       case 'controlecustos': return <CostControlScreen go={go} />
+      case 'chamados': return <TicketsScreen />
+      case 'ajuda': return <HelpCenterScreen go={(next) => go(next as Screen)} />
+      case 'hubspotinterno': return <HubspotScreen />
+      case 'prospeccao': return <ProspectsScreen go={(next) => go(next as Screen)} />
+      case 'npsinterno': return <NpsScreen go={(next) => go(next as Screen)} />
       case 'seletordatas': return <DatePickersScreen />
       case 'equipe': return <TeamScreen t={t} go={go} members={members} setMembers={setMembers} groupCount={groups.length} />
       case 'grupos': return <GroupsScreen t={t} go={go} members={members} groups={groups} setGroups={setGroups} openGroup={openGroup} />
