@@ -238,7 +238,7 @@ watch([level, parent, accountId, companyId, days, inReview], refilter)
       <Button size="sm" variant="ghost" @click="pickAll(false)">{{ t('fb.control.clear') }}</Button>
     </div>
     <div v-if="!loadError && tiles.length" class="grid grid-cols-2 gap-px overflow-hidden rounded-lg border bg-border md:grid-cols-3 xl:grid-cols-6">
-      <div v-for="tile in tiles" :key="tile.key" class="bg-card p-4">
+      <div v-for="tile in tiles" :key="tile.key" class="kpi-motion relative bg-card p-4 transition-colors hover:bg-muted">
         <span class="block text-[13px] font-medium text-muted-foreground">{{ t(tile.label as Key) }}</span>
         <span :class="['mt-1 block truncate text-[20px] font-semibold tracking-[-0.03em] tnum sm:text-[24px]', tile.tone]">{{ tile.text }}</span>
       </div>
