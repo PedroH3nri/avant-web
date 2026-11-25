@@ -10,6 +10,7 @@ import {
   facebookPath,
   formatMoney,
   formatRatio,
+  roiTone,
   objectState,
   limitDetails,
   overLimit,
@@ -130,5 +131,12 @@ describe('regras do Facebook', () => {
     expect(parseAmount('12,50')).toBe('12.50')
     expect(parseAmount('')).toBeUndefined()
     expect(parseAmount('0')).toBeUndefined()
+  })
+
+  it('pinta o ROI de verde no lucro, de vermelho no prejuízo e deixa neutro sem receita', () => {
+    expect(roiTone(0.27)).toBe('text-ok')
+    expect(roiTone(-0.16)).toBe('text-bad')
+    expect(roiTone(0)).toBe('')
+    expect(roiTone(null)).toBe('')
   })
 })

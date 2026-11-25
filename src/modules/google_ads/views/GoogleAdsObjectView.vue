@@ -17,7 +17,7 @@ import { errorText, locale, t, type Key } from '@/lib/i18n'
 import { td, th } from '@/lib/table'
 import GoogleAdsHistoryPanel from '@/modules/google_ads/components/GoogleAdsHistoryPanel.vue'
 import GoogleAdsTermsTable from '@/modules/google_ads/components/GoogleAdsTermsTable.vue'
-import { PERIODS, campaignsPath, channelKey, childLevel, formatCount, formatMoney, formatRatio, isLevel, matchKey, objectPath, objectState, periodRange } from '@/modules/google_ads/rules'
+import { PERIODS, campaignsPath, channelKey, childLevel, formatCount, formatMoney, formatRatio, isLevel, matchKey, objectPath, objectState, periodRange, roiTone } from '@/modules/google_ads/rules'
 import { googleAdsReader, googleAdsService } from '@/modules/google_ads/service'
 import type { GoogleAdsKeyword, GoogleAdsLevel, GoogleAdsObject, GoogleAdsObjectDetail, GoogleAdsTerm, GoogleAdsTotals } from '@/modules/google_ads/types'
 
@@ -231,7 +231,7 @@ watch(termKind, loadTerms)
               <td :class="[td, 'text-right tnum']">{{ formatCount(keyword.totals.clicks, locale) }}</td>
               <td :class="[td, 'text-right tnum']">{{ formatMoney(keyword.totals.cpc, currency, locale) }}</td>
               <td :class="[td, 'text-right tnum']">{{ formatMoney(keyword.totals.revenue, currency, locale) }}</td>
-              <td :class="[td, 'text-right tnum']">{{ formatRatio(keyword.totals.roi, locale) }}</td>
+              <td :class="[td, 'text-right tnum', roiTone(keyword.totals.roi)]">{{ formatRatio(keyword.totals.roi, locale) }}</td>
             </tr>
           </tbody>
         </DataTable>

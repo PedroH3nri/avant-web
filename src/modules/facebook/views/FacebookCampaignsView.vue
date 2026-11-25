@@ -26,7 +26,7 @@ import FiltersMenu from '@/modules/views/components/FiltersMenu.vue'
 import { useLocalBarFilters } from '@/modules/views/barFilters'
 import { td, th } from '@/lib/table'
 import { clientService } from '@/modules/internal/clients/service'
-import { PERIODS, campaignsPath, childLevel, controlErrorText, formatCount, formatMoney, formatRatio, objectState, periodRange } from '@/modules/facebook/rules'
+import { PERIODS, campaignsPath, childLevel, controlErrorText, formatCount, formatMoney, formatRatio, objectState, periodRange, roiTone } from '@/modules/facebook/rules'
 import { facebookReader, facebookService } from '@/modules/facebook/service'
 import { useSession } from '@/stores/session'
 import type { FacebookAccount, FacebookLevel, FacebookObject, FacebookSummary } from '@/modules/facebook/types'
@@ -134,12 +134,12 @@ const tiles = computed(() => {
   const found = summary.value
   if (!found) return []
   return [
-    { key: 'spend', label: 'fb.metric.spend', text: formatMoney(found.spend, found.currency, locale.value), bad: false },
-    { key: 'link_clicks', label: 'fb.metric.linkClicks', text: formatCount(found.link_clicks, locale.value), bad: false },
-    { key: 'cpc', label: 'fb.metric.cpc', text: formatMoney(found.cpc, found.currency, locale.value), bad: false },
-    { key: 'revenue', label: 'fb.metric.revenue', text: formatMoney(found.revenue, found.currency, locale.value), bad: false },
-    { key: 'profit', label: 'fb.metric.profit', text: formatMoney(found.profit, found.currency, locale.value), bad: Number(found.profit) < 0 },
-    { key: 'roi', label: 'fb.metric.roi', text: formatRatio(found.roi, locale.value), bad: false },
+    { key: 'spend', label: 'fb.metric.spend', text: formatMoney(found.spend, found.currency, locale.value), tone: '' },
+    { key: 'link_clicks', label: 'fb.metric.linkClicks', text: formatCount(found.link_clicks, locale.value), tone: '' },
+    { key: 'cpc', label: 'fb.metric.cpc', text: formatMoney(found.cpc, found.currency, locale.value), tone: '' },
+    { key: 'revenue', label: 'fb.metric.revenue', text: formatMoney(found.revenue, found.currency, locale.value), tone: '' },
+    { key: 'profit', label: 'fb.metric.profit', text: formatMoney(found.profit, found.currency, locale.value), tone: Number(found.profit) < 0 ? 'text-bad' : '' },
+    { key: 'roi', label: 'fb.metric.roi', text: formatRatio(found.roi, locale.value), tone: roiTone(found.roi) },
   ]
 })
 
@@ -240,7 +240,7 @@ watch([level, parent, accountId, companyId, days, inReview], refilter)
     <div v-if="!loadError && tiles.length" class="grid grid-cols-2 gap-px overflow-hidden rounded-lg border bg-border md:grid-cols-3 xl:grid-cols-6">
       <div v-for="tile in tiles" :key="tile.key" class="bg-card p-4">
         <span class="block text-[13px] font-medium text-muted-foreground">{{ t(tile.label as Key) }}</span>
-        <span :class="['mt-1 block truncate text-[20px] font-semibold tracking-[-0.03em] tnum sm:text-[24px]', tile.bad && 'text-bad']">{{ tile.text }}</span>
+        <span :class="['mt-1 block truncate text-[20px] font-semibold tracking-[-0.03em] tnum sm:text-[24px]', tile.tone]">{{ tile.text }}</span>
       </div>
     </div>
     <LoadError v-if="loadError" :message="loadError" @retry="load" />
@@ -280,7 +280,7 @@ watch([level, parent, accountId, companyId, days, inReview], refilter)
           <td :class="[td, 'text-right tnum']">{{ formatMoney(item.totals.cpc, item.account.currency, locale) }}</td>
           <td :class="[td, 'text-right tnum']">{{ formatMoney(item.totals.revenue, item.account.currency, locale) }}</td>
           <td :class="[td, 'text-right tnum', Number(item.totals.profit) < 0 ? 'text-bad' : '']">{{ formatMoney(item.totals.profit, item.account.currency, locale) }}</td>
-          <td :class="[td, 'text-right tnum']">{{ formatRatio(item.totals.roi, locale) }}</td>
+          <td :class="[td, 'text-right tnum', roiTone(item.totals.roi)]">{{ formatRatio(item.totals.roi, locale) }}</td>
           <td v-if="canManage" :class="td">
             <Switch :model-value="item.active" :label="t('fb.control.toggle', { name: item.name })" :disabled="switching" @update:model-value="(active) => setStatus([item.external_id], active)" />
           </td>
