@@ -24,13 +24,16 @@ import { clientInventoryService } from '@/modules/internal/inventory/service'
 import type { ClientNetworkDetail } from '@/modules/internal/inventory/types'
 import { networkName, networkTone, statusKey } from '@/modules/networks/rules'
 import type { SyncRun } from '@/modules/networks/types'
+import NetworkAdsTxtCard from '@/modules/internal/inventory/components/NetworkAdsTxtCard.vue'
 import RevenueStatusBadge from '@/modules/revenue/components/RevenueStatusBadge.vue'
 import { approval } from '@/modules/sites/rules'
+import { useSession } from '@/stores/session'
 
 const KINDS: SyncRun['kind'][] = ['test', 'sites', 'ad_units']
 const RUN_TONE: Record<SyncRun['status'], 'ok' | 'warn' | 'bad'> = { ok: 'ok', running: 'warn', failed: 'bad' }
 
 const route = useRoute()
+const session = useSession()
 const router = useRouter()
 const network = ref<ClientNetworkDetail | null>(null)
 const loadError = ref<string | null>(null)
@@ -131,6 +134,13 @@ function runSummary(syncRun: SyncRun) {
           <RevenueStatusBadge :status="network.revenue_status" />
         </Card>
       </div>
+
+      <NetworkAdsTxtCard
+        v-if="session.can('internal.gam_tools.view')"
+        class="lg:col-span-2"
+        :network-id="network.id"
+        :inventory="network.delegation === 'manage_inventory'"
+      />
 
       <Card class="lg:col-span-2" :title="t('netd.lastRuns')">
         <ul class="-my-2 grid divide-y text-[14px] sm:grid-cols-3 sm:divide-x sm:divide-y-0">
