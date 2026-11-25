@@ -121,7 +121,7 @@ onBeforeUnmount(() => {
       <Bell :key="unread" :class="cn('size-4', unread > 0 && 'bell-ring')" aria-hidden="true" />
       <span
         v-if="unread > 0"
-        class="absolute -right-1.5 -top-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-bad px-1 text-[11px] font-semibold leading-none text-white tabular-nums ring-2 ring-background animate-in zoom-in-50"
+        class="absolute -right-1.5 -top-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[hsl(var(--highlight))] px-1 text-[11px] font-semibold leading-none text-[hsl(var(--background))] tabular-nums ring-2 ring-background animate-in zoom-in-50"
         >{{ badge }}</span
       >
     </PopoverTrigger>
