@@ -6,7 +6,7 @@ import Button from '@/components/ui/Button.vue'
 import Dialog from '@/components/ui/Dialog.vue'
 import Field from '@/components/ui/Field.vue'
 import Input from '@/components/ui/Input.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import { ApiError } from '@/lib/api'
 import { errorText, locale, t } from '@/lib/i18n'
 import { TAX_TYPES } from '@/modules/company/fiscal'
@@ -63,7 +63,7 @@ async function save() {
   <Dialog v-model:open="open" class="max-w-[640px]" :title="t('inv.payee.title')" :desc="t('inv.payee.dialogDesc')">
     <form id="payee-form" class="grid gap-4 md:grid-cols-2" novalidate @submit.prevent="save">
       <Field id="py-type" :label="t('inv.payee.document')">
-        <NativeSelect id="py-type" v-model="form.tax_type" :options="options" />
+        <Select id="py-type" v-model="form.tax_type" :options="options" />
       </Field>
       <Field id="py-id" :label="documentLabel">
         <Input id="py-id" v-model="form.tax_id" class="tnum" maxlength="30" autocomplete="off" />

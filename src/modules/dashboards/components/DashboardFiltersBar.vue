@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /** Os filtros que valem para o dashboard inteiro: período e, por dimensão, um valor ou todos. */
 import { computed } from 'vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import { t, type Key } from '@/lib/i18n'
 import { PERIOD_PRESETS } from '@/lib/metrics'
 import { filterPeriod, withPeriod, withValue } from '@/modules/dashboards/rules'
@@ -29,14 +29,14 @@ const chosen = (dimension: FilterDimension) => filters.value[dimension]?.[0] ?? 
 
 <template>
   <div class="flex flex-wrap items-center gap-2">
-    <NativeSelect
+    <Select
       :model-value="filterPeriod(filters)"
       :options="periods"
       class="w-auto min-w-[200px]"
       :aria-label="t('dash.filter.period')"
       @update:model-value="(value) => (filters = withPeriod(filters, value as RelativePeriod | ''))"
     />
-    <NativeSelect
+    <Select
       v-for="item in dimensions"
       :key="item.dimension"
       :model-value="chosen(item.dimension)"

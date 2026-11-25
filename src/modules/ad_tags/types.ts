@@ -1,5 +1,7 @@
 /** Formatos da API das ad tags (iguais ao dto.py de modules/ad_tags no avant-api). Datas em ISO 8601 UTC. */
 
+import type { InstallSummary } from '@/modules/install_checks/types'
+
 export type AdTagBlockKind = 'content' | 'anchor' | 'interstitial' | 'fixed'
 export type AdTagEdge = 'top' | 'bottom'
 export type AdTagSide = 'before' | 'after'
@@ -44,6 +46,8 @@ export interface AdTagDraft {
 /** Uma ad tag; `client` só no painel interno, `live` vazio se nunca foi publicada. */
 export interface AdTag {
   id: string
+  /** A última verificação de instalação; só nas listas. */
+  install?: InstallSummary | null
   site_id: string
   domain: string
   client: { id: string; name: string } | null

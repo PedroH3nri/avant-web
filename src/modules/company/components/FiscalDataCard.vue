@@ -6,7 +6,7 @@ import Button from '@/components/ui/Button.vue'
 import Card from '@/components/ui/Card.vue'
 import Field from '@/components/ui/Field.vue'
 import Input from '@/components/ui/Input.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import { ApiError } from '@/lib/api'
 import { TAX_TYPES, taxTypeOptions } from '@/modules/company/fiscal'
 import { errorText, t } from '@/lib/i18n'
@@ -67,7 +67,7 @@ async function save() {
   <Card v-if="loaded" :title="t('fiscal.title')" :desc="t('fiscal.desc')" :footer-note="t('fiscal.note')">
     <form id="fiscal-form" class="grid gap-4 md:grid-cols-2" @submit.prevent="save">
       <Field id="fi-type" :label="t('fiscal.taxType')">
-        <NativeSelect id="fi-type" v-model="form.tax_type" :options="options" />
+        <Select id="fi-type" v-model="form.tax_type" :options="options" />
       </Field>
       <Field id="fi-id" :label="documentLabel">
         <Input id="fi-id" v-model="form.tax_id" class="tnum" maxlength="30" autocomplete="off" />

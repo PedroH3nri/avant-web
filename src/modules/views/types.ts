@@ -3,7 +3,19 @@
 import type { Visibility } from '@/modules/reports/types'
 
 /** As tabelas internas que têm visões salvas. */
-export type ViewScreen = 'clients' | 'contracts' | 'client_results' | 'commissions' | 'invoices'
+export type ViewScreen =
+  | 'clients'
+  | 'contracts'
+  | 'client_results'
+  | 'commissions'
+  | 'invoices'
+  | 'companies'
+  | 'networks'
+  | 'sites'
+  | 'ad_tags'
+  | 'loaders'
+  | 'rewards'
+  | 'price_rules'
 
 export type SortDirection = 'asc' | 'desc'
 
@@ -21,6 +33,8 @@ export interface ViewDefinition {
   columns: string[]
   filters: Record<string, FilterValue>
   sort: ViewSort | null
+  /** Os filtros que ficam na barra; ausente nas visões antigas, que usam os padrão da tela. */
+  shown_filters?: string[]
 }
 
 export interface SavedViewInput {

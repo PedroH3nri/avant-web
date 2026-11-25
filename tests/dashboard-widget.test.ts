@@ -1,6 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
+import { t } from '@/lib/i18n'
 import DashboardWidget from '@/modules/dashboards/components/DashboardWidget.vue'
+import { goalService } from '@/modules/internal/goals/service'
+import type { GoalProgress } from '@/modules/internal/goals/types'
 import type { Widget } from '@/modules/dashboards/types'
 import { reportService } from '@/modules/reports/service'
 import type { MetricCatalog, ReportResult } from '@/modules/reports/types'
@@ -66,5 +69,31 @@ describe('DashboardWidget', () => {
     expect(view.findComponent({ name: 'ReportTable' }).exists()).toBe(false)
     await view.setProps({ loading: false })
     expect(view.findComponent({ name: 'ReportTable' }).exists()).toBe(true)
+  })
+
+  it('mostra o carregando, e não a meta antiga, enquanto a meta nova chega', async () => {
+    const progress = {} as GoalProgress
+    const mine = vi.spyOn(goalService, 'mine').mockResolvedValueOnce({ progress } as never).mockReturnValueOnce(new Promise(() => undefined))
+    const goalWidget = { ...widget, type: 'goal', report_id: undefined, goal_scope: 'mine' } as unknown as Widget
+    const view = mount(DashboardWidget, {
+      props: {
+        widget: goalWidget,
+        filters: null,
+        catalog: { metrics: [], dimensions: [] } as unknown as MetricCatalog,
+        editing: false,
+        stored: true,
+        result: null,
+        failure: null,
+        loading: false,
+      },
+      global: { stubs: { ReportChart: true, ReportTable: true, GoalBar: true, AccountStatus: true } },
+    })
+    await flushPromises()
+    expect(view.findComponent({ name: 'GoalBar' }).exists()).toBe(true)
+    await view.setProps({ filters: { period: { preset: 'last_7_days' } } as never })
+    await flushPromises()
+    expect(mine).toHaveBeenCalledTimes(2)
+    expect(view.findComponent({ name: 'GoalBar' }).exists()).toBe(false)
+    expect(view.text()).toContain(t('dash.widget.loading'))
   })
 })

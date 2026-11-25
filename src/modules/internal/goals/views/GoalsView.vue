@@ -9,7 +9,7 @@ import PageHeader from '@/components/PageHeader.vue'
 import Button from '@/components/ui/Button.vue'
 import Card from '@/components/ui/Card.vue'
 import DataTable from '@/components/ui/DataTable.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import TableState from '@/components/ui/TableState.vue'
 import { ApiError } from '@/lib/api'
 import { errorText, locale, pick, t } from '@/lib/i18n'
@@ -83,7 +83,7 @@ const percent = (person: PersonGoal) =>
 <template>
   <PageHeader :title="t('goals.title')" :sub="t('goals.sub')">
     <template #actions>
-      <NativeSelect v-model="month" :options="months" class="w-[200px]" :aria-label="t('goals.month')" />
+      <Select v-model="month" :options="months" class="w-[200px]" :aria-label="t('goals.month')" />
       <Button v-if="canManage" variant="outline" @click="templatesOpen = true">{{ t('goals.templatesTitle') }}</Button>
     </template>
   </PageHeader>
@@ -147,7 +147,7 @@ const percent = (person: PersonGoal) =>
           <tr v-for="role in roles" :key="role.id">
             <td :class="[td, 'font-medium whitespace-nowrap']">{{ pick(role.name) }}</td>
             <td :class="td">
-              <NativeSelect
+              <Select
                 :model-value="goalOf(role)?.goal_template_id ?? ''"
                 :options="templateOptions"
                 :aria-label="t('goals.templateOf', { role: pick(role.name) })"
@@ -155,7 +155,7 @@ const percent = (person: PersonGoal) =>
               />
             </td>
             <td :class="td">
-              <NativeSelect
+              <Select
                 v-if="goalOf(role)"
                 :model-value="goalOf(role)?.goal_mode ?? 'per_member'"
                 :options="modes"

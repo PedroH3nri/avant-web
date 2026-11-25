@@ -12,16 +12,19 @@ export interface BarSeries {
 }
 
 const props = withDefaults(
-  defineProps<{ labels: string[]; series: BarSeries[]; format: (value: number | null, compact?: boolean) => string; description: string; height?: number }>(),
+  defineProps<{ labels: string[]; series: BarSeries[]; format: (value: number | null, compact?: boolean) => string; description: string; height?: number; fillHeight?: number }>(),
   { height: 260 },
 )
 const box = useTemplateRef<HTMLDivElement>('box')
 const { width } = useElementSize(box)
+const legend = useTemplateRef<HTMLDivElement>('legend')
+const { height: legendHeight } = useElementSize(legend, undefined, { box: 'border-box' })
 const hovered = ref<number | null>(null)
 const padding = { top: 12, right: 12, bottom: 28, left: 64 }
 const chartWidth = computed(() => Math.max(width.value, 240))
 const plotWidth = computed(() => chartWidth.value - padding.left - padding.right)
-const plotHeight = computed(() => props.height - padding.top - padding.bottom)
+const svgHeight = computed(() => (props.fillHeight ? Math.max(140, Math.floor(props.fillHeight - legendHeight.value)) : props.height))
+const plotHeight = computed(() => svgHeight.value - padding.top - padding.bottom)
 const ticks = computed(() => niceTicks(Math.max(0, ...props.series.flatMap((line) => line.values).filter((value): value is number => value !== null))))
 const top = computed(() => ticks.value[ticks.value.length - 1] || 1)
 const group = computed(() => plotWidth.value / Math.max(props.labels.length, 1))
@@ -35,12 +38,12 @@ const xOf = (index: number, seriesIndex: number) => padding.left + index * group
 
 <template>
   <div ref="box" class="relative w-full">
-    <div class="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-muted-foreground">
+    <div ref="legend" class="flex pb-3 flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-muted-foreground">
       <span v-for="line in series" :key="line.key" class="flex items-center gap-1.5">
         <span class="h-2.5 w-2.5 rounded-sm bg-foreground" :style="{ background: line.color }" aria-hidden="true" />{{ line.name }}
       </span>
     </div>
-    <svg :width="chartWidth" :height="height" class="block" role="img" :aria-label="description" @pointerleave="hovered = null">
+    <svg :width="chartWidth" :height="svgHeight" class="block" role="img" :aria-label="description" @pointerleave="hovered = null">
       <g v-for="tick in ticks" :key="tick">
         <line :x1="padding.left" :x2="chartWidth - padding.right" :y1="yOf(tick)" :y2="yOf(tick)" class="stroke-border" stroke-width="1" />
         <text :x="padding.left - 8" :y="yOf(tick) + 4" text-anchor="end" class="fill-muted-foreground text-[11px] tnum">{{ format(tick, true) }}</text>
@@ -59,7 +62,7 @@ const xOf = (index: number, seriesIndex: number) => padding.left + index * group
             :style="{ fill: line.color }"
           />
         </template>
-        <text v-if="index % labelStep === 0" :x="padding.left + index * group + group / 2" :y="height - 8" text-anchor="middle" class="fill-muted-foreground text-[11px] tnum">{{ label }}</text>
+        <text v-if="index % labelStep === 0" :x="padding.left + index * group + group / 2" :y="svgHeight - 8" text-anchor="middle" class="fill-muted-foreground text-[11px] tnum">{{ label }}</text>
       </g>
     </svg>
     <div
@@ -74,14 +77,16 @@ const xOf = (index: number, seriesIndex: number) => padding.left + index * group
         <span class="tnum">{{ format(line.values[hovered] ?? null) }}</span>
       </div>
     </div>
-    <table class="sr-only">
-      <caption>{{ description }}</caption>
-      <tbody>
-        <tr v-for="(label, index) in labels" :key="label">
-          <th scope="row">{{ label }}</th>
-          <td v-for="line in series" :key="line.key">{{ line.name }}: {{ format(line.values[index] ?? null) }}</td>
-        </tr>
-      </tbody>
-    </table>
+    <div class="sr-only">
+      <table>
+        <caption>{{ description }}</caption>
+        <tbody>
+          <tr v-for="(label, index) in labels" :key="label">
+            <th scope="row">{{ label }}</th>
+            <td v-for="line in series" :key="line.key">{{ line.name }}: {{ format(line.values[index] ?? null) }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </template>

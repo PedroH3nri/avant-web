@@ -3,6 +3,7 @@
  * Modelos prontos de dashboard (painel interno): os da equipe Groone e os dos clientes em abas, quem vê
  * cada um e qual abre no início de quem ainda não tem dashboard.
  */
+import OpenLink from '@/components/OpenLink.vue'
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
@@ -131,10 +132,11 @@ async function remove() {
             <th :class="th">{{ t('tpl.col.blocks') }}</th>
             <th :class="th">{{ t('tpl.col.updated') }}</th>
             <th :class="cn(th, 'w-12')"><span class="sr-only">{{ t('tpl.col.actions') }}</span></th>
+            <th :class="[th, 'w-px']"><span class="sr-only">{{ t('common.open') }}</span></th>
           </tr>
         </thead>
         <tbody>
-          <TableState :cols="5" :loading="!templates" :empty="!!templates && !shown.length" :desc="t('tpl.empty')" />
+          <TableState :cols="6" :loading="!templates" :empty="!!templates && !shown.length" :desc="t('tpl.empty')" />
           <tr v-for="template in shown" :key="template.id" class="hover:bg-muted">
             <td :class="td">
               <button type="button" class="font-medium hover:underline" @click="edit(template)">{{ pick(template.name) }}</button>
@@ -156,6 +158,7 @@ async function remove() {
                 </MenuContent>
               </DropdownMenuRoot>
             </td>
+            <td :class="[td, 'text-right']"><OpenLink :to="`/interno/modelos-de-dashboard/${template.id}`" :name="pick(template.name)" /></td>
           </tr>
         </tbody>
       </DataTable>

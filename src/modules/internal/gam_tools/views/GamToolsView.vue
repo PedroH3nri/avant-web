@@ -1,6 +1,7 @@
 <script setup lang="ts">
 /** Ferramentas do GAM: as ações e as execuções sempre na tela; as ações ativam quando a network
  * do cliente é escolhida, e a tabela mostra as execuções de todas até a escolha. */
+import OpenLink from '@/components/OpenLink.vue'
 import { saveFile } from '@/lib/utils'
 import { computed, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
@@ -15,7 +16,7 @@ import DataTable from '@/components/ui/DataTable.vue'
 import Dialog from '@/components/ui/Dialog.vue'
 import Field from '@/components/ui/Field.vue'
 import Input from '@/components/ui/Input.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import Pagination from '@/components/ui/Pagination.vue'
 import Status from '@/components/ui/Status.vue'
 import TableState from '@/components/ui/TableState.vue'
@@ -209,7 +210,7 @@ async function copyAds() {
           <Search class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
           <Input v-model="query" type="search" :aria-label="t('gamt.searchNetwork')" class="h-9 pl-9" :placeholder="t('gamt.searchPlaceholder')" />
         </div>
-        <NativeSelect v-model="networkId" :options="networkOptions" :aria-label="t('gamt.network')" class="min-w-0 [&_select]:h-9" />
+        <Select v-model="networkId" :options="networkOptions" :aria-label="t('gamt.network')" class="min-w-0 h-9" />
       </div>
       <dl v-if="network" class="flex flex-wrap gap-x-6 gap-y-1 text-[13px] text-muted-foreground">
         <div class="flex gap-1"><dt>{{ t('gamt.client') }}</dt><dd class="text-foreground">{{ network.client.name }}</dd></div>
@@ -251,10 +252,11 @@ async function copyAds() {
               <th :class="th">{{ t('gamt.col.who') }}</th>
               <th :class="th">{{ t('gamt.col.when') }}</th>
               <th :class="th">{{ t('gamt.col.state') }}</th>
+              <th :class="[th, 'w-px']"><span class="sr-only">{{ t('common.open') }}</span></th>
             </tr>
           </thead>
           <tbody>
-            <TableState :cols="networkId ? 5 : 6" :loading="!runs" :empty="runs?.length === 0" :icon="Wrench" :title="networkId ? t('gamt.runsEmpty') : t('gamt.runsEmptyAll')" />
+            <TableState :cols="(networkId ? 5 : 6) + 1" :loading="!runs" :empty="runs?.length === 0" :icon="Wrench" :title="networkId ? t('gamt.runsEmpty') : t('gamt.runsEmptyAll')" />
             <tr v-for="item in runs ?? []" :key="item.id" class="hover:bg-muted">
               <td :class="td">
                 <RouterLink :to="`/interno/ferramentas-gam/execucoes/${item.id}`" class="font-medium hover:underline focus-visible:underline focus-visible:outline-none">{{ toolName(item.kind) }}</RouterLink>
@@ -268,6 +270,7 @@ async function copyAds() {
               <td :class="td">{{ item.requested_by?.name ?? '–' }}</td>
               <td :class="[td, 'whitespace-nowrap tnum text-[13px] text-muted-foreground']">{{ formatDate(item.created_at) }}</td>
               <td :class="td"><Status :tone="RUN_TONE[item.state]">{{ runStateLabel(item.state) }}</Status></td>
+              <td :class="[td, 'text-right']"><OpenLink :to="`/interno/ferramentas-gam/execucoes/${item.id}`" :name="toolName(item.kind)" /></td>
             </tr>
           </tbody>
         </DataTable>
@@ -318,8 +321,8 @@ async function copyAds() {
     <div class="grid gap-4">
       <GamSitePicker v-model="chosen" :sites="installSites" :label="t('gamt.sites')" />
       <div class="grid gap-4 sm:grid-cols-2">
-        <Field id="install-lang" :label="t('gamt.install.language')"><NativeSelect id="install-lang" v-model="language" :options="languages" class="[&_select]:h-9" /></Field>
-        <Field id="install-label" :label="t('gamt.install.label')"><NativeSelect id="install-label" v-model="label" :options="languages" class="[&_select]:h-9" /></Field>
+        <Field id="install-lang" :label="t('gamt.install.language')"><Select id="install-lang" v-model="language" :options="languages" class="h-9" /></Field>
+        <Field id="install-label" :label="t('gamt.install.label')"><Select id="install-label" v-model="label" :options="languages" class="h-9" /></Field>
       </div>
       <div v-if="hasGtag" class="flex gap-2 rounded-md border px-3 py-2.5 text-[13px]">
         <AlertTriangle class="mt-0.5 size-4 shrink-0 text-ochre" aria-hidden="true" /><span>{{ t('gamt.install.gtag') }}</span>

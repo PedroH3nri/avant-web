@@ -16,7 +16,7 @@ const session = useSession()
 
 <template>
   <div class="flex min-h-full">
-    <aside class="sticky top-0 z-30 hidden h-dvh w-[88px] shrink-0 self-start md:block">
+    <aside class="sticky top-0 z-30 hidden h-dvh w-[5.5rem] shrink-0 self-start md:block">
       <SidebarRail />
     </aside>
     <DialogRoot v-model:open="open">

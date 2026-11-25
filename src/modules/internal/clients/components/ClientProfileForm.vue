@@ -3,7 +3,7 @@
 import { computed } from 'vue'
 import Field from '@/components/ui/Field.vue'
 import Input from '@/components/ui/Input.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import { percentageOk } from '@/modules/internal/clients/rules'
 import { t } from '@/lib/i18n'
 import type { ClientProfileInput } from '@/modules/internal/clients/types'
@@ -21,8 +21,8 @@ const localeOptions = [
   { value: 'es', label: 'Español' },
 ]
 const referrer = computed({
-  get: () => profile.value.referred_by_company_id ?? '',
-  set: (value: string) => (profile.value.referred_by_company_id = value || null),
+  get: () => profile.value.referred_by_client_id ?? '',
+  set: (value: string) => (profile.value.referred_by_client_id = value || null),
 })
 const phone = computed({
   get: () => profile.value.phone ?? '',
@@ -40,7 +40,7 @@ const notes = computed({
   get: () => profile.value.notes ?? '',
   set: (value: string) => (profile.value.notes = value || null),
 })
-const percentageBad = computed(() => !!profile.value.referred_by_company_id && !percentageOk(profile.value.referral_percentage))
+const percentageBad = computed(() => !!profile.value.referred_by_client_id && !percentageOk(profile.value.referral_percentage))
 /** Id do campo com o prefixo do formulário, para dois formulários na mesma tela. */
 const field = (name: string) => `${props.idPrefix}-${name}`
 </script>
@@ -67,16 +67,16 @@ const field = (name: string) => `${props.idPrefix}-${name}`
         </Field>
       </div>
       <Field :id="field('locale')" :label="t('int.locale')">
-        <NativeSelect :id="field('locale')" v-model="profile.locale" :options="localeOptions" />
+        <Select :id="field('locale')" v-model="profile.locale" :options="localeOptions" />
       </Field>
     </fieldset>
     <fieldset class="grid gap-4 md:grid-cols-[1fr_160px]">
       <legend class="mb-3 text-[13px] font-medium text-muted-foreground">{{ t('int.section.referral') }}</legend>
       <Field :id="field('referrer')" :label="t('int.referredBy')">
-        <NativeSelect :id="field('referrer')" v-model="referrer" :options="referrerOptions" />
+        <Select :id="field('referrer')" v-model="referrer" :options="referrerOptions" />
       </Field>
       <Field :id="field('percentage')" :label="t('int.commission')" :hint="t('int.commissionHint')">
-        <Input :id="field('percentage')" v-model="percentage" class="tnum" inputmode="decimal" :disabled="!profile.referred_by_company_id" :invalid="percentageBad" />
+        <Input :id="field('percentage')" v-model="percentage" class="tnum" inputmode="decimal" :disabled="!profile.referred_by_client_id" :invalid="percentageBad" />
       </Field>
     </fieldset>
     <Field :id="field('notes')" :label="t('int.notes')">
@@ -85,7 +85,7 @@ const field = (name: string) => `${props.idPrefix}-${name}`
         v-model="notes"
         maxlength="300"
         rows="2"
-        class="w-full rounded-md border border-input bg-background px-3 py-2 text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        class="w-full rounded-md border border-input bg-[hsl(var(--field))] px-3 py-2 text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       />
     </Field>
   </div>

@@ -7,7 +7,7 @@ import Checkbox from '@/components/ui/Checkbox.vue'
 import Dialog from '@/components/ui/Dialog.vue'
 import Field from '@/components/ui/Field.vue'
 import Input from '@/components/ui/Input.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import { ApiError } from '@/lib/api'
 import { errorText, t } from '@/lib/i18n'
 import { ITEM_NAME_MIN, KINDS, kindDesc, kindLabel, parseWords } from '@/modules/internal/checklists/rules'
@@ -61,7 +61,7 @@ async function save() {
         <Input id="item-name" v-model="name" class="h-10" maxlength="120" />
       </Field>
       <Field id="item-kind" :label="t('check.itemKind')">
-        <NativeSelect id="item-kind" v-model="kind" :options="kindOptions" />
+        <Select id="item-kind" v-model="kind" :options="kindOptions" />
       </Field>
       <Field v-if="kind === 'link'" id="item-words" :label="t('check.itemWords')" :hint="t('check.itemWordsHint')">
         <Input id="item-words" v-model="words" class="h-10" placeholder="cookies, cookie, galletas" />

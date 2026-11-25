@@ -1,6 +1,7 @@
 <script setup lang="ts">
 /** Painel interno: clientes com visões salvas (colunas, filtros e ordem), cadastro de cliente novo
  * (sem e-mail) e convites de dono pendentes. */
+import OpenLink from '@/components/OpenLink.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useDebounceFn } from '@vueuse/core'
 import { toast } from 'vue-sonner'
@@ -18,7 +19,7 @@ import DataTable from '@/components/ui/DataTable.vue'
 import Pagination from '@/components/ui/Pagination.vue'
 import Field from '@/components/ui/Field.vue'
 import Input from '@/components/ui/Input.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import SeatBar from '@/components/ui/SeatBar.vue'
 import Status from '@/components/ui/Status.vue'
 import TableState from '@/components/ui/TableState.vue'
@@ -34,7 +35,9 @@ import { useSession } from '@/stores/session'
 import { clientService } from '@/modules/internal/clients/service'
 import { staffService } from '@/modules/internal/staff/service'
 import ColumnsMenu from '@/modules/views/components/ColumnsMenu.vue'
+import FiltersMenu from '@/modules/views/components/FiltersMenu.vue'
 import SavedViewsBar from '@/modules/views/components/SavedViewsBar.vue'
+import { useBarFilters } from '@/modules/views/barFilters'
 import { cleanFilters, firstValue, parseSort, sortValue } from '@/modules/views/rules'
 import type { ViewDefinition, ViewSort } from '@/modules/views/types'
 
@@ -49,7 +52,13 @@ const SORTS: ViewSort[] = [
   { key: 'name', direction: 'asc' },
   { key: 'name', direction: 'desc' },
 ]
-const DEFAULT_VIEW: ViewDefinition = { columns: ['client', 'contact', 'employees', 'status', 'revenue'], filters: {}, sort: SORTS[0] ?? null }
+const FILTERS = ['status', 'account_manager_ids']
+const DEFAULT_FILTERS = ['status', 'account_manager_ids']
+const FILTER_LABELS: Record<string, Key> = {
+  status: 'int.situation',
+  account_manager_ids: 'int.column.manager',
+}
+const DEFAULT_VIEW: ViewDefinition = { columns: ['client', 'contact', 'employees', 'status', 'revenue'], filters: {}, sort: SORTS[0] ?? null, shown_filters: DEFAULT_FILTERS }
 
 const session = useSession()
 const canManage = computed(() => session.can('internal.clients.manage'))
@@ -68,6 +77,10 @@ const loadError = ref<string | null>(null)
 const searchText = ref('')
 const tab = ref<Tab>('all')
 const manager = ref(ALL)
+const barFilters = useBarFilters(FILTERS, DEFAULT_FILTERS, {
+  status: () => (tab.value = 'all'),
+  account_manager_ids: () => (manager.value = ALL),
+})
 const sort = ref(sortValue(SORTS[0] as ViewSort))
 const columns = ref<string[]>([...DEFAULT_VIEW.columns])
 const staff = ref<{ value: string; label: string }[]>([])
@@ -80,6 +93,7 @@ const current = computed<ViewDefinition>(() => ({
     account_manager_ids: manager.value === ALL ? [] : [manager.value],
   }),
   sort: parseSort(sort.value),
+  shown_filters: barFilters.shown.value,
 }))
 
 const adding = ref(false)
@@ -91,6 +105,11 @@ const seatsOk = computed(() => Number.isInteger(Number(seats.value)) && Number(s
 const formOk = computed(() => name.value.trim().length >= 2 && seatsOk.value && profileOk(profile.value))
 const referrers = computed(() => options.value.map((client) => ({ id: client.id, name: client.name })))
 const clientNames = computed(() => new Map(options.value.map((client) => [client.id, client.name])))
+/** O nome do cliente do convite de dono, pelo cliente ou, nos convites antigos, pela Empresa. */
+const inviteClient = (invite: OwnerInvitation) => {
+  const ownerId = invite.client_id ?? invite.company_id
+  return ownerId ? clientNames.value.get(ownerId) : undefined
+}
 
 const canceling = ref<OwnerInvitation | null>(null)
 const cancelOpen = computed({
@@ -180,6 +199,8 @@ const tabs: Tab[] = ['all', 'active', 'pending', 'inactive', 'banned']
 const statusOptions = computed(() => tabs.map((option) => ({ value: option, label: `${option === 'all' ? t('int.allStatuses') : t(`int.tab.${option}`)} (${counts.value[option]})` })))
 const managerOptions = computed(() => [{ value: ALL, label: t('int.allManagers') }, ...staff.value])
 const sortOptions = SORTS.map((option) => ({ value: sortValue(option), label: t(`int.sort.${option.key}.${option.direction}` as Key) }))
+/** O nome do filtro no menu de filtros. */
+const filterLabel = (filter: string) => t(FILTER_LABELS[filter] as Key)
 /** Diz se a coluna aparece na tabela. */
 const shown = (column: string) => columns.value.includes(column)
 /** O nome da coluna no menu de colunas. */
@@ -193,6 +214,7 @@ function applyView(definition: ViewDefinition) {
   const status = firstValue(definition.filters.status)
   tab.value = (tabs as string[]).includes(status) ? (status as Tab) : 'all'
   manager.value = firstValue(definition.filters.account_manager_ids) || ALL
+  barFilters.apply(definition)
   const chosen = definition.sort && SORTS.find((option) => sortValue(option) === sortValue(definition.sort as ViewSort))
   sort.value = sortValue(chosen || (SORTS[0] as ViewSort))
 }
@@ -262,7 +284,7 @@ function clearFilters() {
 /** Diz se a data já passou. */
 const expired = (iso: string) => new Date(iso).getTime() <= Date.now()
 /** Nome de quem indicou o cliente, quando houver. */
-const referrerName = (client: Client) => (client.profile?.referred_by_company_id ? clientNames.value.get(client.profile.referred_by_company_id) : undefined)
+const referrerName = (client: Client) => (client.profile?.referred_by_client_id ? clientNames.value.get(client.profile.referred_by_client_id) : undefined)
 </script>
 
 <template>
@@ -300,7 +322,7 @@ const referrerName = (client: Client) => (client.profile?.referred_by_company_id
           <div class="min-w-0 flex-1">
             <div class="truncate text-[14px] font-medium">{{ invite.email }}</div>
             <div class="mt-0.5 text-[13px] text-muted-foreground">
-              <template v-if="invite.company_id && clientNames.get(invite.company_id)">{{ clientNames.get(invite.company_id) }} · </template>
+              <template v-if="inviteClient(invite)">{{ inviteClient(invite) }} · </template>
               <span :class="expired(invite.expires_at) && 'text-ochre'">{{
                 expired(invite.expires_at) ? t('int.expired') : t('int.expires', { when: formatAgo(invite.expires_at) })
               }}</span>
@@ -321,9 +343,10 @@ const referrerName = (client: Client) => (client.profile?.referred_by_company_id
           <Search class="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
           <Input v-model="searchText" :aria-label="t('int.searchLabel')" class="h-9 bg-card pl-9" :placeholder="t('int.search')" />
         </div>
-        <NativeSelect v-model="tab" :options="statusOptions" :aria-label="t('int.situation')" class="w-full sm:w-44 [&_select]:h-9" />
-        <NativeSelect v-model="manager" :options="managerOptions" :aria-label="t('int.column.manager')" class="w-full sm:w-52 [&_select]:h-9" />
-        <NativeSelect v-model="sort" :options="sortOptions" :aria-label="t('views.sort')" class="w-full sm:w-56 [&_select]:h-9" />
+        <Select v-if="barFilters.isShown('status')" v-model="tab" :options="statusOptions" :aria-label="t('int.situation')" class="w-full sm:w-44 h-9" />
+        <Select v-if="barFilters.isShown('account_manager_ids')" v-model="manager" :options="managerOptions" :aria-label="t('int.column.manager')" class="w-full sm:w-52 h-9" />
+        <Select v-model="sort" :options="sortOptions" :aria-label="t('views.sort')" class="w-full sm:w-56 h-9" />
+        <FiltersMenu v-model:shown="barFilters.shown.value" :filters="FILTERS" :label="filterLabel" />
         <ColumnsMenu v-model:shown="columns" :columns="COLUMNS" :label="columnLabel" />
       </SavedViewsBar>
 
@@ -336,7 +359,7 @@ const referrerName = (client: Client) => (client.profile?.referred_by_company_id
             <th v-if="shown('employees')" :class="th">{{ t('int.employees') }}</th>
             <th v-if="shown('status')" :class="th">{{ t('int.situation') }}</th>
             <th v-if="shown('revenue')" :class="th">{{ t('int.column.revenue') }}</th>
-            <th :class="[th, 'w-16']"><span class="sr-only">{{ t('int.open') }}</span></th>
+            <th :class="[th, 'w-px']"><span class="sr-only">{{ t('common.open') }}</span></th>
           </tr>
         </thead>
         <tbody>
@@ -387,14 +410,7 @@ const referrerName = (client: Client) => (client.profile?.referred_by_company_id
               <Status :tone="STATUS_TONE[client.status]">{{ t(`int.status.${client.status}`) }}</Status>
             </td>
             <td v-if="shown('revenue')" :class="td"><RevenueStatusBadge :status="client.revenue_status" /></td>
-            <td :class="td">
-              <RouterLink
-                :to="`/interno/clientes/${client.id}`"
-                class="inline-flex h-8 items-center rounded-md px-3 text-[13px] font-medium hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                :aria-label="`${t('int.open')} ${client.name}`"
-                >{{ t('int.open') }}</RouterLink
-              >
-            </td>
+            <td :class="[td, 'text-right']"><OpenLink :to="`/interno/clientes/${client.id}`" :name="client.name" /></td>
           </tr>
         </tbody>
       </DataTable>

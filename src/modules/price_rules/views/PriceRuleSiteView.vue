@@ -1,5 +1,6 @@
 <script setup lang="ts">
 /** Regra de preço de um site: números do topo, ganho contra o controle por dia, as regras da Automática e da Cascata e a configuração (ligar, controle e o modelo de cada bloco). */
+import StatTile from '@/components/StatTile.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useDebounceFn } from '@vueuse/core'
@@ -51,7 +52,7 @@ import { useSession } from '@/stores/session'
 
 const LADDER_PERIOD_DAYS = 2
 
-type CascadeRow = { rule: PriceRule; ladder: (number | null)[]; firstFill: number | null; ladderFill: number | null }
+type CascadeRow = { rule: PriceRule; ladder: (number | null)[] | null; firstFill: number | null; ladderFill: number | null }
 
 const route = useRoute()
 const router = useRouter()
@@ -80,6 +81,7 @@ const gain = ref<GainSeries | null>(null)
 const busy = ref(false)
 const loadError = ref<string | null>(null)
 const rulesError = ref<string | null>(null)
+let latestCascades = 0
 
 const canManage = computed(() => session.can(priceRulePermission(internal, 'manage')))
 const blocked = computed(() => !site.value?.currency || !site.value.currency_supported)
@@ -183,17 +185,29 @@ async function cascadeRow(rule: PriceRule, start: string, end: string): Promise<
   return { rule, ladder, firstFill: funnel.firstFill, ladderFill: funnel.ladderFill }
 }
 
-/** Carrega a página das regras da Cascata com a escada e as compras de cada uma. */
+/** A linha de uma regra cuja escada ou compras não vieram: só a regra, com traço no resto. */
+function cascadeFallback(rule: PriceRule): CascadeRow {
+  return { rule, ladder: null, firstFill: null, ladderFill: null }
+}
+
+/** Carrega a página das regras da Cascata com a escada e as compras de cada uma; a linha que
+ * falha fica com traço e só a resposta mais nova vale. */
 async function loadCascades() {
+  const ticket = ++latestCascades
   cascadeError.value = null
   try {
     const found = await service.rules(siteId, { page: cascadePage.value, model: 'cascade' })
     const { start, end } = hourPeriod(LADDER_PERIOD_DAYS)
-    cascades.value = await Promise.all(found.items.map((rule) => cascadeRow(rule, start, end)))
+    const settled = await Promise.allSettled(found.items.map((rule) => cascadeRow(rule, start, end)))
+    if (ticket !== latestCascades) return
+    cascades.value = found.items.map((rule, index) => {
+      const outcome = settled[index]
+      return outcome?.status === 'fulfilled' ? outcome.value : cascadeFallback(rule)
+    })
     cascadeTotal.value = found.total
     cascadePages.value = found.pages
   } catch (error) {
-    cascadeError.value = errorText(error instanceof ApiError ? error.code : 'unknown')
+    if (ticket === latestCascades) cascadeError.value = errorText(error instanceof ApiError ? error.code : 'unknown')
   }
 }
 
@@ -265,11 +279,7 @@ watch([hash, country], filterLater)
         <AlertTriangle class="mt-0.5 size-4 shrink-0 text-warn" />{{ t('pr.unsupportedCurrency', { currency: site.currency }) }}
       </div>
       <div v-if="site.active" class="grid grid-cols-2 gap-px overflow-hidden rounded-lg border bg-border lg:grid-cols-4">
-        <div v-for="tile in summary" :key="tile.label" class="bg-card p-4">
-          <div class="text-[13px] text-muted-foreground">{{ tile.label }}</div>
-          <div :class="['mt-1 text-[24px] font-semibold tracking-[-0.03em] tnum max-sm:text-[20px]', tile.tone]">{{ tile.value }}</div>
-          <div class="mt-1 text-[12px] text-muted-foreground">{{ tile.hint }}</div>
-        </div>
+        <StatTile v-for="tile in summary" :key="tile.label" :label="tile.label" :value="tile.value" :hint="tile.hint" :tone="tile.tone" />
       </div>
       <Card v-if="gain && gainChart" :title="t('pr.gain.title')" :desc="t('pr.gain.desc', { percent: site.control_percent })">
         <LineChart :labels="gainChart.labels" :series="gainChart.series" :format="(value) => (value === null ? '—' : moneyText(value * 1_000_000, gain?.currency ?? null, locale))" :description="t('pr.gain.chartDesc')" :height="240" />
@@ -343,7 +353,8 @@ watch([hash, country], filterLater)
             <tr v-for="row in cascades ?? []" :key="row.rule.id" class="hover:bg-muted">
               <td :class="[td, 'font-mono text-[13px]']">{{ row.rule.block }}</td>
               <td :class="td">{{ row.rule.country_code }}</td>
-              <td :class="[td, 'whitespace-nowrap text-[13px] tnum']">
+              <td v-if="!row.ladder" :class="[td, 'text-[13px] text-muted-foreground']">—</td>
+              <td v-else :class="[td, 'whitespace-nowrap text-[13px] tnum']">
                 <span v-for="(floor, index) in row.ladder" :key="index" :class="index ? 'text-muted-foreground' : 'font-medium'">{{ index ? ' → ' : '' }}{{ floor === null ? t('pr.noFloor') : moneyText(floor, row.rule.currency, locale) }}</span>
               </td>
               <td :class="[td, 'text-right tnum']">{{ percentText(row.firstFill, locale) }}</td>
@@ -398,7 +409,7 @@ watch([hash, country], filterLater)
           </ul>
           <p v-else class="mt-4 rounded-md border px-3 py-6 text-center text-[13px] text-muted-foreground">{{ t('pr.noBlocks') }}</p>
         </div>
-        <div v-if="dirty && canManage" class="flex flex-wrap items-center justify-between gap-3 border-t bg-muted px-6 py-3">
+        <div v-if="dirty && canManage" class="flex flex-wrap items-center justify-between gap-3 border-t bg-[hsl(var(--card-footer))] px-6 py-3">
           <div class="text-[13px] text-muted-foreground">{{ t('pr.unsaved') }}</div>
           <div class="flex gap-2">
             <Button variant="outline" :disabled="busy" @click="discard">{{ t('pr.discard') }}</Button>
