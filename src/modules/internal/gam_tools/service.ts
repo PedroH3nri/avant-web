@@ -1,10 +1,10 @@
 /** Chamadas da API das ferramentas do GAM no painel interno. */
 
-import { api, download } from '@/lib/api'
+import { api } from '@/lib/api'
 import type { Page } from '@/lib/types'
-import type { GamToolNetwork, GamToolNetworkDetail, GamToolRun, GamToolRunInput, Language } from '@/modules/internal/gam_tools/types'
+import type { GamToolNetwork, GamToolNetworkDetail, GamToolRun, GamToolRunInput } from '@/modules/internal/gam_tools/types'
 
-/** Serviço das ferramentas do GAM: networks, execuções, ads.txt e o arquivo de instalação. */
+/** Serviço das ferramentas do GAM: networks, execuções e ads.txt. */
 export const gamToolService = {
   /** Uma página das networks dos clientes, pelo nome ou pelo network code. */
   networks: (query: string, page = 1) => api.get<Page<GamToolNetwork>>('/internal/gam-tools/networks', { q: query, page }),
@@ -18,7 +18,4 @@ export const gamToolService = {
   start: (body: GamToolRunInput) => api.post<GamToolRun>('/internal/gam-tools/runs', body),
   /** As linhas do ads.txt da network. */
   adsTxt: (networkId: string) => api.get<{ lines: string[] }>('/internal/gam-tools/ads-txt', { network: networkId }),
-  /** Baixa o arquivo de instalação: .txt de um site ou .zip de vários. */
-  install: (networkId: string, sites: string[], language: Language, label: Language) =>
-    download('/internal/gam-tools/install', { network: networkId, sites, language, label }),
 }

@@ -92,7 +92,7 @@ watch(
           <li v-for="(step, position) in run.steps" :key="`${step.key}:${step.site ?? ''}`" class="grid grid-cols-[28px_1fr] gap-3 px-5 py-3 sm:grid-cols-[28px_1fr_auto] sm:items-center">
             <span class="tnum pt-0.5 text-[13px] text-muted-foreground">{{ position + 1 }}</span>
             <div class="min-w-0">
-              <div class="break-words text-[14px] font-medium">{{ stepLabel(step, run.format) }}</div>
+              <div class="break-words text-[14px] font-medium">{{ stepLabel(step) }}</div>
               <div v-if="stepDetail(step)" class="break-words text-[13px] text-muted-foreground">{{ stepDetail(step) }}</div>
             </div>
             <div class="col-start-2 sm:col-start-auto">

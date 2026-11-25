@@ -3,11 +3,10 @@
 import { t, type Key } from '@/lib/i18n'
 import type { GamFormat, GamRunState, GamStep, GamStepState, GamToolKind, GamToolSite } from '@/modules/internal/gam_tools/types'
 
-export type ToolCard = GamToolKind | 'install' | 'ads_txt'
-export const TOOL_CARDS: ToolCard[] = ['config', 'setup', 'key_values', 'sync', 'install', 'ads_txt']
+export type ToolCard = GamToolKind | 'ads_txt'
+export const TOOL_CARDS: ToolCard[] = ['config', 'setup', 'key_values', 'sync', 'ads_txt']
 export const WRITING_TOOLS: GamToolKind[] = ['config', 'setup', 'key_values']
-export const FORMATS: GamFormat[] = ['light', 'gtag']
-export const BLOCK_COUNT: Record<GamFormat, number> = { light: 14, gtag: 27 }
+export const GTAG_BLOCKS = 27
 export const KEY_NAMES = ['utm_term', 'utm_source', 'utm_medium', 'utm_content', 'utm_campaign', 'land_uri', 'id_post_wp', 'content_hash', 'groone_prices', 'groone_group']
 export const STEP_TONE: Record<GamStepState, 'ok' | 'bad' | 'neutral' | 'ochre'> = {
   pending: 'neutral',
@@ -24,11 +23,10 @@ export function writes(tool: ToolCard): boolean {
 }
 
 /** O nome do passo, com o site quando o passo é de um site. */
-export function stepLabel(step: GamStep, format: GamFormat | null): string {
-  const blocks = format ? BLOCK_COUNT[format] : 0
+export function stepLabel(step: GamStep): string {
   if (step.key === 'parent') return t('gamt.step.parent', { site: step.site ?? '' })
-  if (step.key === 'children') return t('gamt.step.children', { site: step.site ?? '', count: blocks })
-  if (step.key === 'line_items') return format === 'light' ? t('gamt.step.lineItemDisplay') : t('gamt.step.lineItems', { count: blocks })
+  if (step.key === 'children') return t('gamt.step.children', { site: step.site ?? '', count: GTAG_BLOCKS })
+  if (step.key === 'line_items') return t('gamt.step.lineItems', { count: GTAG_BLOCKS })
   return t(`gamt.step.${step.key}` as Key)
 }
 
@@ -63,13 +61,9 @@ export function toggleDomain(chosen: string[], domain: string): string[] {
 
 /** O resumo do que o site já tem no GAM, para a lista de escolha. */
 export function siteSummary(site: GamToolSite): string {
-  if (site.blocks) return t('gamt.site.blocks', { count: site.blocks, format: site.format ? formatName(site.format) : '' })
+  if (site.blocks && site.format) return t('gamt.site.blocks', { count: site.blocks, format: formatName(site.format) })
+  if (site.blocks) return t('gamt.site.blocksOnly', { count: site.blocks })
   return site.has_parent ? t('gamt.site.parentOnly') : t('gamt.site.nothing')
-}
-
-/** Os sites que podem sair no arquivo de instalação: os que têm blocos importados ou nenhum formato conhecido. */
-export function installable(sites: GamToolSite[]): GamToolSite[] {
-  return sites.filter((site) => site.format !== 'gtag')
 }
 
 /** O nome da ferramenta. */
@@ -105,9 +99,4 @@ export function stepStateLabel(state: GamStepState): string {
 /** O tipo de delegação do MCM. */
 export function delegationLabel(delegation: 'manage_inventory' | 'manage_account' | null): string {
   return delegation ? t(`gamt.delegation.${delegation}` as Key) : '–'
-}
-
-/** O nome do idioma do arquivo de instalação. */
-export function languageLabel(language: 'pt' | 'en' | 'es'): string {
-  return t(`gamt.lang.${language}` as Key)
 }
