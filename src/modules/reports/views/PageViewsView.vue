@@ -20,13 +20,14 @@ import { errorText, locale, t } from '@/lib/i18n'
 import { change, countryName, dailySeries, daysOf, formatMetric, hourLabel, hourlyItems, peakHour, shortDay, toNumber } from '@/lib/metrics'
 import { td, th } from '@/lib/table'
 import type { RelativePeriod, ReportQuery, ReportRange, ReportResult } from '@/modules/reports/types'
-import { presetRange, previousRange, sameRange, utcToday } from '@/modules/reports/rules'
+import { previousRange, sameRange, utcToday } from '@/modules/reports/rules'
+import { presetValue, type PeriodValue } from '@/lib/periods'
 import { reportService } from '@/modules/reports/service'
 
 const METRIC = 'page_views'
 const REFRESH_DELAY_MS = 5000
 
-const period = ref<RelativePeriod>('last_30_days')
+const period = ref<PeriodValue>(presetValue('last_30_days', utcToday(), false))
 const compare = ref(true)
 const daily = ref<ReportResult | null>(null)
 const previousDaily = ref<ReportResult | null>(null)
@@ -41,7 +42,13 @@ const empty = computed(() => !!daily.value && daily.value.rows.length === 0)
 
 /** Consulta das visitas no motor de relatórios, no período escolhido. */
 function section(body: Omit<ReportQuery, 'period' | 'source' | 'metrics'>, range?: ReportRange): ReportQuery {
-  return { ...body, source: 'page_views', metrics: [METRIC], period: range ?? { preset: period.value } }
+  return { ...body, source: 'page_views', metrics: [METRIC], period: range ?? chosenPeriod() }
+}
+
+/** O período da consulta: o atalho pelo nome (o motor conta as datas) ou as datas escolhidas. */
+function chosenPeriod(): ReportQuery['period'] {
+  const { preset, start, end } = period.value
+  return preset ? { preset: preset as RelativePeriod } : { start, end }
 }
 
 /** Carrega as seções da tela numa requisição só; resposta atrasada de outro período é ignorada. */
@@ -52,7 +59,7 @@ async function load() {
   try {
     const mode = compare.value ? 'previous' : 'none'
     const byDay = { dimensions: ['date'], order: [{ field: 'date', descending: false }], limit: 400 }
-    const expected = previousRange(presetRange(period.value, utcToday()))
+    const expected = previousRange({ start: period.value.start, end: period.value.end })
     const sections = [
       section({ ...byDay, compare: mode }),
       section({ dimensions: ['hour'], order: [{ field: 'hour', descending: false }], limit: 24 }),

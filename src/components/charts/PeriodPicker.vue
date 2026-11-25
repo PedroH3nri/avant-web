@@ -1,26 +1,21 @@
 <script setup lang="ts">
-/** Período relativo e a comparação com o período anterior, usados pelas telas de métricas. */
+/** Período (atalho ou datas escolhidas) e a comparação com o período anterior, usados pelas telas de métricas. */
 import { computed } from 'vue'
 import { Check } from 'lucide-vue-next'
 import Button from '@/components/ui/Button.vue'
-import Select from '@/components/ui/Select.vue'
-import { t, type Key } from '@/lib/i18n'
+import DateRangePicker from '@/components/ui/DateRangePicker.vue'
+import { t } from '@/lib/i18n'
 import { PERIOD_PRESETS } from '@/lib/metrics'
-import type { RelativePeriod } from '@/modules/reports/types'
+import { periodPresets, type PeriodValue } from '@/lib/periods'
+import { utcToday } from '@/modules/reports/rules'
 
-const period = defineModel<RelativePeriod>('period', { required: true })
+const period = defineModel<PeriodValue>('period', { required: true })
 const compare = defineModel<boolean>('compare', { default: true })
-const options = computed(() => PERIOD_PRESETS.map((preset) => ({ value: preset, label: t(`period.${preset}` as Key) })))
-const selected = computed({
-  get: () => period.value as string,
-  set: (value: string) => {
-    period.value = value as RelativePeriod
-  },
-})
+const presets = computed(() => periodPresets(PERIOD_PRESETS, utcToday(), false))
 </script>
 
 <template>
-  <Select v-model="selected" :options="options" class="w-[190px]" :aria-label="t('perf.period')" />
+  <DateRangePicker v-model="period" :presets="presets" :max-days="400" :max="utcToday()" :aria-label="t('perf.period')" />
   <Button variant="outline" class="h-10" :aria-pressed="compare" @click="compare = !compare">
     <Check v-if="compare" class="size-4" aria-hidden="true" />{{ t('perf.compare') }}
   </Button>

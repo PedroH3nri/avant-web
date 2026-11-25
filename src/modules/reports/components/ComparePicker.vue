@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /** Escolhe com que período comparar: nenhum, o anterior, o do ano passado ou datas escolhidas. */
 import { computed } from 'vue'
-import Input from '@/components/ui/Input.vue'
+import DateField from '@/components/ui/DateField.vue'
 import Select from '@/components/ui/Select.vue'
 import { t, type Key } from '@/lib/i18n'
 import { COMPARE_MODES, comparisonReady, type Comparison } from '@/modules/reports/rules'
@@ -35,24 +35,24 @@ function setDate(edge: 'start' | 'end', value: string) {
       @update:model-value="setMode"
     />
     <template v-if="modelValue.mode === 'custom'">
-      <Input
-        type="date"
+      <DateField
         :model-value="modelValue.start ?? ''"
         :disabled="disabled"
         :aria-label="t('compare.start')"
         :invalid="missingDates"
         class="w-[160px]"
-        @update:model-value="(value) => setDate('start', String(value))"
+        clearable
+        @update:model-value="(value) => setDate('start', value)"
       />
-      <Input
-        type="date"
+      <DateField
         :model-value="modelValue.end ?? ''"
         :min="modelValue.start ?? undefined"
         :disabled="disabled"
         :aria-label="t('compare.end')"
         :invalid="missingDates"
         class="w-[160px]"
-        @update:model-value="(value) => setDate('end', String(value))"
+        clearable
+        @update:model-value="(value) => setDate('end', value)"
       />
       <p v-if="missingDates" class="basis-full text-[13px] text-muted-foreground">{{ t('compare.pickDates') }}</p>
     </template>

@@ -1,5 +1,6 @@
 /** Regras de tela do Facebook: situação, dinheiro na moeda da conta, períodos, níveis e textos do histórico e dos avisos. */
 
+import type { PresetKey } from '@/lib/periods'
 import type { Key } from '@/lib/i18n'
 import type {
   FacebookAccount,
@@ -17,6 +18,10 @@ import type {
 type Tone = 'ok' | 'warn' | 'bad' | 'neutral'
 
 export const PERIODS = [7, 14, 30, 90] as const
+
+/** Os atalhos de período das campanhas (contam até hoje) e o maior período que a API aceita. */
+export const ADS_PRESETS: PresetKey[] = ['today', 'yesterday', 'last_7_days', 'last_14_days', 'last_30_days', 'last_90_days', 'this_month', 'last_month']
+export const ADS_MAX_DAYS = 400
 export const LEVELS: FacebookLevel[] = ['campaign', 'adset', 'ad']
 
 const ACCOUNT_TONES: Record<FacebookAccountState, Tone> = { active: 'ok', pending: 'warn', unsettled: 'bad', disabled: 'bad', closed: 'neutral' }
