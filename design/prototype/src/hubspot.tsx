@@ -2,7 +2,7 @@
    Do HubSpot para o Avant só vem o que o Avant não tem; clientes, networks, contratos e métricas só vão. */
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
-import { AlertTriangle, ArrowRight, BookOpen, CalendarClock, CalendarDays, Check, CheckCircle2, ChevronRight, CircleDollarSign, ClipboardCheck, ExternalLink, Filter, Inbox, LayoutGrid, List, ListChecks, Loader2, Mail, MessageSquare, NotebookPen, Paperclip, Phone, Plus, RefreshCw, Search, Send, SmilePlus, ThumbsDown, ThumbsUp, TrendingDown, UserPlus, Video, X } from 'lucide-react'
+import { AlertTriangle, ArrowRight, Code2, Gift, BookOpen, CalendarClock, CalendarDays, Check, CheckCircle2, ChevronRight, CircleDollarSign, ClipboardCheck, ExternalLink, Filter, Inbox, LayoutGrid, List, ListChecks, Loader2, Mail, MessageSquare, NotebookPen, Paperclip, Phone, Plus, RefreshCw, Search, Send, SmilePlus, ThumbsDown, ThumbsUp, TrendingDown, UserPlus, Video, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -104,53 +104,87 @@ function passes(row: Record<string, string>, values: Record<string, string>, que
   return Object.entries(values).every(([key, value]) => !value || value === 'all' || row[key] === value)
 }
 
-/* ---------- 1. Atividade comercial na página do cliente (painel interno) ---------- */
+/* ---------- 1. Card do HubSpot no cliente, na network e no site (painel interno) ---------- */
 
 type Activity = { id: number; kind: 'E-mail' | 'Ligação' | 'Reunião' | 'Nota'; title: string; text: string; who: string; when: string }
-const ACTIVITIES: Activity[] = [
-  { id: 1, kind: 'Reunião', title: 'Revisão do trimestre', text: 'Mostramos a queda de RPM no mobile e combinamos testar a Cascata na âncora.', who: 'Marina Souza', when: 'hoje, 10:30' },
-  { id: 2, kind: 'E-mail', title: 'Re: proposta de revshare 15%', text: 'Caio respondeu que aceita a partir de dezembro.', who: 'Caio Prado', when: 'ontem, 17:42' },
-  { id: 3, kind: 'Ligação', title: 'Ligação de 12 min', text: 'Dúvida sobre o pagamento de outubro. Expliquei a dedução do GAM.', who: 'Marina Souza', when: '21/11, 15:10' },
-  { id: 4, kind: 'Nota', title: 'Quer abrir um segundo site', text: 'receitasdavo.com.br, previsão para janeiro.', who: 'Marina Souza', when: '18/11, 09:02' },
-]
+type RecordKind = 'client' | 'network' | 'site'
+type RecordInfo = { object: string; desc: string; facts: [string, React.ReactNode][]; activities: Activity[] }
 const ACTIVITY_ICON = { 'E-mail': Mail, Ligação: Phone, Reunião: Video, Nota: NotebookPen }
 
-/** O card do HubSpot na página do cliente: dono, negócio, NPS e as últimas atividades, lidos na hora e sem guardar. */
-export function HubspotClientCard() {
-  const [kind, setKind] = useState<'all' | Activity['kind']>('all')
+const RECORDS: Record<RecordKind, RecordInfo> = {
+  client: {
+    object: 'Contato',
+    desc: 'O contato do publisher no HubSpot: a pessoa, o relacionamento e o atendimento.',
+    facts: [
+      ['Dono do contato', <span className="flex items-center gap-2"><Avatar name="Marina Souza" size={26} />Marina Souza</span>],
+      ['Ciclo de vida', <Status tone="ok">Cliente</Status>],
+      ['NPS', <span className="flex items-center gap-2"><span className="tnum text-[18px] font-semibold text-ok">9</span><span className="text-[13px] text-muted-foreground">Promotor · 02/11</span></span>],
+      ['Chamados abertos', <span className="flex items-center gap-2"><span className="tnum text-[18px] font-semibold">1</span><span className="text-[13px] text-muted-foreground">Pagamento</span></span>],
+    ],
+    activities: [
+      { id: 1, kind: 'Reunião', title: 'Revisão do trimestre', text: 'Combinamos testar a Cascata na âncora e falar de um segundo site em janeiro.', who: 'Marina Souza', when: 'hoje, 10:30' },
+      { id: 2, kind: 'Ligação', title: 'Ligação de 12 min', text: 'Dúvida sobre o pagamento de outubro. Expliquei a dedução do GAM.', who: 'Marina Souza', when: '21/11, 15:10' },
+      { id: 3, kind: 'Nota', title: 'Prefere WhatsApp', text: 'Responde mais rápido no WhatsApp do que por e-mail.', who: 'Marina Souza', when: '18/11, 09:02' },
+    ],
+  },
+  network: {
+    object: 'Empresa e negócio',
+    desc: 'A empresa da network no HubSpot e o negócio do contrato ativo.',
+    facts: [
+      ['Dono da empresa', <span className="flex items-center gap-2"><Avatar name="Marina Souza" size={26} />Marina Souza</span>],
+      ['Negócio', <span className="grid"><span>Tech Notícias - 24/10/2026</span><span className="text-[13px] text-muted-foreground">Pipeline padrão</span></span>],
+      ['Estágio', <Status tone="ok">Ativo</Status>],
+      ['Revshare no negócio', <span className="tnum text-[18px] font-semibold">15%</span>],
+    ],
+    activities: [
+      { id: 1, kind: 'E-mail', title: 'Re: proposta de revshare 15%', text: 'O cliente aceitou 15% a partir de dezembro. O contrato novo nasce quando o GAM mudar.', who: 'Caio Prado', when: 'ontem, 17:42' },
+      { id: 2, kind: 'Nota', title: 'MCM aceito', text: 'Convite do MCM aceito em 24/10. Manage Account.', who: 'João Pedro', when: '24/10, 14:10' },
+    ],
+  },
+  site: {
+    object: 'Site',
+    desc: 'O registro do site no HubSpot, com as métricas do mês que o Avant mandou.',
+    facts: [
+      ['Situação no HubSpot', <Status tone="ok">Ativo</Status>],
+      ['Receita de novembro', <span className="tnum text-[18px] font-semibold">US$ 1.240,18</span>],
+      ['Impressões de novembro', <span className="tnum text-[18px] font-semibold">2,41 mi</span>],
+      ['Enviado em', <span className="tnum">hoje, 05:00</span>],
+    ],
+    activities: [
+      { id: 1, kind: 'Nota', title: 'Âncora cobrindo o menu no iPhone', text: 'Pedimos para o cliente subir o menu fixo em 60 px. Ver o chamado #1038.', who: 'Marina Souza', when: '24/11, 18:20' },
+    ],
+  },
+}
+
+/** O card do HubSpot de um publisher, uma network ou um site: só os dados daquele registro, lidos na hora e sem guardar. */
+export function HubspotRecordCard({ kind, className }: { kind: RecordKind; className?: string }) {
+  const record = RECORDS[kind]
+  const [type, setType] = useState<'all' | Activity['kind']>('all')
   const [loading, setLoading] = useState(true)
   useEffect(() => { const timer = setTimeout(() => setLoading(false), 700); return () => clearTimeout(timer) }, [])
-  const list = ACTIVITIES.filter((activity) => kind === 'all' || activity.kind === kind)
+  const kinds = [...new Set(record.activities.map((activity) => activity.kind))]
+  const list = record.activities.filter((activity) => type === 'all' || activity.kind === type)
   return (
-    <section className="overflow-hidden rounded-lg border bg-card lg:col-span-2 animate-in fade-in slide-in-from-bottom-2 duration-500">
+    <section className={cn('overflow-hidden rounded-lg border bg-card animate-in fade-in slide-in-from-bottom-2 duration-500', className)}>
       <div className="flex flex-wrap items-start justify-between gap-3 p-6 pb-0">
         <div>
-          <h2 className="flex items-center gap-2 text-[20px] font-semibold tracking-tight"><HubspotMark size={18} />HubSpot</h2>
-          <p className="mt-2 text-[14px] text-muted-foreground">Lido do HubSpot agora. O Avant não guarda nada disso.</p>
+          <h2 className="flex items-center gap-2 text-[20px] font-semibold tracking-tight"><HubspotMark size={18} />HubSpot · {record.object}</h2>
+          <p className="mt-2 text-[14px] text-muted-foreground">{record.desc} Lido agora; o Avant não guarda.</p>
         </div>
         <Button variant="outline" size="sm" asChild><a href="https://app.hubspot.com" target="_blank" rel="noreferrer"><ExternalLink className="h-4 w-4" />Abrir no HubSpot</a></Button>
       </div>
-      <dl className="grid gap-4 p-6 sm:grid-cols-4">
-        {[
-          ['Dono no HubSpot', <span className="flex items-center gap-2"><Avatar name="Marina Souza" size={26} />Marina Souza</span>],
-          ['Negócio', <Status tone="ok">Contrato ativo · 15%</Status>],
-          ['NPS', <span className="flex items-center gap-2"><span className="tnum text-[18px] font-semibold text-ok">9</span><span className="text-[13px] text-muted-foreground">Promotor · 02/11</span></span>],
-          ['Chamados abertos', <span className="flex items-center gap-2"><span className="tnum text-[18px] font-semibold">1</span><span className="text-[13px] text-muted-foreground">Pagamento</span></span>],
-        ].map(([label, value], index) => (
-          <div key={String(label)} {...rise(index)}><dt className="text-[13px] text-muted-foreground">{label}</dt><dd className="mt-1 text-[14px]">{value}</dd></div>
-        ))}
+      <dl className="grid gap-4 p-6 sm:grid-cols-2 xl:grid-cols-4">
+        {record.facts.map(([label, value], index) => <div key={label} {...rise(index)}><dt className="text-[13px] text-muted-foreground">{label}</dt><dd className="mt-1 text-[14px]">{value}</dd></div>)}
       </dl>
       <div className="border-t">
-        <div className="flex flex-wrap items-center gap-1 px-6 pt-4" role="tablist" aria-label="Tipo de atividade">
-          {(['all', 'E-mail', 'Ligação', 'Reunião', 'Nota'] as const).map((option) => (
-            <button key={option} role="tab" aria-selected={kind === option} onClick={() => setKind(option)} className={cn('h-8 rounded-md px-3 text-[13px] transition-colors', kind === option ? 'bg-secondary font-medium text-foreground' : 'text-muted-foreground hover:text-foreground')}>{option === 'all' ? 'Tudo' : option}</button>
-          ))}
-        </div>
-        <ol className="grid gap-0 px-6 py-4">
-          {loading ? [0, 1, 2].map((index) => <li key={index} className="flex gap-3 py-3"><span className="h-8 w-8 animate-pulse rounded-full bg-muted" /><span className="grid flex-1 gap-2"><span className="h-3 w-1/3 animate-pulse rounded bg-muted" /><span className="h-3 w-2/3 animate-pulse rounded bg-muted" /></span></li>) : list.map((activity, index) => {
+        {kinds.length > 1 && <div className="flex flex-wrap items-center gap-1 px-6 pt-4" role="tablist" aria-label="Tipo de atividade">
+          {(['all', ...kinds] as const).map((option) => <button key={option} role="tab" aria-selected={type === option} onClick={() => setType(option)} className={cn('h-8 rounded-md px-3 text-[13px] transition-colors', type === option ? 'bg-secondary font-medium text-foreground' : 'text-muted-foreground hover:text-foreground')}>{option === 'all' ? 'Tudo' : option}</button>)}
+        </div>}
+        <ol className="grid px-6 py-4">
+          {loading ? [0, 1].map((index) => <li key={index} className="flex gap-3 py-3"><span className="h-8 w-8 animate-pulse rounded-full bg-muted" /><span className="grid flex-1 gap-2"><span className="h-3 w-1/3 animate-pulse rounded bg-muted" /><span className="h-3 w-2/3 animate-pulse rounded bg-muted" /></span></li>) : list.map((activity, index) => {
             const Icon = ACTIVITY_ICON[activity.kind]
             return (
-              <li key={activity.id} {...rise(index, 'relative flex gap-3 py-3')}>
+              <li key={activity.id} {...rise(index, 'flex gap-3 py-3')}>
                 <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full border bg-background"><Icon className="h-4 w-4 text-muted-foreground" /></span>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-baseline justify-between gap-x-3"><span className="text-[14px] font-medium">{activity.title}</span><span className="text-[12px] text-muted-foreground tnum">{activity.when}</span></div>
@@ -162,8 +196,24 @@ export function HubspotClientCard() {
           })}
         </ol>
       </div>
-      <div className="flex flex-wrap items-center justify-between gap-3 border-t bg-muted px-6 py-3 text-[13px] text-muted-foreground"><span>Mostrando as 4 últimas atividades. As antigas ficam no HubSpot.</span><Button size="sm" variant="outline" onClick={() => toast.success('Nota criada no HubSpot', { description: 'Aparece na linha do tempo do contato.' })}><NotebookPen className="h-4 w-4" />Nova nota</Button></div>
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t bg-muted px-6 py-3 text-[13px] text-muted-foreground"><span>As últimas atividades deste registro. As antigas ficam no HubSpot.</span><Button size="sm" variant="outline" onClick={() => toast.success('Nota criada no HubSpot', { description: `Aparece na linha do tempo do registro (${record.object.toLowerCase()}).` })}><NotebookPen className="h-4 w-4" />Nova nota</Button></div>
     </section>
+  )
+}
+
+/** Página da network no painel interno (só o necessário para mostrar o card do HubSpot da network). */
+export function NetworkDetailScreen({ go }: { go: Go }) {
+  const row = (label: string, value: React.ReactNode) => <div className="grid grid-cols-[160px_1fr] gap-3 py-2 text-[14px]"><dt className="text-muted-foreground">{label}</dt><dd className="min-w-0">{value}</dd></div>
+  return (
+    <>
+      <PageHeader title="Tech Notícias" sub="Network 22334455667 · cliente Tech Notícias"
+        back={<button onClick={() => go('cliente')} className="mb-3 inline-flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-foreground"><ChevronRight className="h-4 w-4 rotate-180" />Cliente</button>} />
+      <Body className="lg:grid-cols-2">
+        <RiseCard index={0} title="Network"><dl className="-my-2 divide-y">{row('Network code', <span className="tnum">22334455667</span>)}{row('Tipo', 'MCM · Manage Account')}{row('Situação', <Status tone="ok">Conectada</Status>)}{row('Sites', <span className="tnum">3</span>)}</dl></RiseCard>
+        <RiseCard index={1} title="Contrato ativo"><dl className="-my-2 divide-y">{row('Revshare', <span className="tnum">15,000%</span>)}{row('Origem', 'GAM')}{row('Desde', <span className="tnum">24/10/2026 14:05</span>)}</dl></RiseCard>
+        <HubspotRecordCard kind="network" className="lg:col-span-2" />
+      </Body>
+    </>
   )
 }
 
@@ -208,7 +258,7 @@ export function ProspectsScreen({ go }: { go: Go }) {
     : <Button size="sm" className="h-7 px-2 text-[12px]" onClick={() => setRegistering(deal)}><UserPlus className="h-3.5 w-3.5" />Cadastrar cliente</Button>
   return (
     <>
-      <PageHeader title="Prospecção" sub="Os negócios abertos do pipeline de prospecção do HubSpot, de quem ainda não é cliente. Lido na hora: mover o negócio continua sendo no HubSpot."
+      <PageHeader title="Prospecção" sub="Os negócios do pipeline “Prospecção” do HubSpot, de quem ainda não é cliente. Cada coluna é um estágio do pipeline, com o nome e a ordem do HubSpot. Mover o negócio continua sendo no HubSpot."
         actions={<>
           <div className="flex rounded-md border bg-background p-0.5" role="tablist" aria-label="Vista">
             <button role="tab" aria-selected={view === 'board'} onClick={() => setView('board')} className={cn('flex h-8 items-center gap-1.5 rounded px-2.5 text-[13px]', view === 'board' ? 'bg-secondary font-medium' : 'text-muted-foreground')}><LayoutGrid className="h-4 w-4" />Funil</button>
@@ -231,7 +281,7 @@ export function ProspectsScreen({ go }: { go: Go }) {
                 const inStage = rows.filter((deal) => deal.stage === stage)
                 return (
                   <div key={stage} {...rise(column, 'min-w-[220px] rounded-md bg-muted p-2')}>
-                    <div className="flex items-center justify-between px-1 pb-2 text-[13px] font-medium"><span>{stage}</span><span className="tnum text-muted-foreground">{inStage.length}</span></div>
+                    <div className="flex items-center justify-between px-1 pb-2 text-[13px] font-medium"><span className="flex items-center gap-1.5" title={`Estágio “${stage}” do pipeline Prospecção no HubSpot`}><HubspotMark size={12} />{stage}</span><span className="tnum text-muted-foreground">{inStage.length}</span></div>
                     <div className="grid gap-2">
                       {inStage.map((deal) => (
                         <article key={deal.id} className="rounded-md border bg-card p-3 transition-[box-shadow,transform] duration-200 hover:-translate-y-px hover:shadow-sm">
@@ -397,6 +447,63 @@ export function ManagerCard() {
 
 /* ---------- 5. Central de ajuda (painel do cliente) + 6. NPS no painel ---------- */
 
+type GuideStep = { title: string; text: string; shot: 'list' | 'editor' | 'code' | 'check' | 'chart' | 'form' }
+type Guide = { id: string; name: string; icon: typeof BookOpen; summary: string; steps: GuideStep[] }
+const GUIDES: Guide[] = [
+  { id: 'adtag', name: 'Ad tag', icon: Code2, summary: 'Os anúncios do seu site: blocos, formatos e instalação.', steps: [
+    { title: 'Abra Inventário > Ad tags', text: 'Cada site tem as suas ad tags. Clique em “Nova ad tag” e escolha o site.', shot: 'list' },
+    { title: 'Escolha os blocos', text: 'Conteúdo 1 a 9, âncora, intersticial e fixo. Na prévia, clique onde cada bloco aparece.', shot: 'editor' },
+    { title: 'Publique e copie o script', text: 'Publicar cria a versão 1. Copie o script e cole no <head> de todas as páginas.', shot: 'code' },
+    { title: 'Confira a instalação', text: 'Clique em “Verificar de novo”. Em um minuto o site aparece como instalado.', shot: 'check' },
+  ] },
+  { id: 'reward', name: 'Reward', icon: Gift, summary: 'Libere o conteúdo depois de um anúncio premiado.', steps: [
+    { title: 'Abra Inventário > Rewards', text: 'Clique em “Novo reward” e escolha a página do site.', shot: 'list' },
+    { title: 'Monte as perguntas', text: 'Até 5 perguntas e o pedido de contato antes do anúncio.', shot: 'form' },
+    { title: 'Instale o reward.js', text: 'Se o site já tem a ad tag, nada a fazer. Senão, cole o script do reward.', shot: 'code' },
+    { title: 'Acompanhe', text: 'Visitas, anúncios vistos e contatos por dia nas métricas do reward.', shot: 'chart' },
+  ] },
+  { id: 'loader', name: 'Loader', icon: Loader2, summary: 'A tela de carregamento e o aviso de adblock.', steps: [
+    { title: 'Abra Inventário > Loaders', text: 'Escolha o modelo GroOne ou Tela cheia.', shot: 'list' },
+    { title: 'Personalize', text: 'Cores, logo e o que fazer com adblock: avisar ou bloquear.', shot: 'editor' },
+    { title: 'Ligue na ad tag', text: 'Na ad tag do site, escolha o loader e publique.', shot: 'form' },
+  ] },
+  { id: 'precos', name: 'Regras de preço', icon: CircleDollarSign, summary: 'Floor automático por bloco e país, com grupo de controle.', steps: [
+    { title: 'Abra Inventário > Regras de preço', text: 'Ligue a regra no site e escolha os blocos.', shot: 'list' },
+    { title: 'Escolha o modelo', text: 'Automática no conteúdo; Cascata na âncora, no intersticial e no fixo.', shot: 'form' },
+    { title: 'Veja o ganho', text: 'Compare a receita da regra contra o grupo de controle.', shot: 'chart' },
+  ] },
+  { id: 'pageviews', name: 'Page Views', icon: LayoutGrid, summary: 'As visitas do site por página, país e UTM.', steps: [
+    { title: 'Instale a ad tag', text: 'As visitas vêm junto com a ad tag; não há script separado.', shot: 'code' },
+    { title: 'Abra Relatórios > Page Views', text: 'Filtre por site, período, país e UTM.', shot: 'chart' },
+  ] },
+  { id: 'gam', name: 'Networks do GAM', icon: ListChecks, summary: 'Ligar a sua network do Ad Manager à Groone pelo MCM.', steps: [
+    { title: 'Aceite o convite do MCM', text: 'No Ad Manager, em Admin > Multiple Customer Management, aceite o convite da Groone.', shot: 'form' },
+    { title: 'Confira no Avant', text: 'Em Inventário > Networks do GAM, a network aparece como conectada em até 1 hora.', shot: 'list' },
+    { title: 'Sites importados', text: 'Os sites e blocos chegam sozinhos a cada 6 horas.', shot: 'check' },
+  ] },
+]
+
+/** Um print desenhado da tela do Avant para o passo do guia (no painel de verdade, o print vem do artigo no HubSpot). */
+function GuideShot({ kind }: { kind: GuideStep['shot'] }) {
+  return (
+    <div className="overflow-hidden rounded-md border bg-background shadow-sm" aria-hidden="true">
+      <div className="flex items-center gap-1.5 border-b bg-muted px-3 py-2"><span className="h-2 w-2 rounded-full bg-bad/60" /><span className="h-2 w-2 rounded-full bg-ochre/60" /><span className="h-2 w-2 rounded-full bg-ok/60" /><span className="ml-3 h-3 w-40 rounded bg-background" /></div>
+      <div className="grid grid-cols-[48px_1fr] gap-3 p-3">
+        <div className="grid content-start gap-2">{[0, 1, 2, 3].map((index) => <span key={index} className={cn('h-6 rounded', index === 1 ? 'bg-foreground/80' : 'bg-muted')} />)}</div>
+        <div className="grid content-start gap-2">
+          <span className="h-4 w-1/3 rounded bg-foreground/80" />
+          {kind === 'list' && [0, 1, 2].map((index) => <span key={index} className={cn('h-7 rounded border', index === 0 && 'ring-2 ring-[hsl(var(--link))] ring-offset-1')} />)}
+          {kind === 'editor' && <div className="grid grid-cols-[1fr_80px] gap-2"><span className="h-24 rounded border bg-muted" /><span className="grid gap-1.5">{[0, 1, 2].map((index) => <span key={index} className={cn('h-5 rounded border', index === 2 && 'ring-2 ring-[hsl(var(--link))]')} />)}</span></div>}
+          {kind === 'code' && <div className="rounded bg-foreground/90 p-2 font-mono text-[10px] text-background">&lt;script async src="…/tag.js" data-tag="tg_…"&gt;&lt;/script&gt;</div>}
+          {kind === 'check' && <span className="flex items-center gap-2 rounded border p-2 text-[11px]"><CheckCircle2 className="h-4 w-4 text-ok" />Instalado · verificado agora</span>}
+          {kind === 'chart' && <div className="flex h-20 items-end gap-1 rounded border p-2">{[30, 45, 38, 60, 52, 70, 64, 80].map((height, index) => <span key={index} className="flex-1 rounded-t bg-foreground/70" style={{ height: `${height}%` }} />)}</div>}
+          {kind === 'form' && [0, 1, 2].map((index) => <span key={index} className={cn('h-6 rounded border', index === 2 && 'w-24 bg-foreground/80')} />)}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 type Article = { id: number; category: string; title: string; summary: string; minutes: number }
 const ARTICLES: Article[] = [
   { id: 1, category: 'Primeiros passos', title: 'Como instalar a ad tag no seu site', summary: 'Copie o script, cole no <head> e confira a instalação no Avant.', minutes: 3 },
@@ -413,12 +520,26 @@ export function HelpCenterScreen({ go }: { go: Go }) {
   const [category, setCategory] = useState('Todas')
   const [reading, setReading] = useState<Article | null>(null)
   const [helpful, setHelpful] = useState<boolean | null>(null)
+  const [guide, setGuide] = useState<Guide | null>(null)
   const list = ARTICLES.filter((article) => (category === 'Todas' || article.category === category) && (article.title + article.summary).toLowerCase().includes(query.trim().toLowerCase()))
   return (
     <>
       <PageHeader title="Central de ajuda" sub="Os artigos da Groone sobre o Avant, a ad tag, o GAM e os pagamentos." actions={<Button variant="outline" onClick={() => go('chamados')}><MessageSquare className="h-4 w-4" />Meus chamados</Button>} />
       <Body>
         <div className="relative animate-in fade-in slide-in-from-bottom-2 duration-500"><Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" /><Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Como podemos ajudar?" className="h-12 bg-card pl-12 text-[16px]" /></div>
+        <section className="grid gap-3">
+          <h2 className="text-[18px] font-semibold tracking-tight">Guias por tecnologia</h2>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{GUIDES.map((guide, index) => {
+            const Icon = guide.icon
+            return (
+              <button key={guide.id} onClick={() => setGuide(guide)} {...rise(index, 'group flex items-start gap-4 rounded-lg border bg-card p-5 text-left transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-sm')}>
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-md border bg-background transition-colors group-hover:bg-foreground group-hover:text-background"><Icon className="h-5 w-5" /></span>
+                <span className="min-w-0"><span className="block text-[16px] font-semibold tracking-tight">{guide.name}</span><span className="block text-[14px] text-muted-foreground">{guide.summary}</span><span className="mt-2 inline-flex items-center gap-1 text-[13px] font-medium text-link">Passo a passo · {guide.steps.length} passos<ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" /></span></span>
+              </button>
+            )
+          })}</div>
+        </section>
+        <h2 className="text-[18px] font-semibold tracking-tight">Artigos</h2>
         <div className="flex flex-wrap gap-2">{['Todas', 'Primeiros passos', 'Pagamentos', 'Anúncios', 'Relatórios'].map((option) => <button key={option} onClick={() => setCategory(option)} className={cn('h-8 rounded-full border px-3 text-[13px] transition-colors', category === option ? 'border-foreground bg-foreground text-background' : 'bg-card hover:bg-muted')}>{option}</button>)}</div>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {list.map((article, index) => (
@@ -444,6 +565,21 @@ export function HelpCenterScreen({ go }: { go: Go }) {
               : <p className="animate-in fade-in text-[14px] text-muted-foreground">{helpful ? 'Obrigado!' : 'Poxa. Que tal abrir um chamado? A equipe responde em até 1 dia útil.'}</p>}</div>
             <p className="text-[12px] text-muted-foreground">Da base de conhecimento da Groone no HubSpot. Atualizado em 20/11.</p>
           </article>}
+        </SheetContent>
+      </Sheet>
+      <Sheet open={guide !== null} onOpenChange={(value) => !value && setGuide(null)}>
+        <SheetContent className="w-full overflow-y-auto sm:max-w-[640px]">
+          {guide && <div className="grid gap-6 pt-4">
+            <div><div className="text-[12px] font-medium text-muted-foreground">Passo a passo · {guide.steps.length} passos</div><SheetTitle className="mt-1 text-[24px] tracking-tight">{guide.name}</SheetTitle><p className="mt-1 text-[15px] text-muted-foreground">{guide.summary}</p></div>
+            <ol className="grid gap-6">{guide.steps.map((step, index) => (
+              <li key={step.title} {...rise(index, 'grid gap-3')}>
+                <div className="flex items-start gap-3"><span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-foreground text-[13px] font-semibold text-background tnum">{index + 1}</span><div><div className="text-[15px] font-medium">{step.title}</div><p className="text-[14px] text-muted-foreground">{step.text}</p></div></div>
+                <div className="pl-10"><GuideShot kind={step.shot} /></div>
+              </li>
+            ))}</ol>
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-4 text-[14px]"><span>Travou em algum passo?</span><Button size="sm" onClick={() => go('chamados')}><MessageSquare className="h-4 w-4" />Falar com a Groone</Button></div>
+            <p className="text-[12px] text-muted-foreground">Da base de conhecimento da Groone no HubSpot. A equipe edita os passos e os prints lá, sem deploy.</p>
+          </div>}
         </SheetContent>
       </Sheet>
       <NpsPrompt />

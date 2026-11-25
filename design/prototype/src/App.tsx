@@ -19,7 +19,7 @@ import { translate, type Key, type Lang } from './i18n'
 import { Mark, SeatBar, SeatDot, SeatStrip, type SeatState } from './tiles'
 import { DateField, MonthField, PeriodPicker, PRESETS } from './date-pickers'
 import { DollarRate, NotificationCenter } from './navbar-extras'
-import { HelpCenterScreen, HubspotClientCard, HubspotScreen, NpsScreen, ProspectsScreen, TicketsScreen } from './hubspot'
+import { HelpCenterScreen, HubspotRecordCard, HubspotScreen, NetworkDetailScreen, NpsScreen, ProspectsScreen, TicketsScreen } from './hubspot'
 
 /* ---------- prototype routing ---------- */
 
@@ -52,6 +52,7 @@ const SCREENS = [
   ['interno', 'Painel interno · Clientes'],
   ['cliente', 'Painel interno · Página do cliente'],
   ['siteinterno', 'Painel interno · Detalhes do site'],
+  ['networkinterno', 'Painel interno · Detalhes da network (HubSpot)'],
   ['fiscais', 'Configurações · Dados fiscais'],
   ['contratos', 'Painel interno · Contratos'],
   ['resultados', 'Painel interno · Resultado dos clientes'],
@@ -132,7 +133,7 @@ const SCREENS = [
   ['seletordatas', 'Componentes · Seletor de datas'],
 ] as const
 type Screen = (typeof SCREENS)[number][0]
-const INTERNAL_SCREENS: Screen[] = ['hubspotinterno', 'prospeccao', 'npsinterno', 'gadsinterno', 'gadscampanhasinterno', 'gadscampanhainterno', 'gadsgrupointerno', 'gadsanunciointerno', 'fbinterno', 'fbcampanhasinterno', 'fbcampanhainterno', 'fbconjuntointerno', 'fbanunciointerno', 'interno', 'cliente', 'siteinterno', 'contratos', 'resultados', 'papelcomissao', 'minhacomissao', 'comissoes', 'minhasinvoices', 'invoice', 'invoices', 'servicosinvoice', 'modelosdash', 'tarefas', 'tarefa', 'checklists', 'checklist', 'checklistitens', 'ferramentasgam', 'execucaogam', 'rewardsinterno', 'rewardinterno', 'rewardmetricasinterno', 'adtagsinterno', 'adtaginterno', 'adtagmetricasinterno', 'loadersinterno', 'loaderinterno', 'regrasprecointerno', 'regrasiteinterno', 'regrainterno', 'cascatainterno']
+const INTERNAL_SCREENS: Screen[] = ['networkinterno', 'hubspotinterno', 'prospeccao', 'npsinterno', 'gadsinterno', 'gadscampanhasinterno', 'gadscampanhainterno', 'gadsgrupointerno', 'gadsanunciointerno', 'fbinterno', 'fbcampanhasinterno', 'fbcampanhainterno', 'fbconjuntointerno', 'fbanunciointerno', 'interno', 'cliente', 'siteinterno', 'contratos', 'resultados', 'papelcomissao', 'minhacomissao', 'comissoes', 'minhasinvoices', 'invoice', 'invoices', 'servicosinvoice', 'modelosdash', 'tarefas', 'tarefa', 'checklists', 'checklist', 'checklistitens', 'ferramentasgam', 'execucaogam', 'rewardsinterno', 'rewardinterno', 'rewardmetricasinterno', 'adtagsinterno', 'adtaginterno', 'adtagmetricasinterno', 'loadersinterno', 'loaderinterno', 'regrasprecointerno', 'regrasiteinterno', 'regrainterno', 'cascatainterno']
 const isScreen = (s: string): s is Screen => SCREENS.some(([k]) => k === s)
 type T = (k: Key) => string
 
@@ -567,7 +568,7 @@ const CLIENT_RAIL: RailGroup[] = [
   { key: 'empresa', label: 'Empresa', icon: Settings, items: [{ id: 'configuracoes', label: 'Configurações' }, { id: 'fiscais', label: 'Dados fiscais' }] },
 ]
 const INTERNAL_RAIL: RailGroup[] = [
-  { key: 'clientes', label: 'Inventário', icon: Users, items: [{ id: 'interno', label: 'Clientes', also: ['cliente', 'siteinterno'] }, { id: 'prospeccao', label: 'Prospecção' }, { id: 'npsinterno', label: 'NPS dos clientes' }, { id: 'contratos', label: 'Contratos' }, { id: 'resultados', label: 'Resultado dos clientes' }, { id: 'checklists', label: 'Checklists', also: ['checklist', 'checklistitens'] }, { id: 'rewardsinterno', label: 'Rewards', also: ['rewardinterno', 'rewardmetricasinterno'] }, { id: 'adtagsinterno', label: 'Ad tags', also: ['adtaginterno', 'adtagmetricasinterno'] }, { id: 'loadersinterno', label: 'Loaders', also: ['loaderinterno'] }, { id: 'regrasprecointerno', label: 'Regras de preço', also: ['regrasiteinterno', 'regrainterno', 'cascatainterno'] }] },
+  { key: 'clientes', label: 'Inventário', icon: Users, items: [{ id: 'interno', label: 'Clientes', also: ['cliente', 'siteinterno', 'networkinterno'] }, { id: 'prospeccao', label: 'Prospecção' }, { id: 'npsinterno', label: 'NPS dos clientes' }, { id: 'contratos', label: 'Contratos' }, { id: 'resultados', label: 'Resultado dos clientes' }, { id: 'checklists', label: 'Checklists', also: ['checklist', 'checklistitens'] }, { id: 'rewardsinterno', label: 'Rewards', also: ['rewardinterno', 'rewardmetricasinterno'] }, { id: 'adtagsinterno', label: 'Ad tags', also: ['adtaginterno', 'adtagmetricasinterno'] }, { id: 'loadersinterno', label: 'Loaders', also: ['loaderinterno'] }, { id: 'regrasprecointerno', label: 'Regras de preço', also: ['regrasiteinterno', 'regrainterno', 'cascatainterno'] }] },
   { key: 'integracoes', label: 'Integrações', icon: Plug, items: [{ id: 'hubspotinterno', label: 'HubSpot' }, { id: 'fbinterno', label: 'Facebook' }, { id: 'fbcampanhasinterno', label: 'Campanhas do Facebook', also: ['fbcampanhainterno', 'fbconjuntointerno', 'fbanunciointerno'] }, { id: 'gadsinterno', label: 'Google Ads' }, { id: 'gadscampanhasinterno', label: 'Campanhas do Google Ads', also: ['gadscampanhainterno', 'gadsgrupointerno', 'gadsanunciointerno'] }] },
   { key: 'comissoes', label: 'Comissões', icon: Wallet, items: [{ id: 'minhacomissao', label: 'Minha comissão' }, { id: 'minhasinvoices', label: 'Minhas invoices' }, { id: 'comissoes', label: 'Comissões da equipe' }, { id: 'invoices', label: 'Invoices', also: ['servicosinvoice', 'invoice'] }] },
   { key: 'ferramentas', label: 'Ferramentas', icon: Wrench, items: [{ id: 'tarefas', label: 'Tarefas', also: ['tarefa'] }, { id: 'modelosdash', label: 'Modelos de dashboard' }, { id: 'ferramentasgam', label: 'Ferramentas do GAM', also: ['execucaogam'] }] },
@@ -1786,7 +1787,7 @@ function ClientSiteScreen({ go }: { go: (s: Screen) => void }) {
         back={<button onClick={() => go('interno')} className="mb-3 inline-flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4" />Sites</button>}
         actions={<>
           <Button variant="outline" onClick={() => go('regrasiteinterno')}><CircleDollarSign className="h-4 w-4" />Regras de preço</Button>
-          <Button variant="outline" onClick={() => go('networks')}><Network className="h-4 w-4" />Abrir network</Button>
+          <Button variant="outline" onClick={() => go('networkinterno')}><Network className="h-4 w-4" />Abrir network</Button>
           <Button variant="outline" onClick={() => go('cliente')}><Users className="h-4 w-4" />Abrir cliente</Button>
         </>}
       />
@@ -1848,6 +1849,7 @@ function ClientSiteScreen({ go }: { go: (s: Screen) => void }) {
             </tbody>
           </Table>
         </section>
+        <HubspotRecordCard kind="site" className="lg:col-span-2 min-[1920px]:col-span-3" />
       </Body>
       <ItemOverrideDialog item={custom} close={() => setCustom(null)} />
     </>
@@ -1911,7 +1913,7 @@ function ClientScreen({ go }: { go: (s: Screen) => void }) {
           <dl className="-my-2 divide-y">{row('Nome', 'Caio Prado')}{row('E-mail', 'contato@technoticias.com')}{row('Telefone', <span className="tnum">+55 11 98888-7777</span>)}{row('Idioma', 'Português')}{row('Convite', sent ? <Status tone="ochre">Enviado {sent}</Status> : <span className="text-muted-foreground">Ainda não enviado</span>)}</dl>
         </Card>
         <AccountManagerCard />
-        <HubspotClientCard />
+        <HubspotRecordCard kind="client" className="lg:col-span-2" />
         <Card title="Indicação" footer={<Button size="sm" variant="outline">Editar</Button>}>
           <dl className="-my-2 divide-y">{row('Indicado por', 'Blog Exemplo')}{row('Comissão', <span className="tnum">2%</span>)}{row('Observações', <span className="text-muted-foreground">Veio do evento de setembro.</span>)}</dl>
         </Card>
@@ -10720,6 +10722,7 @@ export default function App() {
       case 'interno': return <InternalScreen t={t} go={go} />
       case 'cliente': return <ClientScreen go={go} />
       case 'siteinterno': return <ClientSiteScreen go={go} />
+      case 'networkinterno': return <NetworkDetailScreen go={(next) => go(next as Screen)} />
       case 'fiscais': return <FiscalScreen />
       case 'contratos': return <ContractsScreen />
       case 'resultados': return <ClientsResultScreen />
