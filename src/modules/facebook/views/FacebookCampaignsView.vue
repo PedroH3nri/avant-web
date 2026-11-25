@@ -1,6 +1,7 @@
 <script setup lang="ts">
 /** Campanhas, conjuntos e anúncios do Facebook com gasto, receita, lucro e ROI do período; no interno, de todos os clientes.
  * Quem gerencia campanhas liga ou pausa um por um ou vários de uma vez. */
+import StatTile from '@/components/StatTile.vue'
 import DateRangePicker from '@/components/ui/DateRangePicker.vue'
 import { todayIso } from '@/lib/dates'
 import { periodFromQuery, periodPresets, periodQuery, type PeriodValue } from '@/lib/periods'
@@ -242,10 +243,7 @@ watch([level, parent, accountId, companyId, period, inReview], refilter)
       <Button size="sm" variant="ghost" @click="pickAll(false)">{{ t('fb.control.clear') }}</Button>
     </div>
     <div v-if="!loadError && tiles.length" class="grid grid-cols-2 gap-px overflow-hidden rounded-lg border bg-border md:grid-cols-3 xl:grid-cols-6">
-      <div v-for="tile in tiles" :key="tile.key" class="kpi-motion relative bg-card p-4 transition-colors hover:bg-muted">
-        <span class="block text-[13px] font-medium text-muted-foreground">{{ t(tile.label as Key) }}</span>
-        <span :class="['mt-1 block truncate text-[20px] font-semibold tracking-[-0.03em] tnum sm:text-[24px]', tile.tone]">{{ tile.text }}</span>
-      </div>
+      <StatTile v-for="tile in tiles" :key="tile.key" :label="t(tile.label as Key)" :value="tile.text" :tone="tile.tone" />
     </div>
     <LoadError v-if="loadError" :message="loadError" @retry="load" />
     <DataTable v-else :min="internal ? 1240 : canManage ? 1240 : 1120">

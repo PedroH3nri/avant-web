@@ -1,5 +1,6 @@
 <script setup lang="ts">
 /** Campanhas, grupos e anúncios do Google Ads com gasto, receita, lucro e ROI do período; no interno, de todos os clientes. */
+import StatTile from '@/components/StatTile.vue'
 import DateRangePicker from '@/components/ui/DateRangePicker.vue'
 import { todayIso } from '@/lib/dates'
 import { periodFromQuery, periodPresets, periodQuery, type PeriodValue } from '@/lib/periods'
@@ -199,10 +200,7 @@ watch([level, parent, accountId, companyId, period, withIssues], refilter)
       <span class="font-medium">{{ parent.name }}</span>
     </p>
     <div v-if="!loadError && tiles.length" class="grid grid-cols-2 gap-px overflow-hidden rounded-lg border bg-border md:grid-cols-4 xl:grid-cols-7">
-      <div v-for="tile in tiles" :key="tile.key" class="kpi-motion relative bg-card p-4 transition-colors hover:bg-muted">
-        <span class="block text-[13px] font-medium text-muted-foreground">{{ t(tile.label as Key) }}</span>
-        <span :class="['mt-1 block truncate text-[20px] font-semibold tracking-[-0.03em] tnum sm:text-[24px]', tile.tone]">{{ tile.text }}</span>
-      </div>
+      <StatTile v-for="tile in tiles" :key="tile.key" :label="t(tile.label as Key)" :value="tile.text" :tone="tile.tone" />
     </div>
     <LoadError v-if="loadError" :message="loadError" @retry="load" />
     <DataTable v-else :min="internal ? 1240 : 1120">

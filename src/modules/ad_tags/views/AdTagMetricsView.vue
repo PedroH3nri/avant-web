@@ -1,5 +1,6 @@
 <script setup lang="ts">
 /** Métricas da ad tag: última vez vista, versão no site, páginas vistas por dia e o preenchimento de cada bloco. */
+import StatTile from '@/components/StatTile.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { AlertTriangle, ArrowLeft, Pencil } from 'lucide-vue-next'
@@ -108,11 +109,7 @@ watch(period, load)
       <Card v-if="!health.last_seen_at" :title="t('at.notSeenTitle')" :desc="t('at.notSeenDesc')" />
       <template v-else>
         <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <div v-for="tile in tiles" :key="tile.label" class="rounded-lg border bg-card p-4">
-            <div class="text-[13px] text-muted-foreground">{{ tile.label }}</div>
-            <div class="mt-1 text-[26px] font-semibold tracking-[-0.03em] tnum">{{ tile.value }}</div>
-            <div class="mt-1 text-[12px] leading-snug text-muted-foreground">{{ tile.note }}</div>
-          </div>
+          <StatTile v-for="tile in tiles" :key="tile.label" framed :label="tile.label" :value="tile.value" :hint="tile.note" />
         </div>
         <Card :title="t('at.daily')">
           <div class="mb-4 inline-flex flex-wrap rounded-md border bg-muted p-0.5" role="radiogroup" :aria-label="t('at.series')">

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 /** Checklists de domínio do mês: resumo, busca, filtro de feito e a lista do maior faturamento para o menor. */
+import StatTile from '@/components/StatTile.vue'
 import OpenLink from '@/components/OpenLink.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
@@ -128,19 +129,9 @@ function retry() {
   </PageHeader>
   <PageBody>
     <div class="grid gap-px overflow-hidden rounded-lg border bg-border sm:grid-cols-3">
-      <div class="bg-card p-4">
-        <div class="text-[13px] font-medium text-muted-foreground">{{ t('check.summary.done') }}</div>
-        <div class="mt-1 text-[24px] font-semibold tracking-tight tnum">{{ summary ? t('check.ofTotal', { done: summary.done, total: summary.sites }) : '–' }}</div>
-      </div>
-      <div class="bg-card p-4">
-        <div class="text-[13px] font-medium text-muted-foreground">{{ t('check.summary.review') }}</div>
-        <div class="mt-1 text-[24px] font-semibold tracking-tight tnum">{{ summary ? summary.sites - summary.done : '–' }}</div>
-      </div>
-      <div class="bg-card p-4">
-        <div class="text-[13px] font-medium text-muted-foreground">{{ t('check.summary.checked') }}</div>
-        <div class="mt-1 text-[15px] font-medium tnum">{{ summary?.checked_at ? formatDate(summary.checked_at) : t('check.notYet') }}</div>
-        <div class="text-[13px] text-muted-foreground">{{ t('check.summary.schedule') }}</div>
-      </div>
+      <StatTile :label="t('check.summary.done')" :value="summary ? t('check.ofTotal', { done: summary.done, total: summary.sites }) : '–'" />
+      <StatTile :label="t('check.summary.review')" :value="summary ? summary.sites - summary.done : '–'" />
+      <StatTile :label="t('check.summary.checked')" :value="summary?.checked_at ? formatDate(summary.checked_at) : t('check.notYet')" :hint="t('check.summary.schedule')" />
     </div>
     <div class="flex flex-wrap items-center gap-3">
       <div class="relative w-full sm:w-[260px]">
