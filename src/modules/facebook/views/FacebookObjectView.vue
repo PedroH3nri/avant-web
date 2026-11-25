@@ -1,6 +1,7 @@
 <script setup lang="ts">
 /** Uma campanha, conjunto ou anúncio do Facebook: números do período, por dia e por país, ligar ou pausar, orçamento,
  * regras automáticas com as decisões e o histórico dele. */
+import StatTile from '@/components/StatTile.vue'
 import DateRangePicker from '@/components/ui/DateRangePicker.vue'
 import { todayIso } from '@/lib/dates'
 import { periodFromQuery, periodPresets, type PeriodValue } from '@/lib/periods'
@@ -149,12 +150,9 @@ watch(period, load)
         </ul>
         <a v-if="!internal" :href="ACCOUNT_QUALITY_URL" target="_blank" rel="noopener noreferrer" class="mt-3 inline-flex items-center gap-1 text-[13px] text-link hover:underline">{{ t('fb.appeal') }}<ExternalLink class="size-3.5" aria-hidden="true" /></a>
       </div>
-      <dl class="grid grid-cols-2 gap-px overflow-hidden rounded-lg border bg-border sm:grid-cols-4">
-        <div v-for="item in summary" :key="item.key" class="kpi-motion relative bg-card p-4 transition-colors hover:bg-muted">
-          <dt class="text-[13px] text-muted-foreground">{{ t(item.key) }}</dt>
-          <dd class="mt-1 text-[20px] font-semibold tracking-tight tnum">{{ item.value }}</dd>
-        </div>
-      </dl>
+      <div class="grid grid-cols-2 gap-px overflow-hidden rounded-lg border bg-border sm:grid-cols-4">
+        <StatTile v-for="item in summary" :key="item.key" :label="t(item.key)" :value="item.value" />
+      </div>
       <p v-if="detail.totals.revenue === null" class="text-[13px] text-muted-foreground">{{ t('fb.noRevenue') }}</p>
       <section class="grid gap-3">
         <h2 class="text-[20px] font-semibold tracking-tight">{{ t('fb.byDay') }}</h2>

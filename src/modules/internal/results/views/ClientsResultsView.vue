@@ -1,5 +1,6 @@
 <script setup lang="ts">
 /** Painel interno: o resultado de cada Empresa cliente no mês escolhido, com visões salvas. */
+import StatTile from '@/components/StatTile.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import LoadError from '@/components/LoadError.vue'
@@ -138,11 +139,9 @@ const tiles = computed(() => {
       <ColumnsMenu v-model:shown="columns" :columns="COLUMNS" :label="columnLabel" />
     </SavedViewsBar>
     <div v-if="!loadError && tiles.length" class="grid grid-cols-2 gap-px overflow-hidden rounded-lg border bg-border md:grid-cols-3 2xl:grid-cols-6">
-      <div v-for="tile in tiles" :key="tile.key" class="bg-card p-4">
-        <span class="block text-[13px] font-medium text-muted-foreground">{{ t(tile.label) }}</span>
-        <span :class="cn('mt-1 block truncate text-[20px] font-semibold tracking-[-0.03em] sm:text-[24px]', valueClass(tile.value, tile.strong))">{{ money(tile.value) }}</span>
+      <StatTile v-for="tile in tiles" :key="tile.key" :label="t(tile.label)" :value="money(tile.value)" :tone="valueClass(tile.value, tile.strong)">
         <Status v-if="tile.key === 'deductions' && totalsPending" tone="ochre" class="mt-1">{{ t('res.pending') }}</Status>
-      </div>
+      </StatTile>
     </div>
     <LoadError v-if="loadError" :message="loadError" @retry="load" />
     <DataTable v-else :min="980">

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 /** Regra de preço de um site: números do topo, ganho contra o controle por dia, as regras da Automática e da Cascata e a configuração (ligar, controle e o modelo de cada bloco). */
+import StatTile from '@/components/StatTile.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useDebounceFn } from '@vueuse/core'
@@ -278,11 +279,7 @@ watch([hash, country], filterLater)
         <AlertTriangle class="mt-0.5 size-4 shrink-0 text-warn" />{{ t('pr.unsupportedCurrency', { currency: site.currency }) }}
       </div>
       <div v-if="site.active" class="grid grid-cols-2 gap-px overflow-hidden rounded-lg border bg-border lg:grid-cols-4">
-        <div v-for="tile in summary" :key="tile.label" class="kpi-motion relative bg-card p-4 transition-colors hover:bg-muted">
-          <div class="text-[13px] text-muted-foreground">{{ tile.label }}</div>
-          <div :class="['mt-1 text-[24px] font-semibold tracking-[-0.03em] tnum max-sm:text-[20px]', tile.tone]">{{ tile.value }}</div>
-          <div class="mt-1 text-[12px] text-muted-foreground">{{ tile.hint }}</div>
-        </div>
+        <StatTile v-for="tile in summary" :key="tile.label" :label="tile.label" :value="tile.value" :hint="tile.hint" :tone="tile.tone" />
       </div>
       <Card v-if="gain && gainChart" :title="t('pr.gain.title')" :desc="t('pr.gain.desc', { percent: site.control_percent })">
         <LineChart :labels="gainChart.labels" :series="gainChart.series" :format="(value) => (value === null ? '—' : moneyText(value * 1_000_000, gain?.currency ?? null, locale))" :description="t('pr.gain.chartDesc')" :height="240" />
