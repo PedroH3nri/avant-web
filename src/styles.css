@@ -300,3 +300,20 @@
 @media (prefers-reduced-motion: reduce) {
   :root:not([data-motion-off~="cards"]) .card-motion:hover { transform: none; }
 }
+
+/* O sino balança uma vez quando chega notificação nova. */
+@keyframes bell-ring {
+  0%, 100% { transform: rotate(0); }
+  15% { transform: rotate(14deg); }
+  30% { transform: rotate(-12deg); }
+  45% { transform: rotate(8deg); }
+  60% { transform: rotate(-6deg); }
+  75% { transform: rotate(3deg); }
+}
+:root:not([data-motion-off~="buttons"]) .bell-ring {
+  transform-origin: top center;
+  animation: bell-ring 1s ease-in-out 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .bell-ring { animation: none; }
+}
