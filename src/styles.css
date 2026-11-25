@@ -5,7 +5,8 @@
 /* Tokens do DESIGN.md: quase monocromático, primária preta (ou a cor da Empresa), azul só para link e foco. */
 @layer base {
   /* Campos, janelas e rodapé dos cartões: nos temas prontos seguem o fundo e o muted; o tema
-     personalizado os tira do cartão. Hover e item ativo do menu: no personalizado, do menu. */
+     personalizado os tira do cartão. Hover e item ativo do menu: no personalizado, do menu.
+     Destaque em texto (links, idioma, menu): nos prontos o texto; no personalizado, o destaque. */
   :root {
     --field: var(--background);
     --dialog: var(--background);
@@ -15,6 +16,8 @@
     --glow-color: var(--foreground);
     --glow-alpha: 0;
     --hover-border: var(--input);
+    --highlight: var(--foreground);
+    --sidebar-highlight: var(--sidebar-foreground);
   }
 
   :root {
