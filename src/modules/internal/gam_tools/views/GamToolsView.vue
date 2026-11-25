@@ -230,7 +230,7 @@ async function copyAds() {
           :key="card"
           type="button"
           :disabled="busy || !network"
-          class="flex flex-col items-start gap-2 bg-card p-5 text-left enabled:hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
+          class="kpi-motion relative flex flex-col items-start gap-2 bg-card p-5 transition-colors text-left enabled:hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
           @click="choose(card)"
         >
           <span class="flex w-full items-center gap-2">
