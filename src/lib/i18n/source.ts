@@ -3448,6 +3448,16 @@ export const dict = {
     'For every site on network {name}. Manage Inventory: the two Google lines are included too.',
     'Para todos los sitios de la network {name}. Manage Inventory: entran también las dos líneas de Google.',
   ],
+  'netd.adsTxt.desc': [
+    'As linhas que os sites desta network colocam no ads.txt. O seller ID vem do GAM de hora em hora.',
+    'The lines the sites on this network add to ads.txt. The seller ID comes from GAM every hour.',
+    'Las líneas que los sitios de esta network ponen en ads.txt. El seller ID llega de GAM cada hora.',
+  ],
+  'netd.adsTxt.descInventory': [
+    'As linhas que os sites desta network colocam no ads.txt, com as do Google da Groone (Manage Inventory). O seller ID vem do GAM de hora em hora.',
+    'The lines the sites on this network add to ads.txt, including the Groone Google lines (Manage Inventory). The seller ID comes from GAM every hour.',
+    'Las líneas que los sitios de esta network ponen en ads.txt, con las de Google de Groone (Manage Inventory). El seller ID llega de GAM cada hora.',
+  ],
   'gamt.ads.copy': ['Copiar', 'Copy', 'Copiar'],
   'gamt.ads.copied': ['Linhas copiadas', 'Lines copied', 'Líneas copiadas'],
   'gamt.ads.copyFailed': ['Não foi possível copiar. Selecione o texto e copie.', 'Could not copy. Select the text and copy it.', 'No se pudo copiar. Selecciona el texto y cópialo.'],
@@ -5579,9 +5589,9 @@ export const errors: Record<string, readonly [string, string, string]> = {
     'Ya hay una herramienta ejecutándose en esta network. Espera a que termine.',
   ],
   seller_id_missing: [
-    'O seller ID da network ainda não foi lido. Rode Sincronizar agora.',
-    'The network seller ID was not read yet. Run Sync now.',
-    'El seller ID de la network aún no se leyó. Ejecuta Sincronizar ahora.',
+    'O seller ID da network ainda não veio do GAM. Ele é lido de hora em hora; para ler já, rode Sincronizar agora nas Ferramentas do GAM.',
+    'The network seller ID has not come from GAM yet. It is read every hour; to read it now, run Sync now in GAM tools.',
+    'El seller ID de la network aún no llegó de GAM. Se lee cada hora; para leerlo ya, ejecuta Sincronizar ahora en Herramientas de GAM.',
   ],
   gtag_install_pending: [
     'O arquivo de instalação da GTag ainda está para definir.',
