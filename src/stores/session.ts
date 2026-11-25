@@ -6,8 +6,8 @@ import { ApiError } from '@/lib/api'
 import { reconnectEvents } from '@/lib/events'
 import { chooseLang } from '@/lib/i18n'
 import { announceCompany } from '@/lib/tabs'
-import { animations, ANIMATION_AREAS, customColors, theme } from '@/lib/theme'
-import type { AnimationArea, Lang, Me, Theme, UserRef } from '@/lib/types'
+import { animations, ANIMATION_AREAS, customColors, fontSize, theme } from '@/lib/theme'
+import type { AnimationArea, FontSize, Lang, Me, Theme, UserRef } from '@/lib/types'
 import { accountService } from '@/modules/account/service'
 import type { CustomTheme } from '@/modules/account/types'
 import type { LoginResult } from '@/modules/auth/types'
@@ -20,6 +20,7 @@ interface AppearanceChoice {
   locale: Lang
   custom_theme_id: string | null
   animations: AnimationArea[]
+  font_size: FontSize
 }
 
 export const useSession = defineStore('session', () => {
@@ -70,6 +71,7 @@ export const useSession = defineStore('session', () => {
     if (value) {
       theme.value = value.theme
       animations.value = value.animations ?? [...ANIMATION_AREAS]
+      fontSize.value = value.font_size ?? 'default'
       void chooseLang(value.user.locale)
     } else {
       customThemes.value = null
@@ -119,11 +121,12 @@ export const useSession = defineStore('session', () => {
       locale: me.value.user.locale,
       custom_theme_id: me.value.custom_theme_id ?? null,
       animations: me.value.animations ?? ANIMATION_AREAS,
+      font_size: me.value.font_size ?? 'default',
     }
     applyAppearance({ ...before, ...change })
     try {
       const saved = await accountService.appearance(change)
-      applyAppearance({ ...saved, custom_theme_id: saved.custom_theme_id ?? null, animations: saved.animations ?? ANIMATION_AREAS })
+      applyAppearance({ ...saved, custom_theme_id: saved.custom_theme_id ?? null, animations: saved.animations ?? ANIMATION_AREAS, font_size: saved.font_size ?? 'default' })
     } catch (error) {
       applyAppearance(before)
       throw error

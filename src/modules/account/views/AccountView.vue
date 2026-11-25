@@ -15,6 +15,7 @@ import PasswordCard from '@/modules/account/components/PasswordCard.vue'
 import ProfileImageCard from '@/modules/account/components/ProfileImageCard.vue'
 import SessionsCard from '@/modules/account/components/SessionsCard.vue'
 import AnimationsCard from '@/modules/account/components/AnimationsCard.vue'
+import FontSizeCard from '@/modules/account/components/FontSizeCard.vue'
 import ThemeCard from '@/modules/account/components/ThemeCard.vue'
 import LangSwitch from '@/components/LangSwitch.vue'
 import PageBody from '@/components/PageBody.vue'
@@ -78,6 +79,7 @@ onMounted(() => {
         {{ t('set.appearance') }}
       </h2>
       <ThemeCard />
+      <FontSizeCard />
       <AnimationsCard />
       <Card :title="t('set.language')" :desc="t('set.langDesc')">
         <LangSwitch class="max-w-[360px]" />
