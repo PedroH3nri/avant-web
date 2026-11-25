@@ -17,7 +17,7 @@ import { formatMetric } from '@/lib/metrics'
 import { negative, resultRange } from '@/modules/results/rules'
 import { td, th } from '@/lib/table'
 import { cn } from '@/lib/utils'
-import type { CompanyResults } from '@/modules/results/types'
+import type { CompanyResults, ResultTotals } from '@/modules/results/types'
 import { useSession } from '@/stores/session'
 import { resultService } from '@/modules/results/service'
 import { localToday } from '@/modules/internal/commissions/rules'
@@ -27,7 +27,7 @@ import { cleanFilters, firstValue, monthPeriod, periodMonth, type Period } from 
 import type { ViewDefinition } from '@/modules/views/types'
 
 const MONTHS_TO_PICK = 12
-const COLUMNS = ['client', 'groone', 'billing', 'deductions', 'revenue', 'costs', 'result']
+const COLUMNS = ['client', 'billing', 'deductions', 'revenue', 'groone', 'costs', 'result']
 const COLUMN_LABELS: Record<string, Key> = {
   client: 'ct.client',
   groone: 'res.grooneRevenue',
@@ -51,6 +51,8 @@ const monthChoices = (() => {
 })()
 const month = ref<string>(monthChoices[1] ?? monthChoices[0] ?? '')
 const clients = ref<CompanyResults[] | null>(null)
+const totals = ref<ResultTotals | null>(null)
+const totalsPending = ref(false)
 const page = ref(1)
 const total = ref(0)
 const pages = ref(0)
@@ -88,10 +90,13 @@ async function load() {
   const current = ++latestLoad
   loadError.value = null
   clients.value = null
+  totals.value = null
   try {
     const found = await resultService.clients({ start: month.value, end: month.value, currency: session.displayCurrency, page: page.value })
     if (current !== latestLoad) return
     clients.value = found.items
+    totals.value = found.totals
+    totalsPending.value = found.deductions_pending
     total.value = found.total
     pages.value = found.pages
   } catch (error) {
@@ -110,6 +115,19 @@ const money = (value: number | string) => formatMetric(Number(value), 'currency'
 /** Classe do valor: saídas em cinza, resultado negativo em vermelho. */
 const valueClass = (value: number | string, strong = false) =>
   cn('tnum whitespace-nowrap', strong && 'font-semibold', Number(value) < 0 && (strong ? 'text-bad' : 'text-muted-foreground'))
+/** Os cards com a soma de todas as Empresas cliente no mês, na ordem das colunas. */
+const tiles = computed(() => {
+  const sum = totals.value
+  if (!sum) return []
+  return [
+    { key: 'billing', label: 'res.billing', value: Number(sum.billing), strong: false },
+    { key: 'deductions', label: 'res.deductions', value: negative(sum.deductions), strong: false },
+    { key: 'revenue', label: 'res.clientRevenue', value: Number(sum.revenue), strong: false },
+    { key: 'groone', label: 'res.grooneRevenue', value: Number(sum.groone_revenue ?? 0), strong: true },
+    { key: 'costs', label: 'res.costs', value: negative(sum.costs), strong: false },
+    { key: 'result', label: 'res.result', value: Number(sum.result), strong: true },
+  ] as const
+})
 </script>
 
 <template>
@@ -119,15 +137,22 @@ const valueClass = (value: number | string, strong = false) =>
       <Select v-model="month" :options="monthOptions" class="w-full sm:w-[200px] h-9" :aria-label="t('res.month')" />
       <ColumnsMenu v-model:shown="columns" :columns="COLUMNS" :label="columnLabel" />
     </SavedViewsBar>
+    <div v-if="!loadError && tiles.length" class="grid grid-cols-2 gap-px overflow-hidden rounded-lg border bg-border md:grid-cols-3 2xl:grid-cols-6">
+      <div v-for="tile in tiles" :key="tile.key" class="bg-card p-4">
+        <span class="block text-[13px] font-medium text-muted-foreground">{{ t(tile.label) }}</span>
+        <span :class="cn('mt-1 block truncate text-[20px] font-semibold tracking-[-0.03em] sm:text-[24px]', valueClass(tile.value, tile.strong))">{{ money(tile.value) }}</span>
+        <Status v-if="tile.key === 'deductions' && totalsPending" tone="ochre" class="mt-1">{{ t('res.pending') }}</Status>
+      </div>
+    </div>
     <LoadError v-if="loadError" :message="loadError" @retry="load" />
     <DataTable v-else :min="980">
       <thead>
         <tr>
           <th v-if="shown('client')" :class="th">{{ t('ct.client') }}</th>
-          <th v-if="shown('groone')" :class="[th, 'text-right']">{{ t('res.grooneRevenue') }}</th>
           <th v-if="shown('billing')" :class="[th, 'text-right']">{{ t('res.billing') }}</th>
           <th v-if="shown('deductions')" :class="[th, 'text-right']">{{ t('res.deductions') }}</th>
           <th v-if="shown('revenue')" :class="[th, 'text-right']">{{ t('res.clientRevenue') }}</th>
+          <th v-if="shown('groone')" :class="[th, 'text-right']">{{ t('res.grooneRevenue') }}</th>
           <th v-if="shown('costs')" :class="[th, 'text-right']">{{ t('res.costs') }}</th>
           <th v-if="shown('result')" :class="[th, 'text-right']">{{ t('res.result') }}</th>
         </tr>
@@ -139,13 +164,13 @@ const valueClass = (value: number | string, strong = false) =>
             <RouterLink :to="`/interno/clientes/${row.client.company.id}`" class="hover:underline">{{ row.client.company.name }}</RouterLink>
           </td>
           <template v-if="row.month">
-            <td v-if="shown('groone')" :class="[td, 'text-right']"><span :class="valueClass(row.month.groone_revenue ?? 0)">{{ money(row.month.groone_revenue ?? 0) }}</span></td>
             <td v-if="shown('billing')" :class="[td, 'text-right']"><span :class="valueClass(row.month.billing)">{{ money(row.month.billing) }}</span></td>
             <td v-if="shown('deductions')" :class="[td, 'text-right']">
               <Status v-if="row.month.deductions_pending" tone="ochre">{{ t('res.pendingShort') }}</Status>
               <span v-else :class="valueClass(negative(row.month.deductions))">{{ money(negative(row.month.deductions)) }}</span>
             </td>
             <td v-if="shown('revenue')" :class="[td, 'text-right']"><span :class="valueClass(row.month.revenue)">{{ money(row.month.revenue) }}</span></td>
+            <td v-if="shown('groone')" :class="[td, 'text-right']"><span :class="valueClass(row.month.groone_revenue ?? 0)">{{ money(row.month.groone_revenue ?? 0) }}</span></td>
             <td v-if="shown('costs')" :class="[td, 'text-right']"><span :class="valueClass(negative(row.month.costs))">{{ money(negative(row.month.costs)) }}</span></td>
             <td v-if="shown('result')" :class="[td, 'text-right']"><span :class="valueClass(row.month.result, true)">{{ money(row.month.result) }}</span></td>
           </template>
