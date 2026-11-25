@@ -1,6 +1,9 @@
 <script setup lang="ts">
 /** Uma campanha, conjunto ou anúncio do Facebook: números do período, por dia e por país, ligar ou pausar, orçamento,
  * regras automáticas com as decisões e o histórico dele. */
+import DateRangePicker from '@/components/ui/DateRangePicker.vue'
+import { todayIso } from '@/lib/dates'
+import { periodFromQuery, periodPresets, type PeriodValue } from '@/lib/periods'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
@@ -10,7 +13,6 @@ import PageBody from '@/components/PageBody.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import Button from '@/components/ui/Button.vue'
 import DataTable from '@/components/ui/DataTable.vue'
-import Select from '@/components/ui/Select.vue'
 import Status from '@/components/ui/Status.vue'
 import { ApiError } from '@/lib/api'
 import { errorText, locale, t, type Key } from '@/lib/i18n'
@@ -20,7 +22,7 @@ import FacebookDecisionsPanel from '@/modules/facebook/components/FacebookDecisi
 import FacebookHistoryPanel from '@/modules/facebook/components/FacebookHistoryPanel.vue'
 import FacebookJobDialog from '@/modules/facebook/components/FacebookJobDialog.vue'
 import FacebookRulesCard from '@/modules/facebook/components/FacebookRulesCard.vue'
-import { ACCOUNT_QUALITY_URL, PERIODS, campaignsPath, controlErrorText, formatCount, formatMoney, formatRatio, objectState, periodRange } from '@/modules/facebook/rules'
+import { ACCOUNT_QUALITY_URL, ADS_MAX_DAYS, ADS_PRESETS, campaignsPath, controlErrorText, formatCount, formatMoney, formatRatio, objectState } from '@/modules/facebook/rules'
 import { facebookReader, facebookService } from '@/modules/facebook/service'
 import { useSession } from '@/stores/session'
 import type { FacebookJob, FacebookObjectDetail, FacebookTotals } from '@/modules/facebook/types'
@@ -38,10 +40,10 @@ const duplicating = ref(false)
 const job = ref<FacebookJob | null>(null)
 const following = ref(false)
 
-const days = ref(typeof route.query.dias === 'string' && PERIODS.map(String).includes(route.query.dias) ? route.query.dias : '7')
+const period = ref<PeriodValue>(periodFromQuery(route.query, ADS_PRESETS, 'last_7_days', todayIso(), true))
 const detail = ref<FacebookObjectDetail | null>(null)
 const loadError = ref<string | null>(null)
-const periodOptions = computed(() => PERIODS.map((count) => ({ value: String(count), label: t('fb.period.days', { n: count }) })))
+const presets = computed(() => periodPresets(ADS_PRESETS, todayIso(), true))
 const currency = computed(() => detail.value?.account.currency ?? 'USD')
 
 /** Os números que a tela mostra em cartões e nas tabelas. */
@@ -64,7 +66,7 @@ const summary = computed(() => {
 async function load() {
   loadError.value = null
   try {
-    detail.value = await reader.object(externalId, periodRange(Number(days.value), new Date()))
+    detail.value = await reader.object(externalId, { from: period.value.start, to: period.value.end })
   } catch (error) {
     loadError.value = errorText(error instanceof ApiError ? error.code : 'unknown')
   }
@@ -114,7 +116,7 @@ async function duplicate() {
 }
 
 onMounted(load)
-watch(days, load)
+watch(period, load)
 </script>
 
 <template>
@@ -134,7 +136,7 @@ watch(days, load)
       <Button v-if="canManage && detail" variant="outline" @click="router.push(`${base}/${externalId}/editar`)"><Pencil aria-hidden="true" />{{ t('fb.edit.action') }}</Button>
       <Button v-if="canManage && detail" variant="outline" :loading="duplicating" @click="duplicate"><Copy aria-hidden="true" />{{ t('fb.duplicate.action') }}</Button>
       <Button v-if="canManage && detail" variant="outline" :loading="switching" @click="toggle">{{ detail.active ? t('fb.control.pause') : t('fb.control.activate') }}</Button>
-      <Select v-model="days" :aria-label="t('fb.period')" class="w-[160px]" :options="periodOptions" />
+      <DateRangePicker v-model="period" :presets="presets" :max-days="ADS_MAX_DAYS" :aria-label="t('fb.period')" class="w-auto" />
     </template>
   </PageHeader>
   <PageBody>

@@ -1,6 +1,9 @@
 <script setup lang="ts">
 /** Campanhas, conjuntos e anúncios do Facebook com gasto, receita, lucro e ROI do período; no interno, de todos os clientes.
  * Quem gerencia campanhas liga ou pausa um por um ou vários de uma vez. */
+import DateRangePicker from '@/components/ui/DateRangePicker.vue'
+import { todayIso } from '@/lib/dates'
+import { periodFromQuery, periodPresets, periodQuery, type PeriodValue } from '@/lib/periods'
 import OpenLink from '@/components/OpenLink.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -26,7 +29,7 @@ import FiltersMenu from '@/modules/views/components/FiltersMenu.vue'
 import { useLocalBarFilters } from '@/modules/views/barFilters'
 import { td, th } from '@/lib/table'
 import { clientService } from '@/modules/internal/clients/service'
-import { PERIODS, campaignsPath, childLevel, controlErrorText, formatCount, formatMoney, formatRatio, objectState, periodRange, roiTone } from '@/modules/facebook/rules'
+import { ADS_MAX_DAYS, ADS_PRESETS, campaignsPath, childLevel, controlErrorText, formatCount, formatMoney, formatRatio, objectState, roiTone } from '@/modules/facebook/rules'
 import { facebookReader, facebookService } from '@/modules/facebook/service'
 import { useSession } from '@/stores/session'
 import type { FacebookAccount, FacebookLevel, FacebookObject, FacebookSummary } from '@/modules/facebook/types'
@@ -52,7 +55,7 @@ const level = ref<FacebookLevel>('campaign')
 const parent = ref<{ id: string; name: string; level: FacebookLevel } | null>(null)
 const accountId = ref(typeof route.query.conta === 'string' ? route.query.conta : '')
 const companyId = ref('')
-const days = ref('7')
+const period = ref<PeriodValue>(periodFromQuery(route.query, ADS_PRESETS, 'last_7_days', todayIso(), true))
 const query = ref('')
 const inReview = ref(false)
 const barFilters = useLocalBarFilters('fb-campaigns', FILTERS, DEFAULT_FILTERS, {
@@ -79,7 +82,7 @@ const levelOptions = computed(() => [
   { value: 'adset', label: t('fb.level.adset') },
   { value: 'ad', label: t('fb.level.ad') },
 ])
-const periodOptions = computed(() => PERIODS.map((count) => ({ value: String(count), label: t('fb.period.days', { n: count }) })))
+const presets = computed(() => periodPresets(ADS_PRESETS, todayIso(), true))
 const accountOptions = computed(() => [{ value: '', label: t('fb.allAccounts') }, ...accounts.value.map((account) => ({ value: account.id, label: account.name }))])
 const clientOptions = computed(() => [{ value: '', label: t('fb.allClients') }, ...clients.value.map((client) => ({ value: client.id, label: client.name }))])
 const columns = computed(() => (internal ? 10 : canManage.value ? 11 : 9))
@@ -95,7 +98,8 @@ async function load() {
   loadError.value = null
   try {
     const filters = {
-      ...periodRange(Number(days.value), new Date()),
+      from: period.value.start,
+      to: period.value.end,
       level: level.value,
       parent: parent.value?.id,
       account_id: accountId.value || undefined,
@@ -155,7 +159,7 @@ const searchLater = useDebounceFn(refilter, 300)
 function open(item: FacebookObject) {
   const next = childLevel(item.level)
   if (!next) {
-    void router.push({ path: `${base}/${item.external_id}`, query: { dias: days.value } })
+    void router.push({ path: `${base}/${item.external_id}`, query: periodQuery(period.value) })
     return
   }
   parent.value = { id: item.external_id, name: item.name, level: item.level }
@@ -204,7 +208,7 @@ onMounted(() => {
 })
 watch(page, load)
 watch(query, searchLater)
-watch([level, parent, accountId, companyId, days, inReview], refilter)
+watch([level, parent, accountId, companyId, period, inReview], refilter)
 </script>
 
 <template>
@@ -216,7 +220,7 @@ watch([level, parent, accountId, companyId, days, inReview], refilter)
   <PageBody>
     <div class="flex flex-wrap items-center gap-3">
       <Segmented :model-value="level" :label="t('fb.level')" :options="levelOptions" @update:model-value="pickLevel" />
-      <Select v-model="days" :aria-label="t('fb.period')" class="w-full sm:w-[160px]" :options="periodOptions" />
+      <DateRangePicker v-model="period" :presets="presets" :max-days="ADS_MAX_DAYS" :aria-label="t('fb.period')" class="w-full sm:w-auto" />
       <Select v-if="internal && barFilters.isShown('client')" v-model="companyId" :aria-label="t('fb.col.client')" class="w-full sm:w-[220px]" :options="clientOptions" />
       <Select v-model="accountId" :aria-label="t('fb.account')" class="w-full sm:w-[220px]" :options="accountOptions" />
       <div class="relative w-full sm:w-[240px]">
@@ -285,7 +289,7 @@ watch([level, parent, accountId, companyId, days, inReview], refilter)
             <Switch :model-value="item.active" :label="t('fb.control.toggle', { name: item.name })" :disabled="switching" @update:model-value="(active) => setStatus([item.external_id], active)" />
           </td>
           <td :class="[td, 'text-right']">
-            <OpenLink :to="{ path: `${base}/${item.external_id}`, query: { dias: days } }" :name="item.name" />
+            <OpenLink :to="{ path: `${base}/${item.external_id}`, query: periodQuery(period) }" :name="item.name" />
           </td>
         </tr>
       </tbody>

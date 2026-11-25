@@ -1,6 +1,7 @@
 <script setup lang="ts">
 /** Comissões da equipe: o mês de cada pessoa, os prazos dela, desconto, emissão, a data de início e
  * as visões salvas da tabela. */
+import DateField from '@/components/ui/DateField.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
 import { DropdownMenuRoot, DropdownMenuTrigger } from 'reka-ui'
@@ -14,7 +15,6 @@ import Card from '@/components/ui/Card.vue'
 import DataTable from '@/components/ui/DataTable.vue'
 import Dialog from '@/components/ui/Dialog.vue'
 import Field from '@/components/ui/Field.vue'
-import Input from '@/components/ui/Input.vue'
 import MenuContent from '@/components/ui/MenuContent.vue'
 import MenuItem from '@/components/ui/MenuItem.vue'
 import Select from '@/components/ui/Select.vue'
@@ -248,7 +248,7 @@ async function saveStart() {
       </DataTable>
       <Card v-if="canManage" :title="t('com.start.title')" :desc="t('com.start.desc')" :footer-note="savedStart ? undefined : t('com.start.missing')">
         <Field id="commission-start" :label="t('com.start.label')">
-          <Input id="commission-start" v-model="startsOn" type="date" class="max-w-[200px] tnum" />
+          <DateField id="commission-start" v-model="startsOn" class="max-w-[200px]" />
         </Field>
         <template #footer>
           <Button size="sm" :disabled="!startsOn || startsOn === savedStart" :loading="startBusy" @click="saveStart">{{ t('com.start.save') }}</Button>

@@ -1,6 +1,9 @@
 <script setup lang="ts">
 /** Uma campanha, grupo ou anúncio do Google Ads: números do período e por dia, o nível de baixo, as palavras-chave,
  * os termos de pesquisa, os posicionamentos e o histórico dele. */
+import DateRangePicker from '@/components/ui/DateRangePicker.vue'
+import { todayIso } from '@/lib/dates'
+import { periodFromQuery, periodPresets, periodQuery, type PeriodValue } from '@/lib/periods'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ArrowLeft } from 'lucide-vue-next'
@@ -8,7 +11,6 @@ import LoadError from '@/components/LoadError.vue'
 import PageBody from '@/components/PageBody.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import DataTable from '@/components/ui/DataTable.vue'
-import Select from '@/components/ui/Select.vue'
 import Segmented from '@/components/ui/Segmented.vue'
 import Status from '@/components/ui/Status.vue'
 import TableState from '@/components/ui/TableState.vue'
@@ -17,7 +19,7 @@ import { errorText, locale, t, type Key } from '@/lib/i18n'
 import { td, th } from '@/lib/table'
 import GoogleAdsHistoryPanel from '@/modules/google_ads/components/GoogleAdsHistoryPanel.vue'
 import GoogleAdsTermsTable from '@/modules/google_ads/components/GoogleAdsTermsTable.vue'
-import { PERIODS, campaignsPath, channelKey, childLevel, formatCount, formatMoney, formatRatio, isLevel, matchKey, objectPath, objectState, periodRange, roiTone } from '@/modules/google_ads/rules'
+import { ADS_MAX_DAYS, ADS_PRESETS, campaignsPath, channelKey, childLevel, formatCount, formatMoney, formatRatio, isLevel, matchKey, objectPath, objectState, roiTone } from '@/modules/google_ads/rules'
 import { googleAdsReader, googleAdsService } from '@/modules/google_ads/service'
 import type { GoogleAdsKeyword, GoogleAdsLevel, GoogleAdsObject, GoogleAdsObjectDetail, GoogleAdsTerm, GoogleAdsTotals } from '@/modules/google_ads/types'
 
@@ -29,14 +31,14 @@ const level = computed<GoogleAdsLevel>(() => (isLevel(route.params.level) ? rout
 const externalId = computed(() => String(route.params.id))
 const child = computed(() => childLevel(level.value))
 
-const days = ref(typeof route.query.dias === 'string' && PERIODS.map(String).includes(route.query.dias) ? route.query.dias : '7')
+const period = ref<PeriodValue>(periodFromQuery(route.query, ADS_PRESETS, 'last_7_days', todayIso(), true))
 const detail = ref<GoogleAdsObjectDetail | null>(null)
 const children = ref<GoogleAdsObject[] | null>(null)
 const keywords = ref<GoogleAdsKeyword[] | null>(null)
 const terms = ref<GoogleAdsTerm[] | null>(null)
 const termKind = ref('terms')
 const loadError = ref<string | null>(null)
-const periodOptions = computed(() => PERIODS.map((count) => ({ value: String(count), label: t('gads.period.days', { n: count }) })))
+const presets = computed(() => periodPresets(ADS_PRESETS, todayIso(), true))
 const currency = computed(() => detail.value?.account.currency ?? 'USD')
 const showTerms = computed(() => !internal && level.value !== 'ad')
 const termOptions = computed(() => [
@@ -64,7 +66,7 @@ let loadRequest = 0
 let termsRequest = 0
 
 /** O período escolhido, como a API pede. */
-const range = () => periodRange(Number(days.value), new Date())
+const range = () => ({ from: period.value.start, to: period.value.end })
 
 /** Carrega o objeto, o nível de baixo e as palavras-chave do grupo. */
 async function load() {
@@ -121,7 +123,7 @@ function reloadObject() {
 }
 
 onMounted(load)
-watch(days, load)
+watch(period, load)
 watch([level, externalId], reloadObject)
 watch(termKind, loadTerms)
 </script>
@@ -142,7 +144,7 @@ watch(termKind, loadTerms)
       </p>
     </template>
     <template #actions>
-      <Select v-model="days" :aria-label="t('gads.period')" class="w-[160px]" :options="periodOptions" />
+      <DateRangePicker v-model="period" :presets="presets" :max-days="ADS_MAX_DAYS" :aria-label="t('gads.period')" class="w-auto" />
     </template>
   </PageHeader>
   <PageBody>
@@ -193,7 +195,7 @@ watch(termKind, loadTerms)
           </thead>
           <tbody>
             <tr v-for="item in children" :key="item.id" class="hover:bg-muted">
-              <td :class="td"><RouterLink :to="{ path: objectPath(internal, item), query: { dias: days } }" class="font-medium hover:underline">{{ item.name }}</RouterLink></td>
+              <td :class="td"><RouterLink :to="{ path: objectPath(internal, item), query: periodQuery(period) }" class="font-medium hover:underline">{{ item.name }}</RouterLink></td>
               <td :class="td"><Status :tone="objectState(item).tone">{{ t(objectState(item).key) }}</Status></td>
               <td v-for="(value, index) in row(item.totals)" :key="index" :class="[td, 'text-right tnum']">{{ value }}</td>
             </tr>
