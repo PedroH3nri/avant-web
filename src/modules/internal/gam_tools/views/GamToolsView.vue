@@ -2,19 +2,17 @@
 /** Ferramentas do GAM: as ações e as execuções sempre na tela; as ações ativam quando a network
  * do cliente é escolhida, e a tabela mostra as execuções de todas até a escolha. */
 import OpenLink from '@/components/OpenLink.vue'
-import { saveFile } from '@/lib/utils'
 import { computed, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useDebounceFn } from '@vueuse/core'
 import { toast } from 'vue-sonner'
-import { AlertTriangle, Copy, Download, List, Plus, RefreshCw, Search, Wrench } from 'lucide-vue-next'
+import { Copy, List, Plus, RefreshCw, Search, Wrench } from 'lucide-vue-next'
 import LoadError from '@/components/LoadError.vue'
 import PageBody from '@/components/PageBody.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import Button from '@/components/ui/Button.vue'
 import DataTable from '@/components/ui/DataTable.vue'
 import Dialog from '@/components/ui/Dialog.vue'
-import Field from '@/components/ui/Field.vue'
 import Input from '@/components/ui/Input.vue'
 import Select from '@/components/ui/Select.vue'
 import Pagination from '@/components/ui/Pagination.vue'
@@ -26,8 +24,7 @@ import { errorText, formatDate, t } from '@/lib/i18n'
 import { td, th } from '@/lib/table'
 import GamSitePicker from '@/modules/internal/gam_tools/components/GamSitePicker.vue'
 import {
-  BLOCK_COUNT,
-  FORMATS,
+  GTAG_BLOCKS,
   KEY_NAMES,
   RUN_TONE,
   TOOL_CARDS,
@@ -35,8 +32,6 @@ import {
   delegationLabel,
   formatDesc,
   formatName,
-  installable,
-  languageLabel,
   runStateLabel,
   toolDesc,
   toolName,
@@ -44,11 +39,11 @@ import {
   type ToolCard,
 } from '@/modules/internal/gam_tools/rules'
 import { gamToolService } from '@/modules/internal/gam_tools/service'
-import type { GamFormat, GamToolKind, GamToolNetwork, GamToolNetworkDetail, GamToolRun, Language } from '@/modules/internal/gam_tools/types'
+import type { GamToolKind, GamToolNetwork, GamToolNetworkDetail, GamToolRun } from '@/modules/internal/gam_tools/types'
 import { useSession } from '@/stores/session'
 
 const SEARCH_DELAY_MS = 300
-const ICONS = { config: Wrench, setup: Plus, key_values: List, sync: RefreshCw, install: Download, ads_txt: Copy }
+const ICONS = { config: Wrench, setup: Plus, key_values: List, sync: RefreshCw, ads_txt: Copy }
 
 const route = useRoute()
 const router = useRouter()
@@ -64,9 +59,6 @@ const pages = ref(0)
 const loadError = ref<string | null>(null)
 const tool = ref<ToolCard | null>(null)
 const chosen = ref<string[]>([])
-const format = ref<GamFormat>('gtag')
-const language = ref<Language>('pt')
-const label = ref<Language>('pt')
 const adsLines = ref<string[]>([])
 const busy = ref(false)
 
@@ -81,12 +73,8 @@ const networkOptions = computed(() => {
 })
 const picking = computed({ get: () => tool.value === 'config' || tool.value === 'setup', set: (open: boolean) => !open && close() })
 const keyValuesOpen = computed({ get: () => tool.value === 'key_values', set: (open: boolean) => !open && close() })
-const installOpen = computed({ get: () => tool.value === 'install', set: (open: boolean) => !open && close() })
 const adsOpen = computed({ get: () => tool.value === 'ads_txt', set: (open: boolean) => !open && close() })
-const installSites = computed(() => installable(network.value?.sites ?? []))
-const hasGtag = computed(() => (network.value?.sites ?? []).some((site) => site.format === 'gtag'))
 const inventory = computed(() => network.value?.delegation === 'manage_inventory')
-const languages = computed(() => (['pt', 'en', 'es'] as Language[]).map((value) => ({ value, label: languageLabel(value) })))
 
 /** Mostra o erro num aviso. */
 const fail = (error: unknown) => toast.error(errorText(error instanceof ApiError ? error.code : 'unknown'))
@@ -141,7 +129,7 @@ function close() {
 /** Abre a ferramenta: as que escrevem pedem confirmação; "Sincronizar agora" roda direto. */
 async function choose(card: ToolCard) {
   if (!network.value) return
-  chosen.value = card === 'install' ? installSites.value.filter((site) => site.blocks > 0).map((site) => site.domain) : defaultSites(network.value.sites)
+  chosen.value = defaultSites(network.value.sites)
   if (card === 'sync') return run('sync')
   if (card === 'ads_txt') {
     try {
@@ -163,26 +151,9 @@ async function run(kind: GamToolKind) {
       network_id: network.value.id,
       kind,
       domains: withSites ? chosen.value : [],
-      format: withSites ? format.value : null,
     })
     close()
     await router.push(`/interno/ferramentas-gam/execucoes/${started.id}`)
-  } catch (error) {
-    fail(error)
-  } finally {
-    busy.value = false
-  }
-}
-
-/** Baixa o arquivo de instalação dos sites escolhidos. */
-async function downloadInstall() {
-  if (!network.value) return
-  busy.value = true
-  try {
-    const file = await gamToolService.install(network.value.id, chosen.value, language.value, label.value)
-    saveFile(file.blob, file.name)
-    toast.success(t('gamt.install.done', { name: file.name }))
-    close()
   } catch (error) {
     fail(error)
   } finally {
@@ -281,31 +252,22 @@ async function copyAds() {
 
   <Dialog v-if="network" v-model:open="picking" :title="tool ? toolName(tool) : ''" :desc="t('gamt.dialog.desc', { name: network.display_name ?? network.network_code, code: network.network_code })" class="max-w-[560px]">
     <div class="grid gap-5">
-      <fieldset class="grid gap-2">
-        <legend class="mb-2 text-[13px] font-medium text-muted-foreground">{{ t('gamt.format') }}</legend>
-        <label v-for="item in FORMATS" :key="item" class="flex cursor-pointer items-start gap-3 rounded-md border px-3 py-2.5 hover:bg-muted">
-          <input v-model="format" type="radio" name="gam-format" :value="item" class="mt-1 size-4 accent-[hsl(var(--foreground))]" />
-          <span>
-            <span class="block text-[14px] font-medium">{{ formatName(item) }}</span>
-            <span class="text-[13px] text-muted-foreground">{{ formatDesc(item) }}</span>
-          </span>
-        </label>
-      </fieldset>
+      <p class="text-[13px] text-muted-foreground"><span class="font-medium text-foreground">{{ formatName('gtag') }}</span> · {{ formatDesc('gtag') }}</p>
       <GamSitePicker v-model="chosen" :sites="network.sites" :label="t('gamt.sites')" />
       <div class="rounded-md border bg-muted px-4 py-3 text-[13px]">
         <div class="font-medium">{{ t('gamt.willWrite') }}</div>
         <ul class="mt-1 list-disc pl-5 text-muted-foreground">
           <li v-if="tool === 'config'">{{ t('gamt.willWrite.keys') }}</li>
           <li>{{ t('gamt.willWrite.order') }}</li>
-          <li>{{ t('gamt.willWrite.blocks', { count: chosen.length * BLOCK_COUNT[format], sites: chosen.length, each: BLOCK_COUNT[format] }) }}</li>
-          <li>{{ format === 'light' ? t('gamt.willWrite.display') : t('gamt.willWrite.lineItems', { count: BLOCK_COUNT[format] }) }}</li>
+          <li>{{ t('gamt.willWrite.blocks', { count: chosen.length * GTAG_BLOCKS, sites: chosen.length, each: GTAG_BLOCKS }) }}</li>
+          <li>{{ t('gamt.willWrite.lineItems', { count: GTAG_BLOCKS }) }}</li>
           <li>{{ t('gamt.willWrite.rest') }}</li>
         </ul>
       </div>
     </div>
     <template #footer>
       <Button variant="outline" @click="close">{{ t('common.cancel') }}</Button>
-      <Button :disabled="!chosen.length" :loading="busy" @click="tool && tool !== 'install' && tool !== 'ads_txt' && run(tool)">{{ t('gamt.runInGam') }}</Button>
+      <Button :disabled="!chosen.length" :loading="busy" @click="tool && tool !== 'ads_txt' && run(tool)">{{ t('gamt.runInGam') }}</Button>
     </template>
   </Dialog>
 
@@ -314,23 +276,6 @@ async function copyAds() {
     <template #footer>
       <Button variant="outline" @click="close">{{ t('common.cancel') }}</Button>
       <Button :loading="busy" @click="run('key_values')">{{ t('gamt.runInGam') }}</Button>
-    </template>
-  </Dialog>
-
-  <Dialog v-if="network" v-model:open="installOpen" :title="t('gamt.tool.install')" :desc="t('gamt.install.desc')" class="max-w-[520px]">
-    <div class="grid gap-4">
-      <GamSitePicker v-model="chosen" :sites="installSites" :label="t('gamt.sites')" />
-      <div class="grid gap-4 sm:grid-cols-2">
-        <Field id="install-lang" :label="t('gamt.install.language')"><Select id="install-lang" v-model="language" :options="languages" class="h-9" /></Field>
-        <Field id="install-label" :label="t('gamt.install.label')"><Select id="install-label" v-model="label" :options="languages" class="h-9" /></Field>
-      </div>
-      <div v-if="hasGtag" class="flex gap-2 rounded-md border px-3 py-2.5 text-[13px]">
-        <AlertTriangle class="mt-0.5 size-4 shrink-0 text-ochre" aria-hidden="true" /><span>{{ t('gamt.install.gtag') }}</span>
-      </div>
-    </div>
-    <template #footer>
-      <Button variant="outline" @click="close">{{ t('common.cancel') }}</Button>
-      <Button :disabled="!chosen.length" :loading="busy" @click="downloadInstall"><Download />{{ t('gamt.install.download') }}</Button>
     </template>
   </Dialog>
 

@@ -1,10 +1,9 @@
 /** Formatos das ferramentas do GAM, iguais aos DTOs de modules/internal/gam_tools do avant-api. */
 
 export type GamToolKind = 'config' | 'setup' | 'key_values' | 'sync'
-export type GamFormat = 'light' | 'gtag'
+export type GamFormat = 'gtag'
 export type GamRunState = 'running' | 'done' | 'failed'
 export type GamStepState = 'pending' | 'running' | 'done' | 'existed' | 'failed'
-export type Language = 'pt' | 'en' | 'es'
 
 export interface GamToolNetwork {
   id: string
@@ -59,5 +58,4 @@ export interface GamToolRunInput {
   network_id: string
   kind: GamToolKind
   domains: string[]
-  format: GamFormat | null
 }

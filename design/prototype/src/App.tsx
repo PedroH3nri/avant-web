@@ -5216,8 +5216,8 @@ function DashboardTemplatesScreen() {
 
 /* ---------- Ferramentas do GAM (core#191) ---------- */
 
-type GamFormat = 'light' | 'gtag'
-type GamToolKind = 'config' | 'setup' | 'keyvalues' | 'sync' | 'install' | 'adstxt'
+type GamFormat = 'gtag'
+type GamToolKind = 'config' | 'setup' | 'keyvalues' | 'sync' | 'adstxt'
 type GamStepState = 'pending' | 'running' | 'done' | 'existed' | 'failed'
 type GamStep = { key: string; label: string; state: GamStepState; detail: string }
 type GamRun = { id: number; tool: GamToolKind; network: string; sites: string[]; format: GamFormat | null; by: string; at: string; state: 'running' | 'done' | 'failed'; steps: GamStep[] }
@@ -5226,29 +5226,27 @@ type ProtoGamNetwork = { code: string; name: string; client: string; currency: s
 
 const GAM_TOOLS: Record<GamToolKind, { name: string; desc: string; writes: boolean; icon: typeof Wrench }> = {
   config: { name: 'Configuração completa', desc: 'Key values, order AdExchange, blocos pai e filho, line items e criativo, associa tudo e aprova a order. Para network nova.', writes: true, icon: Wrench },
-  setup: { name: 'Setup de anúncio', desc: 'Cria os blocos e liga aos line items dos sites escolhidos, no formato Tag Light ou GTag. Para site novo numa network pronta.', writes: true, icon: Plus },
+  setup: { name: 'Setup de anúncio', desc: 'Cria os blocos da GTag dos sites escolhidos e liga aos line items. Para site novo numa network pronta.', writes: true, icon: Plus },
   keyvalues: { name: 'Gerar key values', desc: 'Confere e cria as 10 keys (utm_*, land_uri, id_post_wp, content_hash, groone_prices, groone_group) e os valores de id_post_wp, dos degraus de preço e dos grupos.', writes: true, icon: List },
   sync: { name: 'Sincronizar agora', desc: 'Busca sites e blocos novos no GAM sem esperar a importação das 6 horas.', writes: false, icon: RefreshCw },
-  install: { name: 'Arquivo de instalação', desc: 'O passo a passo do AdInserter de cada site, em português, inglês ou espanhol. Vários sites saem num .zip.', writes: false, icon: Download },
   adstxt: { name: 'Linhas do ads.txt', desc: 'As linhas que o cliente põe no ads.txt, com o seller ID da network filha.', writes: false, icon: Copy },
 }
 const GAM_FORMATS: Record<GamFormat, { name: string; desc: string; blocks: string[] }> = {
-  light: { name: 'Tag Light', desc: '14 blocos por site (Offerwall, Fixed, Interstitial, Anchor, Rewards, Content 1 a 9) e um line item "Display" para a network toda.', blocks: ['Offerwall', 'Fixed', 'Interstitial', 'Anchor', 'Rewards', 'Content1', 'Content2', 'Content3', 'Content4', 'Content5', 'Content6', 'Content7', 'Content8', 'Content9'] },
   gtag: { name: 'GTag', desc: '27 blocos por site, separados em Desktop e Mobile, e um line item por tipo de bloco (27 na network).', blocks: ['Offerwall', ...['Fixed', 'Interstitial', 'Anchor', 'Rewards', 'Content1', 'Content2', 'Content3', 'Content4', 'Content5', 'Content6', 'Content7', 'Content8', 'Content9'].flatMap((name) => [`${name}_Desktop`, `${name}_Mobile`])] },
 }
 const GAM_STEP_STATE: Record<GamStepState, [string, 'ok' | 'bad' | 'neutral' | 'ochre']> = { pending: ['Pendente', 'neutral'], running: ['Executando', 'ochre'], done: ['Concluído', 'ok'], existed: ['Já existia', 'ok'], failed: ['Falhou', 'bad'] }
 
 const GAM_NETWORKS: ProtoGamNetwork[] = [
-  { code: '21987654321', name: 'Tech Notícias MCM', client: 'Tech Notícias', currency: 'BRL', seller: 'pub-4417829301', keyValues: 8, order: true, sites: [{ domain: 'technoticias.com.br', parent: true, blocks: 27, format: 'gtag' }, { domain: 'financasdodia.com', parent: true, blocks: 14, format: 'light' }, { domain: 'games.technoticias.com.br', parent: false, blocks: 0, format: null }] },
+  { code: '21987654321', name: 'Tech Notícias MCM', client: 'Tech Notícias', currency: 'BRL', seller: 'pub-4417829301', keyValues: 8, order: true, sites: [{ domain: 'technoticias.com.br', parent: true, blocks: 27, format: 'gtag' }, { domain: 'financasdodia.com', parent: true, blocks: 27, format: 'gtag' }, { domain: 'games.technoticias.com.br', parent: false, blocks: 0, format: null }] },
   { code: '22311009876', name: 'Receitas & Cia', client: 'Receitas & Cia', currency: 'USD', seller: 'pub-9031127745', keyValues: 0, order: false, sites: [{ domain: 'receitasdavo.com', parent: false, blocks: 0, format: null }] },
 ]
 
-/** Os passos de uma ferramenta, na ordem do Genius, para os sites e o formato escolhidos. */
+/** Os passos de uma ferramenta, na ordem do Genius, para os sites escolhidos (sempre GTag). */
 function gamSteps(tool: GamToolKind, network: ProtoGamNetwork, sites: string[], format: GamFormat | null): GamStep[] {
   const blocks = format ? GAM_FORMATS[format].blocks.length : 0
   const step = (key: string, label: string, detail = ''): GamStep => ({ key, label, state: 'pending', detail })
   const perSite = sites.flatMap((domain) => [step(`parent-${domain}`, `Bloco pai ${domain}`), step(`child-${domain}`, `${blocks} blocos filhos de ${domain}`)])
-  const delivery = [step('order', 'Order AdExchange'), ...perSite, step('lineitems', format === 'light' ? 'Line item Display' : `${blocks} line items`), step('creative', 'Criativo "Display All requested sizes"'), step('association', 'Associar criativo aos line items'), step('approve', 'Aprovar a order')]
+  const delivery = [step('order', 'Order AdExchange'), ...perSite, step('lineitems', `${blocks} line items`), step('creative', 'Criativo "Display All requested sizes"'), step('association', 'Associar criativo aos line items'), step('approve', 'Aprovar a order')]
   if (tool === 'config') return [step('info', `Conectar na network ${network.code}`), step('keyvalues', 'Key values'), step('domains', 'Sites aprovados no GAM'), ...delivery]
   if (tool === 'setup') return [step('info', `Conectar na network ${network.code}`), ...delivery]
   if (tool === 'keyvalues') return [step('info', `Conectar na network ${network.code}`), step('keys', '10 keys'), step('values', 'Valores de id_post_wp (1 a 9999)'), step('prices', `Valores de groone_prices (200 degraus em ${network.currency})`), step('groups', 'Valores de groone_group (regra e controle)')]
@@ -5273,7 +5271,7 @@ function gamStepResult(step: GamStep, network: ProtoGamNetwork): Pick<GamStep, '
 }
 
 const INITIAL_GAM_RUNS: GamRun[] = [
-  { id: 12, tool: 'setup', network: '21987654321', sites: ['financasdodia.com'], format: 'light', by: 'Ana Souza', at: '28/10/2026 14:02', state: 'done', steps: [] },
+  { id: 12, tool: 'setup', network: '21987654321', sites: ['financasdodia.com'], format: 'gtag', by: 'Ana Souza', at: '28/10/2026 14:02', state: 'done', steps: [] },
   { id: 11, tool: 'keyvalues', network: '21987654321', sites: [], format: null, by: 'Você', at: '20/10/2026 09:31', state: 'done', steps: [] },
   { id: 10, tool: 'config', network: '21987654321', sites: ['technoticias.com.br'], format: 'gtag', by: 'Pedro Henrique', at: '02/10/2026 16:45', state: 'done', steps: [] },
 ]
@@ -5296,8 +5294,7 @@ function GamToolsScreen({ runs, start, open }: { runs: GamRun[]; start: (run: Ga
   const [code, setCode] = useState(GAM_NETWORKS[0].code)
   const [tool, setTool] = useState<GamToolKind | null>(null)
   const [sites, setSites] = useState<string[]>([])
-  const [format, setFormat] = useState<GamFormat>('gtag')
-  const [language, setLanguage] = useState('pt')
+  const format: GamFormat = 'gtag'
   const network = GAM_NETWORKS.find((item) => item.code === code)!
   const networkRuns = runs.filter((run) => run.network === code)
   const choose = (kind: GamToolKind) => {
@@ -5365,14 +5362,7 @@ function GamToolsScreen({ runs, start, open }: { runs: GamRun[]; start: (run: Ga
         <DialogContent className="max-w-[560px]">
           <DialogHeader><DialogTitle>{tool && GAM_TOOLS[tool].name}</DialogTitle><DialogDescription>Na network {network.name} ({network.code}). O que já existe no GAM é reaproveitado; nada é apagado.</DialogDescription></DialogHeader>
           <div className="grid gap-5">
-            <div className="grid gap-2">
-              <Label>Formato</Label>
-              <RadioGroup value={format} onValueChange={(value) => setFormat(value as GamFormat)} className="grid gap-2">
-                {(Object.keys(GAM_FORMATS) as GamFormat[]).map((key) => (
-                  <label key={key} className="flex cursor-pointer items-start gap-3 rounded-md border px-3 py-2.5 hover:bg-muted"><RadioGroupItem value={key} className="mt-0.5" /><span><span className="block text-[14px] font-medium">{GAM_FORMATS[key].name}</span><span className="text-[13px] text-muted-foreground">{GAM_FORMATS[key].desc}</span></span></label>
-                ))}
-              </RadioGroup>
-            </div>
+            <p className="text-[13px] text-muted-foreground"><span className="font-medium text-foreground">{GAM_FORMATS.gtag.name}</span> · {GAM_FORMATS.gtag.desc}</p>
             <div className="grid gap-2">
               <Label>Sites</Label>
               <div className="grid max-h-[220px] gap-2 overflow-y-auto">{network.sites.map((site) => <GamSitePick key={site.domain} site={site} picked={sites.includes(site.domain)} toggle={() => setSites(sites.includes(site.domain) ? sites.filter((item) => item !== site.domain) : [...sites, site.domain])} />)}</div>
@@ -5383,7 +5373,7 @@ function GamToolsScreen({ runs, start, open }: { runs: GamRun[]; start: (run: Ga
                 {tool === 'config' && <li>As key values que faltarem</li>}
                 <li>{network.order ? 'Usa a order AdExchange que já existe' : 'A order AdExchange, com o anunciante google'}</li>
                 <li><span className="tnum">{sites.length * blockCount}</span> blocos ({sites.length} {sites.length === 1 ? 'site' : 'sites'} × {blockCount})</li>
-                <li>{format === 'light' ? 'O line item Display, mirando a network toda' : `Até ${blockCount} line items, um por tipo de bloco`}</li>
+                <li>{`Até ${blockCount} line items, um por tipo de bloco`}</li>
                 <li>O criativo, as associações e a aprovação da order</li>
               </ul>
             </div>
@@ -5398,18 +5388,6 @@ function GamToolsScreen({ runs, start, open }: { runs: GamRun[]; start: (run: Ga
           <p className="font-mono text-[13px] text-muted-foreground">utm_term, utm_source, utm_medium, utm_content, utm_campaign, land_uri, id_post_wp, content_hash, groone_prices, groone_group</p>
           <p className="text-[13px] text-muted-foreground">Os valores de groone_prices são os 200 degraus em {network.currency}, a moeda da network. As Unified Pricing Rules de cada degrau continuam no gerador de regras.</p>
           <DialogFooter><Button variant="outline" onClick={() => setTool(null)}>Cancelar</Button><Button onClick={() => run('keyvalues')}>Rodar no GAM</Button></DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={tool === 'install'} onOpenChange={(value) => !value && setTool(null)}>
-        <DialogContent className="max-w-[520px]">
-          <DialogHeader><DialogTitle>Arquivo de instalação</DialogTitle><DialogDescription>O passo a passo do AdInserter com os blocos que já estão no GAM.</DialogDescription></DialogHeader>
-          <div className="grid gap-4">
-            <div className="grid gap-2"><Label>Sites</Label><div className="grid max-h-[200px] gap-2 overflow-y-auto">{network.sites.filter((site) => site.blocks).map((site) => <GamSitePick key={site.domain} site={site} picked={sites.includes(site.domain)} toggle={() => setSites(sites.includes(site.domain) ? sites.filter((item) => item !== site.domain) : [...sites, site.domain])} />)}</div></div>
-            <Field id="install-lang" label="Idioma"><Select value={language} onValueChange={setLanguage}><SelectTrigger id="install-lang" className="h-9"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="pt">Português</SelectItem><SelectItem value="en">English</SelectItem><SelectItem value="es">Español</SelectItem></SelectContent></Select></Field>
-            {sites.some((domain) => network.sites.find((site) => site.domain === domain)?.format === 'gtag') && <div className="flex gap-2 rounded-md border px-3 py-2.5 text-[13px]"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-ochre" /><span>O arquivo da GTag ainda está para definir. Por enquanto só os sites em Tag Light saem no arquivo.</span></div>}
-          </div>
-          <DialogFooter><Button variant="outline" onClick={() => setTool(null)}>Cancelar</Button><Button disabled={!sites.length} onClick={() => { setTool(null); toast.success(sites.length > 1 ? 'blocos.zip baixado' : `${sites[0]}.txt baixado`) }}><Download className="h-4 w-4" />Baixar</Button></DialogFooter>
         </DialogContent>
       </Dialog>
 
