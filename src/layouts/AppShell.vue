@@ -5,6 +5,8 @@ import { DialogContent, DialogOverlay, DialogPortal, DialogRoot, DialogTitle } f
 import { Menu } from 'lucide-vue-next'
 import CompanySwitcher from '@/components/CompanySwitcher.vue'
 import LangSwitch from '@/components/LangSwitch.vue'
+import DollarRate from '@/modules/currencies/components/DollarRate.vue'
+import NotificationCenter from '@/modules/notifications/components/NotificationCenter.vue'
 import SidebarRail from '@/components/SidebarRail.vue'
 import Button from '@/components/ui/Button.vue'
 import { t } from '@/lib/i18n'
@@ -34,7 +36,9 @@ const session = useSession()
       <header class="sticky top-0 z-20 flex h-14 items-center gap-2 border-b bg-background px-4 sm:px-6">
         <Button variant="ghost" size="icon" class="-ml-2 md:hidden" :aria-label="t('nav.menu')" @click="open = true"><Menu /></Button>
         <CompanySwitcher />
-        <LangSwitch class="ml-auto w-[132px]" />
+        <NotificationCenter class="ml-auto" />
+        <DollarRate class="hidden sm:flex" />
+        <LangSwitch class="w-[132px]" />
       </header>
       <RouterView :key="session.company?.id ?? 'none'" />
     </div>
