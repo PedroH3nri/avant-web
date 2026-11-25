@@ -1,5 +1,6 @@
 <script setup lang="ts">
 /** Histórico de uma regra da Cascata: números de 24 horas, o funil por tentativa, o gráfico por hora, os limites (com a descida por tentativa), as decisões do motor e o ponto de partida à mão. */
+import StatTile from '@/components/StatTile.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { DropdownMenuRoot, DropdownMenuTrigger } from 'reka-ui'
@@ -336,13 +337,9 @@ watch(period, load)
         <AlertTriangle class="mt-0.5 size-4 shrink-0" />{{ t(rule.status === 'paused' ? 'pr.cascadeInactive.paused' : 'pr.inactive.disabled') }}
       </div>
       <div class="grid grid-cols-2 gap-px overflow-hidden rounded-lg border bg-border lg:grid-cols-4">
-        <div v-for="(tile, index) in tiles" :key="tile.label" class="kpi-motion relative bg-card p-4 transition-colors hover:bg-muted">
-          <div class="flex flex-wrap items-center gap-2 text-[13px] text-muted-foreground">
-            {{ tile.label }}<Status v-if="index === 0" :tone="STATUS_TONE[rule.status]">{{ t(`pr.ruleStatus.${rule.status}`) }}</Status>
-          </div>
-          <div class="mt-1 text-[24px] font-semibold tracking-[-0.03em] tnum max-sm:text-[20px]">{{ tile.value }}</div>
-          <div class="mt-1 text-[12px] text-muted-foreground">{{ tile.hint }}</div>
-        </div>
+        <StatTile v-for="(tile, index) in tiles" :key="tile.label" :value="tile.value" :hint="tile.hint">
+          <template #label>{{ tile.label }}<Status v-if="index === 0" :tone="STATUS_TONE[rule.status]">{{ t(`pr.ruleStatus.${rule.status}`) }}</Status></template>
+        </StatTile>
       </div>
       <Card :title="t('pr.funnel.title')" :desc="t('pr.funnel.desc')">
         <div class="grid gap-3 md:grid-cols-4">

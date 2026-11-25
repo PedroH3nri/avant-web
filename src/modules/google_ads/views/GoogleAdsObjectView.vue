@@ -1,6 +1,7 @@
 <script setup lang="ts">
 /** Uma campanha, grupo ou anúncio do Google Ads: números do período e por dia, o nível de baixo, as palavras-chave,
  * os termos de pesquisa, os posicionamentos e o histórico dele. */
+import StatTile from '@/components/StatTile.vue'
 import DateRangePicker from '@/components/ui/DateRangePicker.vue'
 import { todayIso } from '@/lib/dates'
 import { periodFromQuery, periodPresets, periodQuery, type PeriodValue } from '@/lib/periods'
@@ -157,12 +158,9 @@ watch(termKind, loadTerms)
         </ul>
       </div>
       <p v-if="detail.final_url" class="text-[13px] text-muted-foreground">{{ t('gads.finalUrl') }}: <span class="font-mono">{{ detail.final_url }}</span></p>
-      <dl class="grid grid-cols-2 gap-px overflow-hidden rounded-lg border bg-border sm:grid-cols-4">
-        <div v-for="item in summary" :key="item.key" class="kpi-motion relative bg-card p-4 transition-colors hover:bg-muted">
-          <dt class="text-[13px] text-muted-foreground">{{ t(item.key) }}</dt>
-          <dd class="mt-1 text-[20px] font-semibold tracking-tight tnum">{{ item.value }}</dd>
-        </div>
-      </dl>
+      <div class="grid grid-cols-2 gap-px overflow-hidden rounded-lg border bg-border sm:grid-cols-4">
+        <StatTile v-for="item in summary" :key="item.key" :label="t(item.key)" :value="item.value" />
+      </div>
       <p v-if="detail.totals.revenue === null" class="text-[13px] text-muted-foreground">{{ t('gads.noRevenue') }}</p>
       <p v-if="detail.channel_type === 'PERFORMANCE_MAX'" class="rounded-md border px-3 py-2 text-[13px] text-muted-foreground">{{ t('gads.pmaxNote') }}</p>
       <section class="grid gap-3">

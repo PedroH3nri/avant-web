@@ -1,5 +1,6 @@
 <script setup lang="ts">
 /** Resultado da Empresa mês a mês: faturamento, deduções do Ad Manager, receita, custos e o que sobra. */
+import StatTile from '@/components/StatTile.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import LoadError from '@/components/LoadError.vue'
@@ -94,12 +95,10 @@ const marginText = computed(() => {
     <LoadError v-if="loadError" :message="loadError" @retry="load" />
     <template v-else>
       <div v-if="selected" class="grid grid-cols-2 gap-px overflow-hidden rounded-lg border bg-border md:grid-cols-5">
-        <div v-for="tile in tiles" :key="tile.key" class="kpi-motion relative bg-card p-4 transition-colors hover:bg-muted">
-          <span class="block text-[13px] font-medium text-muted-foreground">{{ t(`res.${tile.key}`) }} · {{ formatMonth(selected.month, locale) }}</span>
-          <span :class="cn('mt-1 block truncate text-[20px] font-semibold tracking-[-0.03em] sm:text-[24px]', valueClass(tile.value, tile.strong))">{{ money(tile.value) }}</span>
+        <StatTile v-for="tile in tiles" :key="tile.key" :label="`${t(`res.${tile.key}`)} · ${formatMonth(selected.month, locale)}`" :value="money(tile.value)" :tone="valueClass(tile.value, tile.strong)">
           <Status v-if="tile.key === 'deductions' && selected.deductions_pending" tone="ochre" class="mt-1">{{ t('res.pending') }}</Status>
           <span v-if="tile.key === 'result'" class="mt-1 block text-[13px] text-muted-foreground tnum">{{ t('res.margin', { value: marginText }) }}</span>
-        </div>
+        </StatTile>
       </div>
 
       <DataTable :min="820">
