@@ -1,5 +1,8 @@
 <script setup lang="ts">
 /** Campanhas, grupos e anúncios do Google Ads com gasto, receita, lucro e ROI do período; no interno, de todos os clientes. */
+import DateRangePicker from '@/components/ui/DateRangePicker.vue'
+import { todayIso } from '@/lib/dates'
+import { periodFromQuery, periodPresets, periodQuery, type PeriodValue } from '@/lib/periods'
 import OpenLink from '@/components/OpenLink.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -22,7 +25,7 @@ import FiltersMenu from '@/modules/views/components/FiltersMenu.vue'
 import { useLocalBarFilters } from '@/modules/views/barFilters'
 import { td, th } from '@/lib/table'
 import { clientService } from '@/modules/internal/clients/service'
-import { PERIODS, channelKey, childLevel, formatCount, formatMoney, formatRatio, objectPath, objectState, periodRange, roiTone } from '@/modules/google_ads/rules'
+import { ADS_MAX_DAYS, ADS_PRESETS, channelKey, childLevel, formatCount, formatMoney, formatRatio, objectPath, objectState, roiTone } from '@/modules/google_ads/rules'
 import { googleAdsReader } from '@/modules/google_ads/service'
 import type { GoogleAdsAccount, GoogleAdsLevel, GoogleAdsObject, GoogleAdsSummary } from '@/modules/google_ads/types'
 import { useSession } from '@/stores/session'
@@ -44,7 +47,7 @@ const level = ref<GoogleAdsLevel>('campaign')
 const parent = ref<{ id: string; name: string; level: GoogleAdsLevel } | null>(null)
 const accountId = ref(typeof route.query.conta === 'string' ? route.query.conta : '')
 const companyId = ref('')
-const days = ref('7')
+const period = ref<PeriodValue>(periodFromQuery(route.query, ADS_PRESETS, 'last_7_days', todayIso(), true))
 const query = ref('')
 const withIssues = ref(false)
 const barFilters = useLocalBarFilters('gads-campaigns', FILTERS, DEFAULT_FILTERS, {
@@ -71,7 +74,7 @@ const levelOptions = computed(() => [
   { value: 'ad_group', label: t('gads.level.ad_group') },
   { value: 'ad', label: t('gads.level.ad') },
 ])
-const periodOptions = computed(() => PERIODS.map((count) => ({ value: String(count), label: t('gads.period.days', { n: count }) })))
+const presets = computed(() => periodPresets(ADS_PRESETS, todayIso(), true))
 const accountOptions = computed(() => [{ value: '', label: t('gads.allAccounts') }, ...accounts.value.map((account) => ({ value: account.id, label: account.name }))])
 const clientOptions = computed(() => [{ value: '', label: t('gads.allClients') }, ...clients.value.map((client) => ({ value: client.id, label: client.name }))])
 const columns = computed(() => (internal ? 11 : 10))
@@ -86,7 +89,8 @@ async function load() {
   loadError.value = null
   try {
     const filters = {
-      ...periodRange(Number(days.value), new Date()),
+      from: period.value.start,
+      to: period.value.end,
       level: level.value,
       parent: parent.value?.id,
       account_id: accountId.value || undefined,
@@ -161,7 +165,7 @@ function pickLevel(value: string) {
 
 /** Abre o detalhe com os números por dia, palavras-chave e termos. */
 function details(item: GoogleAdsObject) {
-  void router.push({ path: objectPath(internal, item), query: { dias: days.value } })
+  void router.push({ path: objectPath(internal, item), query: periodQuery(period.value) })
 }
 
 onMounted(() => {
@@ -171,7 +175,7 @@ onMounted(() => {
 })
 watch(page, load)
 watch(query, searchLater)
-watch([level, parent, accountId, companyId, days, withIssues], refilter)
+watch([level, parent, accountId, companyId, period, withIssues], refilter)
 </script>
 
 <template>
@@ -179,7 +183,7 @@ watch([level, parent, accountId, companyId, days, withIssues], refilter)
   <PageBody>
     <div class="flex flex-wrap items-center gap-3">
       <Segmented :model-value="level" :label="t('gads.level')" :options="levelOptions" @update:model-value="pickLevel" />
-      <Select v-model="days" :aria-label="t('gads.period')" class="w-full sm:w-[160px]" :options="periodOptions" />
+      <DateRangePicker v-model="period" :presets="presets" :max-days="ADS_MAX_DAYS" :aria-label="t('gads.period')" class="w-full sm:w-auto" />
       <Select v-if="internal && barFilters.isShown('client')" v-model="companyId" :aria-label="t('gads.col.client')" class="w-full sm:w-[220px]" :options="clientOptions" />
       <Select v-model="accountId" :aria-label="t('gads.account')" class="w-full sm:w-[220px]" :options="accountOptions" />
       <div class="relative w-full sm:w-[240px]">
@@ -234,7 +238,7 @@ watch([level, parent, accountId, companyId, days, withIssues], refilter)
           <td :class="[td, 'text-right tnum', Number(item.totals.profit) < 0 ? 'text-bad' : '']">{{ formatMoney(item.totals.profit, item.account.currency, locale) }}</td>
           <td :class="[td, 'text-right tnum', roiTone(item.totals.roi)]">{{ formatRatio(item.totals.roi, locale) }}</td>
           <td :class="[td, 'text-right']">
-            <OpenLink :to="{ path: objectPath(internal, item), query: { dias: days } }" :name="item.name" />
+            <OpenLink :to="{ path: objectPath(internal, item), query: periodQuery(period) }" :name="item.name" />
           </td>
         </tr>
       </tbody>

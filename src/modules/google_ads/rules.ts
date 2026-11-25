@@ -13,7 +13,7 @@ import type {
   GoogleAdsSuffixState,
 } from '@/modules/google_ads/types'
 
-export { PERIODS, formatCount, formatMoney, formatRatio, overLimit, parseLimit, periodRange, roiTone } from '@/modules/facebook/rules'
+export { ADS_MAX_DAYS, ADS_PRESETS, PERIODS, formatCount, formatMoney, formatRatio, overLimit, parseLimit, periodRange, roiTone } from '@/modules/facebook/rules'
 
 type Tone = 'ok' | 'warn' | 'bad' | 'neutral'
 

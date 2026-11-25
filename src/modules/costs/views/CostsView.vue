@@ -1,5 +1,6 @@
 <script setup lang="ts">
 /** Aba Custos: custos de um mês, recorrentes e por fórmula, que entram no Resultado. */
+import MonthField from '@/components/ui/MonthField.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useDebounceFn } from '@vueuse/core'
 import { DropdownMenuRoot, DropdownMenuSeparator, DropdownMenuTrigger } from 'reka-ui'
@@ -232,10 +233,10 @@ const kindClass = (on: boolean) =>
       </div>
       <div class="grid grid-cols-2 gap-4">
         <Field id="cost-start" :label="form.kind === 'one_time' ? t('cost.month') : t('cost.start')">
-          <Input id="cost-start" v-model="form.start" type="month" />
+          <MonthField id="cost-start" v-model="form.start" />
         </Field>
         <Field v-if="form.kind !== 'one_time'" id="cost-end" :label="t('cost.end')">
-          <Input id="cost-end" v-model="form.end" type="month" :min="form.start" />
+          <MonthField id="cost-end" v-model="form.end" :min="form.start" />
         </Field>
       </div>
       <div class="grid grid-cols-[110px_1fr] gap-4">

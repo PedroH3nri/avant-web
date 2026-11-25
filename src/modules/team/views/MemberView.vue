@@ -1,5 +1,6 @@
 <script setup lang="ts">
 /** Página de um membro: papel, sites atribuídos e permissões diretas. */
+import DateField from '@/components/ui/DateField.vue'
 import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { toast } from 'vue-sonner'
@@ -11,7 +12,6 @@ import Badge from '@/components/ui/Badge.vue'
 import Button from '@/components/ui/Button.vue'
 import Card from '@/components/ui/Card.vue'
 import Checkbox from '@/components/ui/Checkbox.vue'
-import Input from '@/components/ui/Input.vue'
 import Select from '@/components/ui/Select.vue'
 import Status from '@/components/ui/Status.vue'
 import { ApiError } from '@/lib/api'
@@ -257,7 +257,7 @@ const permName = (key: string) => pick(catalog.value.find((permission) => permis
               <div class="grid items-center gap-2 sm:grid-cols-[minmax(0,1fr)_120px_160px_auto]">
                 <Select v-model="row.permission" :options="permOptions" :aria-label="t('member.permission')" />
                 <Select v-model="row.effect" :options="effectOptions" :aria-label="t('member.effect')" />
-                <Input v-model="row.until" type="date" :min="today" :aria-label="t('member.until')" :invalid="!!rowError(row, index)" />
+                <DateField v-model="row.until" :min="today" :aria-label="t('member.until')" :invalid="!!rowError(row, index)" clearable />
                 <Button variant="ghost" size="icon" :aria-label="t('member.removeRow')" @click="rows = rows.filter((_, rowIndex) => rowIndex !== index)"><X /></Button>
               </div>
               <p v-if="rowError(row, index)" class="text-[13px] text-bad">{{ rowError(row, index) }}</p>
