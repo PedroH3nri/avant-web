@@ -211,6 +211,8 @@ export function toHslTriplet(hex: string): string {
 export function themeVariables(colors: ThemeColors): Record<string, string> {
   const { background, sidebar, card, text, primary, border, highlight } = flattenColors(colors)
   const sidebarText = contrast(sidebar, text) >= 4.5 ? text : readableOn(sidebar)
+  const pageHighlight = legibleHighlight(highlight, background, text)
+  const sidebarHighlight = legibleHighlight(highlight, sidebar, sidebarText)
   return {
     background,
     foreground: text,
@@ -228,6 +230,8 @@ export function themeVariables(colors: ThemeColors): Record<string, string> {
     'accent-foreground': text,
     border,
     input: border,
+    link: pageHighlight,
+    highlight: pageHighlight,
     ring: highlight,
     'glow-color': highlight,
     'hover-border': highlight,
@@ -239,8 +243,14 @@ export function themeVariables(colors: ThemeColors): Record<string, string> {
     'sidebar-muted': mix(sidebarText, sidebar, 0.38),
     'sidebar-active': mix(sidebar, sidebarText, 0.1),
     'sidebar-hover': mix(sidebar, sidebarText, 0.07),
-    'sidebar-selected': mix(sidebar, sidebarText, 0.12),
+    'sidebar-selected': mix(sidebar, highlight, 0.14),
+    'sidebar-highlight': sidebarHighlight,
   }
+}
+
+/** A cor de destaque para texto sobre ``surface``; sem contraste de 3:1, fica a cor do texto. */
+function legibleHighlight(highlight: string, surface: string, text: string): string {
+  return contrast(surface, highlight) >= 3 ? highlight : text
 }
 
 /** O CSS do tema: vale com ``data-custom-theme`` no ``<html>`` e ganha do claro, do escuro e da

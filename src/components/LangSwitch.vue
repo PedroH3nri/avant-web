@@ -36,8 +36,8 @@ async function choose(option: Lang) {
       :aria-pressed="lang === option"
       :class="
         cn(
-          'h-7 flex-1 rounded-[4px] px-2 text-[12px] font-medium uppercase focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-          lang === option ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground',
+          'h-7 flex-1 rounded-[4px] px-2 text-[12px] font-medium uppercase transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+          lang === option ? 'bg-secondary text-[hsl(var(--highlight))]' : 'text-muted-foreground hover:bg-accent hover:text-[hsl(var(--highlight))]',
         )
       "
       @click="choose(option)"
