@@ -8,3 +8,19 @@ export interface Currency {
   decimals: number
   available: boolean
 }
+
+/** Um dia da série da cotação. */
+export interface RatePoint {
+  day: string
+  rate: string
+}
+
+/** O dólar em reais agora, no dia anterior e nos últimos 30 dias, de GET /currencies/usd-quote. */
+export interface DollarQuote {
+  code: string
+  rate: string
+  day: string
+  synced_at: string
+  previous: string | null
+  history: RatePoint[]
+}

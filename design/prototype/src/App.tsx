@@ -18,6 +18,7 @@ import { cn } from '@/lib/utils'
 import { translate, type Key, type Lang } from './i18n'
 import { Mark, SeatBar, SeatDot, SeatStrip, type SeatState } from './tiles'
 import { DateField, MonthField, PeriodPicker, PRESETS } from './date-pickers'
+import { DollarRate, NotificationCenter } from './navbar-extras'
 
 /* ---------- prototype routing ---------- */
 
@@ -667,7 +668,9 @@ function Shell({ t, lang, setLang, screen, go, image, children }: { t: T; lang: 
         <header className="sticky top-0 z-20 flex h-14 items-center gap-2 border-b bg-background px-4 sm:px-6 lg:top-11">
           <Button variant="ghost" size="icon" className="-ml-2 md:hidden" onClick={() => setOpen(true)} aria-label="Abrir menu"><Menu /></Button>
           <CompanySwitcher t={t} internal={INTERNAL_SCREENS.includes(screen)} image={image} />
-          <LangSwitch lang={lang} setLang={setLang} className="ml-auto w-[132px]" />
+          <NotificationCenter className="ml-auto" />
+          <DollarRate className="hidden sm:flex" />
+          <LangSwitch lang={lang} setLang={setLang} className="w-[132px]" />
         </header>
         {children}
       </div>
