@@ -296,7 +296,7 @@
   transform: scaleX(0);
   transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
 }
-:root:not([data-motion-off~="cards"]) .kpi-motion:hover::before { transform: scaleX(1); }
+:root:not([data-motion-off~="cards"]) .kpi-motion:not(:disabled):hover::before { transform: scaleX(1); }
 @media (prefers-reduced-motion: reduce) {
   :root:not([data-motion-off~="cards"]) .card-motion:hover { transform: none; }
 }
