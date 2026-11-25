@@ -17,12 +17,12 @@ describe('menu do painel', () => {
   beforeAll(() => (lang.value = 'pt'))
 
   it('com a Company Groone ativa mostra o painel interno, sem filtrar por permissão', () => {
-    expect(labels(true)).toEqual(['Dashboard', 'Tarefas', 'Clientes', 'Empresas', 'Networks do GAM', 'Contratos', 'Sites', 'Rewards', 'Ad tags', 'Loaders', 'Regras de preço', 'Checklists', 'Ad Manager', 'Page Views', 'Resultado', 'Resultado dos clientes', 'Metas', 'Relatórios customizados', 'Facebook', 'Campanhas do Facebook', 'Google Ads', 'Campanhas do Google Ads', 'Ferramentas do GAM', 'Alertas', 'Envios agendados', 'Modelos de dashboard', 'Minha comissão', 'Minhas invoices', 'Comissões', 'Invoices', 'Equipe Groone', 'Papéis da equipe', 'Custos'])
+    expect(labels(true)).toEqual(['Dashboard', 'Tarefas', 'Clientes', 'Empresas', 'Networks do GAM', 'Contratos', 'Sites', 'Rewards', 'Ad tags', 'Loaders', 'Regras de preço', 'Checklists', 'Ad Manager', 'Page Views', 'Resultado', 'Resultado dos clientes', 'Metas', 'Campanhas do Facebook', 'Campanhas do Google Ads', 'Relatórios customizados', 'Facebook', 'Google Ads', 'Ferramentas do GAM', 'Alertas', 'Envios agendados', 'Modelos de dashboard', 'Minha comissão', 'Minhas invoices', 'Comissões', 'Invoices', 'Equipe Groone', 'Papéis da equipe', 'Custos'])
     expect(headers(true)).toEqual(['Inventário', 'Relatórios', 'Integrações', 'Ferramentas', 'Comissões', 'Empresa'])
   })
 
   it('com uma Empresa cliente ativa mostra os links dela, sem os internos (também para a equipe Groone)', () => {
-    expect(labels(false)).toEqual(['Dashboard', 'Equipes', 'Networks do GAM', 'Sites', 'Rewards', 'Ad tags', 'Loaders', 'Regras de preço', 'Ad Manager', 'Page Views', 'Resultado', 'Relatórios customizados', 'Facebook', 'Campanhas do Facebook', 'Google Ads', 'Campanhas do Google Ads', 'Papéis e permissões', 'Custos'])
+    expect(labels(false)).toEqual(['Dashboard', 'Equipes', 'Networks do GAM', 'Sites', 'Rewards', 'Ad tags', 'Loaders', 'Regras de preço', 'Ad Manager', 'Page Views', 'Resultado', 'Campanhas do Facebook', 'Campanhas do Google Ads', 'Relatórios customizados', 'Facebook', 'Google Ads', 'Papéis e permissões', 'Custos'])
     expect(headers(false)).toEqual(['Inventário', 'Relatórios', 'Integrações', 'Empresa'])
     expect(labels(false)).not.toContain('Equipe Groone')
   })
