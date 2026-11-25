@@ -139,7 +139,7 @@ const panelItem = (on: boolean) =>
 
 <template>
   <div ref="container" class="relative flex h-full" @mouseleave="leave" @focusout="blur" @keydown.esc="hovered = null" @pointerdown="pointer">
-    <div class="relative z-10 flex w-[88px] shrink-0 flex-col items-center border-r bg-sidebar py-3 text-sidebar-foreground">
+    <div class="relative z-10 flex w-[5.5rem] shrink-0 flex-col items-center border-r bg-sidebar py-3 text-sidebar-foreground">
       <RouterLink to="/" class="rounded-md p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" @mouseenter="leave">
         <Mark :size="28" /><span class="sr-only">Avant</span>
       </RouterLink>
@@ -193,9 +193,9 @@ const panelItem = (on: boolean) =>
       :inert="!open || undefined"
       :class="
         drawer
-          ? cn('w-[248px] max-w-[calc(92vw-88px)] flex-col bg-sidebar text-sidebar-foreground', open ? 'flex' : 'hidden')
+          ? cn('w-[15.5rem] max-w-[calc(92vw-5.5rem)] flex-col bg-sidebar text-sidebar-foreground', open ? 'flex' : 'hidden')
           : cn(
-          'absolute inset-y-0 left-[88px] flex w-[248px] flex-col border-r bg-sidebar text-sidebar-foreground shadow-[8px_0_24px_-12px_rgba(0,0,0,0.18)] transition-[opacity,transform] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none',
+          'absolute inset-y-0 left-[5.5rem] flex w-[15.5rem] flex-col border-r bg-sidebar text-sidebar-foreground shadow-[8px_0_24px_-12px_rgba(0,0,0,0.18)] transition-[opacity,transform] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none',
           open ? 'translate-x-0 opacity-100 duration-300' : 'pointer-events-none -translate-x-3 opacity-0 duration-200',
         )
       "

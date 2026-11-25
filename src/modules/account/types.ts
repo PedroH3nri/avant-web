@@ -1,7 +1,7 @@
 /** Formatos da API do domínio account (iguais ao dto.py dele no avant-api). Datas em ISO 8601 UTC. */
 
 import type { ThemeColors } from '@/lib/customTheme'
-import type { AnimationArea, Lang, Theme, UserRef } from '@/lib/types'
+import type { AnimationArea, FontSize, Lang, Theme, UserRef } from '@/lib/types'
 
 export interface AuthSession {
   id: string
@@ -69,4 +69,5 @@ export interface Appearance {
   locale: Lang
   custom_theme_id?: string | null
   animations?: AnimationArea[]
+  font_size?: FontSize
 }

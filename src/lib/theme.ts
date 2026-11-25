@@ -7,7 +7,7 @@
 
 import { ref, watch } from 'vue'
 import { customThemeCss, isDarkBackground, withBorder, type SavedThemeColors, type ThemeColors } from '@/lib/customTheme'
-import type { AnimationArea, Theme } from '@/lib/types'
+import type { AnimationArea, FontSize, Theme } from '@/lib/types'
 
 export type { Theme }
 
@@ -27,6 +27,9 @@ const STORAGE = 'avant.theme'
 const ANIMATIONS_STORAGE = 'avant.animations'
 /** As áreas com animação, na ordem da tela; por padrão, todas. */
 export const ANIMATION_AREAS: AnimationArea[] = ['fields', 'buttons', 'cards']
+const FONT_SIZE_STORAGE = 'avant.fontSize'
+/** Os tamanhos do texto, do menor ao maior; o padrão é o de hoje. */
+export const FONT_SIZES: FontSize[] = ['default', 'large', 'larger']
 const CUSTOM_STORAGE = 'avant.customTheme'
 
 /** Tema lembrado no navegador, ou o do sistema. */
@@ -61,7 +64,20 @@ function savedAnimations(): AnimationArea[] {
   return [...ANIMATION_AREAS]
 }
 
+/** Tamanho do texto lembrado no navegador, ou o padrão. */
+function savedFontSize(): FontSize {
+  try {
+    const stored = localStorage.getItem(FONT_SIZE_STORAGE)
+    if (FONT_SIZES.includes(stored as FontSize)) return stored as FontSize
+  } catch {
+    // sem localStorage
+  }
+  return 'default'
+}
+
 export const theme = ref<Theme>(savedTheme())
+/** Tamanho do texto do painel escolhido pela pessoa. */
+export const fontSize = ref<FontSize>(savedFontSize())
 /** Áreas com animação de hover e foco que a pessoa deixou ligadas. */
 export const animations = ref<AnimationArea[]>(savedAnimations())
 /** As cores do tema personalizado em uso; vazio fora dele. */
@@ -119,6 +135,16 @@ watch(
     const off = ANIMATION_AREAS.filter((area) => !areas.includes(area))
     if (off.length) document.documentElement.setAttribute('data-motion-off', off.join(' '))
     else document.documentElement.removeAttribute('data-motion-off')
+  },
+  { immediate: true },
+)
+
+watch(
+  fontSize,
+  (size) => {
+    remember(FONT_SIZE_STORAGE, size)
+    if (size === 'default') document.documentElement.removeAttribute('data-font-size')
+    else document.documentElement.setAttribute('data-font-size', size)
   },
   { immediate: true },
 )

@@ -315,7 +315,7 @@ const segment = (selected: boolean) => ['h-8 rounded px-3 text-[13px] font-mediu
   </PageHeader>
   <PageBody>
     <LoadError v-if="loadError" :message="loadError" @retry="load" />
-    <div v-else-if="input && preview" class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,460px)]">
+    <div v-else-if="input && preview" class="grid gap-6 lg:grid-cols-2">
       <fieldset class="grid min-w-0 content-start gap-6" :disabled="!canManage">
         <Card :title="t('rw.about')" :desc="t('rw.aboutDesc')">
           <div class="grid gap-4">

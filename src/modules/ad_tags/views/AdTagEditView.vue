@@ -488,7 +488,7 @@ async function goToLoader(loaderId: string | null) {
       <div v-if="!tag.active" class="flex items-start gap-2 rounded-md border border-ochre/40 bg-ochre-soft px-3 py-2 text-[13px] text-ochre">
         <AlertTriangle class="mt-0.5 size-4 shrink-0" />{{ t('at.pausedNote') }}
       </div>
-      <div v-if="tab === 'blocks'" class="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,400px)_minmax(0,1fr)]">
+      <div v-if="tab === 'blocks'" class="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-2">
         <div class="grid grid-cols-[minmax(0,1fr)] content-start gap-3">
           <div class="flex flex-wrap items-center justify-between gap-2">
             <h2 class="text-[15px] font-semibold">

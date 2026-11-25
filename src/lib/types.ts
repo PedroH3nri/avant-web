@@ -63,7 +63,11 @@ export interface Me {
   custom_theme_id?: string | null
   /** Áreas com animação de hover e foco (campos, botões, cards de métrica). */
   animations?: AnimationArea[]
+  font_size?: FontSize
 }
+
+/** Tamanho do texto do painel (``FontSize`` do avant-core). */
+export type FontSize = 'default' | 'large' | 'larger'
 
 /** Áreas do painel que podem ter animação (``AnimationArea`` do avant-core). */
 export type AnimationArea = 'fields' | 'buttons' | 'cards'

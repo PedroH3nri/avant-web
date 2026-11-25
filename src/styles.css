@@ -199,6 +199,9 @@
 @layer base {
   * { @apply border-border; }
   html, body, #app { height: 100%; }
+  /* Tamanho do texto da pessoa (Minha conta): as fontes e os espaços em rem crescem juntos. */
+  html[data-font-size="large"] { font-size: 112.5%; }
+  html[data-font-size="larger"] { font-size: 125%; }
   body { @apply bg-background text-foreground font-sans antialiased; font-size: 14px; font-feature-settings: "ss01" on; }
   h1, h2, h3 { text-wrap: balance; }
   ::selection { background: hsl(var(--ring) / 0.25); }
