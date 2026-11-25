@@ -20,7 +20,7 @@ import Segmented from '@/components/ui/Segmented.vue'
 import Status from '@/components/ui/Status.vue'
 import Switch from '@/components/ui/Switch.vue'
 import TableState from '@/components/ui/TableState.vue'
-import { ApiError } from '@/lib/api'
+import { ApiError, type Query } from '@/lib/api'
 import { errorText, locale, t, type Key } from '@/lib/i18n'
 import FiltersMenu from '@/modules/views/components/FiltersMenu.vue'
 import { useLocalBarFilters } from '@/modules/views/barFilters'
@@ -29,7 +29,7 @@ import { clientService } from '@/modules/internal/clients/service'
 import { PERIODS, campaignsPath, childLevel, controlErrorText, formatCount, formatMoney, formatRatio, objectState, periodRange } from '@/modules/facebook/rules'
 import { facebookReader, facebookService } from '@/modules/facebook/service'
 import { useSession } from '@/stores/session'
-import type { FacebookAccount, FacebookLevel, FacebookObject } from '@/modules/facebook/types'
+import type { FacebookAccount, FacebookLevel, FacebookObject, FacebookSummary } from '@/modules/facebook/types'
 
 const FILTERS = ['client', 'in_review']
 const DEFAULT_FILTERS = ['client', 'in_review']
@@ -70,6 +70,9 @@ const page = ref(1)
 const total = ref(0)
 const pages = ref(0)
 const loadError = ref<string | null>(null)
+const summary = ref<FacebookSummary | null>(null)
+let summaryKey = ''
+let summaryTicket = 0
 
 const levelOptions = computed(() => [
   { value: 'campaign', label: t('fb.level.campaign') },
@@ -91,7 +94,7 @@ function clientName(id: string): string {
 async function load() {
   loadError.value = null
   try {
-    const found = await reader.objects({
+    const filters = {
       ...periodRange(Number(days.value), new Date()),
       level: level.value,
       parent: parent.value?.id,
@@ -99,8 +102,9 @@ async function load() {
       company_id: internal ? companyId.value || undefined : undefined,
       in_review: inReview.value || undefined,
       q: query.value.trim() || undefined,
-      page: page.value,
-    })
+    }
+    void loadSummary(filters)
+    const found = await reader.objects({ ...filters, page: page.value })
     items.value = found.items
     selected.value = []
     total.value = found.total
@@ -109,6 +113,35 @@ async function load() {
     loadError.value = errorText(error instanceof ApiError ? error.code : 'unknown')
   }
 }
+
+/** Busca a soma de todo o filtro quando ele muda (trocar de página não muda a soma); só a última resposta vale. */
+async function loadSummary(filters: Query) {
+  const key = JSON.stringify(filters)
+  if (key === summaryKey) return
+  summaryKey = key
+  const ticket = ++summaryTicket
+  summary.value = null
+  try {
+    const found = await reader.summary({ ...filters, currency: session.displayCurrency })
+    if (ticket === summaryTicket) summary.value = found
+  } catch {
+    if (ticket === summaryTicket) summaryKey = ''
+  }
+}
+
+/** Os cards com a soma de todo o filtro, na ordem das colunas da tabela. */
+const tiles = computed(() => {
+  const found = summary.value
+  if (!found) return []
+  return [
+    { key: 'spend', label: 'fb.metric.spend', text: formatMoney(found.spend, found.currency, locale.value), bad: false },
+    { key: 'link_clicks', label: 'fb.metric.linkClicks', text: formatCount(found.link_clicks, locale.value), bad: false },
+    { key: 'cpc', label: 'fb.metric.cpc', text: formatMoney(found.cpc, found.currency, locale.value), bad: false },
+    { key: 'revenue', label: 'fb.metric.revenue', text: formatMoney(found.revenue, found.currency, locale.value), bad: false },
+    { key: 'profit', label: 'fb.metric.profit', text: formatMoney(found.profit, found.currency, locale.value), bad: Number(found.profit) < 0 },
+    { key: 'roi', label: 'fb.metric.roi', text: formatRatio(found.roi, locale.value), bad: false },
+  ]
+})
 
 /** Volta para a primeira página quando um filtro muda. */
 function refilter() {
@@ -203,6 +236,12 @@ watch([level, parent, accountId, companyId, days, inReview], refilter)
       <Button size="sm" variant="outline" :disabled="switching" @click="setStatus(selected, true)">{{ t('fb.control.activate') }}</Button>
       <Button size="sm" variant="outline" :disabled="switching" @click="setStatus(selected, false)">{{ t('fb.control.pause') }}</Button>
       <Button size="sm" variant="ghost" @click="pickAll(false)">{{ t('fb.control.clear') }}</Button>
+    </div>
+    <div v-if="!loadError && tiles.length" class="grid grid-cols-2 gap-px overflow-hidden rounded-lg border bg-border md:grid-cols-3 xl:grid-cols-6">
+      <div v-for="tile in tiles" :key="tile.key" class="bg-card p-4">
+        <span class="block text-[13px] font-medium text-muted-foreground">{{ t(tile.label as Key) }}</span>
+        <span :class="['mt-1 block truncate text-[20px] font-semibold tracking-[-0.03em] tnum sm:text-[24px]', tile.bad && 'text-bad']">{{ tile.text }}</span>
+      </div>
     </div>
     <LoadError v-if="loadError" :message="loadError" @retry="load" />
     <DataTable v-else :min="internal ? 1240 : canManage ? 1240 : 1120">

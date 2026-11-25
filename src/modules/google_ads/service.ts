@@ -2,21 +2,7 @@
 
 import { api, type Query } from '@/lib/api'
 import type { Page } from '@/lib/types'
-import type {
-  GoogleAdsAccount,
-  GoogleAdsAccountInput,
-  GoogleAdsAlert,
-  GoogleAdsAlertSetting,
-  GoogleAdsChange,
-  GoogleAdsKeyword,
-  GoogleAdsLevel,
-  GoogleAdsLogin,
-  GoogleAdsObject,
-  GoogleAdsObjectDetail,
-  GoogleAdsPerson,
-  GoogleAdsPersonInput,
-  GoogleAdsTerm,
-} from '@/modules/google_ads/types'
+import type { GoogleAdsAccount, GoogleAdsAccountInput, GoogleAdsAlert, GoogleAdsAlertSetting, GoogleAdsChange, GoogleAdsKeyword, GoogleAdsLevel, GoogleAdsLogin, GoogleAdsObject, GoogleAdsObjectDetail, GoogleAdsPerson, GoogleAdsPersonInput, GoogleAdsSummary, GoogleAdsTerm } from '@/modules/google_ads/types'
 
 /** Endereço que abre o login do Google; é uma navegação do navegador, não uma chamada da API. */
 export const GOOGLE_ADS_CONNECT_URL = '/api/v1/google-ads/oauth/start'
@@ -29,6 +15,8 @@ export function googleAdsReader(internal: boolean) {
     accounts: (query?: Query) => api.get<GoogleAdsAccount[]>(`${base}/accounts`, query),
     /** Uma página das campanhas, grupos ou anúncios com os números do período. */
     objects: (query?: Query) => api.get<Page<GoogleAdsObject>>(`${base}/objects`, query),
+    /** A soma de todo o filtro no período, numa moeda só, para os cards da tela. */
+    summary: (query?: Query) => api.get<GoogleAdsSummary>(`${base}/objects/summary`, query),
     /** Uma campanha, grupo ou anúncio com os números por dia. */
     object: (level: GoogleAdsLevel, externalId: string, query?: Query) => api.get<GoogleAdsObjectDetail>(`${base}/objects/${level}/${externalId}`, query),
     /** As palavras-chave do grupo com gasto, receita, lucro e ROI. */
