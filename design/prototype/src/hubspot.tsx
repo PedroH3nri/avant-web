@@ -1,8 +1,8 @@
-/* Integração com o HubSpot (decisão 22): as 9 ideias do protótipo, antes de qualquer código.
+/* Integração com o HubSpot (decisão 22): o escopo aprovado (sem invoices e sem lista de chamados: o atendimento é pelo WhatsApp).
    Do HubSpot para o Avant só vem o que o Avant não tem; clientes, networks, contratos e métricas só vão. */
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
-import { AlertTriangle, ArrowRight, Code2, Gift, BookOpen, CalendarClock, CalendarDays, Check, CheckCircle2, ChevronRight, CircleDollarSign, ClipboardCheck, ExternalLink, Filter, Inbox, LayoutGrid, List, ListChecks, Loader2, Mail, MessageSquare, NotebookPen, Phone, Plus, RefreshCw, Search, Send, SmilePlus, ThumbsDown, ThumbsUp, TrendingDown, UserPlus, Video, X } from 'lucide-react'
+import { AlertTriangle, ArrowRight, Code2, Gift, BookOpen, CalendarClock, CalendarDays, Check, CheckCircle2, ChevronRight, CircleDollarSign, ClipboardCheck, ExternalLink, Filter, LayoutGrid, List, ListChecks, Loader2, Mail, NotebookPen, Eye, ImagePlus, Phone, Plus, RefreshCw, Search, Send, Trash2, SmilePlus, ThumbsDown, ThumbsUp, TrendingDown, UserPlus, Video, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -118,7 +118,7 @@ const RECORDS: Record<RecordKind, RecordInfo> = {
       ['Dono do contato', <span className="flex items-center gap-2"><Avatar name="Marina Souza" size={26} />Marina Souza</span>],
       ['Ciclo de vida', <Status tone="ok">Cliente</Status>],
       ['NPS', <span className="flex items-center gap-2"><span className="tnum text-[18px] font-semibold text-ok">9</span><span className="text-[13px] text-muted-foreground">Promotor · 02/11</span></span>],
-      ['Chamados abertos', <span className="flex items-center gap-2"><span className="tnum text-[18px] font-semibold">1</span><span className="text-[13px] text-muted-foreground">Pagamento</span></span>],
+      ['Onboarding', <span className="grid"><span>Ad tag instalada</span><span className="text-[13px] text-muted-foreground">4 de 6 passos</span></span>],
     ],
     activities: [
       { id: 1, kind: 'Reunião', title: 'Revisão do trimestre', text: 'Combinamos testar a Cascata na âncora e falar de um segundo site em janeiro.', who: 'Marina Souza', when: 'hoje, 10:30' },
@@ -150,7 +150,7 @@ const RECORDS: Record<RecordKind, RecordInfo> = {
       ['Enviado em', <span className="tnum">hoje, 05:00</span>],
     ],
     activities: [
-      { id: 1, kind: 'Nota', title: 'Âncora cobrindo o menu no iPhone', text: 'Pedimos para o cliente subir o menu fixo em 60 px. Ver o chamado #1038.', who: 'Marina Souza', when: '24/11, 18:20' },
+      { id: 1, kind: 'Nota', title: 'Âncora cobrindo o menu no iPhone', text: 'Pedimos para o cliente subir o menu fixo em 60 px. Combinado pelo WhatsApp.', who: 'Marina Souza', when: '24/11, 18:20' },
     ],
   },
 }
@@ -218,20 +218,20 @@ export function NetworkDetailScreen({ go }: { go: Go }) {
 
 /* ---------- 2. Funil de prospecção (painel interno) ---------- */
 
-type Stage = 'Lead' | 'Reunião marcada' | 'Proposta enviada' | 'Negociação' | 'Ganho'
+type Stage = 'Lead' | 'Lead qualificado' | 'Pronto para vendas' | 'Oportunidade' | 'Cliente'
 type Deal = { id: number; name: string; contact: string; email: string; phone: string; owner: string; stage: Stage; source: string; traffic: string; days: number; registered: boolean }
-const STAGES: Stage[] = ['Lead', 'Reunião marcada', 'Proposta enviada', 'Negociação', 'Ganho']
+const STAGES: Stage[] = ['Lead', 'Lead qualificado', 'Pronto para vendas', 'Oportunidade', 'Cliente']
 const DEALS: Deal[] = [
   { id: 1, name: 'Guia do Pet', contact: 'Ana Ribeiro', email: 'ana@guiadopet.com.br', phone: '+55 21 99999-1212', owner: 'Marina Souza', stage: 'Lead', source: 'Indicação', traffic: '1,2 mi visitas/mês', days: 2, registered: false },
-  { id: 2, name: 'Futebol Agora', contact: 'Rafael Lima', email: 'rafael@futebolagora.com', phone: '+55 11 97777-3434', owner: 'João Pedro', stage: 'Reunião marcada', source: 'Site da Groone', traffic: '4,8 mi visitas/mês', days: 5, registered: false },
-  { id: 3, name: 'Receitas Fáceis', contact: 'Luísa Mota', email: 'luisa@receitasfaceis.com', phone: '+55 31 98888-5656', owner: 'Marina Souza', stage: 'Proposta enviada', source: 'Evento', traffic: '900 mil visitas/mês', days: 9, registered: false },
-  { id: 4, name: 'Tecnologia Hoje', contact: 'Bruno Alves', email: 'bruno@tecnologiahoje.com', phone: '+55 41 96666-7878', owner: 'João Pedro', stage: 'Negociação', source: 'Outbound', traffic: '2,1 mi visitas/mês', days: 14, registered: false },
-  { id: 5, name: 'Viaje Mais', contact: 'Paula Nunes', email: 'paula@viajemais.com.br', phone: '+55 48 95555-9090', owner: 'Marina Souza', stage: 'Ganho', source: 'Indicação', traffic: '3,3 mi visitas/mês', days: 1, registered: false },
-  { id: 6, name: 'Notícias do Vale', contact: 'Igor Reis', email: 'igor@noticiasdovale.com', phone: '+55 12 94444-1111', owner: 'João Pedro', stage: 'Ganho', source: 'Site da Groone', traffic: '700 mil visitas/mês', days: 6, registered: true },
+  { id: 2, name: 'Futebol Agora', contact: 'Rafael Lima', email: 'rafael@futebolagora.com', phone: '+55 11 97777-3434', owner: 'João Pedro', stage: 'Lead qualificado', source: 'Site da Groone', traffic: '4,8 mi visitas/mês', days: 5, registered: false },
+  { id: 3, name: 'Receitas Fáceis', contact: 'Luísa Mota', email: 'luisa@receitasfaceis.com', phone: '+55 31 98888-5656', owner: 'Marina Souza', stage: 'Pronto para vendas', source: 'Evento', traffic: '900 mil visitas/mês', days: 9, registered: false },
+  { id: 4, name: 'Tecnologia Hoje', contact: 'Bruno Alves', email: 'bruno@tecnologiahoje.com', phone: '+55 41 96666-7878', owner: 'João Pedro', stage: 'Oportunidade', source: 'Outbound', traffic: '2,1 mi visitas/mês', days: 14, registered: false },
+  { id: 5, name: 'Viaje Mais', contact: 'Paula Nunes', email: 'paula@viajemais.com.br', phone: '+55 48 95555-9090', owner: 'Marina Souza', stage: 'Cliente', source: 'Indicação', traffic: '3,3 mi visitas/mês', days: 1, registered: false },
+  { id: 6, name: 'Notícias do Vale', contact: 'Igor Reis', email: 'igor@noticiasdovale.com', phone: '+55 12 94444-1111', owner: 'João Pedro', stage: 'Cliente', source: 'Site da Groone', traffic: '700 mil visitas/mês', days: 6, registered: true },
   { id: 7, name: 'Moda em Dia', contact: 'Carla Dias', email: 'carla@modaemdia.com', phone: '+55 11 93333-2222', owner: 'Marina Souza', stage: 'Lead', source: 'Outbound', traffic: '350 mil visitas/mês', days: 1, registered: false },
 ]
 
-/** Funil de quem ainda não é cliente, vindo do pipeline de prospecção do HubSpot; negócio ganho vira Cliente com um clique. */
+/** Funil de quem ainda não é cliente, pela fase do ciclo de vida do contato no HubSpot (CRM grátis, sem pipeline novo); quem vira Cliente é cadastrado com um clique. */
 export function ProspectsScreen({ go }: { go: Go }) {
   const [deals, setDeals] = useState(DEALS)
   const [view, setView] = useState<'board' | 'list'>('board')
@@ -242,35 +242,35 @@ export function ProspectsScreen({ go }: { go: Go }) {
   const rows = deals.filter((deal) => passes({ ...deal, days: String(deal.days) } as unknown as Record<string, string>, values, query, ['name', 'contact', 'email']))
   const defs: FilterDef[] = [
     { key: 'owner', label: 'Dono', options: ['Marina Souza', 'João Pedro'] },
-    { key: 'stage', label: 'Estágio', options: STAGES },
+    { key: 'stage', label: 'Fase', options: STAGES },
     { key: 'source', label: 'Origem', options: ['Indicação', 'Site da Groone', 'Evento', 'Outbound'] },
   ]
   /** Cadastra o Cliente com os dados do negócio e manda o convite. */
   const register = () => {
     if (!registering) return
     setBusy(true)
-    setTimeout(() => { setDeals((current) => current.map((deal) => (deal.id === registering.id ? { ...deal, registered: true } : deal))); setBusy(false); setRegistering(null); toast.success('Cliente cadastrado e convite enviado', { description: `${registering.email} · o negócio no HubSpot ganhou o link do Avant.` }) }, 800)
+    setTimeout(() => { setDeals((current) => current.map((deal) => (deal.id === registering.id ? { ...deal, registered: true } : deal))); setBusy(false); setRegistering(null); toast.success('Cliente cadastrado e convite enviado', { description: `${registering.email} · o contato no HubSpot ganhou o link do Avant.` }) }, 800)
   }
-  /** Botão do negócio ganho: cadastrar, ou abrir o cliente já cadastrado. */
-  const action = (deal: Deal) => deal.stage !== 'Ganho' ? null : deal.registered
+  /** Botão do contato na fase Cliente: cadastrar, ou abrir o cliente já cadastrado. */
+  const action = (deal: Deal) => deal.stage !== 'Cliente' ? null : deal.registered
     ? <Button size="sm" variant="ghost" className="h-7 px-2 text-[12px]" onClick={() => go('cliente')}><Check className="h-3.5 w-3.5 text-ok" />Cliente no Avant</Button>
     : <Button size="sm" className="h-7 px-2 text-[12px]" onClick={() => setRegistering(deal)}><UserPlus className="h-3.5 w-3.5" />Cadastrar cliente</Button>
   return (
     <>
-      <PageHeader title="Prospecção" sub="Os negócios do pipeline “Prospecção” do HubSpot, de quem ainda não é cliente. Cada coluna é um estágio do pipeline, com o nome e a ordem do HubSpot. Mover o negócio continua sendo no HubSpot."
+      <PageHeader title="Prospecção" sub="Os contatos do HubSpot que ainda não são clientes da Groone. Cada coluna é uma fase do ciclo de vida do contato (Lead, Lead qualificado, Pronto para vendas, Oportunidade e Cliente), recurso do CRM grátis. Mudar a fase continua sendo no HubSpot."
         actions={<>
           <div className="flex rounded-md border bg-background p-0.5" role="tablist" aria-label="Vista">
             <button role="tab" aria-selected={view === 'board'} onClick={() => setView('board')} className={cn('flex h-8 items-center gap-1.5 rounded px-2.5 text-[13px]', view === 'board' ? 'bg-secondary font-medium' : 'text-muted-foreground')}><LayoutGrid className="h-4 w-4" />Funil</button>
             <button role="tab" aria-selected={view === 'list'} onClick={() => setView('list')} className={cn('flex h-8 items-center gap-1.5 rounded px-2.5 text-[13px]', view === 'list' ? 'bg-secondary font-medium' : 'text-muted-foreground')}><List className="h-4 w-4" />Lista</button>
           </div>
-          <Button variant="outline" asChild><a href="https://app.hubspot.com" target="_blank" rel="noreferrer"><HubspotMark />Abrir o pipeline</a></Button>
+          <Button variant="outline" asChild><a href="https://app.hubspot.com" target="_blank" rel="noreferrer"><HubspotMark />Abrir os contatos</a></Button>
         </>} />
       <Body>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Kpi index={0} label="Negócios abertos" value={deals.filter((deal) => deal.stage !== 'Ganho').length} />
-          <Kpi index={1} label="Ganhos para cadastrar" value={deals.filter((deal) => deal.stage === 'Ganho' && !deal.registered).length} tone="ok" />
-          <Kpi index={2} label="Taxa de ganho (90 dias)" value={23} suffix="%" />
-          <Kpi index={3} label="Dias até ganhar (média)" value={34} />
+          <Kpi index={0} label="Contatos em prospecção" value={deals.filter((deal) => deal.stage !== 'Cliente').length} />
+          <Kpi index={1} label="Viraram cliente, falta cadastrar" value={deals.filter((deal) => deal.stage === 'Cliente' && !deal.registered).length} tone="ok" />
+          <Kpi index={2} label="Viram cliente (90 dias)" value={23} suffix="%" />
+          <Kpi index={3} label="Dias até virar cliente (média)" value={34} />
         </div>
         <section className="overflow-hidden rounded-lg border bg-card animate-in fade-in duration-500">
           <TableFilters defs={defs} initial={['owner']} values={values} setValues={setValues} query={query} setQuery={setQuery} placeholder="Buscar site, contato ou e-mail" />
@@ -280,14 +280,14 @@ export function ProspectsScreen({ go }: { go: Go }) {
                 const inStage = rows.filter((deal) => deal.stage === stage)
                 return (
                   <div key={stage} {...rise(column, 'min-w-[220px] rounded-md bg-muted p-2')}>
-                    <div className="flex items-center justify-between px-1 pb-2 text-[13px] font-medium"><span className="flex items-center gap-1.5" title={`Estágio “${stage}” do pipeline Prospecção no HubSpot`}><HubspotMark size={12} />{stage}</span><span className="tnum text-muted-foreground">{inStage.length}</span></div>
+                    <div className="flex items-center justify-between px-1 pb-2 text-[13px] font-medium"><span className="flex items-center gap-1.5" title={`Fase “${stage}” do ciclo de vida no HubSpot`}><HubspotMark size={12} />{stage}</span><span className="tnum text-muted-foreground">{inStage.length}</span></div>
                     <div className="grid gap-2">
                       {inStage.map((deal) => (
                         <article key={deal.id} className="rounded-md border bg-card p-3 transition-[box-shadow,transform] duration-200 hover:-translate-y-px hover:shadow-sm">
                           <div className="text-[14px] font-medium">{deal.name}</div>
                           <div className="text-[13px] text-muted-foreground">{deal.contact} · {deal.traffic}</div>
-                          <div className="mt-2 flex items-center justify-between gap-2"><span className="flex items-center gap-1.5 text-[12px] text-muted-foreground"><Avatar name={deal.owner} size={24} />{deal.owner.split(' ')[0]}</span><span className="text-[12px] text-muted-foreground tnum">{deal.days} d no estágio</span></div>
-                          {deal.stage === 'Ganho' && <div className="mt-2 border-t pt-2">{action(deal)}</div>}
+                          <div className="mt-2 flex items-center justify-between gap-2"><span className="flex items-center gap-1.5 text-[12px] text-muted-foreground"><Avatar name={deal.owner} size={24} />{deal.owner.split(' ')[0]}</span><span className="text-[12px] text-muted-foreground tnum">{deal.days} d na fase</span></div>
+                          {deal.stage === 'Cliente' && <div className="mt-2 border-t pt-2">{action(deal)}</div>}
                         </article>
                       ))}
                       {!inStage.length && <p className="px-1 py-6 text-center text-[13px] text-muted-foreground">Nada aqui.</p>}
@@ -302,7 +302,7 @@ export function ProspectsScreen({ go }: { go: Go }) {
               <tbody className="divide-y">{rows.map((deal, index) => (
                 <tr key={deal.id} {...rise(index, 'transition-colors hover:bg-muted/50')}>
                   <td className={cn(td, 'font-medium')}>{deal.name}</td><td className={td}><div>{deal.contact}</div><div className="text-[13px] text-muted-foreground">{deal.email}</div></td>
-                  <td className={td}><Status tone={deal.stage === 'Ganho' ? 'ok' : deal.stage === 'Negociação' ? 'ochre' : 'neutral'}>{deal.stage}</Status></td>
+                  <td className={td}><Status tone={deal.stage === 'Cliente' ? 'ok' : deal.stage === 'Oportunidade' ? 'ochre' : 'neutral'}>{deal.stage}</Status></td>
                   <td className={td}>{deal.owner}</td><td className={td}>{deal.source}</td><td className={cn(td, 'tnum')}>{deal.traffic}</td><td className={cn(td, 'text-right')}>{action(deal)}</td>
                 </tr>
               ))}</tbody>
@@ -327,18 +327,7 @@ export function ProspectsScreen({ go }: { go: Go }) {
   )
 }
 
-/* ---------- 3. Chamados (painel do cliente) ---------- */
-
-type Ticket = { id: number; subject: string; category: string; site: string; status: 'Aberto' | 'Esperando você' | 'Resolvido'; updated: string; messages: { from: 'client' | 'groone'; who: string; text: string; when: string }[] }
-const TICKETS: Ticket[] = [
-  { id: 1042, subject: 'Pagamento de outubro menor que o relatório', category: 'Pagamento', site: 'blogexemplo.com.br', status: 'Esperando você', updated: 'há 2 h', messages: [
-    { from: 'client', who: 'Caio Prado', text: 'O relatório mostra US$ 1.240 e o pagamento veio US$ 1.180. Por quê?', when: '24/11, 09:12' },
-    { from: 'groone', who: 'Marina Souza', text: 'Oi, Caio! A diferença é a dedução de tráfego inválido do Google em outubro (US$ 60). Você quer que eu mande o detalhe por site?', when: '25/11, 16:40' },
-  ] },
-  { id: 1038, subject: 'Anúncio âncora cobrindo o menu no celular', category: 'Anúncios', site: 'blogexemplo.com.br', status: 'Aberto', updated: 'ontem', messages: [{ from: 'client', who: 'Caio Prado', text: 'No iPhone, o anúncio de baixo fica em cima do menu fixo.', when: '24/11, 18:03' }] },
-  { id: 1021, subject: 'Como adicionar um segundo site', category: 'Inventário', site: '—', status: 'Resolvido', updated: '12/11', messages: [{ from: 'client', who: 'Caio Prado', text: 'Quero monetizar outro domínio.', when: '10/11, 11:00' }, { from: 'groone', who: 'Marina Souza', text: 'Pronto: adicionei em Inventário > Sites. Falta só a aprovação do Google.', when: '12/11, 14:20' }] },
-]
-const TICKET_TONE: Record<Ticket['status'], Tone> = { Aberto: 'neutral', 'Esperando você': 'ochre', Resolvido: 'ok' }
+/* ---------- 3. Atendimento pelo WhatsApp da Groone (painel do cliente) ---------- */
 
 const GROONE_WHATSAPP = '5511900000000'
 
@@ -352,76 +341,11 @@ function WhatsappIcon() {
   return <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.3-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6a2.7 2.7 0 0 0 1.8-1.2 2.2 2.2 0 0 0 .1-1.3c0-.1-.2-.2-.5-.3Z" /></svg>
 }
 
-/** Chamados do cliente: o atendimento é no WhatsApp da Groone (ligado ao HubSpot); aqui ele abre e acompanha. */
-export function TicketsScreen() {
-  const [tickets, setTickets] = useState(TICKETS)
-  const [values, setValues] = useState<Record<string, string>>({})
-  const [query, setQuery] = useState('')
-  const [open, setOpen] = useState<Ticket | null>(null)
-  const [creating, setCreating] = useState(false)
-  const [form, setForm] = useState({ subject: '', category: 'Pagamento', text: '' })
-  const rows = tickets.filter((ticket) => passes({ ...ticket, id: String(ticket.id) } as unknown as Record<string, string>, values, query, ['subject', 'id']))
-  /** Cria o chamado (vira um ticket no HubSpot, com o cliente e o site associados). */
-  const create = () => {
-    const ticket: Ticket = { id: 1043, subject: form.subject, category: form.category, site: 'blogexemplo.com.br', status: 'Aberto', updated: 'agora', messages: [{ from: 'client', who: 'Caio Prado', text: form.text, when: 'agora' }] }
-    setTickets([ticket, ...tickets]); setCreating(false); setForm({ subject: '', category: 'Pagamento', text: '' })
-    toast.success('Chamado #1043 aberto', { description: 'A equipe responde no seu WhatsApp. O histórico aparece aqui.' })
-  }
-  return (
-    <>
-      <PageHeader title="Chamados" sub="O atendimento da Groone é pelo WhatsApp. Aqui você acompanha cada chamado: número, assunto, situação e o histórico da conversa."
-        actions={<><Button variant="outline" onClick={() => setCreating(true)}><Plus className="h-4 w-4" />Abrir chamado</Button><Button asChild><a href={whatsappLink('Olá! Sou Caio Prado, do Blog Exemplo (blogexemplo.com.br).')} target="_blank" rel="noreferrer"><WhatsappIcon />Falar no WhatsApp</a></Button></>} />
-      <Body>
-        <section className="overflow-hidden rounded-lg border bg-card animate-in fade-in slide-in-from-bottom-2 duration-500">
-          <TableFilters defs={[{ key: 'status', label: 'Situação', options: ['Aberto', 'Esperando você', 'Resolvido'] }, { key: 'category', label: 'Assunto', options: ['Pagamento', 'Anúncios', 'Inventário', 'Outro'] }, { key: 'site', label: 'Site', options: ['blogexemplo.com.br'] }]} initial={['status']} values={values} setValues={setValues} query={query} setQuery={setQuery} placeholder="Buscar pelo assunto ou número" />
-          <div className="overflow-x-auto"><table className="w-full text-[14px]">
-            <thead className="border-b"><tr><th className={th}>Chamado</th><th className={th}>Assunto</th><th className={th}>Site</th><th className={th}>Situação</th><th className={th}>Atualizado</th></tr></thead>
-            <tbody className="divide-y">{rows.map((ticket, index) => (
-              <tr key={ticket.id} onClick={() => setOpen(ticket)} {...rise(index, 'cursor-pointer transition-colors hover:bg-muted/50')}>
-                <td className={td}><div className="font-medium">{ticket.subject}</div><div className="text-[13px] text-muted-foreground tnum">#{ticket.id}</div></td>
-                <td className={td}>{ticket.category}</td><td className={td}>{ticket.site}</td><td className={td}><Status tone={TICKET_TONE[ticket.status]}>{ticket.status}</Status></td><td className={cn(td, 'text-muted-foreground')}>{ticket.updated}</td>
-              </tr>
-            ))}
-            {!rows.length && <tr><td colSpan={5} className="py-12 text-center"><Inbox className="mx-auto h-5 w-5 text-muted-foreground" /><p className="mt-2 font-medium">Nenhum chamado com esses filtros</p></td></tr>}</tbody>
-          </table></div>
-        </section>
-        <ManagerCard />
-      </Body>
-      <Dialog open={open !== null} onOpenChange={(value) => !value && setOpen(null)}>
-        <DialogContent className="flex max-h-[85vh] flex-col gap-0 p-0 sm:max-w-[720px]">
-          {open && <>
-            <DialogHeader className="border-b p-6 text-left"><DialogTitle className="pr-6 text-[20px]">{open.subject}</DialogTitle><DialogDescription asChild><div className="flex flex-wrap items-center gap-3 text-[13px]"><span className="tnum">#{open.id}</span><span>{open.category}</span><span>{open.site}</span><Status tone={TICKET_TONE[open.status]}>{open.status}</Status></div></DialogDescription></DialogHeader>
-            <ol className="flex-1 space-y-4 overflow-y-auto p-6">{open.messages.map((message, index) => (
-              <li key={index} {...rise(index, cn('flex gap-3', message.from === 'client' && 'flex-row-reverse text-right'))}>
-                <Avatar name={message.who} size={28} />
-                <div className={cn('max-w-[80%] rounded-lg px-3 py-2 text-[14px]', message.from === 'client' ? 'bg-primary text-primary-foreground' : 'bg-muted')}><p>{message.text}</p><p className={cn('mt-1 text-[12px]', message.from === 'client' ? 'text-primary-foreground/70' : 'text-muted-foreground')}>{message.who} · {message.when} · WhatsApp</p></div>
-              </li>
-            ))}</ol>
-            {open.status !== 'Resolvido' ? <div className="flex flex-wrap items-center justify-between gap-3 border-t bg-muted p-4 text-[13px] text-muted-foreground"><span>A conversa deste chamado continua no WhatsApp da Groone.</span><Button size="sm" asChild><a href={whatsappLink(`Chamado #${open.id}: ${open.subject}`)} target="_blank" rel="noreferrer"><WhatsappIcon />Continuar no WhatsApp</a></Button></div>
-              : <div className="border-t bg-muted p-4 text-[13px] text-muted-foreground">Resolvido. Se voltar a acontecer, chame a Groone no WhatsApp.</div>}
-          </>}
-        </DialogContent>
-      </Dialog>
-      <Dialog open={creating} onOpenChange={setCreating}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>Novo chamado</DialogTitle><DialogDescription>Vira um chamado na Groone e a resposta chega no seu WhatsApp (+55 11 98888-7777).</DialogDescription></DialogHeader>
-          <div className="grid gap-4">
-            <Field id="tk-subject" label="Resumo"><Input id="tk-subject" className="h-10" value={form.subject} onChange={(event) => setForm({ ...form, subject: event.target.value })} placeholder="Ex.: pagamento de outubro" /></Field>
-            <Field id="tk-category" label="Assunto"><Select value={form.category} onValueChange={(category) => setForm({ ...form, category })}><SelectTrigger id="tk-category" className="h-10"><SelectValue /></SelectTrigger><SelectContent>{['Pagamento', 'Anúncios', 'Inventário', 'Outro'].map((option) => <SelectItem key={option} value={option}>{option}</SelectItem>)}</SelectContent></Select></Field>
-            <Field id="tk-text" label="O que aconteceu"><Textarea id="tk-text" rows={4} value={form.text} onChange={(event) => setForm({ ...form, text: event.target.value })} /></Field>
-          </div>
-          <DialogFooter><Button variant="outline" onClick={() => setCreating(false)}>Cancelar</Button><Button disabled={!form.subject.trim() || !form.text.trim()} onClick={create}>Abrir chamado</Button></DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
-  )
-}
-
 /* ---------- 4. Fale com seu gerente (painel do cliente) ---------- */
 
 const SLOTS: Record<string, string[]> = { 'qui, 26/11': ['10:00', '10:30', '14:00', '16:30'], 'sex, 27/11': ['09:00', '11:00', '15:00'], 'seg, 30/11': ['10:00', '13:30', '14:00', '17:00'] }
 
-/** O gerente de conta do cliente, com o link de agendamento do HubSpot Meetings dele. */
+/** O card de atendimento: o WhatsApp da Groone (caixa do HubSpot) e o link de agendamento do gerente de conta, guardado no Avant. */
 export function ManagerCard() {
   const [open, setOpen] = useState(false)
   const [day, setDay] = useState(Object.keys(SLOTS)[0])
@@ -431,13 +355,13 @@ export function ManagerCard() {
     <>
       <section className="flex flex-wrap items-center gap-4 overflow-hidden rounded-lg border bg-card p-6 animate-in fade-in slide-in-from-bottom-2 duration-500 [animation-delay:120ms] fill-mode-both">
         <Avatar name="Marina Souza" size={48} />
-        <div className="min-w-0 flex-1"><div className="text-[13px] text-muted-foreground">Sua gerente de conta</div><div className="text-[18px] font-semibold tracking-tight">Marina Souza</div><div className="text-[13px] text-muted-foreground">marina@groone.com · responde em até 1 dia útil</div></div>
+        <div className="min-w-0 flex-1"><div className="text-[13px] text-muted-foreground">Precisa de ajuda? Sua gerente de conta é</div><div className="text-[18px] font-semibold tracking-tight">Marina Souza</div><div className="text-[13px] text-muted-foreground">O atendimento da Groone é pelo WhatsApp, de segunda a sexta, das 9h às 18h.</div></div>
         {booked ? <Status tone="ok">Reunião marcada: {booked}</Status> : null}
-        <div className="flex flex-wrap gap-2"><Button variant="outline" asChild><a href={whatsappLink('Olá, Marina! Sou Caio Prado, do Blog Exemplo.')} target="_blank" rel="noreferrer"><WhatsappIcon />WhatsApp</a></Button><Button onClick={() => setOpen(true)}><CalendarClock className="h-4 w-4" />Marcar uma conversa</Button></div>
+        <div className="flex flex-wrap gap-2"><Button variant="outline" onClick={() => setOpen(true)}><CalendarClock className="h-4 w-4" />Marcar uma conversa</Button><Button asChild><a href={whatsappLink('Olá! Sou Caio Prado, do Blog Exemplo (blogexemplo.com.br).')} target="_blank" rel="noreferrer"><WhatsappIcon />Falar no WhatsApp</a></Button></div>
       </section>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-[520px]">
-          <DialogHeader><DialogTitle>Marcar uma conversa com a Marina</DialogTitle><DialogDescription>30 minutos por vídeo. Horários de Brasília, da agenda dela no HubSpot.</DialogDescription></DialogHeader>
+          <DialogHeader><DialogTitle>Marcar uma conversa com a Marina</DialogTitle><DialogDescription>30 minutos por vídeo. Horários de Brasília, pelo link de agendamento dela.</DialogDescription></DialogHeader>
           <div className="grid gap-4">
             <div className="flex flex-wrap gap-2">{Object.keys(SLOTS).map((option) => <button key={option} onClick={() => { setDay(option); setSlot(null) }} className={cn('flex h-9 items-center gap-1.5 rounded-md border px-3 text-[13px] transition-colors', day === option ? 'border-foreground bg-foreground text-background' : 'hover:bg-muted')}><CalendarDays className="h-4 w-4" />{option}</button>)}</div>
             <div key={day} className="grid grid-cols-3 gap-2 sm:grid-cols-4">{SLOTS[day].map((time, index) => <button key={time} {...rise(index)} onClick={() => setSlot(time)} className={cn('h-10 rounded-md border text-[14px] tnum transition-colors', rise(index).className, slot === time ? 'border-foreground bg-secondary font-medium' : 'hover:bg-muted')}>{time}</button>)}</div>
@@ -488,7 +412,7 @@ const GUIDES: Guide[] = [
   ] },
 ]
 
-/** Um print desenhado da tela do Avant para o passo do guia (no painel de verdade, o print vem do artigo no HubSpot). */
+/** Um print desenhado da tela do Avant para o passo do guia (no painel de verdade, o print que a equipe sobe no editor de guias). */
 function GuideShot({ kind }: { kind: GuideStep['shot'] }) {
   return (
     <div className="overflow-hidden rounded-md border bg-background shadow-sm" aria-hidden="true">
@@ -519,8 +443,8 @@ const ARTICLES: Article[] = [
   { id: 6, category: 'Relatórios', title: 'Montar um relatório customizado', summary: 'Métricas, dimensões, filtros e envios agendados.', minutes: 4 },
 ]
 
-/** Central de ajuda com os artigos da base de conhecimento do HubSpot, no lugar do botão de ajuda do Genius. */
-export function HelpCenterScreen({ go }: { go: Go }) {
+/** Central de ajuda com os guias por tecnologia e os artigos que a equipe Groone escreve no Avant (sem a base de conhecimento paga do HubSpot). */
+export function HelpCenterScreen() {
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState('Todas')
   const [reading, setReading] = useState<Article | null>(null)
@@ -530,7 +454,7 @@ export function HelpCenterScreen({ go }: { go: Go }) {
   const list = ARTICLES.filter((article) => (category === 'Todas' || article.category === category) && (article.title + article.summary).toLowerCase().includes(query.trim().toLowerCase()))
   return (
     <>
-      <PageHeader title="Central de ajuda" sub="Os artigos da Groone sobre o Avant, a ad tag, o GAM e os pagamentos." actions={<Button variant="outline" onClick={() => go('chamados')}><MessageSquare className="h-4 w-4" />Meus chamados</Button>} />
+      <PageHeader title="Central de ajuda" sub="Os artigos da Groone sobre o Avant, a ad tag, o GAM e os pagamentos." actions={<Button variant="outline" asChild><a href={whatsappLink('Olá! Preciso de ajuda com o Avant.')} target="_blank" rel="noreferrer"><WhatsappIcon />Falar no WhatsApp</a></Button>} />
       <Body>
         <div className="relative animate-in fade-in slide-in-from-bottom-2 duration-500"><Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" /><Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Como podemos ajudar?" className="h-12 bg-card pl-12 text-[16px]" /></div>
         <section className="grid gap-3">
@@ -556,7 +480,7 @@ export function HelpCenterScreen({ go }: { go: Go }) {
               <span className="mt-auto inline-flex items-center gap-1 pt-3 text-[13px] font-medium text-link">Ler<ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" /></span>
             </button>
           ))}
-          {!list.length && <div className="rounded-lg border bg-card p-8 text-center md:col-span-2 lg:col-span-3"><p className="font-medium">Nenhum artigo com “{query}”</p><p className="mt-1 text-[14px] text-muted-foreground">Abra um chamado que a equipe responde.</p><Button className="mt-4" onClick={() => go('chamados')}>Abrir chamado</Button></div>}
+          {!list.length && <div className="rounded-lg border bg-card p-8 text-center md:col-span-2 lg:col-span-3"><p className="font-medium">Nenhum artigo com “{query}”</p><p className="mt-1 text-[14px] text-muted-foreground">Chame a Groone no WhatsApp que a equipe responde.</p><Button className="mt-4" asChild><a href={whatsappLink(`Não achei na central de ajuda: ${query}`)} target="_blank" rel="noreferrer"><WhatsappIcon />Falar no WhatsApp</a></Button></div>}
         </div>
         <ManagerCard />
       </Body>
@@ -568,8 +492,8 @@ export function HelpCenterScreen({ go }: { go: Go }) {
             <p className="text-[15px] leading-relaxed text-muted-foreground">{reading.summary}</p>
             <div className="grid gap-3 text-[15px] leading-relaxed"><p>1. Em Inventário &gt; Ad tags, abra a tag do site e clique em <b>Copiar o script</b>.</p><p>2. Cole o script dentro do <code className="rounded bg-muted px-1">&lt;head&gt;</code> de todas as páginas.</p><p>3. Volte ao Avant e clique em <b>Verificar de novo</b>. Em um minuto o site aparece como instalado.</p></div>
             <div className="mt-4 rounded-lg border p-4">{helpful === null ? <div className="flex flex-wrap items-center justify-between gap-3 text-[14px]"><span>Este artigo ajudou?</span><div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => setHelpful(true)}><ThumbsUp className="h-4 w-4" />Sim</Button><Button size="sm" variant="outline" onClick={() => setHelpful(false)}><ThumbsDown className="h-4 w-4" />Não</Button></div></div>
-              : <p className="animate-in fade-in text-[14px] text-muted-foreground">{helpful ? 'Obrigado!' : 'Poxa. Que tal abrir um chamado? A equipe responde em até 1 dia útil.'}</p>}</div>
-            <p className="text-[12px] text-muted-foreground">Da base de conhecimento da Groone no HubSpot. Atualizado em 20/11.</p>
+              : <p className="animate-in fade-in text-[14px] text-muted-foreground">{helpful ? 'Obrigado!' : 'Poxa. Chame a Groone no WhatsApp que a equipe ajuda.'}</p>}</div>
+            <p className="text-[12px] text-muted-foreground">Escrito pela equipe Groone. Atualizado em 20/11.</p>
           </article>}
         </DialogContent>
       </Dialog>
@@ -602,7 +526,7 @@ export function HelpCenterScreen({ go }: { go: Go }) {
   )
 }
 
-/** A pesquisa de NPS do HubSpot dentro do painel do cliente: aparece uma vez por trimestre, no canto. */
+/** A pesquisa de NPS do Avant no painel do cliente: aparece uma vez por trimestre, no canto; a nota vai para o contato no HubSpot. */
 export function NpsPrompt() {
   const [stage, setStage] = useState<'hidden' | 'ask' | 'comment' | 'done'>('hidden')
   const [score, setScore] = useState<number | null>(null)
@@ -680,21 +604,21 @@ export function NpsScreen({ go }: { go: Go }) {
   )
 }
 
-/* ---------- Integrações > HubSpot (painel interno): sincronia + 7, 8 e 9 ---------- */
+/* ---------- Integrações > HubSpot (painel interno): sincronia, saúde e tarefas ---------- */
 
-type SyncRow = { object: string; avant: string; count: number; failed: number; last: string }
+type SyncRow = { object: string; avant: string; count: number; failed: number; last: string; custom?: boolean }
 const SYNC: SyncRow[] = [
   { object: 'Contatos', avant: 'Clientes', count: 412, failed: 2, last: 'há 3 min' },
   { object: 'Empresas', avant: 'Networks', count: 389, failed: 0, last: 'há 3 min' },
-  { object: 'Sites', avant: 'Sites', count: 1204, failed: 1, last: 'há 3 min' },
+  { object: 'Sites', avant: 'Sites', count: 1204, failed: 0, last: 'há 3 min', custom: true },
   { object: 'Negócios', avant: 'Contratos', count: 377, failed: 0, last: 'há 3 min' },
-  { object: 'Métricas', avant: 'Receita do site por mês', count: 3610, failed: 0, last: 'hoje, 05:00' },
-  { object: 'Comissões', avant: 'Comissão da equipe', count: 288, failed: 0, last: 'hoje, 05:00' },
+  { object: 'Métricas', avant: 'Receita do site por mês', count: 3610, failed: 0, last: 'hoje, 05:00', custom: true },
+  { object: 'Comissões', avant: 'Comissão da equipe', count: 288, failed: 0, last: 'hoje, 05:00', custom: true },
 ]
 const SYNC_ERRORS = [
   { object: 'Contatos', label: 'contato@technoticias', error: 'O e-mail já é de outro contato no HubSpot.', when: 'há 3 min' },
   { object: 'Contatos', label: 'ana@guiadopet.com.br', error: 'Telefone em formato inválido.', when: 'há 3 min' },
-  { object: 'Sites', label: 'receitasdavo.com.br', error: 'A propriedade "install_ok" não existe no objeto Site.', when: 'há 1 h' },
+  { object: 'Negócios', label: 'Contrato 0412 · Tech Notícias', error: 'A fase “Ativo” não existe no pipeline do HubSpot.', when: 'há 1 h' },
 ]
 const HEALTH = [
   { key: 'onboarding_step', label: 'Etapa do onboarding', example: 'Ad tag instalada (4 de 6)', group: 'Onboarding' },
@@ -706,40 +630,32 @@ const HEALTH = [
   { key: 'revenue_change', label: 'Variação contra os 30 dias anteriores', example: '−18%', group: 'Saúde' },
   { key: 'last_revenue_day', label: 'Último dia com receita', example: '24/11/2026', group: 'Saúde' },
 ]
-const INVOICE_PROPS = [
-  { key: 'last_invoice_month', label: 'Mês da última invoice', example: '10/2026' },
-  { key: 'last_invoice_status', label: 'Situação da última invoice', example: 'Emitida, esperando pagamento' },
-  { key: 'open_amount', label: 'Total em aberto (US$)', example: '1.180,00' },
-  { key: 'days_overdue', label: 'Dias em atraso', example: '0' },
-  { key: 'paid_12m', label: 'Pago nos últimos 12 meses (US$)', example: '13.402,55' },
-]
-type TaskRule = { id: string; icon: typeof AlertTriangle; title: string; text: string; on: boolean; threshold?: string; unit?: string; due: string }
+type TaskRule = { id: string; icon: typeof AlertTriangle; title: string; text: string; on: boolean; due: string; isNew?: boolean }
 const TASK_RULES: TaskRule[] = [
-  { id: 'drop', icon: TrendingDown, title: 'Queda de receita', text: 'Receita dos últimos 7 dias abaixo da média das 4 semanas anteriores.', on: true, threshold: '25', unit: '% de queda', due: '1 dia útil' },
-  { id: 'network', icon: AlertTriangle, title: 'Network desconectada', text: 'A network perdeu o acesso no GAM por mais de 6 horas.', on: true, due: 'hoje' },
-  { id: 'install', icon: ClipboardCheck, title: 'Instalação quebrada', text: 'A verificação diária achou erro na ad tag, no loader ou no reward.', on: true, due: '1 dia útil' },
-  { id: 'onboarding', icon: ListChecks, title: 'Onboarding parado', text: 'Cliente sem avançar no checklist do site.', on: false, threshold: '7', unit: 'dias parado', due: '2 dias úteis' },
-  { id: 'invoice', icon: CircleDollarSign, title: 'Invoice atrasada', text: 'Invoice emitida e não paga depois do prazo.', on: false, threshold: '5', unit: 'dias de atraso', due: '1 dia útil' },
-  { id: 'detractor', icon: SmilePlus, title: 'Detrator no NPS', text: 'O cliente deu nota de 0 a 6 na pesquisa.', on: true, due: '2 dias úteis' },
+  { id: 'network_error', icon: AlertTriangle, title: 'Network com erro', text: 'O aviso que o Avant manda quando a leitura do GAM falha.', on: true, due: 'hoje' },
+  { id: 'network_disconnected', icon: AlertTriangle, title: 'Network desconectada', text: 'O aviso de quando a network perde o acesso da Groone no GAM.', on: true, due: 'hoje' },
+  { id: 'install', icon: ClipboardCheck, title: 'Instalação quebrada', text: 'O aviso da verificação diária: erro na ad tag, no loader ou no reward.', on: true, due: '1 dia útil' },
+  { id: 'alert', icon: TrendingDown, title: 'Alerta de métrica disparado', text: 'Os alertas que o cliente ou a equipe já criaram, como queda de receita.', on: false, due: '1 dia útil' },
+  { id: 'detractor', icon: SmilePlus, title: 'Detrator no NPS', text: 'Aviso novo: o cliente deu nota de 0 a 6 na pesquisa.', on: true, due: '2 dias úteis', isNew: true },
 ]
 const RECENT_TASKS = [
-  { title: 'Queda de receita: Blog do Zé (−31%)', owner: 'João Pedro', when: 'hoje, 07:00', state: 'Aberta' },
+  { title: 'Network desconectada: Blog do Zé', owner: 'João Pedro', when: 'hoje, 07:00', state: 'Aberta' },
   { title: 'Instalação quebrada: receitasdavo.com.br', owner: 'Marina Souza', when: 'hoje, 06:10', state: 'Aberta' },
   { title: 'Detrator no NPS: Receitas da Vó (3)', owner: 'Marina Souza', when: '14/11', state: 'Concluída' },
 ]
 
-/** A integração com o HubSpot no painel interno: sincronia do que vai para lá, propriedades de saúde, tarefas e invoices. */
+/** A integração com o HubSpot no painel interno: sincronia do que vai para lá, propriedades de saúde e tarefas a partir dos avisos. */
 export function HubspotScreen() {
-  const [tab, setTab] = useState<'sync' | 'health' | 'tasks' | 'invoices'>('sync')
+  const [tab, setTab] = useState<'sync' | 'health' | 'tasks'>('sync')
   const [running, setRunning] = useState(false)
   const [rules, setRules] = useState(TASK_RULES)
-  const [enabled, setEnabled] = useState<Record<string, boolean>>(Object.fromEntries([...HEALTH, ...INVOICE_PROPS].map((item) => [item.key, true])))
+  const [enabled, setEnabled] = useState<Record<string, boolean>>(Object.fromEntries(HEALTH.map((item) => [item.key, true])))
   const [values, setValues] = useState<Record<string, string>>({})
   const [query, setQuery] = useState('')
   const errors = useMemo(() => SYNC_ERRORS.filter((row) => passes(row, values, query, ['label', 'error'])), [values, query])
   /** Pede a sincronia de tudo agora (o worker pega no próximo minuto). */
   const syncNow = () => { setRunning(true); setTimeout(() => { setRunning(false); toast.success('Sincronia terminada', { description: '14 registros mudaram e foram para o HubSpot.' }) }, 1600) }
-  const tabs = [['sync', 'Sincronia'], ['health', 'Saúde e onboarding'], ['tasks', 'Tarefas para o gerente'], ['invoices', 'Invoices']] as const
+  const tabs = [['sync', 'Sincronia'], ['health', 'Saúde e onboarding'], ['tasks', 'Tarefas para o gerente']] as const
   return (
     <>
       <PageHeader title="HubSpot" sub="O que o Avant manda para o HubSpot da Groone. Clientes, networks, contratos e métricas só vão: nada disso volta do HubSpot."
@@ -750,11 +666,12 @@ export function HubspotScreen() {
         </div>
         {tab === 'sync' && <>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{SYNC.map((row, index) => (
-            <div key={row.object} className={cn('rounded-lg border bg-card p-5 transition-[box-shadow,transform] duration-200 hover:-translate-y-px hover:shadow-sm', rise(index).className)} style={rise(index).style}>
-              <div className="flex items-center justify-between"><span className="flex items-center gap-2 text-[14px] font-medium"><HubspotMark />{row.object}</span>{row.failed ? <Status tone="bad">{row.failed} com erro</Status> : <Status tone="ok">Em dia</Status>}</div>
+            <div key={row.object} className={cn('rounded-lg border bg-card p-5 transition-[box-shadow,transform] duration-200 hover:-translate-y-px hover:shadow-sm', row.custom && 'border-dashed', rise(index).className)} style={rise(index).style}>
+              <div className="flex items-center justify-between"><span className="flex items-center gap-2 text-[14px] font-medium"><HubspotMark />{row.object}</span>{row.custom ? <Status tone="neutral">Precisa da licença</Status> : row.failed ? <Status tone="bad">{row.failed} com erro</Status> : <Status tone="ok">Em dia</Status>}</div>
               <div className="mt-3 text-[28px] font-semibold tracking-[-0.03em]"><CountUp value={row.count} /></div>
               <div className="flex items-center gap-1 text-[13px] text-muted-foreground">{row.avant}<ChevronRight className="h-3.5 w-3.5" />{row.object.toLowerCase()} · {row.last}</div>
-              {running && <div className="mt-3 h-1 overflow-hidden rounded-full bg-muted"><span className="block h-full w-1/3 animate-[loaderbar_1.1s_ease-in-out_infinite] rounded-full bg-foreground" /></div>}
+              {row.custom && <p className="mt-3 border-t pt-3 text-[12px] text-muted-foreground">Objeto personalizado do HubSpot: só liga com a licença Enterprise. Até lá, isso fica só no Avant.</p>}
+              {running && !row.custom && <div className="mt-3 h-1 overflow-hidden rounded-full bg-muted"><span className="block h-full w-1/3 animate-[loaderbar_1.1s_ease-in-out_infinite] rounded-full bg-foreground" /></div>}
             </div>
           ))}</div>
           <section className="overflow-hidden rounded-lg border bg-card animate-in fade-in duration-500">
@@ -770,16 +687,15 @@ export function HubspotScreen() {
           <PropertyTable rows={HEALTH} enabled={enabled} setEnabled={setEnabled} grouped />
         </RiseCard>}
         {tab === 'tasks' && <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
-          <RiseCard index={0} title="Quando criar uma tarefa no HubSpot" desc="A tarefa vai para o gerente de conta do cliente (o dono do contato no HubSpot), com o link da tela certa no Avant. Uma por problema: enquanto ela estiver aberta, o Avant não cria outra.">
+          <RiseCard index={0} title="Avisos que também viram tarefa no HubSpot" desc="São os avisos que o Avant já manda por e-mail e no sino, com as mesmas regras. Ligue a chave para também criar uma tarefa para o gerente de conta do cliente (o dono do contato no HubSpot), com o link da tela certa. Uma por problema: enquanto ela estiver aberta, o Avant não cria outra. Tarefa é do CRM grátis.">
             <ul className="-my-3 divide-y">{rules.map((rule, index) => {
               const Icon = rule.icon
               return (
                 <li key={rule.id} {...rise(index, 'flex flex-wrap items-start gap-3 py-4')}>
                   <span className={cn('grid h-9 w-9 shrink-0 place-items-center rounded-md border transition-colors', rule.on ? 'bg-background' : 'bg-muted text-muted-foreground')}><Icon className="h-4 w-4" /></span>
-                  <div className="min-w-0 flex-1"><div className="text-[14px] font-medium">{rule.title}</div><p className="text-[13px] text-muted-foreground">{rule.text}</p>
+                  <div className="min-w-0 flex-1"><div className="flex items-center gap-2 text-[14px] font-medium">{rule.title}{rule.isNew && <Badge>Novo</Badge>}</div><p className="text-[13px] text-muted-foreground">{rule.text}</p>
                     {rule.on && <div className="mt-2 flex flex-wrap items-center gap-2 text-[13px] animate-in fade-in slide-in-from-top-1">
-                      {rule.threshold !== undefined && <><Input className="h-8 w-16 tnum" defaultValue={rule.threshold} aria-label={rule.unit} /><span className="text-muted-foreground">{rule.unit}</span><span className="text-muted-foreground">·</span></>}
-                      <span className="text-muted-foreground">prazo</span><Select defaultValue={rule.due}><SelectTrigger className="h-8 w-[140px] text-[13px]"><SelectValue /></SelectTrigger><SelectContent>{['hoje', '1 dia útil', '2 dias úteis', '1 semana'].map((option) => <SelectItem key={option} value={option}>{option}</SelectItem>)}</SelectContent></Select>
+                      <span className="text-muted-foreground">criar tarefa, com prazo de</span><Select defaultValue={rule.due}><SelectTrigger className="h-8 w-[140px] text-[13px]"><SelectValue /></SelectTrigger><SelectContent>{['hoje', '1 dia útil', '2 dias úteis', '1 semana'].map((option) => <SelectItem key={option} value={option}>{option}</SelectItem>)}</SelectContent></Select>
                     </div>}
                   </div>
                   <Switch checked={rule.on} onCheckedChange={(on) => setRules(rules.map((item) => (item.id === rule.id ? { ...item, on } : item)))} aria-label={rule.title} />
@@ -791,10 +707,6 @@ export function HubspotScreen() {
             <ul className="-my-2 divide-y">{RECENT_TASKS.map((task, index) => <li key={task.title} {...rise(index + 2, 'py-3')}><div className="text-[14px] font-medium">{task.title}</div><div className="mt-0.5 flex items-center justify-between text-[12px] text-muted-foreground"><span>{task.owner} · {task.when}</span><Status tone={task.state === 'Aberta' ? 'ochre' : 'ok'}>{task.state}</Status></div></li>)}</ul>
           </RiseCard>
         </div>}
-        {tab === 'invoices' && <RiseCard index={0} title="Invoices e pagamentos no contato" desc="O comercial vê no HubSpot quem está em dia e quem está em atraso, sem abrir o Avant. Vai só o resumo: nenhum dado bancário ou fiscal sai do Avant."
-          footerNote="Atualizado quando a invoice muda de situação.">
-          <PropertyTable rows={INVOICE_PROPS} enabled={enabled} setEnabled={setEnabled} />
-        </RiseCard>}
       </Body>
     </>
   )
@@ -815,3 +727,153 @@ function PropertyTable({ rows, enabled, setEnabled, grouped = false }: { rows: {
   )
 }
 
+
+/* ---------- Ferramentas > Central de ajuda (painel interno): a equipe escreve os guias e artigos ---------- */
+
+type Language = 'PT' | 'EN' | 'ES'
+type HelpItem = { id: string; kind: 'Guia' | 'Artigo'; title: string; category: string; languages: Language[]; steps: number; published: boolean; updated: string; reads: number }
+const LANGUAGES: Language[] = ['PT', 'EN', 'ES']
+const HELP_ITEMS: HelpItem[] = [
+  ...GUIDES.map((guide, index) => ({ id: guide.id, kind: 'Guia' as const, title: guide.name, category: 'Tecnologias', languages: (index < 3 ? LANGUAGES : ['PT', 'EN']) as Language[], steps: guide.steps.length, published: index !== 5, updated: `${20 - index}/11`, reads: [412, 233, 198, 87, 64, 0][index] })),
+  ...ARTICLES.map((article, index) => ({ id: `artigo-${article.id}`, kind: 'Artigo' as const, title: article.title, category: article.category, languages: (index % 2 ? ['PT'] : LANGUAGES) as Language[], steps: 0, published: true, updated: `${18 - index}/11`, reads: [301, 188, 540, 122, 96, 41][index] })),
+]
+
+/** Editor da central de ajuda: a equipe Groone escreve guias e artigos em PT, EN e ES, sobe os prints e publica. */
+export function HelpEditorScreen() {
+  const [items, setItems] = useState(HELP_ITEMS)
+  const [values, setValues] = useState<Record<string, string>>({})
+  const [query, setQuery] = useState('')
+  const [editing, setEditing] = useState<HelpItem | null>(null)
+  const rows = items.filter((item) => passes({ ...item, state: item.published ? 'Publicado' : 'Rascunho', missing: LANGUAGES.filter((language) => !item.languages.includes(language)).join(' ') || 'Nenhum' } as unknown as Record<string, string>, values, query, ['title', 'category']))
+  const defs: FilterDef[] = [
+    { key: 'kind', label: 'Tipo', options: ['Guia', 'Artigo'] },
+    { key: 'state', label: 'Situação', options: ['Publicado', 'Rascunho'] },
+    { key: 'category', label: 'Categoria', options: ['Tecnologias', 'Primeiros passos', 'Pagamentos', 'Anúncios', 'Relatórios'] },
+  ]
+  /** Abre o editor com um guia novo, ainda sem passos. */
+  const create = (kind: HelpItem['kind']) => setEditing({ id: `novo-${Date.now()}`, kind, title: '', category: kind === 'Guia' ? 'Tecnologias' : 'Primeiros passos', languages: [], steps: kind === 'Guia' ? 1 : 0, published: false, updated: 'agora', reads: 0 })
+  /** Guarda o que o editor mudou e fecha. */
+  const save = (next: HelpItem) => {
+    setItems((current) => (current.some((item) => item.id === next.id) ? current.map((item) => (item.id === next.id ? next : item)) : [next, ...current]))
+    setEditing(null)
+    toast.success(next.published ? 'Publicado na central de ajuda' : 'Rascunho salvo', { description: next.published ? 'Os clientes já veem em Ajuda, no idioma de cada um.' : 'Só a equipe vê até publicar.' })
+  }
+  return (
+    <>
+      <PageHeader title="Central de ajuda" sub="Os guias de cada tecnologia e os artigos que os clientes veem em Ajuda. Ficam no Avant, sem licença do HubSpot. Quem não acha a resposta cai no WhatsApp da Groone."
+        actions={<><Button variant="outline" onClick={() => create('Artigo')}><Plus className="h-4 w-4" />Novo artigo</Button><Button onClick={() => create('Guia')}><Plus className="h-4 w-4" />Novo guia</Button></>} />
+      <Body>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <Kpi index={0} label="Publicados" value={items.filter((item) => item.published).length} />
+          <Kpi index={1} label="Rascunhos" value={items.filter((item) => !item.published).length} />
+          <Kpi index={2} label="Faltando tradução" value={items.filter((item) => item.languages.length < 3).length} tone="ochre" />
+          <Kpi index={3} label="Leituras (30 dias)" value={items.reduce((total, item) => total + item.reads, 0)} />
+        </div>
+        <section className="overflow-hidden rounded-lg border bg-card animate-in fade-in duration-500">
+          <TableFilters defs={defs} initial={['kind', 'state']} values={values} setValues={setValues} query={query} setQuery={setQuery} placeholder="Buscar título ou categoria" />
+          <div className="overflow-x-auto"><table className="w-full text-[14px]">
+            <thead className="border-b"><tr><th className={th}>Título</th><th className={th}>Tipo</th><th className={th}>Idiomas</th><th className={cn(th, 'text-right')}>Passos</th><th className={th}>Situação</th><th className={cn(th, 'text-right')}>Leituras</th><th className={th}>Atualizado</th></tr></thead>
+            <tbody className="divide-y">{rows.map((item, index) => (
+              <tr key={item.id} {...rise(index, 'cursor-pointer transition-colors hover:bg-muted/50')} onClick={() => setEditing(item)}>
+                <td className={cn(td, 'font-medium')}>{item.title}<div className="text-[13px] font-normal text-muted-foreground">{item.category}</div></td>
+                <td className={td}><Badge>{item.kind}</Badge></td>
+                <td className={td}><span className="flex gap-1">{LANGUAGES.map((language) => <span key={language} className={cn('rounded border px-1.5 py-0.5 font-mono text-[11px]', item.languages.includes(language) ? 'bg-background' : 'border-dashed text-muted-foreground line-through')}>{language}</span>)}</span></td>
+                <td className={cn(td, 'text-right tnum')}>{item.kind === 'Guia' ? item.steps : '—'}</td>
+                <td className={td}>{item.published ? <Status tone="ok">Publicado</Status> : <Status tone="neutral">Rascunho</Status>}</td>
+                <td className={cn(td, 'text-right tnum')}>{item.reads.toLocaleString('pt-BR')}</td>
+                <td className={cn(td, 'text-muted-foreground')}>{item.updated}</td>
+              </tr>
+            ))}
+            {!rows.length && <tr><td colSpan={7} className="py-10 text-center text-[14px] text-muted-foreground">Nada com esses filtros.</td></tr>}</tbody>
+          </table></div>
+        </section>
+      </Body>
+      {editing && <HelpItemEditor key={editing.id} item={editing} close={() => setEditing(null)} save={save} />}
+    </>
+  )
+}
+
+type DraftStep = { title: string; text: string; shot: GuideStep['shot'] | null }
+
+/** Modal grande do editor: idioma em abas, título, resumo, os passos com o print de cada um e a prévia como o cliente vê. */
+function HelpItemEditor({ item, close, save }: { item: HelpItem; close: () => void; save: (next: HelpItem) => void }) {
+  const guide = GUIDES.find((entry) => entry.id === item.id)
+  const article = ARTICLES.find((entry) => `artigo-${entry.id}` === item.id)
+  const [language, setLanguage] = useState<Language>('PT')
+  const [title, setTitle] = useState(item.title)
+  const [summary, setSummary] = useState(guide?.summary ?? article?.summary ?? '')
+  const [steps, setSteps] = useState<DraftStep[]>(guide ? guide.steps : item.kind === 'Guia' ? [{ title: '', text: '', shot: null }] : [])
+  const [published, setPublished] = useState(item.published)
+  const [preview, setPreview] = useState(false)
+  const translated = (code: Language) => code === 'PT' || item.languages.includes(code)
+  /** Troca um campo de um passo. */
+  const patch = (index: number, next: Partial<DraftStep>) => setSteps(steps.map((step, position) => (position === index ? { ...step, ...next } : step)))
+  /** Simula a subida do print do passo (no painel de verdade, PNG ou JPG até 2 MB). */
+  const upload = (index: number) => { patch(index, { shot: (['list', 'editor', 'code', 'check', 'chart', 'form'] as const)[index % 6] }); toast.success('Print enviado', { description: 'PNG, 1440 × 900. Os dados do cliente no print ficam por conta de quem sobe: use a Empresa de demonstração.' }) }
+  return (
+    <Dialog open onOpenChange={(open) => { if (!open) close() }}>
+      <DialogContent className="flex h-[88vh] max-h-[880px] w-[calc(100vw-32px)] max-w-[1120px] flex-col gap-0 overflow-hidden p-0 sm:max-w-[1120px]">
+        <DialogHeader className="border-b p-6 pb-4 text-left">
+          <DialogTitle className="text-[20px] tracking-tight">{item.title ? `Editar ${item.kind.toLowerCase()}: ${item.title}` : `Novo ${item.kind.toLowerCase()}`}</DialogTitle>
+          <DialogDescription>Escreva em português e depois traduza. O cliente vê no idioma dele; sem tradução, vê em português.</DialogDescription>
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex rounded-md border bg-background p-0.5" role="tablist" aria-label="Idioma">
+              {LANGUAGES.map((code) => <button key={code} role="tab" aria-selected={language === code} onClick={() => setLanguage(code)} className={cn('flex h-8 items-center gap-1.5 rounded px-3 text-[13px] transition-colors', language === code ? 'bg-secondary font-medium' : 'text-muted-foreground')}>{code}{!translated(code) && <span className="h-1.5 w-1.5 rounded-full bg-ochre" aria-label="sem tradução" />}</button>)}
+            </div>
+            <div className="flex rounded-md border bg-background p-0.5" role="tablist" aria-label="Modo">
+              <button role="tab" aria-selected={!preview} onClick={() => setPreview(false)} className={cn('flex h-8 items-center gap-1.5 rounded px-3 text-[13px]', !preview ? 'bg-secondary font-medium' : 'text-muted-foreground')}><NotebookPen className="h-4 w-4" />Editar</button>
+              <button role="tab" aria-selected={preview} onClick={() => setPreview(true)} className={cn('flex h-8 items-center gap-1.5 rounded px-3 text-[13px]', preview ? 'bg-secondary font-medium' : 'text-muted-foreground')}><Eye className="h-4 w-4" />Como o cliente vê</button>
+            </div>
+          </div>
+        </DialogHeader>
+        <div className="min-h-0 flex-1 overflow-y-auto p-6">
+          {!translated(language) && <p className="mb-4 rounded-md border border-dashed p-3 text-[13px] text-muted-foreground animate-in fade-in">Ainda sem tradução em {language}. Os campos começam com o texto em português para você traduzir.</p>}
+          {preview ? (
+            <div key={language} className="mx-auto grid max-w-[760px] gap-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <div><div className="text-[13px] text-muted-foreground">{item.category}</div><h2 className="text-[28px] font-semibold tracking-[-0.03em]">{title || 'Sem título'}</h2><p className="mt-1 text-[15px] text-muted-foreground">{summary}</p></div>
+              {steps.map((step, index) => (
+                <div key={index} {...rise(index, 'grid gap-3')}>
+                  <div className="flex items-start gap-3"><span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-foreground text-[13px] font-medium text-background tnum">{index + 1}</span><div><div className="text-[16px] font-medium">{step.title || 'Passo sem título'}</div><p className="text-[14px] text-muted-foreground">{step.text}</p></div></div>
+                  {step.shot ? <GuideShot kind={step.shot} /> : <div className="grid h-40 place-items-center rounded-md border border-dashed text-[13px] text-muted-foreground">Sem print</div>}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div key={language} className="grid gap-6 animate-in fade-in duration-300">
+              <div className="grid gap-4 md:grid-cols-2">
+                <Field id="help-title" label="Título"><Input id="help-title" value={title} onChange={(event) => setTitle(event.target.value)} placeholder={item.kind === 'Guia' ? 'Ex.: Ad tag' : 'Ex.: Como instalar a ad tag'} /></Field>
+                <Field id="help-category" label="Categoria"><Select defaultValue={item.category}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{['Tecnologias', 'Primeiros passos', 'Pagamentos', 'Anúncios', 'Relatórios'].map((option) => <SelectItem key={option} value={option}>{option}</SelectItem>)}</SelectContent></Select></Field>
+              </div>
+              <Field id="help-summary" label="Resumo"><Textarea id="help-summary" rows={2} value={summary} onChange={(event) => setSummary(event.target.value)} placeholder="Uma frase sobre o que o cliente aprende aqui." /></Field>
+              {item.kind === 'Artigo' && <Field id="help-body" label="Texto do artigo"><Textarea id="help-body" rows={10} defaultValue={article ? `${article.summary}\n\n1. …\n2. …` : ''} placeholder="Escreva o artigo. Títulos com ##, listas com - e links normais." /></Field>}
+              {item.kind === 'Guia' && <div className="grid gap-3">
+                <div className="flex items-center justify-between"><h3 className="text-[16px] font-semibold tracking-tight">Passos</h3><span className="text-[13px] text-muted-foreground tnum">{steps.length} passo{steps.length === 1 ? '' : 's'}</span></div>
+                {steps.map((step, index) => (
+                  <div key={index} {...rise(index, 'grid gap-4 rounded-lg border bg-card p-4 md:grid-cols-[1fr_300px]')}>
+                    <div className="grid content-start gap-3">
+                      <div className="flex items-center gap-2"><span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-foreground text-[13px] font-medium text-background tnum">{index + 1}</span><Input value={step.title} onChange={(event) => patch(index, { title: event.target.value })} placeholder="Título do passo" aria-label={`Título do passo ${index + 1}`} />
+                        <Button size="icon" variant="ghost" className="shrink-0" aria-label={`Tirar o passo ${index + 1}`} onClick={() => setSteps(steps.filter((_, position) => position !== index))}><Trash2 className="h-4 w-4" /></Button></div>
+                      <Textarea rows={3} value={step.text} onChange={(event) => patch(index, { text: event.target.value })} placeholder="O que o cliente faz neste passo." aria-label={`Texto do passo ${index + 1}`} />
+                    </div>
+                    {step.shot ? (
+                      <div className="group relative"><GuideShot kind={step.shot} /><Button size="sm" variant="outline" className="absolute bottom-2 right-2 opacity-0 transition-opacity group-hover:opacity-100" onClick={() => upload(index + 1)}><ImagePlus className="h-4 w-4" />Trocar print</Button></div>
+                    ) : (
+                      <button onClick={() => upload(index)} className="grid min-h-[180px] place-items-center rounded-md border border-dashed text-center text-[13px] text-muted-foreground transition-colors hover:border-foreground/40 hover:bg-muted/50">
+                        <span className="grid justify-items-center gap-1"><ImagePlus className="h-5 w-5" />Subir o print do passo<span className="text-[12px]">PNG ou JPG, até 2 MB. Arraste ou clique.</span></span>
+                      </button>
+                    )}
+                  </div>
+                ))}
+                <Button variant="outline" className="w-fit" onClick={() => setSteps([...steps, { title: '', text: '', shot: null }])}><Plus className="h-4 w-4" />Adicionar passo</Button>
+              </div>}
+            </div>
+          )}
+        </div>
+        <DialogFooter className="flex-row items-center justify-between border-t p-4 sm:justify-between">
+          <label className="flex items-center gap-2 text-[14px]"><Switch checked={published} onCheckedChange={setPublished} />{published ? 'Publicado: os clientes veem' : 'Rascunho: só a equipe vê'}</label>
+          <div className="flex gap-2"><Button variant="outline" onClick={close}>Cancelar</Button><Button disabled={!title.trim()} onClick={() => save({ ...item, title, steps: steps.length, published, languages: Array.from(new Set([...item.languages, 'PT', language])) as Language[], updated: 'agora' })}><Check className="h-4 w-4" />Salvar</Button></div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}

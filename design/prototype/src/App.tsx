@@ -19,7 +19,7 @@ import { translate, type Key, type Lang } from './i18n'
 import { Mark, SeatBar, SeatDot, SeatStrip, type SeatState } from './tiles'
 import { DateField, MonthField, PeriodPicker, PRESETS } from './date-pickers'
 import { DollarRate, NotificationCenter } from './navbar-extras'
-import { HelpCenterScreen, HubspotRecordCard, HubspotScreen, NetworkDetailScreen, NpsScreen, ProspectsScreen, TicketsScreen } from './hubspot'
+import { HelpCenterScreen, HubspotRecordCard, HubspotScreen, HelpEditorScreen, NetworkDetailScreen, NpsScreen, ProspectsScreen } from './hubspot'
 
 /* ---------- prototype routing ---------- */
 
@@ -36,9 +36,9 @@ const SCREENS = [
   ['resultado', 'Resultado'],
   ['custos', 'Custos'],
   ['controlecustos', 'Financeiro · Controle de custos'],
-  ['chamados', 'Ajuda · Chamados (HubSpot)'],
   ['ajuda', 'Ajuda · Central de ajuda, gerente e NPS (HubSpot)'],
   ['hubspotinterno', 'Painel interno · Integrações · HubSpot'],
+  ['ajudainterno', 'Painel interno · Ferramentas · Central de ajuda'],
   ['prospeccao', 'Painel interno · Prospecção (HubSpot)'],
   ['npsinterno', 'Painel interno · NPS dos clientes (HubSpot)'],
   ['equipe', 'Equipe'],
@@ -133,7 +133,7 @@ const SCREENS = [
   ['seletordatas', 'Componentes · Seletor de datas'],
 ] as const
 type Screen = (typeof SCREENS)[number][0]
-const INTERNAL_SCREENS: Screen[] = ['networkinterno', 'hubspotinterno', 'prospeccao', 'npsinterno', 'gadsinterno', 'gadscampanhasinterno', 'gadscampanhainterno', 'gadsgrupointerno', 'gadsanunciointerno', 'fbinterno', 'fbcampanhasinterno', 'fbcampanhainterno', 'fbconjuntointerno', 'fbanunciointerno', 'interno', 'cliente', 'siteinterno', 'contratos', 'resultados', 'papelcomissao', 'minhacomissao', 'comissoes', 'minhasinvoices', 'invoice', 'invoices', 'servicosinvoice', 'modelosdash', 'tarefas', 'tarefa', 'checklists', 'checklist', 'checklistitens', 'ferramentasgam', 'execucaogam', 'rewardsinterno', 'rewardinterno', 'rewardmetricasinterno', 'adtagsinterno', 'adtaginterno', 'adtagmetricasinterno', 'loadersinterno', 'loaderinterno', 'regrasprecointerno', 'regrasiteinterno', 'regrainterno', 'cascatainterno']
+const INTERNAL_SCREENS: Screen[] = ['networkinterno', 'hubspotinterno', 'ajudainterno', 'prospeccao', 'npsinterno', 'gadsinterno', 'gadscampanhasinterno', 'gadscampanhainterno', 'gadsgrupointerno', 'gadsanunciointerno', 'fbinterno', 'fbcampanhasinterno', 'fbcampanhainterno', 'fbconjuntointerno', 'fbanunciointerno', 'interno', 'cliente', 'siteinterno', 'contratos', 'resultados', 'papelcomissao', 'minhacomissao', 'comissoes', 'minhasinvoices', 'invoice', 'invoices', 'servicosinvoice', 'modelosdash', 'tarefas', 'tarefa', 'checklists', 'checklist', 'checklistitens', 'ferramentasgam', 'execucaogam', 'rewardsinterno', 'rewardinterno', 'rewardmetricasinterno', 'adtagsinterno', 'adtaginterno', 'adtagmetricasinterno', 'loadersinterno', 'loaderinterno', 'regrasprecointerno', 'regrasiteinterno', 'regrainterno', 'cascatainterno']
 const isScreen = (s: string): s is Screen => SCREENS.some(([k]) => k === s)
 type T = (k: Key) => string
 
@@ -564,14 +564,14 @@ const CLIENT_RAIL: RailGroup[] = [
   { key: 'financeiro', label: 'Financeiro', icon: Wallet, items: [{ id: 'resultado', label: 'Resultado' }, { id: 'custos', label: 'Custos' }, { id: 'controlecustos', label: 'Controle de custos' }] },
   { key: 'inventario', label: 'Inventário', icon: Network, items: [{ id: 'networks', label: 'Networks do GAM', also: ['conectar'] }, { id: 'rewards', label: 'Rewards', also: ['reward', 'rewardmetricas'] }, { id: 'adtags', label: 'Ad tags', also: ['adtag', 'adtagmetricas'] }, { id: 'loaders', label: 'Loaders', also: ['loader'] }, { id: 'regraspreco', label: 'Regras de preço', also: ['regrasite', 'regra', 'cascata'] }] },
   { key: 'equipe', label: 'Equipe', icon: Users, items: [{ id: 'equipe', label: 'Membros', also: ['membro'] }, { id: 'grupos', label: 'Grupos', also: ['grupo', 'grupoinativo'] }] },
-  { key: 'ajuda', label: 'Ajuda', icon: LifeBuoy, items: [{ id: 'ajuda', label: 'Central de ajuda' }, { id: 'chamados', label: 'Chamados' }] },
+  { key: 'ajuda', label: 'Ajuda', icon: LifeBuoy, items: [{ id: 'ajuda', label: 'Central de ajuda' }] },
   { key: 'empresa', label: 'Empresa', icon: Settings, items: [{ id: 'configuracoes', label: 'Configurações' }, { id: 'fiscais', label: 'Dados fiscais' }] },
 ]
 const INTERNAL_RAIL: RailGroup[] = [
   { key: 'clientes', label: 'Inventário', icon: Users, items: [{ id: 'interno', label: 'Clientes', also: ['cliente', 'siteinterno', 'networkinterno'] }, { id: 'prospeccao', label: 'Prospecção' }, { id: 'npsinterno', label: 'NPS dos clientes' }, { id: 'contratos', label: 'Contratos' }, { id: 'resultados', label: 'Resultado dos clientes' }, { id: 'checklists', label: 'Checklists', also: ['checklist', 'checklistitens'] }, { id: 'rewardsinterno', label: 'Rewards', also: ['rewardinterno', 'rewardmetricasinterno'] }, { id: 'adtagsinterno', label: 'Ad tags', also: ['adtaginterno', 'adtagmetricasinterno'] }, { id: 'loadersinterno', label: 'Loaders', also: ['loaderinterno'] }, { id: 'regrasprecointerno', label: 'Regras de preço', also: ['regrasiteinterno', 'regrainterno', 'cascatainterno'] }] },
   { key: 'integracoes', label: 'Integrações', icon: Plug, items: [{ id: 'hubspotinterno', label: 'HubSpot' }, { id: 'fbinterno', label: 'Facebook' }, { id: 'fbcampanhasinterno', label: 'Campanhas do Facebook', also: ['fbcampanhainterno', 'fbconjuntointerno', 'fbanunciointerno'] }, { id: 'gadsinterno', label: 'Google Ads' }, { id: 'gadscampanhasinterno', label: 'Campanhas do Google Ads', also: ['gadscampanhainterno', 'gadsgrupointerno', 'gadsanunciointerno'] }] },
   { key: 'comissoes', label: 'Comissões', icon: Wallet, items: [{ id: 'minhacomissao', label: 'Minha comissão' }, { id: 'minhasinvoices', label: 'Minhas invoices' }, { id: 'comissoes', label: 'Comissões da equipe' }, { id: 'invoices', label: 'Invoices', also: ['servicosinvoice', 'invoice'] }] },
-  { key: 'ferramentas', label: 'Ferramentas', icon: Wrench, items: [{ id: 'tarefas', label: 'Tarefas', also: ['tarefa'] }, { id: 'modelosdash', label: 'Modelos de dashboard' }, { id: 'ferramentasgam', label: 'Ferramentas do GAM', also: ['execucaogam'] }] },
+  { key: 'ferramentas', label: 'Ferramentas', icon: Wrench, items: [{ id: 'tarefas', label: 'Tarefas', also: ['tarefa'] }, { id: 'modelosdash', label: 'Modelos de dashboard' }, { id: 'ferramentasgam', label: 'Ferramentas do GAM', also: ['execucaogam'] }, { id: 'ajudainterno', label: 'Central de ajuda' }] },
   { key: 'equipegroone', label: 'Equipe', icon: ShieldCheck, items: [{ id: 'papelcomissao', label: 'Papéis da Equipe Groone' }] },
 ]
 const RAIL_WIDTH = 88
@@ -10705,8 +10705,8 @@ export default function App() {
       case 'resultado': return <ResultScreen go={go} />
       case 'custos': return <CostsScreen />
       case 'controlecustos': return <CostControlScreen go={go} />
-      case 'chamados': return <TicketsScreen />
-      case 'ajuda': return <HelpCenterScreen go={(next) => go(next as Screen)} />
+      case 'ajudainterno': return <HelpEditorScreen />
+      case 'ajuda': return <HelpCenterScreen />
       case 'hubspotinterno': return <HubspotScreen />
       case 'prospeccao': return <ProspectsScreen go={(next) => go(next as Screen)} />
       case 'npsinterno': return <NpsScreen go={(next) => go(next as Screen)} />
