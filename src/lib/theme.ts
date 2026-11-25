@@ -1,109 +1,150 @@
 /**
- * Tema e cor do sistema, escolhas de cada pessoa (vêm do /auth/me como ``theme`` e ``accent``).
- * O navegador lembra o tema para a primeira tela não piscar. A cor secundária muda ``--primary``
- * com um tom por tema.
+ * Tema do painel, escolha de cada pessoa (vem do /auth/me como ``theme``).
+ * O navegador lembra o tema (e as cores do personalizado) para a primeira tela não piscar. Cada
+ * tema pronto tem as próprias cores (``styles.css``); o personalizado traz as que a pessoa escolheu.
+ * Enquanto a pessoa edita um tema, ``previewColors`` mostra as cores no painel sem salvar.
  */
 
 import { ref, watch } from 'vue'
-import type { AccentId, Theme } from '@/lib/types'
+import { customThemeCss, isDarkBackground, withBorder, type SavedThemeColors, type ThemeColors } from '@/lib/customTheme'
+import type { AnimationArea, FontSize, Theme } from '@/lib/types'
 
-export type { AccentId, Theme }
+export type { Theme }
 
-export interface Accent {
-  id: AccentId
-  /** Cor da amostra fora do painel (e-mail, documentação). */
-  hex: string
-  /** Tom e cor do texto do botão em cada tema (HSL sem ``hsl()``). */
-  light: string
-  lightText: string
-  dark: string
-  darkText: string
-  groone: string
-  grooneText: string
-  /** Borda clara do botão no GroOne, para a cor que some no fundo azul-marinho. */
-  grooneEdge?: string
-}
-
-/** A cor secundária do sistema: o padrão e mais nove, cada uma com um tom por tema. */
-export const ACCENTS: Accent[] = [
-  { id: 'default', hex: '#171717', light: '0 0% 9%', lightText: '0 0% 100%', dark: '0 0% 93%', darkText: '0 0% 4%', groone: '215 78% 27%', grooneText: '0 0% 100%' },
-  { id: 'blue', hex: '#0062e6', light: '212 100% 45%', lightText: '0 0% 100%', dark: '212 100% 62%', darkText: '0 0% 4%', groone: '212 85% 40%', grooneText: '0 0% 100%' },
-  { id: 'navy', hex: '#0a213d', light: '213 72% 14%', lightText: '0 0% 100%', dark: '213 55% 45%', darkText: '0 0% 100%', groone: '213 62% 21%', grooneText: '0 0% 100%', grooneEdge: '213 45% 60%' },
-  { id: 'cyan', hex: '#0c7f99', light: '192 85% 32%', lightText: '0 0% 100%', dark: '189 75% 52%', darkText: '0 0% 4%', groone: '192 80% 28%', grooneText: '0 0% 100%' },
-  { id: 'green', hex: '#11804c', light: '152 76% 28%', lightText: '0 0% 100%', dark: '150 60% 52%', darkText: '0 0% 4%', groone: '152 70% 25%', grooneText: '0 0% 100%' },
-  { id: 'purple', hex: '#6d32d4', light: '262 70% 52%', lightText: '0 0% 100%', dark: '262 85% 74%', darkText: '0 0% 4%', groone: '262 55% 38%', grooneText: '0 0% 100%' },
-  { id: 'pink', hex: '#c4207a', light: '330 72% 45%', lightText: '0 0% 100%', dark: '330 85% 70%', darkText: '0 0% 4%', groone: '330 65% 36%', grooneText: '0 0% 100%' },
-  { id: 'orange', hex: '#d9530b', light: '22 92% 44%', lightText: '0 0% 100%', dark: '26 95% 60%', darkText: '0 0% 4%', groone: '22 85% 36%', grooneText: '0 0% 100%' },
-  { id: 'gold', hex: '#dda60e', light: '44 88% 46%', lightText: '0 0% 9%', dark: '45 95% 58%', darkText: '0 0% 4%', groone: '43 80% 45%', grooneText: '214 72% 9%' },
-  { id: 'graphite', hex: '#45505f', light: '215 16% 32%', lightText: '0 0% 100%', dark: '215 16% 70%', darkText: '0 0% 4%', groone: '215 25% 30%', grooneText: '0 0% 100%', grooneEdge: '215 25% 65%' },
-]
-
+/** Os temas prontos; os personalizados vêm da conta da pessoa. */
 export const THEMES: Theme[] = ['light', 'dark', 'groone', 'system']
 
-/** Cor de destaque com o id, ou a padrão. */
-export function accentFor(id: string | null | undefined): Accent {
-  return ACCENTS.find((accent) => accent.id === id) ?? ACCENTS[0]!
-}
-
-/** CSS que troca a cor primária em cada tema; no GroOne o padrão já vem do ``styles.css``. O foco
- * (``--ring``) fica com o azul do tema, para continuar visível com qualquer cor. */
-export function accentCss(accent: Accent): string {
-  if (accent.id === 'default') return ''
-  const light = `--primary:${accent.light};--primary-foreground:${accent.lightText};`
-  const dark = `--primary:${accent.dark};--primary-foreground:${accent.darkText};`
-  const edge = accent.grooneEdge ? `--primary-edge:${accent.grooneEdge};` : ''
-  const groone = `--primary:${accent.groone};--primary-foreground:${accent.grooneText};${edge}`
-  return `:root{${light}}@media (prefers-color-scheme: dark){:root:not([data-theme="light"]):not([data-theme="groone"]){${dark}}}:root[data-theme="dark"]{${dark}}:root[data-theme="groone"]{${groone}}`
-}
-
-/** A cor da amostra no tema que vale agora (o do sistema já resolvido em claro ou escuro). */
-export function swatchColor(accent: Accent, shown: 'light' | 'dark' | 'groone'): string {
-  return `hsl(${accent[shown]})`
-}
-
-/** O tema que vale agora: o do sistema vira claro ou escuro pelo aparelho. */
+/** O tema que vale agora: o do sistema vira claro ou escuro pelo aparelho, e o personalizado vira
+ * claro ou escuro pelo fundo dele. */
 export function shownTheme(value: Theme): 'light' | 'dark' | 'groone' {
-  if (value !== 'system') return value
+  if (previewColors.value) return isDarkBackground(previewColors.value.background) ? 'dark' : 'light'
+  if (value === 'custom' && customColors.value) return isDarkBackground(customColors.value.background) ? 'dark' : 'light'
+  if (value !== 'system' && value !== 'custom') return value
   return typeof matchMedia !== 'undefined' && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
 }
 
-/** Aplica a cor de destaque da pessoa na página. */
-export function applyAccent(id: string | null | undefined) {
-  let element = document.getElementById('avant-accent') as HTMLStyleElement | null
-  if (!element) {
-    element = document.createElement('style')
-    element.id = 'avant-accent'
-    document.head.appendChild(element)
-  }
-  element.textContent = accentCss(accentFor(id))
-}
-
 const STORAGE = 'avant.theme'
+const ANIMATIONS_STORAGE = 'avant.animations'
+/** As áreas com animação, na ordem da tela; por padrão, todas. */
+export const ANIMATION_AREAS: AnimationArea[] = ['fields', 'buttons', 'cards']
+const FONT_SIZE_STORAGE = 'avant.fontSize'
+/** Os tamanhos do texto, do menor ao maior; o padrão é o de hoje. */
+export const FONT_SIZES: FontSize[] = ['default', 'large', 'larger']
+const CUSTOM_STORAGE = 'avant.customTheme'
 
 /** Tema lembrado no navegador, ou o do sistema. */
 function savedTheme(): Theme {
   try {
     const stored = localStorage.getItem(STORAGE)
-    if (stored && (THEMES as string[]).includes(stored)) return stored as Theme
+    if (stored && ([...THEMES, 'custom'] as string[]).includes(stored)) return stored as Theme
   } catch {
     // sem localStorage
   }
   return 'system'
 }
 
+/** Cores do tema personalizado lembradas no navegador, ou vazio. */
+function savedCustomColors(): ThemeColors | null {
+  try {
+    const stored = localStorage.getItem(CUSTOM_STORAGE)
+    return stored ? withBorder(JSON.parse(stored) as SavedThemeColors) : null
+  } catch {
+    return null
+  }
+}
+
+/** Áreas com animação lembradas no navegador, ou todas. */
+function savedAnimations(): AnimationArea[] {
+  try {
+    const stored = localStorage.getItem(ANIMATIONS_STORAGE)
+    if (stored !== null) return ANIMATION_AREAS.filter((area) => stored.split(',').includes(area))
+  } catch {
+    // sem localStorage
+  }
+  return [...ANIMATION_AREAS]
+}
+
+/** Tamanho do texto lembrado no navegador, ou o padrão. */
+function savedFontSize(): FontSize {
+  try {
+    const stored = localStorage.getItem(FONT_SIZE_STORAGE)
+    if (FONT_SIZES.includes(stored as FontSize)) return stored as FontSize
+  } catch {
+    // sem localStorage
+  }
+  return 'default'
+}
+
 export const theme = ref<Theme>(savedTheme())
+/** Tamanho do texto do painel escolhido pela pessoa. */
+export const fontSize = ref<FontSize>(savedFontSize())
+/** Áreas com animação de hover e foco que a pessoa deixou ligadas. */
+export const animations = ref<AnimationArea[]>(savedAnimations())
+/** As cores do tema personalizado em uso; vazio fora dele. */
+export const customColors = ref<ThemeColors | null>(savedCustomColors())
+/** Cores em edição, mostradas no painel inteiro antes de salvar; vazio fora do editor. */
+export const previewColors = ref<ThemeColors | null>(null)
+
+/** Guarda um valor no navegador, ou apaga quando vazio; sem localStorage, segue sem lembrar. */
+function remember(key: string, value: string | null) {
+  try {
+    if (value === null) localStorage.removeItem(key)
+    else localStorage.setItem(key, value)
+  } catch {
+    // segue sem lembrar
+  }
+}
+
+/** Põe ou tira o CSS do tema personalizado na página. */
+function applyCustomCss(colors: ThemeColors | null) {
+  let element = document.getElementById('avant-custom-theme') as HTMLStyleElement | null
+  if (!colors) {
+    element?.remove()
+    return
+  }
+  if (!element) {
+    element = document.createElement('style')
+    element.id = 'avant-custom-theme'
+    document.head.appendChild(element)
+  }
+  element.textContent = customThemeCss(colors)
+}
 
 watch(
-  theme,
-  (value) => {
-    try {
-      localStorage.setItem(STORAGE, value)
-    } catch {
-      // segue sem lembrar
-    }
+  [theme, customColors, previewColors],
+  ([value, colors, preview]) => {
+    const saved = value === 'custom' && colors !== null
+    remember(STORAGE, value)
+    remember(CUSTOM_STORAGE, saved ? JSON.stringify(colors) : null)
+    const shown = preview ?? (saved ? colors : null)
+    applyCustomCss(shown)
     const root = document.documentElement
-    if (value === 'system') root.removeAttribute('data-theme')
-    else root.setAttribute('data-theme', value)
+    if (shown) root.setAttribute('data-custom-theme', '')
+    else root.removeAttribute('data-custom-theme')
+    const attribute = shown ? shownTheme(value) : value
+    if (attribute === 'system' || attribute === 'custom') root.removeAttribute('data-theme')
+    else root.setAttribute('data-theme', attribute)
+  },
+  { immediate: true },
+)
+
+watch(
+  animations,
+  (areas) => {
+    remember(ANIMATIONS_STORAGE, areas.join(','))
+    const off = ANIMATION_AREAS.filter((area) => !areas.includes(area))
+    if (off.length) document.documentElement.setAttribute('data-motion-off', off.join(' '))
+    else document.documentElement.removeAttribute('data-motion-off')
+  },
+  { immediate: true },
+)
+
+watch(
+  fontSize,
+  (size) => {
+    remember(FONT_SIZE_STORAGE, size)
+    if (size === 'default') document.documentElement.removeAttribute('data-font-size')
+    else document.documentElement.setAttribute('data-font-size', size)
   },
   { immediate: true },
 )

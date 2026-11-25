@@ -7,10 +7,9 @@ export type Localized = Partial<Record<Lang, string>>
 export type SiteScope = 'all' | 'assigned'
 
 /** Tema do painel escolhido pela pessoa. */
-export type Theme = 'light' | 'dark' | 'groone' | 'system'
+export type Theme = 'light' | 'dark' | 'groone' | 'system' | 'custom'
 
 /** Cor de destaque escolhida pela pessoa. */
-export type AccentId = 'default' | 'blue' | 'navy' | 'cyan' | 'green' | 'purple' | 'pink' | 'orange' | 'gold' | 'graphite'
 
 export interface Items<T> {
   items: T[]
@@ -55,8 +54,20 @@ export interface Me {
   is_staff: boolean
   mfa_enabled: boolean
   mfa_setup_required: boolean
+  /** A conta do cliente (papel Publisher) que ainda não criou a Empresa dela. */
+  can_create_company: boolean
   display_currency: string
   /** Tema e cor que a pessoa escolheu; valem em todas as Empresas. */
   theme: Theme
-  accent: AccentId
+  /** O tema personalizado em uso quando ``theme`` é ``custom`` (cores em /auth/me/themes). */
+  custom_theme_id?: string | null
+  /** Áreas com animação de hover e foco (campos, botões, cards de métrica). */
+  animations?: AnimationArea[]
+  font_size?: FontSize
 }
+
+/** Tamanho do texto do painel (``FontSize`` do avant-core). */
+export type FontSize = 'default' | 'large' | 'larger'
+
+/** Áreas do painel que podem ter animação (``AnimationArea`` do avant-core). */
+export type AnimationArea = 'fields' | 'buttons' | 'cards'

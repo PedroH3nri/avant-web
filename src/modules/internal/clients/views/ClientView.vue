@@ -1,34 +1,31 @@
 <script setup lang="ts">
-/** Painel interno: um cliente. Situação, convite de dono, cadastro, dados fiscais, documentos, observações, vagas, dono, equipe e atividade. */
+/**
+ * Painel interno: um cliente. Nome e contato, dados fiscais, documentos, situação, responsável,
+ * limite de pessoas, convite de dono, observações e atividade; o que é da Empresa fica em Empresas.
+ */
 import { computed, onMounted, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
-import { ArrowLeft, Lock, Mail } from 'lucide-vue-next'
+import { ArrowLeft, Building, Lock, Mail } from 'lucide-vue-next'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import ClientProfileForm from '@/modules/internal/clients/components/ClientProfileForm.vue'
 import LoadError from '@/components/LoadError.vue'
 import PageBody from '@/components/PageBody.vue'
 import PageHeader from '@/components/PageHeader.vue'
-import Badge from '@/components/ui/Badge.vue'
 import Button from '@/components/ui/Button.vue'
 import Card from '@/components/ui/Card.vue'
-import CompanyImageCard from '@/components/CompanyImageCard.vue'
 import AccountManagerCard from '@/modules/internal/commissions/components/AccountManagerCard.vue'
 import ClientDocumentsCard from '@/modules/internal/clients/components/ClientDocumentsCard.vue'
 import ClientNotesCard from '@/modules/internal/clients/components/ClientNotesCard.vue'
-import ClientNetworksCard from '@/modules/internal/inventory/components/ClientNetworksCard.vue'
-import DataTable from '@/components/ui/DataTable.vue'
-import Dialog from '@/components/ui/Dialog.vue'
+import ReservedNetworksCard from '@/modules/internal/clients/components/ReservedNetworksCard.vue'
 import Field from '@/components/ui/Field.vue'
 import Input from '@/components/ui/Input.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
 import Pagination from '@/components/ui/Pagination.vue'
 import Status from '@/components/ui/Status.vue'
 import { ApiError } from '@/lib/api'
 import { emptyProfile, profileBody, profileInput, profileOk, STAFF_STATUSES, STATUS_TONE } from '@/modules/internal/clients/rules'
 import { taxTypeLabel } from '@/modules/company/fiscal'
-import { auditText, errorText, formatAgo, formatDate, pick, t } from '@/lib/i18n'
-import { td, th } from '@/lib/table'
+import { auditText, errorText, formatAgo, formatDate, t } from '@/lib/i18n'
 import type { Page } from '@/lib/types'
 import type { CompanyStatus } from '@/modules/company/types'
 import type { AuditEntry, Client, ClientDetail, OwnerInvitation } from '@/modules/internal/clients/types'
@@ -36,10 +33,10 @@ import { useSession } from '@/stores/session'
 import { clientService } from '@/modules/internal/clients/service'
 
 const route = useRoute()
+const router = useRouter()
 const session = useSession()
 const id = computed(() => String(route.params.id))
 const canManage = computed(() => session.can('internal.clients.manage'))
-const canOwner = computed(() => session.can('internal.owner.change'))
 const canDocuments = computed(() => session.can('internal.clients.documents'))
 const canNotes = computed(() => session.can('internal.clients.notes'))
 
@@ -56,9 +53,6 @@ const editing = ref(false)
 const profile = ref(emptyProfile())
 const profileBusy = ref(false)
 const referrers = ref<{ id: string; name: string }[]>([])
-const ownerOpen = ref(false)
-const ownerPick = ref('')
-const ownerBusy = ref(false)
 const audit = ref<AuditEntry[]>([])
 const auditPage = ref(1)
 const auditTotal = ref(0)
@@ -66,18 +60,6 @@ const auditPages = ref(0)
 
 /** Mostra o erro num aviso. */
 const fail = (error: unknown) => toast.error(errorText(error instanceof ApiError ? error.code : 'unknown'))
-
-/** Envia a imagem nova do cliente e recarrega a página com a auditoria. */
-async function saveImage(file: File) {
-  await clientService.setImage(id.value, file)
-  await reload()
-}
-
-/** Tira a imagem do cliente e recarrega a página com a auditoria. */
-async function removeImage() {
-  await clientService.removeImage(id.value)
-  await reload()
-}
 
 /** Carrega o cliente e a auditoria. */
 async function load() {
@@ -203,7 +185,7 @@ async function sendInvite() {
 async function openEdit() {
   const current = client.value
   if (!current) return
-  profile.value = current.profile ? profileInput(current.profile) : emptyProfile()
+  profile.value = profileInput(current.profile)
   editing.value = true
   try {
     const list = await clientService.options()
@@ -241,40 +223,12 @@ async function managerSaved(fresh: Client) {
 const statusOptions = computed(() => STAFF_STATUSES.filter((status) => status !== client.value?.status))
 const pendingOwnerInvite = computed(() => ownerInvite.value ?? (client.value?.invitations ?? []).find((invitation) => invitation.status === 'pending' && invitation.role_id === null) ?? null)
 const referrerName = computed(() => {
-  const referrerId = client.value?.profile?.referred_by_company_id
+  const referrerId = client.value?.profile?.referred_by_client_id
   return referrerId ? (referrers.value.find((item) => item.id === referrerId)?.name ?? referrerId) : null
 })
 /** Mostra o valor ou o texto de não informado. */
 const shown = (value: string | null | undefined) => value || t('int.none.dash')
 
-const candidates = computed(() => (client.value?.members ?? []).filter((member) => member.status === 'active' && !member.is_owner))
-const ownerOptions = computed(() => candidates.value.map((candidate) => ({ value: candidate.id, label: `${candidate.user.name} (${candidate.user.email})` })))
-
-/** Abre o diálogo para trocar o dono. */
-function openOwner() {
-  ownerPick.value = candidates.value[0]?.id ?? ''
-  ownerOpen.value = true
-}
-
-/** Passa a posse da Empresa para o membro escolhido. */
-async function changeOwner() {
-  const current = client.value
-  if (!current || !ownerPick.value) return
-  ownerBusy.value = true
-  try {
-    await clientService.changeOwner(current.id, ownerPick.value)
-    ownerOpen.value = false
-    toast.success(t('int.ownerChanged'))
-    await reload()
-  } catch (error) {
-    fail(error)
-  } finally {
-    ownerBusy.value = false
-  }
-}
-
-const members = computed(() => (client.value?.members ?? []).filter((member) => member.status !== 'removed'))
-const pending = computed(() => (client.value?.invitations ?? []).filter((invitation) => invitation.status === 'pending' && invitation.role_id !== null))
 const names = computed(() => new Map((client.value?.members ?? []).map((member) => [member.user.id, member.user.name])))
 /** Quem fez a ação: o nome da pessoa ou o tipo de autor. */
 function who(auditEntry: AuditEntry) {
@@ -284,46 +238,25 @@ function who(auditEntry: AuditEntry) {
 </script>
 
 <template>
-  <PageHeader :title="client?.name ?? t('int.client')" :sub="client ? client.slug : undefined">
+  <PageHeader :title="client?.name ?? t('int.client')" :sub="client ? (client.company?.slug ?? t('int.noCompany')) : undefined">
     <template #back>
       <RouterLink to="/interno" class="mb-3 inline-flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-foreground">
         <ArrowLeft class="size-4" />{{ t('int.back') }}
       </RouterLink>
     </template>
-    <template v-if="client && canManage && client.status === 'pending' && client.profile" #actions>
-      <Button :loading="inviteBusy" @click="sendInvite"><Mail />{{ pendingOwnerInvite ? t('int.resendInvite') : t('int.sendInvite') }}</Button>
+    <template v-if="client" #actions>
+      <Button v-if="canManage && client.status === 'pending' && !client.owner" :loading="inviteBusy" @click="sendInvite"><Mail />{{ pendingOwnerInvite ? t('int.resendInvite') : t('int.sendInvite') }}</Button>
+      <Button v-else-if="client.company" variant="outline" @click="router.push(`/interno/empresas/${client.company.id}`)"><Building />{{ t('int.openCompany') }}</Button>
     </template>
   </PageHeader>
-  <PageBody class="[&>*]:max-w-[960px]">
-    <LoadError v-if="loadError" :message="loadError" @retry="load" />
+  <PageBody class="lg:grid-cols-2">
+    <LoadError v-if="loadError" class="lg:col-span-2" :message="loadError" @retry="load" />
     <template v-if="client">
-      <Card :title="t('int.situation')" :desc="t('int.situationDesc')">
-        <Status :tone="STATUS_TONE[client.status]">{{ t(`int.status.${client.status}`) }}</Status>
-        <template v-if="client.status === 'pending'" #note>{{ t('int.situationPendingNote') }}</template>
-        <template v-if="canManage" #footer>
-          <Button
-            v-for="status in statusOptions"
-            :key="status"
-            :variant="status === 'active' ? 'outline' : 'destructive'"
-            :disabled="status === 'active' && !client.owner"
-            @click="nextStatus = status"
-            >{{ t(`int.status.${status}`) }}</Button
-          >
-        </template>
-      </Card>
-
-      <Card v-if="client.status === 'pending'" :title="t('int.ownerInvite')" :desc="t('int.ownerInviteDesc')">
-        <p class="text-[14px]">
-          <template v-if="pendingOwnerInvite">{{ t('int.ownerInviteSent', { email: pendingOwnerInvite.email, when: t('int.expires', { when: formatAgo(pendingOwnerInvite.expires_at) }) }) }}</template>
-          <span v-else class="text-muted-foreground">{{ t('int.ownerInviteNone') }}</span>
-        </p>
-      </Card>
-
-      <Card :title="t('int.profileTitle')" :desc="t('int.profileDesc')">
+      <Card class="lg:col-span-2" :title="t('int.profileTitle')" :desc="t('int.profileDesc')">
         <form v-if="editing" id="client-profile" @submit.prevent="saveProfile">
           <ClientProfileForm v-model="profile" id-prefix="cp" :referrers="referrers" />
         </form>
-        <dl v-else-if="client.profile" class="-my-2 grid divide-y text-[14px]">
+        <dl v-else class="-my-2 grid divide-y text-[14px]">
           <div class="grid gap-1 py-2 sm:grid-cols-[180px_1fr]">
             <dt class="text-muted-foreground">{{ t('int.contact') }}</dt>
             <dd>{{ client.profile.first_name }} {{ client.profile.last_name }} · {{ client.profile.email }}</dd>
@@ -341,7 +274,6 @@ function who(auditEntry: AuditEntry) {
             <dd>{{ shown(client.profile.notes) }}</dd>
           </div>
         </dl>
-        <p v-else class="text-[14px] text-muted-foreground">{{ t('int.noProfile') }}</p>
         <template v-if="canManage" #footer>
           <template v-if="editing">
             <Button variant="outline" @click="editing = false">{{ t('common.cancel') }}</Button>
@@ -351,11 +283,7 @@ function who(auditEntry: AuditEntry) {
         </template>
       </Card>
 
-      <AccountManagerCard :client="client" @saved="managerSaved" />
-
-      <CompanyImageCard :name="client.name" :image-url="client.image_url" staff :readonly="!canManage" :save="saveImage" :remove="removeImage" />
-
-      <Card :title="t('int.fiscalTitle')" :desc="t('int.fiscalDesc')">
+      <Card class="lg:col-span-2" :title="t('int.fiscalTitle')" :desc="t('int.fiscalDesc')">
         <dl v-if="client.profile?.fiscal" class="-my-2 grid divide-y text-[14px]">
           <div class="grid gap-1 py-2 sm:grid-cols-[180px_1fr]">
             <dt class="text-muted-foreground">{{ t('fiscal.taxType') }}</dt>
@@ -380,11 +308,26 @@ function who(auditEntry: AuditEntry) {
         <p v-else class="flex items-center gap-2 text-[14px] text-muted-foreground"><Lock class="size-4" aria-hidden="true" />{{ t('int.fiscalEmpty') }}</p>
       </Card>
 
-      <ClientNetworksCard :client-id="client.id" :client-name="client.name" />
-      <ClientDocumentsCard v-if="canDocuments" :company-id="client.id" @changed="auditChanged" />
-      <ClientNotesCard v-if="canNotes" :company-id="client.id" @changed="auditChanged" />
+      <ClientDocumentsCard v-if="canDocuments && client.company" class="lg:col-span-2" :company-id="client.company.id" @changed="auditChanged" />
 
-      <Card :title="t('int.seatsTitle')" :desc="t('int.seatsDesc')">
+      <Card :title="t('int.situation')" :desc="t('int.situationDesc')">
+        <Status :tone="STATUS_TONE[client.status]">{{ t(`int.status.${client.status}`) }}</Status>
+        <template v-if="client.status === 'pending'" #note>{{ t('int.situationPendingNote') }}</template>
+        <template v-if="canManage" #footer>
+          <Button
+            v-for="status in statusOptions"
+            :key="status"
+            :variant="status === 'active' ? 'outline' : 'destructive'"
+            :disabled="status === 'active' && !client.owner"
+            @click="nextStatus = status"
+            >{{ t(`int.status.${status}`) }}</Button
+          >
+        </template>
+      </Card>
+
+      <AccountManagerCard :client="client" @saved="managerSaved" />
+
+      <Card :class="client.status === 'pending' ? '' : 'lg:col-span-2'" :title="t('int.seatsTitle')" :desc="t('int.seatsDesc')">
         <div class="max-w-[160px]">
           <Field id="cl-seats" :label="t('int.seats')" :error="seatsLow && t('int.seatsMin', { n: client.seats_used })">
             <Input id="cl-seats" v-model="seats" type="number" min="1" max="10000" class="tnum" :disabled="!canManage" :invalid="!seatsOk" />
@@ -396,58 +339,18 @@ function who(auditEntry: AuditEntry) {
         </template>
       </Card>
 
-      <Card :title="t('int.owner')" :desc="t('int.ownerDesc')">
-        <template v-if="client.owner">
-          <div class="text-[14px] font-medium">{{ client.owner.name }}</div>
-          <div class="text-[13px] text-muted-foreground">{{ client.owner.email }}</div>
-        </template>
-        <p v-else class="text-[14px] text-muted-foreground">{{ t('int.noOwner') }}</p>
-        <template v-if="canOwner && client.owner" #note>{{ candidates.length ? '' : t('int.noOtherMembers') }}</template>
-        <template v-if="canOwner && client.owner" #footer>
-          <Button variant="outline" :disabled="!candidates.length" @click="openOwner">{{ t('int.changeOwner') }}</Button>
-        </template>
+      <Card v-if="client.status === 'pending'" :title="t('int.ownerInvite')" :desc="t('int.ownerInviteDesc')">
+        <p class="text-[14px]">
+          <template v-if="pendingOwnerInvite">{{ t('int.ownerInviteSent', { email: pendingOwnerInvite.email, when: t('int.expires', { when: formatAgo(pendingOwnerInvite.expires_at) }) }) }}</template>
+          <span v-else class="text-muted-foreground">{{ t('int.ownerInviteNone') }}</span>
+        </p>
       </Card>
 
-      <template v-if="members.length">
-        <h2 class="text-[13px] font-medium text-muted-foreground">{{ t('int.members') }}</h2>
-        <DataTable :min="640">
-          <thead>
-            <tr>
-              <th :class="th">{{ t('int.person') }}</th>
-              <th :class="th">{{ t('team.role') }}</th>
-              <th :class="th">{{ t('team.status') }}</th>
-              <th :class="th">{{ t('team.since') }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="member in members" :key="member.id">
-              <td :class="td">
-                <div class="font-medium">{{ member.user.name }}</div>
-                <div class="text-[13px] text-muted-foreground">{{ member.user.email }}</div>
-              </td>
-              <td :class="td">
-                <Badge v-if="member.is_owner">{{ t('int.owner') }}</Badge>
-                <template v-else>{{ pick(member.role?.name) }}</template>
-              </td>
-              <td :class="td">
-                <Status :tone="member.status === 'active' ? 'ok' : 'neutral'">{{ member.status === 'active' ? t('team.active') : t('team.suspended') }}</Status>
-              </td>
-              <td :class="[td, 'text-muted-foreground']">{{ formatDate(member.joined_at, false) }}</td>
-            </tr>
-          </tbody>
-        </DataTable>
-      </template>
+      <ReservedNetworksCard v-if="!client.company" class="lg:col-span-2" :client-id="client.id" :client-name="client.name" :networks="client.reserved_networks" @changed="reload" />
 
-      <Card v-if="pending.length" :title="t('int.invites')">
-        <ul class="-my-3 divide-y">
-          <li v-for="invitation in pending" :key="invitation.id" class="flex flex-wrap items-center justify-between gap-2 py-3 text-[14px]">
-            <span class="font-medium">{{ invitation.email }}</span>
-            <span class="text-[13px] text-muted-foreground">{{ t('int.expires', { when: formatAgo(invitation.expires_at) }) }}</span>
-          </li>
-        </ul>
-      </Card>
+      <ClientNotesCard v-if="canNotes && client.company" class="lg:col-span-2" :company-id="client.company.id" @changed="auditChanged" />
 
-      <Card :title="t('int.audit')" :desc="t('int.auditDesc')">
+      <Card class="lg:col-span-2" :title="t('int.audit')" :desc="t('int.auditDesc')">
         <p v-if="!audit.length" class="text-[14px] text-muted-foreground">{{ t('int.auditEmpty') }}</p>
         <ol v-else class="-my-3 divide-y">
           <li v-for="entry in audit" :key="entry.id" class="flex flex-wrap items-baseline gap-x-4 gap-y-0.5 py-2.5 text-[14px]">
@@ -471,13 +374,4 @@ function who(auditEntry: AuditEntry) {
     :busy="statusBusy"
     @confirm="setStatus"
   />
-  <Dialog v-model:open="ownerOpen" :title="t('int.changeOwner')" :desc="t('int.ownerDesc')">
-    <Field id="owner-pick" :label="t('int.owner')">
-      <NativeSelect id="owner-pick" v-model="ownerPick" :options="ownerOptions" />
-    </Field>
-    <template #footer>
-      <Button variant="outline" @click="ownerOpen = false">{{ t('common.cancel') }}</Button>
-      <Button :loading="ownerBusy" :disabled="!ownerPick" @click="changeOwner">{{ t('int.changeOwner') }}</Button>
-    </template>
-  </Dialog>
 </template>

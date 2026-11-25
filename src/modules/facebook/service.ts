@@ -2,30 +2,7 @@
 
 import { api, request, type Query } from '@/lib/api'
 import type { Page } from '@/lib/types'
-import type {
-  FacebookAccount,
-  FacebookAccountInput,
-  FacebookAlert,
-  FacebookAlertSetting,
-  FacebookBudget,
-  FacebookBudgetInput,
-  FacebookChange,
-  FacebookControlResult,
-  FacebookDraftInput,
-  FacebookEditInput,
-  FacebookJob,
-  FacebookListKind,
-  FacebookMedia,
-  FacebookObject,
-  FacebookObjectDetail,
-  FacebookOption,
-  FacebookPerson,
-  FacebookPersonInput,
-  FacebookProfile,
-  FacebookRule,
-  FacebookRuleDecision,
-  FacebookRuleInput,
-} from '@/modules/facebook/types'
+import type { FacebookAccount, FacebookAccountInput, FacebookAlert, FacebookAlertSetting, FacebookBudget, FacebookBudgetInput, FacebookChange, FacebookControlResult, FacebookDraftInput, FacebookEditInput, FacebookJob, FacebookListKind, FacebookMedia, FacebookObject, FacebookObjectDetail, FacebookOption, FacebookPerson, FacebookPersonInput, FacebookProfile, FacebookRule, FacebookRuleDecision, FacebookRuleInput, FacebookSummary } from '@/modules/facebook/types'
 
 /** Endereço que abre o login do Facebook; é uma navegação do navegador, não uma chamada da API. */
 export const FACEBOOK_CONNECT_URL = '/api/v1/facebook/oauth/start'
@@ -38,6 +15,8 @@ export function facebookReader(internal: boolean) {
     accounts: (query?: Query) => api.get<FacebookAccount[]>(`${base}/accounts`, query),
     /** Uma página das campanhas, conjuntos ou anúncios com os números do período. */
     objects: (query?: Query) => api.get<Page<FacebookObject>>(`${base}/objects`, query),
+    /** A soma de todo o filtro no período, numa moeda só, para os cards da tela. */
+    summary: (query?: Query) => api.get<FacebookSummary>(`${base}/objects/summary`, query),
     /** Uma campanha, conjunto ou anúncio com os números por dia e por país. */
     object: (externalId: string, query?: Query) => api.get<FacebookObjectDetail>(`${base}/objects/${externalId}`, query),
     /** Uma página do histórico, o mais novo primeiro. */

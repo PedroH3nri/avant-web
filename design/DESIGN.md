@@ -133,7 +133,7 @@ The Ápice (chosen by the owner on 2026-10-26, avant-web#56): an A without a cro
 ## Colors
 
 ### Primary
-Ink (#171717) is the primary: primary buttons, the active tab underline, the company's seats in the usage bar. In dark mode it flips to #EDEDED with dark text. Each person may swap the primary for a **system secondary color** ("Cor secundária do sistema") in Configurações: Azul, Marinho, Ciano, Verde, Roxo, Rosa, Laranja, Dourado or Grafite (no red: it reads as delete). Every color has its own shade in each theme, and the swatches show the shade of the current theme; only `--primary`, its foreground and, in GroOne, `--ring` change.
+Ink (#171717) is the primary: primary buttons, the active tab underline, the company's seats in the usage bar. In dark mode it flips to #EDEDED with dark text. Each theme has its own fixed colors (Claro, Escuro, GroOne; Sistema follows the device); there is no separate button color. A person may also create up to 3 **custom themes** in Minha conta with seven colors (background, sidebar, cards, text, main color, borders and highlight), each with opacity; the highlight is the focus color (selected fields: border + growing halo) and the hovered-button halo/border; the panel derives soft backgrounds, secondary text and button text from them, dialogs take the card color, and card footers and fields (inputs, selects, outline buttons) are the card color darkened (`--card-footer`, `--field`, `--dialog`; in ready themes they follow muted and background), and alerts and charts follow the light or dark tone of the background. The highlight also colors text: links (`--link`), the language switcher (selected and hover, `--highlight`) and the sidebar items (hover and active text, `--sidebar-highlight`, with the active background tinted by it); when it has less than 3:1 on the background or sidebar, the text color is used instead. Ready themes keep blue links and the text color.
 
 **GroOne theme** (Pedro, 04/11): a third theme beside Light and Dark, in the tones of the brand navy (#0A213D, from the GroOne logo). Background near-black navy, cards a step below #0A213D, the sidebar the same color as the top bar, and the default primary a deep blue (`215 78% 27%`) with white text. Marinho and Grafite get a light inner border on the primary button in this theme (`--primary-edge`), because they sink into the navy background. Charts use the dark-mode series colors.
 
@@ -141,7 +141,7 @@ Ink (#171717) is the primary: primary buttons, the active tab underline, the com
 White surface for headers, page bands and cards; #FAFAFA band behind the work area and inside card footers; #EBEBEB hairlines; #666666 secondary text.
 
 ### Named Rules
-- **Blue is for links and focus only** in the Light and Dark themes with the default color. The GroOne theme and the Azul/Marinho secondary colors are the exceptions, chosen by the person.
+- **Blue is for links and focus only** in the Light and Dark themes. The GroOne theme and custom themes are the exceptions, chosen by the person. Every theme animates fields (hover: border toward the highlight; focus: border + halo, `.border-input`), button hover (1px lift + shadow, `.btn-motion`) and metric cards (dashboard widgets `.card-motion`: 2px lift + highlight border; KPI tiles `.kpi-motion`: highlight line growing at the base). Cards with forms do not move. **Motion is a rule (Pedro, 2026-11-25): every new field, selector, button and metric card ships with its area's motion; each number card of a totals strip is the `StatTile` component (`src/components/StatTile.vue`, `framed` when the cards stand apart; clickable KPI cards use `KpiTile`). A screen without it is not done.** Each person can turn the motion off per area in Minha conta > Animações (Campos e seletores, Botões, Cards de métricas; all on by default, saved in the account as `animations`): the panel writes the areas turned off to `data-motion-off` on `<html>` and the motion selectors in `styles.css` skip them. The focus ring stays even with field motion off. **Text size** (Minha conta > Tamanho do texto: Padrão, Grande, Maior; saved as `font_size`) sets `data-font-size` on `<html>` (root 100%, 112.5%, 125%). A PostCSS plugin (`scripts/postcss-scale-rem.js`) turns px above 2px into rem in font, size, spacing, position and grid declarations (`text-[14px]`, `w-[240px]`, `max-w-[600px]`, `grid-cols-[180px_1fr]`...), so the whole panel grows like a zoom without CSS `zoom` (which misplaces floating menus); borders, shadows, radii and hairlines stay in px. Sizes set in px from script (inline styles, charts) do not scale. Editors with a live preview (reward, ad tag blocks) split the space 50/50 from `lg`.
 - **State is a dot plus a word.** Conectada (ok), Testando conexão (warn), Sem acesso (bad), Convite enviado / pendente (pending). Never color alone.
 
 ## Typography
@@ -150,7 +150,7 @@ Geist for everything; Geist Mono only for network codes, the service-account ema
 
 ## Layout
 
-Left sidebar (248px, #FAFAFA, hairline right border): mark and "Avant by Groone" wordmark at the top, navigation with icons in a fixed order (Dashboard; group Inventário: Clientes, Equipes, Networks, Contratos, Sites; group Relatórios: Ad Manager, Page Views; group Empresa: Equipe Groone, Papéis e permissões; items of the Groone team only are hidden for clients), and at the bottom Configurações and the account. A 56px white navbar over the main column holds the company switcher (left) and the PT/EN/ES switch (right); its bottom border lines up with the sidebar header. Below 1024px the sidebar becomes a drawer opened from a menu button in that same navbar. The main column starts with a white page-header band with the title; then the work area on the #FAFAFA band, max width 1200px, 24px gaps. Settings use a 200px section list beside the cards. Tables scroll inside their own container on phones.
+Left sidebar (248px, #FAFAFA, hairline right border): mark and "Avant by Groone" wordmark at the top, navigation with icons in a fixed order (Dashboard; group Inventário: Clientes, Equipes, Networks, Contratos, Sites; group Relatórios in three blocks split by a hairline: the standard reports (Ad Manager, Page Views, Resultado), the integration reports (Facebook and Google Ads campaigns) and the custom reports; the Integrações group keeps only the connection pages; group Empresa: Equipe Groone, Papéis e permissões; items of the Groone team only are hidden for clients; the menu follows the active company: the Groone company shows the internal panel, a client company shows that company's links, also for Groone staff who switched in the navbar), and at the bottom Configurações and the account. A 56px white navbar over the main column holds the company switcher (left) and the PT/EN/ES switch (right); its bottom border lines up with the sidebar header. Below 1024px the sidebar becomes a drawer opened from a menu button in that same navbar. The main column starts with a white page-header band with the title; then the work area on the #FAFAFA band, max width 1200px up to a 1600px screen, then wider in steps so ultrawide monitors are not left with empty sides (1440px from 1600px, 1760px from 1920px, 2160px from 2560px; page header follows the same width), 24px gaps. Detail pages may add a third column from 1920px. Settings use a 200px section list beside the cards. Tables scroll inside their own container on phones.
 
 ## Elevation & Depth
 
@@ -168,8 +168,13 @@ Primary is ink-filled; outline for secondary actions; ghost inside table rows. 3
 ### Cards / Containers
 A card has a body (24px padding, 20px title, muted description) and, when it saves something, a muted footer with the explanatory note on the left and the single action on the right.
 
+**Two cards per row** (Pedro, 22/11): on wide screens (from 1024px) small cards with little data, such as a status, a short field, an image or a few label/value lines, go two per row (`lg:grid-cols-2` on the page body). Cards with a table, a long list, a feed or a long form take the whole row (`lg:col-span-2`). Cards in the same row share the height and the footer sits at the bottom, so there is no blank area under it. Never let a wide item open a second column by accident: declare the columns on the page body.
+
 ### Inputs / Fields
 40px, label above in 13px muted, hint or error below in 13px. Errors say what is wrong and how to fix it.
+
+### Selects
+Never the browser's native `<select>`. Every choice list uses the panel's own select (`src/components/ui/Select.vue`, prototype `search-select.tsx`), Select2-style: a 40px button like an input with the chosen label and a chevron, and a popover list as wide as the button with a check on the chosen option. From 8 options a search field sits on top of the list (accent and case insensitive, "Nada encontrado" when empty). Keyboard: arrows open and move, Home/End, Enter picks, Esc closes, a letter jumps when there is no search.
 
 ### Navigation
 Sidebar items are 36px rows with a 16px icon; the active item gets the chip fill and medium weight, inactive items are gray and get a soft fill on hover. A red dot on an item flags a problem inside it (a network without access). Every item opens a working screen: no locked or "Em breve" items.
@@ -178,6 +183,10 @@ Sidebar items are 36px rows with a 16px icon; the active item gets the chip fill
 One segment per seat of the Groone staff limit: ink for people, amber for pending invites, gray for free seats, with a legend underneath. The same strip, smaller, sits in the internal clients table.
 
 ### Filters and long lists in dialogs
+**Filters on records tables** (Pedro, 23/11): every records table has filter selectors to add and to remove filters. The default view shows only search plus a few basic selects; a "Filtros" menu (`FiltersMenu`) next to "Colunas" adds and removes any filter, turning one off clears its value, and a saved view keeps the filters that have a value. Never one select per column in the default view.
+
+**Install guides** (Pedro, 23/11): lists of things that go on the client site (Ad tags, Loaders) have a "Como instalar" outline button in the page header that opens a numbered step-by-step dialog (`InstallGuideDialog`), and each ad tag row has its own "Instalar" with the tag key.
+
 Category filters are 28px pill chips: "Todas" first, the active chip ink-filled, the others outlined in gray, with `aria-pressed`. A long list inside a dialog (the role permissions) scrolls on its own inside a hairline box capped at about 44% of the screen height, with the thin `.scroll-thin` scrollbar, so the dialog never grows past the screen. Status filters above a table stay as the segmented tablist.
 
 ### Metrics and charts
@@ -192,5 +201,5 @@ KPI tiles sit in one hairline-divided strip: 13px muted label, 24px semibold val
 
 ### Don't:
 - Don't add colored sidebars, gradients on surfaces, or soft-shadowed cards.
-- Don't use blue for anything but links and focus, except in the GroOne theme or when the person chose a blue secondary color.
+- Don't use blue for anything but links and focus, except in the GroOne theme or in a custom theme the person made.
 - Don't use eyebrows above headings or big-number tiles as page structure.

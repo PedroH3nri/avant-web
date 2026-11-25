@@ -1,5 +1,6 @@
 /** Formatos da API dos rewards (iguais ao dto.py de modules/rewards no avant-api). Datas em ISO 8601 UTC. */
 
+import type { InstallSummary } from '@/modules/install_checks/types'
 import type {
   PublicRewardLead,
   PublicRewardStyle,
@@ -25,6 +26,8 @@ export interface RewardQuestion {
 /** Um reward como a API devolve; `client` só no painel interno, `deleted_at` só na lista dos apagados. */
 export interface Reward {
   id: string
+  /** A última verificação de instalação; só nas listas. */
+  install?: InstallSummary | null
   site_id: string
   domain: string
   client: { id: string; name: string } | null

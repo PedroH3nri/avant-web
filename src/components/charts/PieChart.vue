@@ -37,11 +37,13 @@ const slices = computed(() => {
         <span class="tnum text-muted-foreground">{{ (slice.share * 100).toFixed(1) }}%</span>
       </li>
     </ul>
-    <table class="sr-only">
-      <caption>{{ description }}</caption>
-      <tbody>
-        <tr v-for="slice in slices" :key="slice.key"><th scope="row">{{ slice.label }}</th><td>{{ format(slice.value) }}</td></tr>
-      </tbody>
-    </table>
+    <div class="sr-only">
+      <table>
+        <caption>{{ description }}</caption>
+        <tbody>
+          <tr v-for="slice in slices" :key="slice.key"><th scope="row">{{ slice.label }}</th><td>{{ format(slice.value) }}</td></tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </template>

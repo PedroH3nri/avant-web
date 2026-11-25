@@ -5,7 +5,7 @@ import { Plus, Trash2 } from 'lucide-vue-next'
 import Button from '@/components/ui/Button.vue'
 import Field from '@/components/ui/Field.vue'
 import Input from '@/components/ui/Input.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import Segmented from '@/components/ui/Segmented.vue'
 import { t, type Key } from '@/lib/i18n'
 import FacebookMediaField from '@/modules/facebook/components/FacebookMediaField.vue'
@@ -77,10 +77,10 @@ watch(() => props.accountId, loadIdentity, { immediate: true })
           <Input id="fb-ad-name" :model-value="ad.name" maxlength="400" @update:model-value="patch({ name: $event })" />
         </Field>
         <Field id="fb-ad-page" :label="t('fb.create.page')" :error="!ad.page_id && t('fb.problem.ad_page_missing')">
-          <NativeSelect id="fb-ad-page" :model-value="ad.page_id" :options="pageOptions" @update:model-value="patch({ page_id: $event })" />
+          <Select id="fb-ad-page" :model-value="ad.page_id" :options="pageOptions" @update:model-value="patch({ page_id: $event })" />
         </Field>
         <Field id="fb-ad-ig" :label="t('fb.create.instagram')">
-          <NativeSelect id="fb-ad-ig" :model-value="ad.instagram_id ?? ''" :options="instagramOptions" @update:model-value="patch({ instagram_id: $event || null })" />
+          <Select id="fb-ad-ig" :model-value="ad.instagram_id ?? ''" :options="instagramOptions" @update:model-value="patch({ instagram_id: $event || null })" />
         </Field>
       </div>
     </div>
@@ -113,7 +113,7 @@ watch(() => props.accountId, loadIdentity, { immediate: true })
       <div class="mt-4 grid gap-4">
         <Field v-for="(text, index) in ad.texts" :id="`fb-ad-text-${index}`" :key="`text-${index}`" :label="t('fb.create.text', { n: index + 1 })">
           <div class="flex gap-2">
-            <textarea :id="`fb-ad-text-${index}`" rows="2" maxlength="2000" class="min-h-16 w-full rounded-md border border-input bg-background px-3 py-2 text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" :value="text" @input="setLine('texts', index, ($event.target as HTMLTextAreaElement).value)" />
+            <textarea :id="`fb-ad-text-${index}`" rows="2" maxlength="2000" class="min-h-16 w-full rounded-md border border-input bg-[hsl(var(--field))] px-3 py-2 text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" :value="text" @input="setLine('texts', index, ($event.target as HTMLTextAreaElement).value)" />
             <Button v-if="ad.texts.length > 1" size="icon" variant="ghost" :aria-label="t('fb.create.removeText', { n: index + 1 })" @click="removeLine('texts', index)"><Trash2 aria-hidden="true" /></Button>
           </div>
         </Field>
@@ -145,7 +145,7 @@ watch(() => props.accountId, loadIdentity, { immediate: true })
             <Input id="fb-ad-display" :model-value="ad.display_link" @update:model-value="patch({ display_link: $event })" />
           </Field>
           <Field id="fb-ad-cta" :label="t('fb.create.button')">
-            <NativeSelect id="fb-ad-cta" :model-value="ad.call_to_action" :options="buttonOptions" @update:model-value="patch({ call_to_action: $event })" />
+            <Select id="fb-ad-cta" :model-value="ad.call_to_action" :options="buttonOptions" @update:model-value="patch({ call_to_action: $event })" />
           </Field>
         </div>
         <div class="rounded-md border bg-muted p-3 text-[13px]">

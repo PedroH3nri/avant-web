@@ -1,7 +1,7 @@
 /** Regras de tela do checklist de domínio: rótulos, estado de cada item, provas e meses. */
 
 import { locale, t, type Key } from '@/lib/i18n'
-import type { CheckKind, ChecklistPerson, ChecklistRow, ChecklistState } from '@/modules/internal/checklists/types'
+import type { CheckKind, CheckOverride, ChecklistPerson, ChecklistRow, ChecklistState } from '@/modules/internal/checklists/types'
 
 export const NOTE_MIN = 3
 export const NOTE_MAX = 5000
@@ -27,9 +27,33 @@ export function rowState(row: ChecklistRow): RowState {
   return row.outcome ?? 'pending'
 }
 
-/** Os itens que ainda pedem revisão e os que estão ok, na ordem do checklist. */
-export function splitRows(rows: ChecklistRow[]): { review: ChecklistRow[]; fine: ChecklistRow[] } {
-  return { review: rows.filter((row) => !row.ok), fine: rows.filter((row) => row.ok) }
+/** Os itens que ainda pedem revisão, os que estão ok e os que não se aplicam ao site, na ordem do checklist. */
+export function splitRows(rows: ChecklistRow[]): { review: ChecklistRow[]; fine: ChecklistRow[]; skipped: ChecklistRow[] } {
+  const counted = rows.filter((row) => row.counted !== false)
+  return {
+    review: counted.filter((row) => !row.ok),
+    fine: counted.filter((row) => row.ok),
+    skipped: rows.filter((row) => row.counted === false),
+  }
+}
+
+/** Os jeitos de conferir o item num site, conforme o tipo: palavras só no link, endereço só no que olha a página. */
+export function overrideModes(kind: CheckKind): CheckOverride[] {
+  const modes: CheckOverride[] = []
+  if (kind === 'link') modes.push('words')
+  if (!['manual', 'ad_tag', 'ads_txt'].includes(kind)) modes.push('url')
+  if (kind !== 'manual') modes.push('manual')
+  modes.push('skip')
+  return modes
+}
+
+/** O resumo curto da configuração do item no site, para mostrar ao lado do nome. */
+export function overrideSummary(row: ChecklistRow): string | null {
+  const override = row.override
+  if (!override) return null
+  if (override.mode === 'words') return t('check.override.summary.words', { words: override.words.join(', ') })
+  if (override.mode === 'url') return t('check.override.summary.url', { path: override.path ?? '' })
+  return t(`check.override.summary.${override.mode}` as Key)
 }
 
 /** Nome do tipo de conferência. */

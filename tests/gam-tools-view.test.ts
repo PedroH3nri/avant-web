@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
+import { chooseOption } from './select-helper'
 import { lang } from '@/lib/i18n'
 import type { GamToolNetwork, GamToolNetworkDetail, GamToolRun } from '@/modules/internal/gam_tools/types'
 
@@ -57,14 +58,14 @@ describe('tela das ferramentas do GAM', () => {
     expect(runs).toHaveBeenCalledWith(undefined, 1)
     expect(view.text()).toContain('Açaí')
     expect(view.text()).toContain('Rede Açaí')
-    expect((view.find('select').element as HTMLSelectElement).value).toBe('')
+    expect(view.find('[role="combobox"]').text()).toBe('Escolha um cliente ou network')
     expect(view.text()).toContain('Execuções de todas as networks')
   })
 
   it('ao escolher a network, ativa as ações e filtra as execuções', async () => {
     const view = mount(GamToolsView, { attachTo: document.body })
     await flushPromises()
-    await view.find('select').setValue('n1')
+    await chooseOption(view.find('[role="combobox"]').element, 'n1')
     await flushPromises()
     const sync = view.findAll('button').find((button) => button.text().includes('Sincronizar'))!
     expect(sync.attributes('disabled')).toBeUndefined()

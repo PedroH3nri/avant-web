@@ -6,7 +6,8 @@
  * números. Editando, ganha o menu de
  * mover, mudar o tamanho e tirar e, da tela média para cima, arrasta pelo título e cresce pelo canto.
  */
-import { computed, ref, watch } from 'vue'
+import { computed, ref, useTemplateRef, watch } from 'vue'
+import { useElementSize, useMediaQuery } from '@vueuse/core'
 import { DropdownMenuRoot, DropdownMenuSeparator, DropdownMenuTrigger } from 'reka-ui'
 import { MoreHorizontal } from 'lucide-vue-next'
 import Button from '@/components/ui/Button.vue'
@@ -46,6 +47,12 @@ const props = defineProps<{
   loading: boolean
 }>()
 const emit = defineEmits<{ move: [columns: number, rows: number]; resize: [columns: number, rows: number]; remove: []; grab: [event: PointerEvent, mode: DragMode] }>()
+
+const body = useTemplateRef<HTMLDivElement>('body')
+const { height: bodyHeight } = useElementSize(body)
+const onGrid = useMediaQuery('(min-width: 768px)')
+/** Na grade (tela média para cima) o gráfico ocupa a altura do bloco; no celular, a altura padrão. */
+const chartHeight = computed(() => (onGrid.value && bodyHeight.value > 0 ? bodyHeight.value : undefined))
 
 const today = new Date().toISOString().slice(0, 10)
 const month = today.slice(0, 7)
@@ -121,7 +128,7 @@ function grabTitle(event: PointerEvent) {
 <template>
   <section
     :class="
-      cn('relative flex min-w-0 flex-col rounded-lg border bg-card', editing && 'border-dashed border-foreground/40', dragging && 'z-10 border-solid border-foreground shadow-lg')
+      cn('relative flex min-w-0 flex-col rounded-lg border bg-card', !editing && 'card-motion', editing && 'border-dashed border-foreground/40', dragging && 'z-10 border-solid border-foreground shadow-lg')
     "
   >
     <div :class="cn('flex items-center gap-2 px-5 pt-4', editing && 'md:cursor-grab md:touch-none md:select-none', dragging && 'md:cursor-grabbing')" @pointerdown="grabTitle">
@@ -145,7 +152,7 @@ function grabTitle(event: PointerEvent) {
         </MenuContent>
       </DropdownMenuRoot>
     </div>
-    <div class="min-w-0 flex-1 overflow-auto px-5 pb-5 pt-3">
+    <div ref="body" class="min-w-0 flex-1 overflow-auto px-5 pb-5 pt-3">
       <p v-if="widget.type === 'text'" class="whitespace-pre-line text-[14px] text-muted-foreground">{{ widget.text }}</p>
       <p v-else-if="preview" class="text-[13px] text-muted-foreground">{{ t('dash.widget.preview') }}</p>
       <AccountStatus v-else-if="widget.type === 'account' && !editing" />
@@ -156,7 +163,7 @@ function grabTitle(event: PointerEvent) {
       <GoalBar v-else-if="widget.type === 'goal' && goal" :progress="goal" :month="month" :today="today" :label="title" />
       <template v-else-if="draft && result">
         <ReportTable v-if="draft.chart === 'table'" :draft="draft" :result="result" :catalog="catalog" />
-        <ReportChart v-else :draft="draft" :result="result" :catalog="catalog" compact />
+        <ReportChart v-else :draft="draft" :result="result" :catalog="catalog" :fill-height="chartHeight" compact />
       </template>
     </div>
     <span

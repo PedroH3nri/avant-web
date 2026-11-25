@@ -16,6 +16,8 @@ export const authService = {
   logout: () => api.post('/auth/logout'),
   /** Troca a Empresa ativa da sessão. */
   switchCompany: (companyId: string) => api.post<Me>('/auth/me/active-company', { company_id: companyId }),
+  /** A conta do cliente cria a Empresa dela; a sessão entra nela. */
+  createCompany: (name: string) => api.post<Me>('/auth/me/company', { name }),
   /** Pede o link de redefinição de senha. */
   forgotPassword: (email: string) => api.post('/auth/password/forgot', { email }),
   /** Troca a senha pelo link recebido por e-mail. */

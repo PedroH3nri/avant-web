@@ -38,7 +38,7 @@ function picked(event: Event) {
           :id="id"
           :value="text"
           maxlength="6"
-          class="flex h-9 w-full rounded-md border border-input bg-background pl-6 pr-3 font-mono text-[13px] uppercase focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          class="flex h-9 w-full rounded-md border border-input bg-[hsl(var(--field))] pl-6 pr-3 font-mono text-[13px] uppercase focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           @input="typed"
         />
       </div>

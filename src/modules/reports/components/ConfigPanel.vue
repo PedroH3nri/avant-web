@@ -5,7 +5,7 @@ import { computed, ref } from 'vue'
 import { Plus, X } from 'lucide-vue-next'
 import Button from '@/components/ui/Button.vue'
 import Input from '@/components/ui/Input.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import { lang, t, type Key } from '@/lib/i18n'
 import { PERIOD_PRESETS } from '@/lib/metrics'
 import { cn } from '@/lib/utils'
@@ -94,7 +94,7 @@ const title = 'px-4 pb-1.5 pt-4 text-[12px] font-medium uppercase tracking-wide 
     <h3 :class="title">{{ t('perf.period') }}</h3>
     <div class="grid gap-2 px-4">
       <p v-if="draft.fixedPeriod" class="text-[13px]">{{ t('report.fixedPeriod', { start: draft.fixedPeriod.start, end: draft.fixedPeriod.end }) }}</p>
-      <NativeSelect
+      <Select
         v-else
         :model-value="draft.period"
         :options="periods"
@@ -133,14 +133,14 @@ const title = 'px-4 pb-1.5 pt-4 text-[12px] font-medium uppercase tracking-wide 
         <p v-if="!item.values.length" class="mt-1 text-[12px] text-muted-foreground">{{ t('report.filterEmpty') }}</p>
       </div>
       <div v-if="editable && filterable.length" class="flex gap-2">
-        <NativeSelect :model-value="newField || filterable[0]?.value" :options="filterable" class="flex-1" :aria-label="t('report.filterField')" @update:model-value="(value) => (newField = value)" />
+        <Select :model-value="newField || filterable[0]?.value" :options="filterable" class="flex-1" :aria-label="t('report.filterField')" @update:model-value="(value) => (newField = value)" />
         <Button variant="outline" @click="addFilter"><Plus />{{ t('report.filter') }}</Button>
       </div>
     </div>
 
     <h3 :class="title">{{ t('report.rows') }}</h3>
     <div class="grid gap-2 px-4">
-      <NativeSelect
+      <Select
         :model-value="String(draft.limit)"
         :options="limits"
         :disabled="!editable"

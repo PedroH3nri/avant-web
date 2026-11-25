@@ -1,5 +1,6 @@
 <script setup lang="ts">
 /** Aba Custos: custos de um mês, recorrentes e por fórmula, que entram no Resultado. */
+import MonthField from '@/components/ui/MonthField.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useDebounceFn } from '@vueuse/core'
 import { DropdownMenuRoot, DropdownMenuSeparator, DropdownMenuTrigger } from 'reka-ui'
@@ -18,7 +19,7 @@ import Field from '@/components/ui/Field.vue'
 import Input from '@/components/ui/Input.vue'
 import MenuContent from '@/components/ui/MenuContent.vue'
 import MenuItem from '@/components/ui/MenuItem.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import TableState from '@/components/ui/TableState.vue'
 import { ApiError } from '@/lib/api'
 import { COST_KINDS, FORMULA_CHIPS, costBody, costForm, formatMonth } from '@/modules/costs/rules'
@@ -232,15 +233,15 @@ const kindClass = (on: boolean) =>
       </div>
       <div class="grid grid-cols-2 gap-4">
         <Field id="cost-start" :label="form.kind === 'one_time' ? t('cost.month') : t('cost.start')">
-          <Input id="cost-start" v-model="form.start" type="month" />
+          <MonthField id="cost-start" v-model="form.start" />
         </Field>
         <Field v-if="form.kind !== 'one_time'" id="cost-end" :label="t('cost.end')">
-          <Input id="cost-end" v-model="form.end" type="month" :min="form.start" />
+          <MonthField id="cost-end" v-model="form.end" :min="form.start" />
         </Field>
       </div>
       <div class="grid grid-cols-[110px_1fr] gap-4">
         <Field id="cost-currency" :label="t('cost.currency')">
-          <NativeSelect id="cost-currency" v-model="form.currency" :options="currencyOptions" />
+          <Select id="cost-currency" v-model="form.currency" :options="currencyOptions" />
         </Field>
         <Field v-if="form.kind === 'formula'" id="cost-formula" :label="t('cost.formula')" :hint="previewText" :error="formulaError">
           <Input id="cost-formula" v-model="form.formula" maxlength="300" class="font-mono" placeholder="faturamento * 6%" :invalid="!!formulaError" />

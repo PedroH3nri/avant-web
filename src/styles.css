@@ -4,6 +4,22 @@
 
 /* Tokens do DESIGN.md: quase monocromático, primária preta (ou a cor da Empresa), azul só para link e foco. */
 @layer base {
+  /* Campos, janelas e rodapé dos cartões: nos temas prontos seguem o fundo e o muted; o tema
+     personalizado os tira do cartão. Hover e item ativo do menu: no personalizado, do menu.
+     Destaque em texto (links, idioma, menu): nos prontos o texto; no personalizado, o destaque. */
+  :root {
+    --field: var(--background);
+    --dialog: var(--background);
+    --card-footer: var(--muted);
+    --sidebar-hover: var(--accent);
+    --sidebar-selected: var(--secondary);
+    --glow-color: var(--foreground);
+    --glow-alpha: 0;
+    --hover-border: var(--input);
+    --highlight: var(--foreground);
+    --sidebar-highlight: var(--sidebar-foreground);
+  }
+
   :root {
     --background: 0 0% 100%;
     --foreground: 0 0% 9%;
@@ -37,6 +53,8 @@
     --warn-soft: 45 100% 92%;
     --bad: 358 75% 47%;
     --bad-soft: 0 100% 97%;
+    --info: 212 100% 42%;
+    --info-soft: 212 100% 95%;
     --series-lime: #12c93a;
     --series-cyan: #00b4d8;
     --series-magenta: #e91eb5;
@@ -82,6 +100,8 @@
       --warn-soft: 38 60% 14%;
       --bad: 358 90% 66%;
       --bad-soft: 358 50% 14%;
+      --info: 212 100% 66%;
+      --info-soft: 214 60% 15%;
       --series-lime: #39ff14;
       --series-cyan: #00e5ff;
       --series-magenta: #ff2bd6;
@@ -125,6 +145,8 @@
     --warn-soft: 38 60% 14%;
     --bad: 358 90% 66%;
     --bad-soft: 358 50% 14%;
+    --info: 212 100% 66%;
+    --info-soft: 214 60% 15%;
     --series-lime: #39ff14;
     --series-cyan: #00e5ff;
     --series-magenta: #ff2bd6;
@@ -169,6 +191,8 @@
     --warn-soft: 38 55% 12%;
     --bad: 346 78% 60%;
     --bad-soft: 346 50% 12%;
+    --info: 211 90% 66%;
+    --info-soft: 214 60% 14%;
     --series-lime: #39ff14;
     --series-cyan: #00e5ff;
     --series-magenta: #ff2bd6;
@@ -183,6 +207,9 @@
 @layer base {
   * { @apply border-border; }
   html, body, #app { height: 100%; }
+  /* Tamanho do texto da pessoa (Minha conta): as fontes e os espaços em rem crescem juntos. */
+  html[data-font-size="large"] { font-size: 112.5%; }
+  html[data-font-size="larger"] { font-size: 125%; }
   body { @apply bg-background text-foreground font-sans antialiased; font-size: 14px; font-feature-settings: "ss01" on; }
   h1, h2, h3 { text-wrap: balance; }
   ::selection { background: hsl(var(--ring) / 0.25); }
@@ -197,4 +224,79 @@
   .scroll-thin::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 9999px; }
   .scroll-thin::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground) / 0.5); }
   @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+}
+
+/* Campo sob o mouse: a borda puxa para a cor de destaque (--ring) e aparece um halo leve. Campo
+   selecionado: a borda vira a cor de destaque e o halo cresce. Fica fora das camadas para valer
+   sobre o ring-2 de cada campo. Cada área desliga com ``data-motion-off`` no <html> (escolha da
+   pessoa em Minha conta). */
+:root:not([data-motion-off~="fields"]) .border-input {
+  transition: border-color 0.2s ease, box-shadow 0.32s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.2s ease;
+  box-shadow: 0 0 0 0 hsl(var(--ring) / 0), 0 0 0 0 hsl(var(--ring) / 0);
+}
+:root:not([data-motion-off~="fields"]) .border-input:hover:not(:focus):not(:focus-within):not(:disabled) {
+  border-color: hsl(var(--ring) / 0.55);
+  box-shadow: 0 0 0 0 hsl(var(--ring) / 0), 0 0 0 3px hsl(var(--ring) / 0.08);
+}
+:root:not([data-motion-off~="fields"]) .border-input:focus,
+:root:not([data-motion-off~="fields"]) .border-input:focus-visible,
+:root:not([data-motion-off~="fields"]) .border-input:focus-within {
+  outline: none;
+  border-color: hsl(var(--ring));
+  box-shadow: 0 0 0 1px hsl(var(--ring)), 0 0 0 4px hsl(var(--ring) / 0.2);
+}
+
+/* Botão sob o mouse: sobe 1 px e ganha sombra; no tema personalizado, um halo e a borda na cor de
+   destaque. Ao clicar, desce e encolhe de leve. */
+:root:not([data-motion-off~="buttons"]) .btn-motion {
+  transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+:root:not([data-motion-off~="buttons"]) .btn-motion:not(:disabled):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 0 3px hsl(var(--ring) / var(--glow-alpha)), 0 6px 16px -8px hsl(var(--glow-color) / 0.35);
+}
+:root:not([data-motion-off~="buttons"]) .btn-motion[data-variant="default"]:not(:disabled):hover {
+  box-shadow: inset 0 0 0 1px hsl(var(--primary-edge)), 0 0 0 3px hsl(var(--ring) / var(--glow-alpha)),
+    0 6px 16px -8px hsl(var(--glow-color) / 0.35);
+}
+:root:not([data-motion-off~="buttons"]) .btn-motion[data-variant="outline"]:not(:disabled):hover {
+  border-color: hsl(var(--hover-border));
+}
+:root:not([data-motion-off~="buttons"]) .btn-motion:not(:disabled):active {
+  transform: translateY(0) scale(0.98);
+  transition-duration: 0.08s;
+}
+@media (prefers-reduced-motion: reduce) {
+  :root:not([data-motion-off~="buttons"]) .btn-motion:not(:disabled):hover,
+  :root:not([data-motion-off~="buttons"]) .btn-motion:not(:disabled):active { transform: none; }
+}
+
+/* Cards de métrica (widgets do dashboard e KPIs): sob o mouse, a borda puxa para a cor de destaque,
+   o card sobe 2 px e ganha sombra. Cards com formulário não usam. */
+:root:not([data-motion-off~="cards"]) .card-motion {
+  transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.2s ease;
+}
+:root:not([data-motion-off~="cards"]) .card-motion:hover {
+  transform: translateY(-2px);
+  border-color: hsl(var(--ring) / 0.45);
+  box-shadow: 0 0 0 3px hsl(var(--ring) / calc(var(--glow-alpha) / 2)), 0 10px 24px -14px hsl(var(--glow-color) / 0.45);
+}
+
+/* KPI dentro da faixa de KPIs: sem subir (a faixa é uma peça só); uma linha na cor de destaque
+   cresce do centro na base. */
+:root:not([data-motion-off~="cards"]) .kpi-motion::before {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 2px;
+  background: hsl(var(--ring));
+  transform: scaleX(0);
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+:root:not([data-motion-off~="cards"]) .kpi-motion:hover::before { transform: scaleX(1); }
+@media (prefers-reduced-motion: reduce) {
+  :root:not([data-motion-off~="cards"]) .card-motion:hover { transform: none; }
 }

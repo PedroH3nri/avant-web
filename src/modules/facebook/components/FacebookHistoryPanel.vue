@@ -4,7 +4,7 @@ import { ref, watch, onMounted } from 'vue'
 import { History } from 'lucide-vue-next'
 import LoadError from '@/components/LoadError.vue'
 import DataTable from '@/components/ui/DataTable.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import Pagination from '@/components/ui/Pagination.vue'
 import TableState from '@/components/ui/TableState.vue'
 import { ApiError } from '@/lib/api'
@@ -63,7 +63,7 @@ watch([origin, () => props.companyId], refilter)
 
 <template>
   <section class="grid gap-3">
-    <NativeSelect v-model="origin" :aria-label="t('fb.history.origin')" class="w-full sm:w-[220px]" :options="originOptions" />
+    <Select v-model="origin" :aria-label="t('fb.history.origin')" class="w-full sm:w-[220px]" :options="originOptions" />
     <LoadError v-if="loadError" :message="loadError" @retry="load" />
     <DataTable v-else :min="internal ? 960 : 860">
       <thead>

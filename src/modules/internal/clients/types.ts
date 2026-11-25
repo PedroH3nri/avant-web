@@ -5,11 +5,6 @@ import type { CompanyStatus, FiscalData } from '@/modules/company/types'
 import type { RevenueStatus } from '@/modules/revenue/types'
 import type { Invitation, Member } from '@/modules/team/types'
 
-/** Pessoa da equipe de uma Empresa cliente, vista pela equipe Groone (GET /internal/teams). */
-export interface ClientMember extends Member {
-  company: { id: string; name: string; slug: string; is_internal: boolean }
-}
-
 /** O que a equipe Groone informa no cadastro do cliente. */
 export interface ClientProfileInput {
   first_name: string
@@ -19,7 +14,7 @@ export interface ClientProfileInput {
   phone: string | null
   locale: Lang
   account_manager_id: string | null
-  referred_by_company_id: string | null
+  referred_by_client_id: string | null
   /** Texto decimal; sem valor, a indicação vale 2%. */
   referral_percentage: string | null
   notes: string | null
@@ -30,19 +25,40 @@ export interface ClientProfile extends ClientProfileInput {
 }
 
 /** O cliente nas listas inteiras (`/internal/clients/options`). */
-export type ClientOption = Pick<Client, 'id' | 'name' | 'status'>
+export interface ClientOption extends Pick<Client, 'id' | 'name' | 'status'> {
+  /** A Empresa do cliente; vazia até ele criar. */
+  company_id: string | null
+}
 
-export interface Client {
+/** A Empresa do cliente, quando ele já criou. */
+export interface ClientCompanyRef {
   id: string
   name: string
   slug: string
+  is_internal: boolean
+}
+
+/** Network code guardado no cliente que ainda não criou a Empresa. */
+export interface ReservedNetwork {
+  id: string
+  client_id: string
+  network_code: string
+  created_at: string
+}
+
+export interface Client {
+  /** O id do cliente; os clientes de antes da separação têm o mesmo id da Empresa. */
+  id: string
+  name: string
   status: CompanyStatus
   seat_limit: number
   /** Pessoas mais convites pendentes. */
   seats_used: number
-  /** Vazio enquanto ninguém aceitou o convite de dono. */
+  /** A conta do cliente; vazia enquanto ninguém aceitou o convite. */
   owner: UserRef | null
-  profile: ClientProfile | null
+  /** Vazia até o cliente criar a Empresa dele. */
+  company: ClientCompanyRef | null
+  profile: ClientProfile
   /** Vazio sem imagem: o painel mostra a inicial do nome. */
   image_url: string | null
   /** Só na lista; vazio sem receita nos últimos 60 dias. */
@@ -52,11 +68,14 @@ export interface Client {
 export interface ClientDetail extends Client {
   members: Member[]
   invitations: Invitation[]
+  reserved_networks: ReservedNetwork[]
 }
 
 export interface OwnerInvitation {
   id: string
-  /** Vazio só nos convites antigos, de antes do cadastro do cliente. */
+  /** Vazio nos convites antigos, de antes do cadastro do cliente. */
+  client_id: string | null
+  /** Só nos convites de clientes que já tinham Empresa. */
   company_id: string | null
   email: string
   status: Invitation['status']

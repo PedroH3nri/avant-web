@@ -10,6 +10,7 @@ import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import LoadError from '@/components/LoadError.vue'
 import PageBody from '@/components/PageBody.vue'
 import PageHeader from '@/components/PageHeader.vue'
+import InstallCheckCell from '@/modules/install_checks/components/InstallCheckCell.vue'
 import Button from '@/components/ui/Button.vue'
 import Card from '@/components/ui/Card.vue'
 import Checkbox from '@/components/ui/Checkbox.vue'
@@ -17,7 +18,7 @@ import Field from '@/components/ui/Field.vue'
 import Input from '@/components/ui/Input.vue'
 import MenuContent from '@/components/ui/MenuContent.vue'
 import MenuItem from '@/components/ui/MenuItem.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import { rewardSteps } from 'avant-tag/reward'
 import type { RewardStep, VisitorLanguage } from 'avant-tag/reward'
 import { ApiError } from '@/lib/api'
@@ -297,6 +298,7 @@ const segment = (selected: boolean) => ['h-8 rounded px-3 text-[13px] font-mediu
       </RouterLink>
     </template>
     <template v-if="input" #actions>
+      <InstallCheckCell v-if="rewardId && original?.active" target="reward" :id="rewardId" :name="original.name" :internal="internal" large />
       <Button v-if="rewardId" variant="outline" @click="router.push(`${base}/${rewardId}/metricas`)"><BarChart3 />{{ t('rw.metrics') }}</Button>
       <Button v-if="canManage" :disabled="busy" @click="save">{{ rewardId ? t('common.save') : t('rw.create') }}</Button>
       <DropdownMenuRoot v-if="rewardId && canManage">
@@ -313,7 +315,7 @@ const segment = (selected: boolean) => ['h-8 rounded px-3 text-[13px] font-mediu
   </PageHeader>
   <PageBody>
     <LoadError v-if="loadError" :message="loadError" @retry="load" />
-    <div v-else-if="input && preview" class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,460px)]">
+    <div v-else-if="input && preview" class="grid gap-6 lg:grid-cols-2">
       <fieldset class="grid min-w-0 content-start gap-6" :disabled="!canManage">
         <Card :title="t('rw.about')" :desc="t('rw.aboutDesc')">
           <div class="grid gap-4">
@@ -325,7 +327,7 @@ const segment = (selected: boolean) => ['h-8 rounded px-3 text-[13px] font-mediu
                 <Input v-if="rewardId" id="rw-site" :model-value="domain" disabled />
                 <div v-else class="grid gap-2">
                   <Input v-if="internal" v-model="siteQuery" :aria-label="t('rw.siteSearch')" :placeholder="t('rw.siteSearch')" />
-                  <NativeSelect id="rw-site" :model-value="site?.id ?? ''" :options="siteOptions.length ? siteOptions : [{ value: '', label: t('rw.sitePick') }]" @update:model-value="chooseSite" />
+                  <Select id="rw-site" :model-value="site?.id ?? ''" :options="siteOptions.length ? siteOptions : [{ value: '', label: t('rw.sitePick') }]" @update:model-value="chooseSite" />
                 </div>
               </Field>
               <Field id="rw-active" :label="t('rw.col.state')">
@@ -366,7 +368,7 @@ const segment = (selected: boolean) => ['h-8 rounded px-3 text-[13px] font-mediu
                     v-model="input.icon_emoji"
                     :aria-label="t('rw.iconOther')"
                     :maxlength="LIMITS.emoji"
-                    class="h-9 w-20 rounded-md border border-input bg-background text-center text-[18px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    class="h-9 w-20 rounded-md border border-input bg-[hsl(var(--field))] text-center text-[18px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   />
                 </div>
                 <div v-if="input.icon_kind === 'image'" class="flex flex-wrap items-center gap-3">
@@ -388,7 +390,7 @@ const segment = (selected: boolean) => ['h-8 rounded px-3 text-[13px] font-mediu
                 v-model="input.description"
                 rows="3"
                 :maxlength="LIMITS.description"
-                class="w-full rounded-md border border-input bg-background px-3 py-2 text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                class="w-full rounded-md border border-input bg-[hsl(var(--field))] px-3 py-2 text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               />
             </Field>
             <Field id="rw-button" :label="t('rw.button')" :error="problem('button')">
@@ -430,7 +432,7 @@ const segment = (selected: boolean) => ['h-8 rounded px-3 text-[13px] font-mediu
               <div v-if="input.lead" class="grid gap-4">
                 <div class="grid items-start gap-4 sm:grid-cols-2">
                   <Field id="rw-lead-kind" :label="t('rw.leadKind')">
-                    <NativeSelect
+                    <Select
                       id="rw-lead-kind"
                       v-model="input.lead.kind"
                       :options="[
@@ -440,7 +442,7 @@ const segment = (selected: boolean) => ['h-8 rounded px-3 text-[13px] font-mediu
                     />
                   </Field>
                   <Field id="rw-lead-position" :label="t('rw.leadPosition')">
-                    <NativeSelect
+                    <Select
                       id="rw-lead-position"
                       v-model="input.lead.position"
                       :disabled="input.questions.length === 0"
@@ -531,7 +533,7 @@ const segment = (selected: boolean) => ['h-8 rounded px-3 text-[13px] font-mediu
             </div>
             <div class="grid items-start gap-4 sm:grid-cols-2">
               <Field id="rw-font" :label="t('rw.font')">
-                <NativeSelect id="rw-font" v-model="input.style.font" :options="FONTS.map((font) => ({ value: font, label: font }))" />
+                <Select id="rw-font" v-model="input.style.font" :options="FONTS.map((font) => ({ value: font, label: font }))" />
               </Field>
               <Field id="rw-shadow" :label="t('rw.shadow')">
                 <Checkbox id="rw-shadow" v-model="input.style.shadow" :label="t('rw.shadow')" />
@@ -558,12 +560,12 @@ const segment = (selected: boolean) => ['h-8 rounded px-3 text-[13px] font-mediu
                   v-model="input.click_selector"
                   :maxlength="LIMITS.selector"
                   placeholder="#ver-receita"
-                  class="h-10 w-full rounded-md border border-input bg-background px-3 font-mono text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  class="h-10 w-full rounded-md border border-input bg-[hsl(var(--field))] px-3 font-mono text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 />
               </Field>
             </div>
             <Field id="rw-block" :label="t('rw.adUnits')" :hint="adUnitHint">
-              <NativeSelect id="rw-block" :model-value="input.ad_unit_day ?? ''" class="sm:w-[420px]" :options="adUnitOptions" @update:model-value="(day: string) => input && (input.ad_unit_day = day || null)" />
+              <Select id="rw-block" :model-value="input.ad_unit_day ?? ''" class="sm:w-[420px]" :options="adUnitOptions" @update:model-value="(day: string) => input && (input.ad_unit_day = day || null)" />
             </Field>
             <Field id="rw-cooldown" :label="t('rw.cooldown')" :hint="t('rw.cooldownHint')" :error="problem('cooldown', 'rw.cooldownBad')">
               <input
@@ -572,7 +574,7 @@ const segment = (selected: boolean) => ['h-8 rounded px-3 text-[13px] font-mediu
                 type="number"
                 min="5"
                 max="1440"
-                class="h-10 w-full rounded-md border border-input bg-background px-3 text-[14px] tnum focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:w-[200px]"
+                class="h-10 w-full rounded-md border border-input bg-[hsl(var(--field))] px-3 text-[14px] tnum focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:w-[200px]"
               />
             </Field>
             <div class="grid gap-3">
@@ -620,7 +622,7 @@ const segment = (selected: boolean) => ['h-8 rounded px-3 text-[13px] font-mediu
             <div class="text-[13px] text-muted-foreground">{{ t('rw.previewSub') }}</div>
           </div>
           <div class="flex items-center gap-2">
-            <NativeSelect
+            <Select
               v-model="visitorLang"
               :aria-label="t('rw.visitorLang')"
               class="w-[140px]"

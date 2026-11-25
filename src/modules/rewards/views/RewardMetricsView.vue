@@ -1,5 +1,6 @@
 <script setup lang="ts">
 /** Métricas de um reward: aberturas, cliques, anúncios concluídos, funil das etapas, respostas e contatos. */
+import StatTile from '@/components/StatTile.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { AlertTriangle, ArrowLeft, Pencil } from 'lucide-vue-next'
@@ -10,7 +11,7 @@ import PageBody from '@/components/PageBody.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import Button from '@/components/ui/Button.vue'
 import Card from '@/components/ui/Card.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import { ApiError } from '@/lib/api'
 import { errorText, locale, t, type Key } from '@/lib/i18n'
 import RewardLeadsCard from '@/modules/rewards/components/RewardLeadsCard.vue'
@@ -127,7 +128,7 @@ watch(period, load)
       </RouterLink>
     </template>
     <template #actions>
-      <NativeSelect
+      <Select
         v-model="period"
         :aria-label="t('rw.period')"
         class="w-[180px]"
@@ -143,20 +144,12 @@ watch(period, load)
         <AlertTriangle class="mt-0.5 size-4 shrink-0" />{{ reward.deleted_at ? t('rw.deletedNote') : t('rw.pausedNote') }}
       </div>
       <div :class="['grid gap-3 sm:grid-cols-2', tiles.length === 5 ? 'lg:grid-cols-5' : 'lg:grid-cols-4']">
-        <div v-for="tile in tiles" :key="tile.label" class="rounded-lg border bg-card p-4">
-          <div class="text-[13px] text-muted-foreground">{{ tile.label }}</div>
-          <div class="mt-1 text-[26px] font-semibold tracking-[-0.03em] tnum">{{ integer.format(tile.value) }}</div>
-          <div class="mt-1 text-[12px] leading-snug text-muted-foreground">{{ tile.note }}</div>
-        </div>
+        <StatTile v-for="tile in tiles" :key="tile.label" framed :label="tile.label" :value="integer.format(tile.value)" :hint="tile.note" />
       </div>
       <section v-if="quizTiles.length" class="grid gap-3">
         <h2 class="text-[13px] font-medium uppercase tracking-wide text-muted-foreground">{{ t('rw.quiz') }}</h2>
         <div class="grid gap-3 sm:grid-cols-3">
-          <div v-for="tile in quizTiles" :key="tile.label" class="rounded-lg border bg-card p-4">
-            <div class="text-[13px] text-muted-foreground">{{ tile.label }}</div>
-            <div class="mt-1 text-[26px] font-semibold tracking-[-0.03em] tnum">{{ tile.value }}</div>
-            <div class="mt-1 text-[12px] leading-snug text-muted-foreground">{{ tile.note }}</div>
-          </div>
+          <StatTile v-for="tile in quizTiles" :key="tile.label" framed :label="tile.label" :value="tile.value" :hint="tile.note" />
         </div>
       </section>
       <Card :title="t('rw.daily')">

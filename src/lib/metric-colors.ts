@@ -51,6 +51,15 @@ export const METRIC_COLOR: Record<string, SeriesColor> = {
   fb_cpc: 'yellow',
   fb_cpm: 'yellow',
   fb_ctr: 'cyan',
+  gads_spend: 'orange',
+  gads_revenue: 'lime',
+  gads_profit: 'lime',
+  gads_roi: 'cyan',
+  gads_impressions: 'violet',
+  gads_clicks: 'magenta',
+  gads_cpc: 'yellow',
+  gads_cpm: 'yellow',
+  gads_ctr: 'cyan',
 }
 
 /** A variável CSS de uma cor da paleta, que já muda entre o tema claro e o escuro. */

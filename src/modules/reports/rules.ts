@@ -82,7 +82,7 @@ export interface ReportDraft {
   ownerUserId: string | null
 }
 
-export const SOURCE_PREFERENCE: MetricSource[] = ['gam', 'page_views', 'gam_key_values', 'facebook']
+export const SOURCE_PREFERENCE: MetricSource[] = ['gam', 'page_views', 'gam_key_values', 'facebook', 'google_ads']
 export const TIME_DIMENSIONS = ['date', 'week', 'month', 'hour']
 const AXIS_CHARTS: ChartType[] = ['line', 'bar', 'area']
 const STACKABLE: ChartType[] = ['bar', 'area']

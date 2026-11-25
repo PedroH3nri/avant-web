@@ -1,6 +1,7 @@
 /** Formatos da API do domínio results (iguais ao dto.py dele no avant-api). Datas em ISO 8601 UTC. */
 
 import type { CostKind } from '@/modules/costs/types'
+import type { Page } from '@/lib/types'
 
 export interface CostLine {
   cost_id: string
@@ -18,6 +19,8 @@ export interface MonthResult {
   result: string
   deductions_pending: boolean
   cost_lines: CostLine[]
+  /** Só no painel interno: o que a Groone recebe no mês. */
+  groone_revenue?: string | null
 }
 
 export interface ResultTotals {
@@ -26,6 +29,7 @@ export interface ResultTotals {
   revenue: string
   costs: string
   result: string
+  groone_revenue?: string | null
 }
 
 export interface CompanyResults {
@@ -33,4 +37,10 @@ export interface CompanyResults {
   currency: string
   months: MonthResult[]
   totals: ResultTotals
+}
+
+/** Uma página do ranking do resultado dos clientes com a soma de todos, igual ao ``ClientsResultsPageOut`` da API. */
+export interface ClientsResultsPage extends Page<CompanyResults> {
+  totals: ResultTotals
+  deductions_pending: boolean
 }

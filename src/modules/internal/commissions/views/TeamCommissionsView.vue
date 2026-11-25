@@ -1,6 +1,7 @@
 <script setup lang="ts">
 /** Comissões da equipe: o mês de cada pessoa, os prazos dela, desconto, emissão, a data de início e
  * as visões salvas da tabela. */
+import DateField from '@/components/ui/DateField.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
 import { DropdownMenuRoot, DropdownMenuTrigger } from 'reka-ui'
@@ -14,10 +15,9 @@ import Card from '@/components/ui/Card.vue'
 import DataTable from '@/components/ui/DataTable.vue'
 import Dialog from '@/components/ui/Dialog.vue'
 import Field from '@/components/ui/Field.vue'
-import Input from '@/components/ui/Input.vue'
 import MenuContent from '@/components/ui/MenuContent.vue'
 import MenuItem from '@/components/ui/MenuItem.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import Status from '@/components/ui/Status.vue'
 import TableState from '@/components/ui/TableState.vue'
 import { ApiError } from '@/lib/api'
@@ -32,7 +32,9 @@ import type { PersonMonth, WindowMonth } from '@/modules/internal/commissions/ty
 import { formatAmount, monthOptions } from '@/modules/internal/goals/rules'
 import { useSession } from '@/stores/session'
 import ColumnsMenu from '@/modules/views/components/ColumnsMenu.vue'
+import FiltersMenu from '@/modules/views/components/FiltersMenu.vue'
 import SavedViewsBar from '@/modules/views/components/SavedViewsBar.vue'
+import { useBarFilters } from '@/modules/views/barFilters'
 import { cleanFilters, firstValue, monthPeriod, parseSort, periodMonth, sortValue, type Period } from '@/modules/views/rules'
 import type { ViewDefinition, ViewSort } from '@/modules/views/types'
 import type { CommissionStatus } from '@/modules/internal/commissions/types'
@@ -44,19 +46,28 @@ const SORTS: ViewSort[] = [
   { key: 'total', direction: 'desc' },
   { key: 'person', direction: 'asc' },
 ]
-const DEFAULT_VIEW: ViewDefinition = { columns: [...COLUMNS], filters: { period: 'current_month' }, sort: SORTS[0] ?? null }
+const FILTERS = ['status']
+const DEFAULT_FILTERS = ['status']
+const FILTER_LABELS: Record<string, Key> = {
+  status: 'com.col.status',
+}
+const DEFAULT_VIEW: ViewDefinition = { columns: [...COLUMNS], filters: { period: 'current_month' }, sort: SORTS[0] ?? null, shown_filters: DEFAULT_FILTERS }
 
 const session = useSession()
 const today = localToday()
 const months = computed(() => monthOptions(today, locale.value))
 const month = ref(today.slice(0, 7))
 const status = ref<CommissionStatus | typeof ALL>(ALL)
+const barFilters = useBarFilters(FILTERS, DEFAULT_FILTERS, {
+  status: () => (status.value = ALL),
+})
 const sort = ref(sortValue(SORTS[0] as ViewSort))
 const columns = ref<string[]>([...COLUMNS])
 const current = computed<ViewDefinition>(() => ({
   columns: columns.value,
   filters: cleanFilters({ period: monthPeriod(month.value, today), status: status.value === ALL ? undefined : status.value }),
   sort: parseSort(sort.value),
+  shown_filters: barFilters.shown.value,
 }))
 const statusOptions = computed(() => [{ value: ALL, label: t('com.allStatuses') }, ...STATUSES.map((value) => ({ value, label: t(`com.status.${value}` as Key) }))])
 const sortOptions = computed(() => SORTS.map((option) => ({ value: sortValue(option), label: t(`com.sort.${option.key}` as Key) })))
@@ -67,6 +78,8 @@ const rows = computed(() => {
   if (chosen?.key === 'person') return [...list].sort((first, second) => first.user.name.localeCompare(second.user.name, locale.value))
   return [...list].sort((first, second) => (toNumber(second.month.total) ?? 0) - (toNumber(first.month.total) ?? 0))
 })
+/** O nome do filtro no menu de filtros. */
+const filterLabel = (filter: string) => t(FILTER_LABELS[filter] as Key)
 /** Diz se a coluna aparece na tabela. */
 const shown = (column: string) => columns.value.includes(column)
 /** O nome da coluna no menu de colunas. */
@@ -80,6 +93,7 @@ function applyView(definition: ViewDefinition) {
   month.value = period ? periodMonth(period as Period, today) : today.slice(0, 7)
   const chosenStatus = firstValue(definition.filters.status)
   status.value = (STATUSES as string[]).includes(chosenStatus) ? (chosenStatus as CommissionStatus) : ALL
+  barFilters.apply(definition)
   const chosenSort = definition.sort && SORTS.find((option) => sortValue(option) === sortValue(definition.sort as ViewSort))
   sort.value = sortValue(chosenSort || (SORTS[0] as ViewSort))
 }
@@ -183,9 +197,10 @@ async function saveStart() {
     <template v-else>
       <CommissionKpis :items="kpis" />
       <SavedViewsBar screen="commissions" :default-label="t('com.thisMonth')" :current="current" :defaults="DEFAULT_VIEW" @apply="applyView">
-        <NativeSelect v-model="month" :options="months" :aria-label="t('com.month')" class="w-full sm:w-[200px] [&_select]:h-9" />
-        <NativeSelect v-model="status" :options="statusOptions" :aria-label="t('com.col.status')" class="w-full sm:w-[180px] [&_select]:h-9" />
-        <NativeSelect v-model="sort" :options="sortOptions" :aria-label="t('views.sort')" class="w-full sm:w-[200px] [&_select]:h-9" />
+        <Select v-model="month" :options="months" :aria-label="t('com.month')" class="w-full sm:w-[200px] h-9" />
+        <Select v-if="barFilters.isShown('status')" v-model="status" :options="statusOptions" :aria-label="t('com.col.status')" class="w-full sm:w-[180px] h-9" />
+        <Select v-model="sort" :options="sortOptions" :aria-label="t('views.sort')" class="w-full sm:w-[200px] h-9" />
+        <FiltersMenu v-model:shown="barFilters.shown.value" :filters="FILTERS" :label="filterLabel" />
         <ColumnsMenu v-model:shown="columns" :columns="COLUMNS" :label="columnLabel" />
       </SavedViewsBar>
       <DataTable :min="960">
@@ -233,7 +248,7 @@ async function saveStart() {
       </DataTable>
       <Card v-if="canManage" :title="t('com.start.title')" :desc="t('com.start.desc')" :footer-note="savedStart ? undefined : t('com.start.missing')">
         <Field id="commission-start" :label="t('com.start.label')">
-          <Input id="commission-start" v-model="startsOn" type="date" class="max-w-[200px] tnum" />
+          <DateField id="commission-start" v-model="startsOn" class="max-w-[200px]" />
         </Field>
         <template #footer>
           <Button size="sm" :disabled="!startsOn || startsOn === savedStart" :loading="startBusy" @click="saveStart">{{ t('com.start.save') }}</Button>

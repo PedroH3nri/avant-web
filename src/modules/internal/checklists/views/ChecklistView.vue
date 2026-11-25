@@ -7,13 +7,14 @@ import { ArrowLeft, Check, ExternalLink, RefreshCw } from 'lucide-vue-next'
 import LoadError from '@/components/LoadError.vue'
 import PageBody from '@/components/PageBody.vue'
 import PageHeader from '@/components/PageHeader.vue'
+import Badge from '@/components/ui/Badge.vue'
 import Button from '@/components/ui/Button.vue'
 import Card from '@/components/ui/Card.vue'
 import Status from '@/components/ui/Status.vue'
 import { ApiError } from '@/lib/api'
 import { errorText, formatDate, t } from '@/lib/i18n'
 import ChecklistNotesCard from '@/modules/internal/checklists/components/ChecklistNotesCard.vue'
-import { ROW_TONE, evidenceText, monthName, personName, rowState, rowStateLabel, splitRows } from '@/modules/internal/checklists/rules'
+import { ROW_TONE, evidenceText, monthName, overrideSummary, personName, rowState, rowStateLabel, splitRows } from '@/modules/internal/checklists/rules'
 import { checklistService } from '@/modules/internal/checklists/service'
 import type { ChecklistRow, SiteChecklistDetail } from '@/modules/internal/checklists/types'
 import { useSession } from '@/stores/session'
@@ -133,6 +134,7 @@ async function checkNow() {
                   <span class="font-medium">{{ row.item.name }}</span>
                   <Status :tone="ROW_TONE[rowState(row)]">{{ rowStateLabel(rowState(row)) }}</Status>
                   <span class="text-[12px] text-muted-foreground">{{ row.item.kind === 'manual' ? t('check.manual') : t('check.automatic') }}</span>
+                  <Badge v-if="row.override">{{ overrideSummary(row) }}</Badge>
                 </div>
                 <p class="mt-0.5 break-words text-[13px] text-muted-foreground">{{ evidenceText(row) }}</p>
                 <p v-if="row.detail" class="mt-0.5 break-all font-mono text-[12px] text-muted-foreground">{{ row.detail }}</p>
@@ -150,6 +152,7 @@ async function checkNow() {
                   <span class="font-medium">{{ row.item.name }}</span>
                   <Status :tone="ROW_TONE[rowState(row)]">{{ rowStateLabel(rowState(row)) }}</Status>
                   <span class="text-[12px] text-muted-foreground">{{ row.item.kind === 'manual' ? t('check.manual') : t('check.automatic') }}</span>
+                  <Badge v-if="row.override">{{ overrideSummary(row) }}</Badge>
                 </div>
                 <p class="mt-0.5 break-words text-[13px] text-muted-foreground">
                   {{ evidenceText(row) }}
@@ -159,6 +162,11 @@ async function checkNow() {
               </div>
               <Button v-if="writable && row.marked_at" size="sm" variant="ghost" :loading="marking === row.item.id" @click="mark(row, false)">{{ t('check.unmark') }}</Button>
             </li>
+          </ul>
+        </Card>
+        <Card v-if="groups.skipped.length" :title="t('check.override.skipped')">
+          <ul class="flex flex-wrap gap-2">
+            <li v-for="row in groups.skipped" :key="row.item.id" class="rounded-md border border-dashed px-2.5 py-1 text-[13px] text-muted-foreground">{{ row.item.name }}</li>
           </ul>
         </Card>
       </div>

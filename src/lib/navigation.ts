@@ -2,21 +2,20 @@
 
 import { computed, type Component } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { toast } from 'vue-sonner'
-import { BellRing, Building2, ChartLine, CircleDollarSign, Code2, Coins, Eye, FileChartColumn, FileSignature, FileText, Gift, Globe, IdCard, LayoutDashboard, LayoutTemplate, ListChecks, ListTodo, LoaderCircle, MailCheck, Megaphone, Network, Plug, Receipt, ReceiptText, Scale, ShieldCheck, Target, Users, UsersRound, Wallet, Wrench } from 'lucide-vue-next'
-import { ApiError } from '@/lib/api'
-import { errorText, type Key } from '@/lib/i18n'
+import { BellRing, Building, Building2, ChartLine, CircleDollarSign, Code2, Coins, Eye, FileChartColumn, FileSignature, FileText, Gift, Globe, IdCard, LayoutDashboard, LayoutTemplate, ListChecks, ListTodo, LoaderCircle, MailCheck, Network, Plug, Receipt, ReceiptText, Scale, ShieldCheck, Target, Users, UsersRound, Wallet, Wrench } from 'lucide-vue-next'
+import FacebookIcon from '@/components/FacebookIcon.vue'
+import GoogleAdsIcon from '@/components/GoogleAdsIcon.vue'
+import type { Key } from '@/lib/i18n'
 import { useSession } from '@/stores/session'
 
 export type NavItem = { to: string; key: Key; icon: Component; internal?: boolean; clientOnly?: boolean; separated?: boolean }
 export type NavGroup = { id: string; key: Key | null; label: Key; icon: Component; items: NavItem[] }
 
-// O menu é imutável: os mesmos itens em todas as rotas e Empresas, sem filtrar por permissão
-// (o guarda do router e a API decidem o acesso). Itens com ``internal`` abrem o painel interno
-// (o guarda troca para a Company Groone) e só a equipe Groone os vê; os outros abrem a Empresa
-// cliente. Itens com ``clientOnly`` somem para a equipe Groone, que tem a versão interna deles
-// (Equipes: a Groone vê as equipes de todos os clientes, nunca a própria; Papéis e permissões:
-// a Groone cuida dos seus em Papéis da equipe). Itens com ``separated`` ganham uma linha acima.
+// O menu tem os mesmos itens em todas as rotas, sem filtrar por permissão (o guarda do router e a
+// API decidem o acesso), mas segue a Empresa ativa: com a Company Groone ativa mostra o painel
+// interno (itens com ``internal``, só da equipe Groone); com uma Empresa cliente ativa, os itens
+// dela (itens com ``clientOnly`` e os comuns), também para a equipe Groone que trocou de Empresa
+// na barra de cima. Itens com ``separated`` ganham uma linha acima.
 export const NAV_GROUPS: NavGroup[] = [
   { id: 'home', key: null, label: 'nav.home', icon: LayoutDashboard, items: [{ to: '/', key: 'nav.home', icon: LayoutDashboard }] },
   { id: 'tasks', key: null, label: 'nav.tasks', icon: ListTodo, items: [{ to: '/interno/tarefas', key: 'nav.tasks', icon: ListTodo, internal: true }] },
@@ -28,7 +27,7 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { to: '/interno', key: 'int.clients', icon: Building2, internal: true },
       { to: '/equipe', key: 'nav.team', icon: Users, clientOnly: true },
-      { to: '/interno/equipes', key: 'nav.team', icon: Users, internal: true },
+      { to: '/interno/empresas', key: 'int.companies', icon: Building, internal: true },
       { to: '/networks', key: 'nav.networks', icon: Network, clientOnly: true },
       { to: '/interno/networks', key: 'nav.networks', icon: Network, internal: true },
       { to: '/interno/contratos', key: 'int.contracts', icon: FileSignature, internal: true },
@@ -56,6 +55,10 @@ export const NAV_GROUPS: NavGroup[] = [
       { to: '/resultado', key: 'nav.results', icon: Scale },
       { to: '/interno/resultados', key: 'int.results', icon: Scale, internal: true },
       { to: '/interno/metas', key: 'goals.title', icon: Target, internal: true },
+      { to: '/campanhas-facebook', key: 'nav.facebookCampaigns', icon: FacebookIcon, clientOnly: true, separated: true },
+      { to: '/interno/campanhas-facebook', key: 'nav.facebookCampaigns', icon: FacebookIcon, internal: true, separated: true },
+      { to: '/campanhas-google-ads', key: 'nav.googleAdsCampaigns', icon: GoogleAdsIcon, clientOnly: true },
+      { to: '/interno/campanhas-google-ads', key: 'nav.googleAdsCampaigns', icon: GoogleAdsIcon, internal: true },
       { to: '/relatorios', key: 'nav.customReports', icon: FileChartColumn, separated: true },
     ],
   },
@@ -65,10 +68,10 @@ export const NAV_GROUPS: NavGroup[] = [
     label: 'nav.groupIntegrations',
     icon: Plug,
     items: [
-      { to: '/facebook', key: 'nav.facebook', icon: Megaphone, clientOnly: true },
-      { to: '/interno/facebook', key: 'nav.facebook', icon: Megaphone, internal: true },
-      { to: '/campanhas-facebook', key: 'nav.facebookCampaigns', icon: ChartLine, clientOnly: true },
-      { to: '/interno/campanhas-facebook', key: 'nav.facebookCampaigns', icon: ChartLine, internal: true },
+      { to: '/facebook', key: 'nav.facebook', icon: FacebookIcon, clientOnly: true },
+      { to: '/interno/facebook', key: 'nav.facebook', icon: FacebookIcon, internal: true },
+      { to: '/google-ads', key: 'nav.googleAds', icon: GoogleAdsIcon, clientOnly: true },
+      { to: '/interno/google-ads', key: 'nav.googleAds', icon: GoogleAdsIcon, internal: true },
     ],
   },
   {
@@ -114,9 +117,9 @@ const SIBLINGS: Record<string, string[]> = {
   '/interno/invoices': ['/interno/servicos-de-invoice'],
 }
 
-/** Os grupos que a pessoa vê: a equipe Groone troca os itens só de cliente pelos internos. */
-export function visibleGroups(staff: boolean): NavGroup[] {
-  return NAV_GROUPS.map((section) => ({ ...section, items: section.items.filter((link) => (staff ? !link.clientOnly : !link.internal)) })).filter(
+/** Os grupos do menu: com a Company Groone ativa, os do painel interno; com uma Empresa cliente, os dela. */
+export function visibleGroups(onGroone: boolean): NavGroup[] {
+  return NAV_GROUPS.map((section) => ({ ...section, items: section.items.filter((link) => (onGroone ? !link.clientOnly : !link.internal)) })).filter(
     (section) => section.items.length > 0,
   )
 }
@@ -137,38 +140,17 @@ export function useNavigation(onNavigate: () => void) {
   const route = useRoute()
   const router = useRouter()
   const ready = computed(() => !!session.me && !session.me.mfa_setup_required)
-  const groups = computed(() => visibleGroups(!!session.internalCompany))
+  const groups = computed(() => visibleGroups(!!session.company?.is_internal))
   const onInternal = computed(() => route.meta.internal === true)
-  /** A Empresa cliente do grupo Inventário: a ativa ou a última por onde a pessoa passou. */
-  const clientId = computed(() => {
-    if (session.company && !session.company.is_internal) return session.company.id
-    const last = session.clientCompanies.find((clientCompany) => clientCompany.id === session.lastClientId)
-    return (last ?? session.clientCompanies[0])?.id ?? null
-  })
-
   /** Diz se o link está ativo na rota atual. */
   const active = (link: NavItem) => linkActive(link, route.path, onInternal.value)
   /** Diz se o grupo tem o item ativo. */
   const groupActive = (section: NavGroup) => section.items.some(active)
 
-  /**
-   * Item da Empresa cliente com a Company Groone ativa: troca para a Empresa cliente antes de
-   * abrir. Item interno segue direto (o guarda troca); sem Empresa cliente, abre na Company Groone.
-   */
+  /** Abre o link na Empresa ativa; o item interno troca para a Company Groone pelo guarda do router. */
   async function openLink(event: Event | null, to: string) {
     onNavigate()
-    const id = clientId.value
-    if (to.startsWith('/interno') || !session.company?.is_internal || !id) {
-      if (!event) await router.push(to)
-      return
-    }
-    event?.preventDefault()
-    try {
-      await session.switchCompany(id)
-      await router.push(to)
-    } catch (error) {
-      toast.error(errorText(error instanceof ApiError ? error.code : 'unknown'))
-    }
+    if (!event) await router.push(to)
   }
 
   /** Abre a página da conta. */

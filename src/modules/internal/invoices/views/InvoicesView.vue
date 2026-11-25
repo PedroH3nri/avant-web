@@ -1,6 +1,7 @@
 <script setup lang="ts">
 /** Invoices da equipe Groone, com filtros e visões salvas, para o financeiro devolver ou confirmar o
  * pagamento. */
+import OpenLink from '@/components/OpenLink.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import LoadError from '@/components/LoadError.vue'
@@ -9,7 +10,7 @@ import PageHeader from '@/components/PageHeader.vue'
 import Avatar from '@/components/ui/Avatar.vue'
 import Button from '@/components/ui/Button.vue'
 import DataTable from '@/components/ui/DataTable.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import Pagination from '@/components/ui/Pagination.vue'
 import Status from '@/components/ui/Status.vue'
 import TableState from '@/components/ui/TableState.vue'
@@ -24,13 +25,22 @@ import { invoiceService } from '@/modules/internal/invoices/service'
 import type { InvoiceStatus, InvoiceSummary } from '@/modules/internal/invoices/types'
 import { staffService } from '@/modules/internal/staff/service'
 import ColumnsMenu from '@/modules/views/components/ColumnsMenu.vue'
+import FiltersMenu from '@/modules/views/components/FiltersMenu.vue'
 import SavedViewsBar from '@/modules/views/components/SavedViewsBar.vue'
+import { useBarFilters } from '@/modules/views/barFilters'
 import { cleanFilters, firstValue, monthPeriod, periodMonth, type Period } from '@/modules/views/rules'
 import type { ViewDefinition } from '@/modules/views/types'
 
 const ALL = 'all'
 const COLUMNS = ['number', 'person', 'month', 'total', 'status', 'issued_at', 'paid_at']
-const DEFAULT_VIEW: ViewDefinition = { columns: [...COLUMNS], filters: {}, sort: { key: 'created_at', direction: 'desc' } }
+const FILTERS = ['status', 'period', 'user_id']
+const DEFAULT_FILTERS = ['status', 'period', 'user_id']
+const FILTER_LABELS: Record<string, Key> = {
+  status: 'inv.col.status',
+  period: 'inv.col.month',
+  user_id: 'inv.col.person',
+}
+const DEFAULT_VIEW: ViewDefinition = { columns: [...COLUMNS], filters: {}, sort: { key: 'created_at', direction: 'desc' }, shown_filters: DEFAULT_FILTERS }
 const today = localToday()
 const invoices = ref<InvoiceSummary[] | null>(null)
 const page = ref(1)
@@ -39,6 +49,11 @@ const pages = ref(0)
 const status = ref<InvoiceStatus | typeof ALL>(ALL)
 const month = ref(ALL)
 const person = ref(ALL)
+const barFilters = useBarFilters(FILTERS, DEFAULT_FILTERS, {
+  status: () => (status.value = ALL),
+  period: () => (month.value = ALL),
+  user_id: () => (person.value = ALL),
+})
 const columns = ref<string[]>([...COLUMNS])
 const people = ref<{ value: string; label: string }[]>([])
 const current = computed<ViewDefinition>(() => ({
@@ -49,6 +64,7 @@ const current = computed<ViewDefinition>(() => ({
     user_id: person.value === ALL ? undefined : person.value,
   }),
   sort: DEFAULT_VIEW.sort,
+  shown_filters: barFilters.shown.value,
 }))
 const loadError = ref<string | null>(null)
 let ticket = 0
@@ -59,6 +75,8 @@ const statusOptions = computed(() => [
 ])
 const months = computed(() => [{ value: ALL, label: t('inv.team.allMonths') }, ...monthOptions(today, locale.value)])
 const personOptions = computed(() => [{ value: ALL, label: t('inv.team.allPeople') }, ...people.value])
+/** O nome do filtro no menu de filtros. */
+const filterLabel = (filter: string) => t(FILTER_LABELS[filter] as Key)
 /** Diz se a coluna aparece na tabela. */
 const shown = (column: string) => columns.value.includes(column)
 /** O nome da coluna no menu de colunas. */
@@ -72,6 +90,7 @@ function applyView(definition: ViewDefinition) {
   status.value = (['draft', 'issued', 'paid'] as string[]).includes(chosenStatus) ? (chosenStatus as InvoiceStatus) : ALL
   const period = firstValue(definition.filters.period)
   month.value = period ? periodMonth(period as Period, today) : ALL
+  barFilters.apply(definition)
   person.value = firstValue(definition.filters.user_id) || ALL
 }
 
@@ -127,9 +146,10 @@ const monthName = (iso: string) => new Intl.DateTimeFormat(locale.value, { month
   </PageHeader>
   <PageBody>
     <SavedViewsBar screen="invoices" :default-label="t('inv.team.allInvoices')" :current="current" :defaults="DEFAULT_VIEW" @apply="applyView">
-      <NativeSelect v-model="status" :options="statusOptions" :aria-label="t('inv.col.status')" class="w-full sm:w-[200px] [&_select]:h-9" />
-      <NativeSelect v-model="month" :options="months" :aria-label="t('inv.col.month')" class="w-full sm:w-[200px] [&_select]:h-9" />
-      <NativeSelect v-model="person" :options="personOptions" :aria-label="t('inv.col.person')" class="w-full sm:w-[220px] [&_select]:h-9" />
+      <Select v-if="barFilters.isShown('status')" v-model="status" :options="statusOptions" :aria-label="t('inv.col.status')" class="w-full sm:w-[200px] h-9" />
+      <Select v-if="barFilters.isShown('period')" v-model="month" :options="months" :aria-label="t('inv.col.month')" class="w-full sm:w-[200px] h-9" />
+      <Select v-if="barFilters.isShown('user_id')" v-model="person" :options="personOptions" :aria-label="t('inv.col.person')" class="w-full sm:w-[220px] h-9" />
+      <FiltersMenu v-model:shown="barFilters.shown.value" :filters="FILTERS" :label="filterLabel" />
       <ColumnsMenu v-model:shown="columns" :columns="COLUMNS" :label="columnLabel" />
     </SavedViewsBar>
     <LoadError v-if="loadError" :message="loadError" @retry="load" />
@@ -145,10 +165,11 @@ const monthName = (iso: string) => new Intl.DateTimeFormat(locale.value, { month
             <th v-if="shown('status')" :class="th">{{ t('inv.col.status') }}</th>
             <th v-if="shown('issued_at')" :class="th">{{ t('inv.col.issued') }}</th>
             <th v-if="shown('paid_at')" :class="th">{{ t('inv.col.paid') }}</th>
+            <th :class="[th, 'w-px']"><span class="sr-only">{{ t('common.open') }}</span></th>
           </tr>
         </thead>
         <tbody>
-          <TableState :cols="columns.length" :empty="invoices.length === 0" :desc="t('inv.team.empty')" />
+          <TableState :cols="(columns.length) + 1" :empty="invoices.length === 0" :desc="t('inv.team.empty')" />
           <tr v-for="invoice in invoices" :key="invoice.id" class="hover:bg-muted">
             <td v-if="shown('number')" :class="td">
               <RouterLink :to="`/interno/invoices/${invoice.id}`" class="font-mono text-[13px] font-medium hover:underline focus-visible:underline focus-visible:outline-none">{{ invoice.number }}</RouterLink>
@@ -164,6 +185,7 @@ const monthName = (iso: string) => new Intl.DateTimeFormat(locale.value, { month
             </td>
             <td v-if="shown('issued_at')" :class="[td, 'tnum text-muted-foreground']">{{ invoice.issued_at ? formatDate(invoice.issued_at, false) : '–' }}</td>
             <td v-if="shown('paid_at')" :class="[td, 'tnum text-muted-foreground']">{{ invoice.paid_at ? formatDate(invoice.paid_at, false) : '–' }}</td>
+            <td :class="[td, 'text-right']"><OpenLink :to="`/interno/invoices/${invoice.id}`" :name="invoice.number" /></td>
           </tr>
         </tbody>
       </DataTable>
