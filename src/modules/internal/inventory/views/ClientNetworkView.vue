@@ -25,7 +25,7 @@ import type { ClientNetworkDetail } from '@/modules/internal/inventory/types'
 import { networkName, networkTone, statusKey } from '@/modules/networks/rules'
 import type { SyncRun } from '@/modules/networks/types'
 import NetworkAdsTxtCard from '@/modules/internal/inventory/components/NetworkAdsTxtCard.vue'
-import RevenueStatusBadge from '@/modules/revenue/components/RevenueStatusBadge.vue'
+import RevenueStatusCard from '@/modules/revenue/components/RevenueStatusCard.vue'
 import { approval } from '@/modules/sites/rules'
 import { useSession } from '@/stores/session'
 
@@ -131,7 +131,7 @@ function runSummary(syncRun: SyncRun) {
           <p v-else class="text-[14px] text-muted-foreground">{{ t('netd.noContract') }}</p>
         </Card>
         <Card :title="t('int.column.revenue')">
-          <RevenueStatusBadge :status="network.revenue_status" />
+          <RevenueStatusCard :status="network.revenue_status" />
         </Card>
       </div>
 

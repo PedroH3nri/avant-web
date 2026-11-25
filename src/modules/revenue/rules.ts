@@ -3,11 +3,12 @@
 import { REPORT_CURRENCY, toNumber } from '@/lib/metrics'
 import type { RevenueStatus, RevenueTrend } from '@/modules/revenue/types'
 
-/** Classes da badge de cada tendência: verde, cinza, ocre e vermelho. */
+/** Classes da badge de cada tendência (Pedro, 2026-11-25): verde subindo, azul mantendo, amarelo
+ * caindo e vermelho parado. */
 export const TREND_CLASS: Record<RevenueTrend, string> = {
   scaling: 'bg-ok-soft text-ok',
-  steady: 'bg-secondary text-secondary-foreground',
-  reducing: 'bg-ochre-soft text-ochre',
+  steady: 'bg-info-soft text-info',
+  reducing: 'bg-warn-soft text-warn',
   stopped: 'bg-bad-soft text-bad',
 }
 

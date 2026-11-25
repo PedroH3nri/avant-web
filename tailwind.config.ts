@@ -20,6 +20,7 @@ export default {
         ok: { DEFAULT: "hsl(var(--ok))", soft: "hsl(var(--ok-soft))" },
         warn: { DEFAULT: "hsl(var(--warn))", soft: "hsl(var(--warn-soft))" },
         bad: { DEFAULT: "hsl(var(--bad))", soft: "hsl(var(--bad-soft))" },
+        info: { DEFAULT: "hsl(var(--info))", soft: "hsl(var(--info-soft))" },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
