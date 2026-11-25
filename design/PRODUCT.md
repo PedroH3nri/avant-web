@@ -35,7 +35,7 @@ Built by the ad-ops company that already manages these publishers' Ad Manager ne
 
 - MVP scope: (1) account and team: login (email + password, Google login after the invite is accepted), invite by email valid for 1 day, one Empresa per client, predefined roles (Gestor de tráfego, Financeiro, Marketing) plus custom roles, staff limit per client set by Groone, owner changeable only from the internal panel; (2) GAM connection: MCM auto-connect or service-account guide with "Testar conexão", sites and ad units imported automatically.
 - Internal Groone panel: all clients, owner, MCM network, staff limit, status, create client.
-- Customization in the MVP: dashboards, cards and system colors (accent color per Empresa).
+- Customization in the MVP: dashboards, cards and themes (each person picks a ready theme or one of up to 3 custom themes).
 - Deferred: per-role permission matrix, metrics sync, dashboards content, price rules, billing, G-Tag.
 
 ## Brand Commitments

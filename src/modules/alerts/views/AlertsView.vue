@@ -42,7 +42,7 @@ const pages = ref(0)
 const loadError = ref<string | null>(null)
 const metrics = ref<MetricDef[]>([])
 const clients = ref<{ value: string; label: string }[]>([])
-const people = ref<{ value: string; label: string }[]>([])
+const people = ref<{ value: string; label: string; imageUrl: string | null }[]>([])
 const editing = ref<Alert | null>(null)
 const formOpen = ref(false)
 const showing = ref<Alert | null>(null)
@@ -55,6 +55,7 @@ const userId = computed(() => session.me?.user.id ?? '')
 const metricByKey = computed(() => new Map(metrics.value.map((metric) => [metric.key, metric])))
 const clientNames = computed(() => new Map(clients.value.map((client) => [client.value, client.label])))
 const peopleNames = computed(() => new Map(people.value.map((person) => [person.value, person.label])))
+const peopleById = computed(() => new Map(people.value.map((person) => [person.value, person])))
 
 /** Carrega a página dos alertas. */
 async function load() {
@@ -79,12 +80,12 @@ async function loadOptions() {
   const denied = () => Promise.reject(new Error('sem permissão'))
   const [catalog, clientList, staff] = await Promise.allSettled([
     reportService.catalog(),
-    session.can('internal.clients.view') ? clientService.options() : denied(),
+    session.can('internal.clients.view') ? clientService.companyOptions() : denied(),
     staffService.options(),
   ])
   if (catalog.status === 'fulfilled') metrics.value = catalog.value.metrics.filter((metric) => metric.sources.includes('gam'))
   if (clientList.status === 'fulfilled') clients.value = clientList.value.items.map((client) => ({ value: client.id, label: client.name }))
-  if (staff.status === 'fulfilled') people.value = staff.value.items.map((member) => ({ value: member.user.id, label: member.user.name || member.user.email }))
+  if (staff.status === 'fulfilled') people.value = staff.value.items.map((member) => ({ value: member.user.id, label: member.user.name || member.user.email, imageUrl: member.user.image_url }))
 }
 
 onMounted(() => {
@@ -117,6 +118,8 @@ function scopeText(alert: Alert): string {
 
 /** Nomes de quem recebe, na ordem salva. */
 const recipientNames = (alert: Alert) => alert.recipient_user_ids.map((id) => peopleNames.value.get(id) ?? '?')
+/** Quem recebe, com nome e foto, na ordem salva. */
+const recipients = (alert: Alert) => alert.recipient_user_ids.map((id) => ({ id, name: peopleById.value.get(id)?.label ?? '?', imageUrl: peopleById.value.get(id)?.imageUrl ?? null }))
 
 /** Abre o formulário, vazio ou com o alerta escolhido. */
 function openForm(alert: Alert | null) {
@@ -196,7 +199,7 @@ async function confirmRemove() {
           <td :class="td">
             <div class="flex items-center gap-2" :title="recipientNames(alert).join(', ')">
               <div class="flex -space-x-2">
-                <Avatar v-for="name in recipientNames(alert).slice(0, MAX_AVATARS)" :key="name" :name="name" :size="24" class="ring-2 ring-background" />
+                <Avatar v-for="person in recipients(alert).slice(0, MAX_AVATARS)" :key="person.id" :name="person.name" :image-url="person.imageUrl" :size="24" class="ring-2 ring-background" />
               </div>
               <span class="text-[13px] text-muted-foreground">{{ tn('alerts.people', alert.recipient_user_ids.length) }}</span>
             </div>

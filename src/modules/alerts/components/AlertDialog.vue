@@ -8,7 +8,7 @@ import Checkbox from '@/components/ui/Checkbox.vue'
 import Dialog from '@/components/ui/Dialog.vue'
 import Field from '@/components/ui/Field.vue'
 import Input from '@/components/ui/Input.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import { ApiError } from '@/lib/api'
 import { errorText, formatDate, locale, pick, t } from '@/lib/i18n'
 import { formatMetric, toNumber } from '@/lib/metrics'
@@ -106,24 +106,24 @@ async function save() {
       </Field>
       <div class="grid gap-4 sm:grid-cols-2">
         <Field id="alert-metric" :label="t('alerts.field.metric')">
-          <NativeSelect id="alert-metric" v-model="form.metric" :options="metricOptions" />
+          <Select id="alert-metric" v-model="form.metric" :options="metricOptions" />
         </Field>
         <Field id="alert-group" :label="t('alerts.field.group')">
-          <NativeSelect id="alert-group" v-model="form.groupBy" :options="groupOptions" />
+          <Select id="alert-group" v-model="form.groupBy" :options="groupOptions" />
         </Field>
       </div>
       <Field v-if="clients.length" id="alert-client" :label="t('alerts.field.client')">
-        <NativeSelect id="alert-client" v-model="form.clientId" :options="clientOptions" />
+        <Select id="alert-client" v-model="form.clientId" :options="clientOptions" />
       </Field>
       <div :class="['grid gap-4', compares(form.condition) ? 'sm:grid-cols-[1.2fr_0.7fr_1.4fr]' : 'sm:grid-cols-[1.2fr_1fr]']">
         <Field id="alert-condition" :label="t('alerts.field.condition')">
-          <NativeSelect id="alert-condition" v-model="form.condition" :options="conditionOptions" />
+          <Select id="alert-condition" v-model="form.condition" :options="conditionOptions" />
         </Field>
         <Field id="alert-value" :label="t('alerts.field.value')">
           <Input id="alert-value" v-model="form.value" inputmode="decimal" class="tnum" :placeholder="compares(form.condition) ? '20%' : '100'" />
         </Field>
         <Field v-if="compares(form.condition)" id="alert-baseline" :label="t('alerts.field.baseline')">
-          <NativeSelect id="alert-baseline" v-model="form.baseline" :options="baselineOptions" />
+          <Select id="alert-baseline" v-model="form.baseline" :options="baselineOptions" />
         </Field>
       </div>
       <fieldset class="grid gap-2">

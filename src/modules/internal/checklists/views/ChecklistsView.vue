@@ -1,5 +1,7 @@
 <script setup lang="ts">
 /** Checklists de domínio do mês: resumo, busca, filtro de feito e a lista do maior faturamento para o menor. */
+import StatTile from '@/components/StatTile.vue'
+import OpenLink from '@/components/OpenLink.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useDebounceFn } from '@vueuse/core'
@@ -10,22 +12,35 @@ import PageHeader from '@/components/PageHeader.vue'
 import Button from '@/components/ui/Button.vue'
 import DataTable from '@/components/ui/DataTable.vue'
 import Input from '@/components/ui/Input.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import Pagination from '@/components/ui/Pagination.vue'
 import Status from '@/components/ui/Status.vue'
 import TableState from '@/components/ui/TableState.vue'
 import { ApiError } from '@/lib/api'
-import { errorText, formatDate, t } from '@/lib/i18n'
+import { errorText, formatDate, t, type Key } from '@/lib/i18n'
+import FiltersMenu from '@/modules/views/components/FiltersMenu.vue'
+import { useLocalBarFilters } from '@/modules/views/barFilters'
 import { latestCall } from '@/lib/latest'
 import { td, th } from '@/lib/table'
 import { STATES, dollars, monthName, previousMonth, progressPercent, stateLabel } from '@/modules/internal/checklists/rules'
 import { checklistService } from '@/modules/internal/checklists/service'
 import type { ChecklistMonth, ChecklistState, SiteChecklist } from '@/modules/internal/checklists/types'
 
+const FILTERS = ['state']
+const DEFAULT_FILTERS = ['state']
+const FILTER_LABELS: Record<string, Key> = {
+  state: 'check.state',
+}
+
 const SEARCH_DELAY_MS = 300
 const months = ref<string[]>([])
 const month = ref('')
 const state = ref<ChecklistState>('all')
+const barFilters = useLocalBarFilters('checklists', FILTERS, DEFAULT_FILTERS, {
+  state: () => (state.value = 'all'),
+})
+/** O nome do filtro no menu de filtros. */
+const filterLabel = (filter: string) => t(FILTER_LABELS[filter] as Key)
 const query = ref('')
 const checklists = ref<SiteChecklist[] | null>(null)
 const summary = ref<ChecklistMonth | null>(null)
@@ -114,27 +129,18 @@ function retry() {
   </PageHeader>
   <PageBody>
     <div class="grid gap-px overflow-hidden rounded-lg border bg-border sm:grid-cols-3">
-      <div class="bg-card p-4">
-        <div class="text-[13px] font-medium text-muted-foreground">{{ t('check.summary.done') }}</div>
-        <div class="mt-1 text-[24px] font-semibold tracking-tight tnum">{{ summary ? t('check.ofTotal', { done: summary.done, total: summary.sites }) : '–' }}</div>
-      </div>
-      <div class="bg-card p-4">
-        <div class="text-[13px] font-medium text-muted-foreground">{{ t('check.summary.review') }}</div>
-        <div class="mt-1 text-[24px] font-semibold tracking-tight tnum">{{ summary ? summary.sites - summary.done : '–' }}</div>
-      </div>
-      <div class="bg-card p-4">
-        <div class="text-[13px] font-medium text-muted-foreground">{{ t('check.summary.checked') }}</div>
-        <div class="mt-1 text-[15px] font-medium tnum">{{ summary?.checked_at ? formatDate(summary.checked_at) : t('check.notYet') }}</div>
-        <div class="text-[13px] text-muted-foreground">{{ t('check.summary.schedule') }}</div>
-      </div>
+      <StatTile :label="t('check.summary.done')" :value="summary ? t('check.ofTotal', { done: summary.done, total: summary.sites }) : '–'" />
+      <StatTile :label="t('check.summary.review')" :value="summary ? summary.sites - summary.done : '–'" />
+      <StatTile :label="t('check.summary.checked')" :value="summary?.checked_at ? formatDate(summary.checked_at) : t('check.notYet')" :hint="t('check.summary.schedule')" />
     </div>
     <div class="flex flex-wrap items-center gap-3">
       <div class="relative w-full sm:w-[260px]">
         <Search class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
         <Input v-model="query" type="search" :aria-label="t('check.search')" class="h-9 pl-9" :placeholder="t('check.searchPlaceholder')" />
       </div>
-      <NativeSelect v-model="month" :options="monthOptions" :aria-label="t('check.month')" class="w-full sm:w-[220px] [&_select]:h-9" />
-      <NativeSelect v-model="state" :options="stateOptions" :aria-label="t('check.state')" class="w-full sm:w-[180px] [&_select]:h-9" />
+      <Select v-model="month" :options="monthOptions" :aria-label="t('check.month')" class="w-full sm:w-[220px] h-9" />
+      <Select v-if="barFilters.isShown('state')" v-model="state" :options="stateOptions" :aria-label="t('check.state')" class="w-full sm:w-[180px] h-9" />
+      <FiltersMenu v-model:shown="barFilters.shown.value" :filters="FILTERS" :label="filterLabel" />
     </div>
     <LoadError v-if="loadError" :message="loadError" @retry="retry" />
     <template v-else>
@@ -146,10 +152,11 @@ function retry() {
             <th :class="th">{{ t('check.col.items') }}</th>
             <th :class="th">{{ t('check.state') }}</th>
             <th :class="th">{{ t('check.col.checked') }}</th>
+            <th :class="[th, 'w-px']"><span class="sr-only">{{ t('common.open') }}</span></th>
           </tr>
         </thead>
         <tbody>
-          <TableState :cols="5" :loading="!checklists" :empty="checklists?.length === 0" :icon="ListChecks" :title="t('check.empty')" />
+          <TableState :cols="6" :loading="!checklists" :empty="checklists?.length === 0" :icon="ListChecks" :title="t('check.empty')" />
           <tr v-for="checklist in checklists ?? []" :key="checklist.id" class="hover:bg-muted">
             <td :class="td">
               <RouterLink :to="`/interno/checklists/${checklist.id}`" class="block hover:underline focus-visible:underline focus-visible:outline-none">
@@ -174,6 +181,7 @@ function retry() {
               <Status v-else tone="ochre">{{ t('check.toReview', { count: checklist.progress.total - checklist.progress.done }) }}</Status>
             </td>
             <td :class="[td, 'whitespace-nowrap tnum text-[13px] text-muted-foreground']">{{ checklist.checked_at ? formatDate(checklist.checked_at) : t('check.notYet') }}</td>
+            <td :class="[td, 'text-right']"><OpenLink :to="`/interno/checklists/${checklist.id}`" :name="checklist.site.domain" /></td>
           </tr>
         </tbody>
       </DataTable>

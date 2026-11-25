@@ -7,7 +7,6 @@ import type { CascadeHour, PriceRuleAction, PriceRuleHistoryEntry, PriceRuleHour
 export type StatusTone = 'ok' | 'warn' | 'bad' | 'ochre' | 'neutral'
 export type HourSeries = 'floor' | 'pmr' | 'revenue' | 'requests'
 export type CascadeSeries = 'start' | 'fill' | 'revenue' | 'requests'
-export type BlockModelKind = 'content' | 'cascade' | 'offerwall'
 export type ModelChoice = { value: PriceRuleModel | typeof NO_MODEL; key: Key; recommended: boolean }
 
 export const NO_MODEL = 'none'
@@ -43,7 +42,7 @@ const CONTROL_GROUP = 'controle'
 const MICROS = 1_000_000
 const CASCADE_TRIES = 4
 const LAST_DAY_HOURS = 24
-const CASCADE_PREFIX = /^(Anchor|Interstitial|Fixed|Reward)/
+const HOUR_MS = 3_600_000
 
 /** A permissão da ação no painel: a do cliente ou a interna. */
 export function priceRulePermission(internal: boolean, action: 'view' | 'manage'): string {
@@ -139,9 +138,21 @@ export function hourPoints(hours: PriceRuleHour[], history: PriceRuleHistoryEntr
   })
 }
 
-/** A soma das últimas 24 horas com número: receita, requisições, impressões e respostas. */
+/** O instante da hora (data e hora do GAM), para medir a distância entre duas horas. */
+function hourTime(row: { date: string; hour: number }): number {
+  return Date.parse(`${row.date}T00:00:00Z`) + row.hour * HOUR_MS
+}
+
+/** As linhas das 24 horas do relógio que terminam na hora mais nova com número; hora sem linha conta no relógio. */
+export function lastDayRows<Row extends { date: string; hour: number }>(rows: Row[]): Row[] {
+  if (!rows.length) return []
+  const newest = Math.max(...rows.map(hourTime))
+  return rows.filter((row) => newest - hourTime(row) < LAST_DAY_HOURS * HOUR_MS)
+}
+
+/** A soma das 24 horas do relógio até a mais nova com número: receita, requisições, impressões e respostas. */
 export function lastDayTotals(hours: PriceRuleHour[]): { revenue: number; requests: number; pmr: number; ecpm: number } | null {
-  const recent = [...hours].sort((first, second) => (first.date === second.date ? second.hour - first.hour : second.date.localeCompare(first.date))).slice(0, 24)
+  const recent = lastDayRows(hours)
   if (!recent.length) return null
   /** A soma de um número das horas recentes. */
   const sum = (pick: (row: PriceRuleHour) => number) => recent.reduce((total, row) => total + pick(row), 0)
@@ -210,18 +221,9 @@ export function gainSeries(result: ReportResult): GainSeries | null {
   }
 }
 
-/** O tipo do bloco pelo começo do nome: conteúdo recomenda a Automática; âncora,
- * intersticial, fixo e reward a Cascata; o offerwall é do Google. */
-export function blockKind(block: string): BlockModelKind {
-  if (block.startsWith('Offerwall')) return 'offerwall'
-  return CASCADE_PREFIX.test(block) ? 'cascade' : 'content'
-}
-
-/** O modelo recomendado do bloco: o que a api manda ou, sem ele, o do tipo; nada no offerwall. */
+/** O modelo recomendado do bloco, como a api manda; o bloco que não recebe regra (o offerwall) fica sem. */
 export function recommendedModel(site: Pick<PriceRuleSite, 'recommended_models'>, block: string): PriceRuleModel | null {
-  const kind = blockKind(block)
-  if (kind === 'offerwall') return null
-  return site.recommended_models?.[block] ?? (kind === 'cascade' ? 'cascade' : 'automatic')
+  return site.recommended_models[block] ?? null
 }
 
 /** As opções de todo bloco fora o offerwall (Automática, Cascata e Sem regra), com a recomendada marcada. */
@@ -269,15 +271,15 @@ export interface CascadeFunnel {
   ladderFill: number | null
 }
 
-/** A hora mais nova primeiro, para pegar as últimas 24. */
+/** A hora mais nova primeiro. */
 function newestFirst(hours: CascadeHour[]): CascadeHour[] {
   return [...hours].sort((first, second) => (first.date === second.date ? second.hour - first.hour : second.date.localeCompare(first.date)))
 }
 
-/** O funil das últimas 24 horas com número: pedidos, compras e receita de cada tentativa,
- * a compra na 1ª e a compra somando a escada (sobre os pedidos da 1ª). */
+/** O funil das 24 horas do relógio até a mais nova com número: pedidos, compras e receita de
+ * cada tentativa, a compra na 1ª e a compra somando a escada (sobre os pedidos da 1ª). */
 export function cascadeFunnel(hours: CascadeHour[]): CascadeFunnel {
-  const recent = newestFirst(hours).slice(0, LAST_DAY_HOURS)
+  const recent = lastDayRows(hours)
   const tries = Array.from({ length: CASCADE_TRIES }, (_item, index) =>
     recent.reduce(
       (total, row) => {

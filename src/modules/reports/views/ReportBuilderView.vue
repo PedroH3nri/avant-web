@@ -19,6 +19,8 @@ import { ApiError } from '@/lib/api'
 import { errorText, lang, pick, t } from '@/lib/i18n'
 import { clientService } from '@/modules/internal/clients/service'
 import { staffService } from '@/modules/internal/staff/service'
+import { facebookService } from '@/modules/facebook/service'
+import { googleAdsService } from '@/modules/google_ads/service'
 import { networkName } from '@/modules/networks/rules'
 import { networkService } from '@/modules/networks/service'
 import ConfigPanel, { type FilterOption } from '@/modules/reports/components/ConfigPanel.vue'
@@ -129,18 +131,20 @@ async function load() {
 }
 
 /** Papéis (para "Papéis escolhidos") e os valores dos filtros que a pessoa pode ver; na Groone, também clientes e responsáveis;
- * nos clientes, os membros que podem ser responsáveis por um site. */
+ * nos clientes, os membros que podem ser responsáveis por um site e as contas de anúncio do Facebook. */
 async function loadExtras() {
   const groone = session.company?.is_internal === true
   /** A lista que a pessoa não pode ver: fica vazia no filtro. */
   const denied = () => Promise.reject(new Error('sem permissão'))
-  const [roleList, siteList, networkList, clientList, staffList, memberList] = await Promise.allSettled([
+  const [roleList, siteList, networkList, clientList, staffList, memberList, accountList, googleAdsList] = await Promise.allSettled([
     session.can('roles.view') ? teamService.roleOptions() : denied(),
     session.can('sites.view') ? siteService.options() : denied(),
     session.can('network.view') ? networkService.options() : denied(),
-    groone && session.can('internal.clients.view') ? clientService.options() : denied(),
+    groone && session.can('internal.clients.view') ? clientService.companyOptions() : denied(),
     groone ? staffService.options() : denied(),
     !groone && session.can('team.view') ? teamService.memberOptions() : denied(),
+    !groone && session.can('facebook.view') ? facebookService.accounts() : denied(),
+    !groone && session.can('google_ads.view') ? googleAdsService.accounts() : denied(),
   ])
   roles.value = roleList.status === 'fulfilled' ? roleList.value.items.map((role) => ({ id: role.id, name: pick(role.name) })) : null
   options.value = {
@@ -149,6 +153,8 @@ async function loadExtras() {
     client: clientList.status === 'fulfilled' ? clientList.value.items.map((client) => ({ value: client.id, label: client.name })) : [],
     account_manager: staffList.status === 'fulfilled' ? staffList.value.items.map((member) => ({ value: member.user.id, label: member.user.name || member.user.email })) : [],
     site_category: SITE_CATEGORIES.map((category) => ({ value: category, label: categoryLabel(category) })),
+    fb_account: accountList.status === 'fulfilled' ? accountList.value.map((account) => ({ value: account.id, label: account.name })) : [],
+    gads_account: googleAdsList.status === 'fulfilled' ? googleAdsList.value.map((account) => ({ value: account.id, label: account.name })) : [],
     site_responsible: memberList.status === 'fulfilled' ? memberList.value.items.map((member) => ({ value: member.user.id, label: member.user.name || member.user.email })) : [],
   }
 }
@@ -360,8 +366,8 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="flex min-h-[calc(100dvh-3.5rem)] flex-col bg-background">
-    <header class="sticky top-14 z-10 flex flex-wrap items-center gap-3 border-b bg-background px-4 py-3">
+  <div class="flex min-h-[calc(100dvh-3.5rem)] flex-col bg-background lg:h-[calc(100dvh-3.5rem)]">
+    <header class="sticky top-14 z-10 flex shrink-0 flex-wrap items-center gap-3 border-b bg-background px-4 py-3">
       <Button variant="ghost" size="sm" class="-ml-1" @click="router.push(draft.id ? `/relatorios/${draft.id}` : '/relatorios')"><ArrowLeft />{{ t('nav.customReports') }}</Button>
       <span class="h-5 w-px bg-border" aria-hidden="true" />
       <input
@@ -392,8 +398,8 @@ onBeforeUnmount(() => {
     </header>
     <div v-if="draft.id && !draft.editable" class="border-b bg-muted px-4 py-2 text-[13px] text-muted-foreground">{{ t('report.readOnly') }}</div>
     <LoadError v-if="loadError" class="m-6" :message="loadError" @retry="load" />
-    <div v-else-if="catalog" class="grid flex-1 lg:grid-cols-[264px_minmax(0,1fr)_300px]">
-      <aside class="border-b lg:border-b-0 lg:border-r" :aria-label="t('report.fields')">
+    <div v-else-if="catalog" class="grid flex-1 lg:min-h-0 lg:grid-cols-[264px_minmax(0,1fr)_300px]">
+      <aside class="border-b lg:min-h-0 lg:overflow-hidden lg:border-b-0 lg:border-r" :aria-label="t('report.fields')">
         <FieldsPanel :draft="draft" :catalog="catalog" :editable="editable" :can-manage-metrics="canManageMetrics"
           @metric="toggleMetric"
           @dimension="toggleDimension"
@@ -402,7 +408,7 @@ onBeforeUnmount(() => {
           @delete-metric="askRemoveMetric"
         />
       </aside>
-      <main class="order-3 min-w-0 bg-muted lg:order-2">
+      <main class="order-3 min-w-0 bg-muted lg:order-2 lg:min-h-0 lg:overflow-y-auto">
         <div class="grid gap-4 p-4 sm:p-6">
           <div class="flex flex-wrap items-center gap-1.5">
             <span v-for="(key, index) in draft.metrics" :key="key" class="inline-flex h-7 items-center gap-1 rounded-full border bg-card pl-1 pr-1 text-[13px]">
@@ -427,7 +433,7 @@ onBeforeUnmount(() => {
           </div>
         </div>
       </main>
-      <aside class="order-2 border-b lg:order-3 lg:border-b-0 lg:border-l" :aria-label="t('report.settings')">
+      <aside class="order-2 border-b lg:order-3 lg:min-h-0 lg:overflow-y-auto lg:border-b-0 lg:border-l" :aria-label="t('report.settings')">
         <ConfigPanel :draft="draft" :catalog="catalog" :editable="editable" :options="options" @update="(patch) => change({ ...draft, ...patch })" />
       </aside>
     </div>

@@ -1,9 +1,11 @@
 <script setup lang="ts">
-/** Painel interno: contratos das networks MCM, com o revshare da Groone em cada uma, e as visões
- * salvas da tabela de contratos. */
+/**
+ * Painel interno: a tabela de todos os contratos das networks MCM, com as visões salvas. O revshare
+ * das Manage Account vem do worker (e do botão de verificar agora); só a Manage Inventory é à mão.
+ */
 import { computed, onMounted, ref, watch } from 'vue'
 import { DropdownMenuRoot, DropdownMenuSeparator, DropdownMenuTrigger } from 'reka-ui'
-import { MoreHorizontal } from 'lucide-vue-next'
+import { MoreHorizontal, RefreshCw } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import LoadError from '@/components/LoadError.vue'
@@ -16,7 +18,7 @@ import Field from '@/components/ui/Field.vue'
 import Input from '@/components/ui/Input.vue'
 import MenuContent from '@/components/ui/MenuContent.vue'
 import MenuItem from '@/components/ui/MenuItem.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import Pagination from '@/components/ui/Pagination.vue'
 import Status from '@/components/ui/Status.vue'
 import TableState from '@/components/ui/TableState.vue'
@@ -29,7 +31,9 @@ import { useSession } from '@/stores/session'
 import { contractService } from '@/modules/internal/contracts/service'
 import { clientService } from '@/modules/internal/clients/service'
 import ColumnsMenu from '@/modules/views/components/ColumnsMenu.vue'
+import FiltersMenu from '@/modules/views/components/FiltersMenu.vue'
 import SavedViewsBar from '@/modules/views/components/SavedViewsBar.vue'
+import { useBarFilters } from '@/modules/views/barFilters'
 import { cleanFilters, firstValue } from '@/modules/views/rules'
 import type { ViewDefinition } from '@/modules/views/types'
 
@@ -37,7 +41,13 @@ type Filter = ContractStatus | 'all'
 
 const ALL = 'all'
 const COLUMNS = ['client', 'network', 'revshare', 'status', 'source', 'starts_at', 'ends_at']
-const DEFAULT_VIEW: ViewDefinition = { columns: [...COLUMNS], filters: { status: 'active' }, sort: { key: 'created_at', direction: 'desc' } }
+const FILTERS = ['status', 'company_id']
+const DEFAULT_FILTERS = ['status', 'company_id']
+const FILTER_LABELS: Record<string, Key> = {
+  status: 'ct.filterLabel',
+  company_id: 'ct.client',
+}
+const DEFAULT_VIEW: ViewDefinition = { columns: [...COLUMNS], filters: {}, sort: { key: 'created_at', direction: 'desc' }, shown_filters: DEFAULT_FILTERS }
 
 const session = useSession()
 const networks = ref<ContractNetwork[] | null>(null)
@@ -46,18 +56,25 @@ const page = ref(1)
 const total = ref(0)
 const pages = ref(0)
 const loadError = ref<string | null>(null)
-const filter = ref<Filter>('active')
+const filter = ref<Filter>('all')
 const filters: Filter[] = ['active', 'ended', 'all']
 const client = ref(ALL)
+const barFilters = useBarFilters(FILTERS, DEFAULT_FILTERS, {
+  status: () => (choose('all')),
+  company_id: () => (client.value = ALL),
+})
 const clients = ref<{ value: string; label: string }[]>([])
 const columns = ref<string[]>([...COLUMNS])
 const current = computed<ViewDefinition>(() => ({
   columns: columns.value,
   filters: cleanFilters({ status: filter.value === 'all' ? undefined : filter.value, company_id: client.value === ALL ? undefined : client.value }),
   sort: DEFAULT_VIEW.sort,
+  shown_filters: barFilters.shown.value,
 }))
 const filterOptions = computed(() => filters.map((option) => ({ value: option, label: t(`ct.filter.${option}`) })))
 const clientOptions = computed(() => [{ value: ALL, label: t('int.allClients') }, ...clients.value])
+/** O nome do filtro no menu de filtros. */
+const filterLabel = (filter: string) => t(FILTER_LABELS[filter] as Key)
 /** Diz se a coluna aparece na tabela de contratos. */
 const shown = (column: string) => columns.value.includes(column)
 /** O nome da coluna no menu de colunas. */
@@ -69,6 +86,7 @@ function applyView(definition: ViewDefinition) {
   columns.value = known.length ? known : [...COLUMNS]
   const status = firstValue(definition.filters.status)
   client.value = firstValue(definition.filters.company_id) || ALL
+  barFilters.apply(definition)
   choose(status === 'active' || status === 'ended' ? status : 'all')
 }
 
@@ -77,6 +95,7 @@ const networkId = ref('')
 const revshareInput = ref('')
 const notes = ref('')
 const busy = ref(false)
+const checking = ref(false)
 const editing = ref<Contract | null>(null)
 const editNotes = ref('')
 const ending = ref<Contract | null>(null)
@@ -85,6 +104,24 @@ const removing = ref<Contract | null>(null)
 const canCreate = computed(() => session.can('internal.contracts.create'))
 const canUpdate = computed(() => session.can('internal.contracts.update'))
 const canDelete = computed(() => session.can('internal.contracts.delete'))
+
+/** Pede ao worker a verificação do revshare no GAM agora e recarrega a tabela pouco depois. */
+async function checkNow() {
+  checking.value = true
+  try {
+    const result = await contractService.check()
+    if (!result.queued) {
+      toast.error(t('ct.checkFailed'))
+      return
+    }
+    toast.success(t('ct.checkQueued'))
+    window.setTimeout(() => void load(), 8000)
+  } catch (error) {
+    toast.error(errorText(error instanceof ApiError ? error.code : 'unknown'))
+  } finally {
+    checking.value = false
+  }
+}
 
 /** Carrega a página dos contratos do filtro atual; se ela ficou vazia, volta uma. */
 async function loadContracts() {
@@ -106,7 +143,7 @@ async function loadContracts() {
 async function load() {
   loadError.value = null
   try {
-    const [networkPage, clientList] = await Promise.all([contractService.networks(), clientService.options(), loadContracts()])
+    const [networkPage, clientList] = await Promise.all([contractService.networks(), clientService.companyOptions(), loadContracts()])
     networks.value = networkPage.items
     clients.value = clientList.items.map((item) => ({ value: item.id, label: item.name }))
   } catch (error) {
@@ -137,10 +174,6 @@ const revshareHint = computed(() => {
   return active ? t('ct.currentHint', { value: formatRevshare(active.revshare, locale.value) }) : t('ct.noActive')
 })
 
-/** Nome curto da network: o nome do GAM ou o código. */
-const networkName = (network: { display_name: string | null; network_code: string }) => network.display_name ?? network.network_code
-/** O tipo de MCM no idioma atual. */
-const delegationLabel = (delegation: string | null) => (delegation ? t(`ct.delegation.${delegation}` as Key) : '–')
 /** A origem do revshare no idioma atual. */
 const sourceLabel = (source: 'gam' | 'manual') => t(`ct.source.${source}`)
 /** Abre o formulário de contrato novo, já com a network escolhida quando vem da tabela. */
@@ -247,56 +280,19 @@ async function confirmRemove() {
 
 <template>
   <PageHeader :title="t('int.contracts')" :sub="t('ct.sub')">
-    <template v-if="canCreate" #actions>
-      <Button :disabled="!manual.length" @click="startCreate()">{{ t('ct.new') }}</Button>
+    <template v-if="canUpdate || (canCreate && manual.length)" #actions>
+      <Button v-if="canUpdate" variant="outline" :loading="checking" @click="checkNow"><RefreshCw />{{ t('ct.check') }}</Button>
+      <Button v-if="canCreate && manual.length" @click="startCreate()">{{ t('ct.new') }}</Button>
     </template>
   </PageHeader>
   <PageBody>
     <LoadError v-if="loadError" :message="loadError" @retry="load" />
     <template v-else>
       <section class="grid gap-3">
-        <div>
-          <h2 class="text-[20px] font-semibold tracking-[-0.025em]">{{ t('ct.networks') }}</h2>
-          <p class="mt-1 max-w-[70ch] text-[14px] text-muted-foreground">{{ t('ct.networksDesc') }}</p>
-        </div>
-        <DataTable :min="760">
-          <thead>
-            <tr>
-              <th :class="th">{{ t('ct.client') }}</th>
-              <th :class="th">{{ t('ct.network') }}</th>
-              <th :class="th">{{ t('ct.mcm') }}</th>
-              <th :class="th">{{ t('ct.current') }}</th>
-              <th :class="th">{{ t('ct.sourceCol') }}</th>
-              <th :class="th"><span class="sr-only">{{ t('ct.new') }}</span></th>
-            </tr>
-          </thead>
-          <tbody>
-            <TableState :cols="6" :loading="!networks" :empty="networks?.length === 0" :desc="t('ct.networksEmpty')" />
-            <tr v-for="item in networks ?? []" :key="item.network.id">
-              <td :class="[td, 'font-medium']">{{ item.company.name }}</td>
-              <td :class="td">
-                <div>{{ networkName(item.network) }}</div>
-                <code class="font-mono text-[13px] text-muted-foreground">{{ item.network.network_code }}</code>
-              </td>
-              <td :class="[td, 'whitespace-nowrap text-muted-foreground']">{{ delegationLabel(item.network.delegation) }}</td>
-              <td :class="[td, 'tnum whitespace-nowrap']">
-                <template v-if="item.active">{{ formatRevshare(item.active.revshare, locale) }}</template>
-                <Status v-else tone="ochre">{{ t('ct.none') }}</Status>
-              </td>
-              <td :class="[td, 'text-muted-foreground']">{{ item.active ? sourceLabel(item.active.source) : '–' }}</td>
-              <td :class="[td, 'text-right']">
-                <Button v-if="item.manual && canCreate" variant="outline" size="sm" @click="startCreate(item)">{{ t('ct.new') }}</Button>
-                <span v-else-if="!item.manual" class="whitespace-nowrap text-[13px] text-muted-foreground">{{ t('ct.fromGam') }}</span>
-              </td>
-            </tr>
-          </tbody>
-        </DataTable>
-      </section>
-
-      <section class="grid gap-3">
-        <SavedViewsBar screen="contracts" :default-label="t('ct.activeContracts')" :current="current" :defaults="DEFAULT_VIEW" @apply="applyView">
-          <NativeSelect :model-value="filter" :options="filterOptions" :aria-label="t('ct.filterLabel')" class="w-full sm:w-44 [&_select]:h-9" @update:model-value="choose($event as Filter)" />
-          <NativeSelect v-model="client" :options="clientOptions" :aria-label="t('ct.client')" class="w-full sm:w-56 [&_select]:h-9" />
+        <SavedViewsBar screen="contracts" :default-label="t('ct.allContracts')" :current="current" :defaults="DEFAULT_VIEW" @apply="applyView">
+          <Select v-if="barFilters.isShown('status')" :model-value="filter" :options="filterOptions" :aria-label="t('ct.filterLabel')" class="w-full sm:w-44 h-9" @update:model-value="choose($event as Filter)" />
+          <Select v-if="barFilters.isShown('company_id')" v-model="client" :options="clientOptions" :aria-label="t('ct.client')" class="w-full sm:w-56 h-9" />
+          <FiltersMenu v-model:shown="barFilters.shown.value" :filters="FILTERS" :label="filterLabel" />
           <ColumnsMenu v-model:shown="columns" :columns="COLUMNS" :label="columnLabel" />
         </SavedViewsBar>
         <DataTable :min="900">
@@ -354,7 +350,7 @@ async function confirmRemove() {
     <p v-if="!manual.length" class="text-[14px] text-muted-foreground">{{ t('ct.noManual') }}</p>
     <form v-else id="contract-form" class="grid gap-4" @submit.prevent="create">
       <Field id="contract-network" :label="t('ct.network')">
-        <NativeSelect id="contract-network" v-model="networkId" :options="networkOptions" />
+        <Select id="contract-network" v-model="networkId" :options="networkOptions" />
       </Field>
       <Field id="contract-revshare" :label="t('ct.revshare')" :hint="revshareHint" :error="revshareError">
         <Input id="contract-revshare" v-model="revshareInput" inputmode="decimal" class="tnum" placeholder="30" :aria-invalid="!!revshareError" />
@@ -365,7 +361,7 @@ async function confirmRemove() {
           v-model="notes"
           maxlength="2000"
           rows="3"
-          class="w-full rounded-md border border-input bg-background px-3 py-2 text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          class="w-full rounded-md border border-input bg-[hsl(var(--field))] px-3 py-2 text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         />
       </Field>
     </form>
@@ -383,7 +379,7 @@ async function confirmRemove() {
           v-model="editNotes"
           maxlength="2000"
           rows="4"
-          class="w-full rounded-md border border-input bg-background px-3 py-2 text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          class="w-full rounded-md border border-input bg-[hsl(var(--field))] px-3 py-2 text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         />
       </Field>
     </form>

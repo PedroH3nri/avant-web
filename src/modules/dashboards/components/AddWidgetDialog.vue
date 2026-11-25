@@ -8,7 +8,7 @@ import { computed, ref, watch } from 'vue'
 import Button from '@/components/ui/Button.vue'
 import Dialog from '@/components/ui/Dialog.vue'
 import Field from '@/components/ui/Field.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import { lang, t, type Key } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 import { accountWidget, goalWidget, kpiWidget, reportWidget, textWidget } from '@/modules/dashboards/rules'
@@ -102,10 +102,10 @@ function add() {
         </button>
       </div>
       <Field v-if="kind === 'query'" id="widget-metric" :label="t('dash.add.metric')">
-        <NativeSelect id="widget-metric" v-model="metric" :options="metrics" />
+        <Select id="widget-metric" v-model="metric" :options="metrics" />
       </Field>
       <Field v-else-if="kind === 'report'" id="widget-report" :label="t('dash.add.reportPick')" :hint="reports.length ? undefined : t('dash.add.noReports')">
-        <NativeSelect id="widget-report" v-model="reportId" :options="reportOptions" :disabled="!reports.length" />
+        <Select id="widget-report" v-model="reportId" :options="reportOptions" :disabled="!reports.length" />
       </Field>
       <Field v-else-if="kind === 'text'" id="widget-text" :label="t('dash.add.textLabel')">
         <textarea
@@ -113,11 +113,11 @@ function add() {
           v-model="text"
           rows="4"
           :maxlength="TEXT_MAX"
-          class="w-full rounded-md border border-input bg-background px-3 py-2 text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          class="w-full rounded-md border border-input bg-[hsl(var(--field))] px-3 py-2 text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         />
       </Field>
       <Field v-else-if="kind === 'goal'" id="widget-goal" :label="t('dash.add.goalScope')">
-        <NativeSelect id="widget-goal" v-model="scope" :options="scopes" />
+        <Select id="widget-goal" v-model="scope" :options="scopes" />
       </Field>
     </div>
     <template #footer>

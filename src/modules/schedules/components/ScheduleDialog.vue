@@ -7,7 +7,7 @@ import Checkbox from '@/components/ui/Checkbox.vue'
 import Dialog from '@/components/ui/Dialog.vue'
 import Field from '@/components/ui/Field.vue'
 import Input from '@/components/ui/Input.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import { ApiError } from '@/lib/api'
 import { errorText, t } from '@/lib/i18n'
 import { HOURS, MONTH_DAYS, SCHEDULE_FREQUENCIES, WEEKDAYS, hourText, scheduleForm, scheduleInput, timezoneOptions, type ScheduleForm } from '@/modules/schedules/rules'
@@ -89,28 +89,28 @@ async function save() {
       </Field>
       <div class="grid gap-4 sm:grid-cols-[0.8fr_1.2fr]">
         <Field id="schedule-target" :label="t('schedules.field.target')">
-          <NativeSelect id="schedule-target" :model-value="form.target" :options="targetOptions" @update:model-value="setTarget" />
+          <Select id="schedule-target" :model-value="form.target" :options="targetOptions" @update:model-value="setTarget" />
         </Field>
         <Field id="schedule-item" :label="t('schedules.field.item')">
-          <NativeSelect id="schedule-item" v-model="form.targetId" :options="itemOptions" />
+          <Select id="schedule-item" v-model="form.targetId" :options="itemOptions" />
         </Field>
       </div>
       <div class="grid gap-4 sm:grid-cols-3">
         <Field id="schedule-frequency" :label="t('schedules.field.frequency')">
-          <NativeSelect id="schedule-frequency" v-model="form.frequency" :options="frequencyOptions" />
+          <Select id="schedule-frequency" v-model="form.frequency" :options="frequencyOptions" />
         </Field>
         <Field v-if="form.frequency === 'weekly'" id="schedule-weekday" :label="t('schedules.field.weekday')">
-          <NativeSelect id="schedule-weekday" v-model="form.weekday" :options="weekdayOptions" />
+          <Select id="schedule-weekday" v-model="form.weekday" :options="weekdayOptions" />
         </Field>
         <Field v-if="form.frequency === 'monthly'" id="schedule-month-day" :label="t('schedules.field.monthDay')">
-          <NativeSelect id="schedule-month-day" v-model="form.monthDay" :options="monthDayOptions" />
+          <Select id="schedule-month-day" v-model="form.monthDay" :options="monthDayOptions" />
         </Field>
         <Field id="schedule-hour" :label="t('schedules.field.hour')">
-          <NativeSelect id="schedule-hour" v-model="form.hour" :options="hourOptions" />
+          <Select id="schedule-hour" v-model="form.hour" :options="hourOptions" />
         </Field>
       </div>
       <Field id="schedule-timezone" :label="t('schedules.field.timezone')">
-        <NativeSelect id="schedule-timezone" v-model="form.timezone" :options="zoneOptions" />
+        <Select id="schedule-timezone" v-model="form.timezone" :options="zoneOptions" />
       </Field>
       <fieldset class="grid gap-2">
         <legend class="mb-2 text-[13px] font-medium text-muted-foreground">{{ t('schedules.field.recipients') }}</legend>

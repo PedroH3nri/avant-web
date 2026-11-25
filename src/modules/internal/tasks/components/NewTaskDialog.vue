@@ -6,7 +6,7 @@ import Button from '@/components/ui/Button.vue'
 import Dialog from '@/components/ui/Dialog.vue'
 import Field from '@/components/ui/Field.vue'
 import Input from '@/components/ui/Input.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import { ApiError } from '@/lib/api'
 import { errorText, t } from '@/lib/i18n'
 import { DESCRIPTION_MAX, PRIORITIES, SUBJECT_MAX, SUBJECT_MIN, priorityLabel } from '@/modules/internal/tasks/rules'
@@ -15,7 +15,7 @@ import type { SupportTaskDetail, TaskPriority } from '@/modules/internal/tasks/t
 import { useSession } from '@/stores/session'
 
 const NONE = 'none'
-const TEXTAREA = 'w-full rounded-md border border-input bg-background px-3 py-2 text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+const TEXTAREA = 'w-full rounded-md border border-input bg-[hsl(var(--field))] px-3 py-2 text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
 
 const open = defineModel<boolean>('open', { default: false })
 const props = defineProps<{ clients: { value: string; label: string }[]; staff: { value: string; label: string }[] }>()
@@ -80,16 +80,16 @@ async function create() {
       </Field>
       <div class="grid gap-4 sm:grid-cols-2">
         <Field id="task-client" :label="t('task.client')">
-          <NativeSelect id="task-client" v-model="client" :options="clientOptions" class="[&_select]:h-10" />
+          <Select id="task-client" v-model="client" :options="clientOptions" class="h-10" />
         </Field>
         <Field id="task-domain" :label="t('task.domain')" :hint="t('task.domainHint')">
           <Input id="task-domain" v-model="domain" class="h-10 font-mono" placeholder="exemplo.com" />
         </Field>
         <Field id="task-priority" :label="t('task.priority')">
-          <NativeSelect id="task-priority" v-model="priority" :options="priorityOptions" class="[&_select]:h-10" />
+          <Select id="task-priority" v-model="priority" :options="priorityOptions" class="h-10" />
         </Field>
         <Field id="task-assignee" :label="t('task.assignee')" :hint="t('task.assigneeHint')">
-          <NativeSelect id="task-assignee" v-model="assignee" :options="staffOptions" class="[&_select]:h-10" />
+          <Select id="task-assignee" v-model="assignee" :options="staffOptions" class="h-10" />
         </Field>
       </div>
     </div>

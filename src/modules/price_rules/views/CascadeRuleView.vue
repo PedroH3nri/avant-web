@@ -1,5 +1,6 @@
 <script setup lang="ts">
 /** Histórico de uma regra da Cascata: números de 24 horas, o funil por tentativa, o gráfico por hora, os limites (com a descida por tentativa), as decisões do motor e o ponto de partida à mão. */
+import StatTile from '@/components/StatTile.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { DropdownMenuRoot, DropdownMenuTrigger } from 'reka-ui'
@@ -18,7 +19,7 @@ import Field from '@/components/ui/Field.vue'
 import Input from '@/components/ui/Input.vue'
 import MenuContent from '@/components/ui/MenuContent.vue'
 import MenuItem from '@/components/ui/MenuItem.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import Pagination from '@/components/ui/Pagination.vue'
 import Segmented from '@/components/ui/Segmented.vue'
 import Status from '@/components/ui/Status.vue'
@@ -86,6 +87,7 @@ const savedDrop = computed(() => rule.value?.config?.drop_tiers ?? DEFAULT_DROP_
 const funnel = computed(() => cascadeFunnel(hours.value))
 const points = computed(() => cascadePoints(hours.value))
 const ladder = computed(() => (rule.value ? cascadeLadder(tiers.value, rule.value.floor_micros, savedDrop.value) : []))
+const firstFillByHour = computed(() => new Map(points.value.map((point) => [`${point.date} ${point.hour}`, point.firstFill])))
 const decisions = computed(() => history.value.slice((page.value - 1) * PAGE_SIZE, page.value * PAGE_SIZE))
 const decisionPages = computed(() => Math.ceil(history.value.length / PAGE_SIZE))
 const startOptions = computed(() => tierOptions(tiers.value, currency.value, locale.value))
@@ -120,7 +122,7 @@ const limitList = computed(() => {
   return [
     { label: t('pr.cascadeLimit.floorMin'), value: moneyText(config.floor_min_micros, currency.value, locale.value), hint: t('pr.cascadeLimit.floorMinShort') },
     { label: t('pr.cascadeLimit.floorMax'), value: moneyText(config.floor_max_micros, currency.value, locale.value), hint: t('pr.limit.floorMaxShort') },
-    { label: t('pr.cascadeLimit.drop'), value: dropText(config.drop_tiers), hint: t('pr.cascadeLimit.dropShort', { percent: dropPercentText(config.drop_tiers) }) },
+    { label: t('pr.cascadeLimit.drop'), value: dropText(formDrop.value), hint: t('pr.cascadeLimit.dropShort', { percent: dropPercentText(formDrop.value) }), drop: true },
     { label: t('pr.cascadeLimit.fillHigh'), value: percentText(config.pmr_floor, locale.value), hint: t('pr.cascadeLimit.fillHighShort') },
     { label: t('pr.cascadeLimit.minRequests'), value: t('pr.limit.minRequestsShort', { count: integer.value.format(config.min_eligible_requests) }), hint: t('pr.cascadeLimit.minRequestsShort') },
   ]
@@ -161,6 +163,12 @@ function dropPercentText(drop: number): string {
   return new Intl.NumberFormat(locale.value, { maximumFractionDigits: 1 }).format(dropPercent(tiers.value, drop))
 }
 
+/** A compra na 1ª da hora do GAM que a decisão usou; sem essa hora no período, um traço. */
+function decisionFirstFill(entry: PriceRuleHistoryEntry): string {
+  if (entry.data_date === null || entry.data_hour === null) return percentText(null, locale.value)
+  return percentText(firstFillByHour.value.get(`${entry.data_date} ${entry.data_hour}`) ?? null, locale.value)
+}
+
 /** A escada em texto, do 1º floor ao "sem floor". */
 function ladderText(steps: (number | null)[]): string {
   return steps.map((floor) => (floor === null ? t('pr.noFloor') : moneyText(floor, currency.value, locale.value))).join(' → ')
@@ -176,7 +184,7 @@ function limitsInput(form: LimitsForm): PriceRuleConfigInput | null {
   const floorMax = Number(form.floorMax)
   const drop = Number(form.drop)
   if (!Number.isFinite(fillHigh) || fillHigh < 0 || fillHigh > 100) return null
-  if (!Number.isInteger(minRequests) || minRequests <= 0 || floorMin > floorMax) return null
+  if (!Number.isInteger(minRequests) || minRequests < 0 || floorMin > floorMax) return null
   if (!DROP_TIERS.some((size) => Number(size) === drop)) return null
   return {
     automatic: false,
@@ -266,7 +274,7 @@ async function saveStart() {
   }
 }
 
-/** Grava os limites, sempre com a descida (`drop_tiers`); com "calculados pelo motor", vale o que ele recalcula. */
+/** Grava os limites, sempre com a descida (`drop_tiers`) do formulário; com "calculados pelo motor", o resto vale o que ele recalcula. */
 async function saveLimits() {
   const form = limits.value
   const current = rule.value?.config
@@ -280,7 +288,7 @@ async function saveLimits() {
         floor_min_micros: current.floor_min_micros,
         floor_max_micros: current.floor_max_micros,
         step_size: current.step_size,
-        drop_tiers: current.drop_tiers,
+        drop_tiers: formDrop.value,
       }
     : limitsInput(form)
   if (!input) return
@@ -306,7 +314,7 @@ watch(period, load)
       <RouterLink :to="`${base}/${siteId}`" class="mb-3 inline-flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-foreground"><ArrowLeft class="size-4" />{{ site?.domain || t('nav.priceRules') }}</RouterLink>
     </template>
     <template v-if="rule" #actions>
-      <NativeSelect v-model="period" :aria-label="t('pr.period')" class="w-[180px]" :options="HOUR_PERIODS.map((days) => ({ value: days, label: t(`pr.period.${days}` as Key) }))" />
+      <Select v-model="period" :aria-label="t('pr.period')" class="w-[180px]" :options="HOUR_PERIODS.map((days) => ({ value: days, label: t(`pr.period.${days}` as Key) }))" />
       <template v-if="canManage">
         <Button variant="outline" @click="openStart"><Pencil />{{ t('pr.manualStart') }}</Button>
         <DropdownMenuRoot>
@@ -329,13 +337,9 @@ watch(period, load)
         <AlertTriangle class="mt-0.5 size-4 shrink-0" />{{ t(rule.status === 'paused' ? 'pr.cascadeInactive.paused' : 'pr.inactive.disabled') }}
       </div>
       <div class="grid grid-cols-2 gap-px overflow-hidden rounded-lg border bg-border lg:grid-cols-4">
-        <div v-for="(tile, index) in tiles" :key="tile.label" class="bg-card p-4">
-          <div class="flex flex-wrap items-center gap-2 text-[13px] text-muted-foreground">
-            {{ tile.label }}<Status v-if="index === 0" :tone="STATUS_TONE[rule.status]">{{ t(`pr.ruleStatus.${rule.status}`) }}</Status>
-          </div>
-          <div class="mt-1 text-[24px] font-semibold tracking-[-0.03em] tnum max-sm:text-[20px]">{{ tile.value }}</div>
-          <div class="mt-1 text-[12px] text-muted-foreground">{{ tile.hint }}</div>
-        </div>
+        <StatTile v-for="(tile, index) in tiles" :key="tile.label" :value="tile.value" :hint="tile.hint">
+          <template #label>{{ tile.label }}<Status v-if="index === 0" :tone="STATUS_TONE[rule.status]">{{ t(`pr.ruleStatus.${rule.status}`) }}</Status></template>
+        </StatTile>
       </div>
       <Card :title="t('pr.funnel.title')" :desc="t('pr.funnel.desc')">
         <div class="grid gap-3 md:grid-cols-4">
@@ -398,16 +402,17 @@ watch(period, load)
         <dl v-if="limits && !manual" class="grid grid-cols-2 gap-px border-t bg-border sm:grid-cols-3 lg:grid-cols-5">
           <div v-for="item in limitList" :key="item.label" class="bg-card px-6 py-4">
             <dt class="text-[13px] text-muted-foreground">{{ item.label }}</dt>
-            <dd class="mt-1 text-[18px] font-semibold tracking-[-0.02em] tnum">{{ item.value }}</dd>
+            <dd v-if="item.drop && canManage" class="mt-1"><Segmented v-model="limits.drop" :options="dropOptions" :label="t('pr.cascadeLimit.drop')" /></dd>
+            <dd v-else class="mt-1 text-[18px] font-semibold tracking-[-0.02em] tnum">{{ item.value }}</dd>
             <dd class="mt-0.5 text-[12px] text-muted-foreground">{{ item.hint }}</dd>
           </div>
         </dl>
         <div v-else-if="limits" class="grid gap-4 border-t p-6 sm:grid-cols-2 lg:grid-cols-3">
           <Field id="cas-floor-min" :label="t('pr.limit.floorMin', { currency: rule.currency })" :hint="t('pr.cascadeLimit.floorMinHint')">
-            <NativeSelect id="cas-floor-min" v-model="limits.floorMin" class="tnum" :options="minOptions" :disabled="!canManage" />
+            <Select id="cas-floor-min" v-model="limits.floorMin" class="tnum" :options="minOptions" :disabled="!canManage" />
           </Field>
           <Field id="cas-floor-max" :label="t('pr.limit.floorMax', { currency: rule.currency })" :hint="t('pr.cascadeLimit.floorMaxHint')">
-            <NativeSelect id="cas-floor-max" v-model="limits.floorMax" class="tnum" :options="maxOptions" :disabled="!canManage" />
+            <Select id="cas-floor-max" v-model="limits.floorMax" class="tnum" :options="maxOptions" :disabled="!canManage" />
           </Field>
           <Field id="cas-drop" :label="t('pr.cascadeLimit.drop')" :hint="t('pr.cascadeLimit.dropHint', { percent: dropPercentText(formDrop) })">
             <Segmented v-model="limits.drop" :options="dropOptions" :label="t('pr.cascadeLimit.drop')" :disabled="!canManage" />
@@ -420,7 +425,7 @@ watch(period, load)
           </Field>
           <p v-if="limitsError" class="text-[13px] text-bad sm:col-span-2 lg:col-span-3">{{ t('pr.limitsInvalid') }}</p>
         </div>
-        <div v-if="limits && limitsDirty && canManage" class="flex flex-wrap items-center justify-between gap-3 border-t bg-muted px-6 py-3">
+        <div v-if="limits && limitsDirty && canManage" class="flex flex-wrap items-center justify-between gap-3 border-t bg-[hsl(var(--card-footer))] px-6 py-3">
           <div class="text-[13px] text-muted-foreground">{{ manual ? t('pr.cascadeLimitsNext.manual') : t('pr.limitsNext.automatic') }}</div>
           <div class="flex gap-2">
             <Button variant="outline" :disabled="busy" @click="discardLimits">{{ t('pr.discard') }}</Button>
@@ -439,11 +444,12 @@ watch(period, load)
               <th :class="th">{{ t('pr.col.hour') }}</th>
               <th :class="th">{{ t('pr.col.action') }}</th>
               <th :class="[th, 'text-right']">{{ t('pr.col.start') }}</th>
+              <th :class="[th, 'text-right']">{{ t('pr.col.firstFill') }}</th>
               <th :class="th">{{ t('pr.col.reason') }}</th>
             </tr>
           </thead>
           <tbody>
-            <TableState v-if="!history.length" :cols="4" empty :desc="t('pr.noDecisions')" />
+            <TableState v-if="!history.length" :cols="5" empty :desc="t('pr.noDecisions')" />
             <tr v-for="entry in decisions" :key="`${entry.date}-${entry.hour}`">
               <td :class="[td, 'whitespace-nowrap tnum']">{{ hourLabel(entry.date, entry.hour, locale) }}</td>
               <td :class="td">
@@ -460,6 +466,7 @@ watch(period, load)
                 </template>
                 {{ moneyText(entry.floor_applied_micros, currency, locale) }}
               </td>
+              <td :class="[td, 'text-right tnum']">{{ decisionFirstFill(entry) }}</td>
               <td :class="[td, 'text-[13px] text-muted-foreground']">{{ t(CASCADE_REASON_KEY[entry.reason]) }}</td>
             </tr>
           </tbody>
@@ -471,7 +478,7 @@ watch(period, load)
   <Dialog v-model:open="startOpen" :title="t('pr.manualStart')" :desc="t('pr.manualStartDesc', { drop: dropText(savedDrop) })">
     <form id="cas-start" class="grid gap-4" @submit.prevent="saveStart">
       <Field id="cas-start-value" :label="t('pr.startLabel', { currency: rule?.currency ?? '' })" :hint="t('pr.startHint', { count: tiers.length, currency: rule?.currency ?? '', ladder: ladderText(cascadeLadder(tiers, Number(startTier), savedDrop)) })">
-        <NativeSelect id="cas-start-value" v-model="startTier" class="tnum" :options="startOptions" />
+        <Select id="cas-start-value" v-model="startTier" class="tnum" :options="startOptions" />
       </Field>
     </form>
     <template #footer>

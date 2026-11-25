@@ -21,13 +21,14 @@ import { change, countryName, dailySeries, daysOf, formatMetric, shortDay, toNum
 import { td, th } from '@/lib/table'
 import { useSession } from '@/stores/session'
 import type { MetricCatalog, MetricDef, MetricValues, RelativePeriod, ReportQuery, ReportRange, ReportResult } from '@/modules/reports/types'
-import { presetRange, previousRange, sameRange, utcToday } from '@/modules/reports/rules'
+import { previousRange, sameRange, utcToday } from '@/modules/reports/rules'
+import { presetValue, type PeriodValue } from '@/lib/periods'
 import { reportService } from '@/modules/reports/service'
 
 const KPI_KEYS = ['revenue', 'impressions', 'ecpm', 'ctr', 'active_view']
 const REFRESH_DELAY_MS = 5000
 
-const period = ref<RelativePeriod>('last_30_days')
+const period = ref<PeriodValue>(presetValue('last_30_days', utcToday(), false))
 const compare = ref(true)
 const chosen = ref('revenue')
 const catalog = ref<MetricCatalog | null>(null)
@@ -48,7 +49,13 @@ const empty = computed(() => !!daily.value && daily.value.rows.length === 0)
 
 /** Consulta do motor de relatórios no período escolhido, na moeda de quem vê. */
 function section(body: Omit<ReportQuery, 'period'>, range?: ReportRange): ReportQuery {
-  return { ...body, currency: session.displayCurrency, period: range ?? { preset: period.value } }
+  return { ...body, currency: session.displayCurrency, period: range ?? chosenPeriod() }
+}
+
+/** O período da consulta: o atalho pelo nome (o motor conta as datas) ou as datas escolhidas. */
+function chosenPeriod(): ReportQuery['period'] {
+  const { preset, start, end } = period.value
+  return preset ? { preset: preset as RelativePeriod } : { start, end }
 }
 
 /** Carrega o catálogo (uma vez) e as seções da tela numa requisição só; resposta atrasada de outro
@@ -61,7 +68,7 @@ async function load() {
     catalog.value ??= await reportService.catalog()
     const mode = compare.value ? 'previous' : 'none'
     const byDay = { metrics: KPI_KEYS, dimensions: ['date'], order: [{ field: 'date', descending: false }], limit: 400 }
-    const expected = previousRange(presetRange(period.value, utcToday()))
+    const expected = previousRange({ start: period.value.start, end: period.value.end })
     const sections = [
       section({ ...byDay, compare: mode }),
       section({ metrics: KPI_KEYS, dimensions: ['site'], compare: mode, order: [{ field: 'revenue' }], limit: 100 }),

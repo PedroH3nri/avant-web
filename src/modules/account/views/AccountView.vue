@@ -7,7 +7,6 @@ import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
 import { ShieldAlert } from 'lucide-vue-next'
-import AccentCard from '@/modules/account/components/AccentCard.vue'
 import ApiKeysCard from '@/modules/account/components/ApiKeysCard.vue'
 import CurrencyCard from '@/modules/account/components/CurrencyCard.vue'
 import GoogleCard from '@/modules/account/components/GoogleCard.vue'
@@ -15,6 +14,8 @@ import MfaCard from '@/modules/account/components/MfaCard.vue'
 import PasswordCard from '@/modules/account/components/PasswordCard.vue'
 import ProfileImageCard from '@/modules/account/components/ProfileImageCard.vue'
 import SessionsCard from '@/modules/account/components/SessionsCard.vue'
+import AnimationsCard from '@/modules/account/components/AnimationsCard.vue'
+import FontSizeCard from '@/modules/account/components/FontSizeCard.vue'
 import ThemeCard from '@/modules/account/components/ThemeCard.vue'
 import LangSwitch from '@/components/LangSwitch.vue'
 import PageBody from '@/components/PageBody.vue'
@@ -77,8 +78,9 @@ onMounted(() => {
       <h2 class="text-[13px] font-medium text-muted-foreground">
         {{ t('set.appearance') }}
       </h2>
-      <AccentCard />
       <ThemeCard />
+      <FontSizeCard />
+      <AnimationsCard />
       <Card :title="t('set.language')" :desc="t('set.langDesc')">
         <LangSwitch class="max-w-[360px]" />
       </Card>

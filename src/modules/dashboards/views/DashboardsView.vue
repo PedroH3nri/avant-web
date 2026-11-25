@@ -20,7 +20,7 @@ import Card from '@/components/ui/Card.vue'
 import Input from '@/components/ui/Input.vue'
 import MenuContent from '@/components/ui/MenuContent.vue'
 import MenuItem from '@/components/ui/MenuItem.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import { ApiError } from '@/lib/api'
 import { errorText, lang, t } from '@/lib/i18n'
 import AddWidgetDialog from '@/modules/dashboards/components/AddWidgetDialog.vue'
@@ -41,12 +41,14 @@ import { siteService } from '@/modules/sites/service'
 import { useSession } from '@/stores/session'
 
 const NAME_MAX = 120
+const HOME_TEMPLATE = 'home-template'
 const session = useSession()
 const route = useRoute()
 const router = useRouter()
 const dashboard = ref<Dashboard | null>(null)
 const dashboards = ref<Dashboard[]>([])
 const template = ref<DashboardTemplate | null>(null)
+const homeTemplate = ref<DashboardTemplate | null>(null)
 const chosenId = ref<string | null>(null)
 const catalog = ref<MetricCatalog | null>(null)
 const options = ref<Partial<Record<FilterDimension, FilterOption[]>>>({})
@@ -71,7 +73,11 @@ const widgets = computed(() => (editing.value ? draftWidgets.value : (definition
 const canTemplate = computed(() => internal.value && session.can('internal.dashboard_templates.manage'))
 const shownFilters = computed<DashboardFilters | null>(() => (definition.value && filtersChanged(filters.value, definition.value.filters) ? filters.value : null))
 const templateName = computed(() => (template.value ? template.value.name[lang.value] : null))
-const switchOptions = computed(() => dashboards.value.map((item) => ({ value: item.id, label: item.name })))
+const switchOptions = computed(() => {
+  const listed = dashboards.value.map((item) => ({ value: item.id, label: item.name }))
+  const start = homeTemplate.value ? [{ value: HOME_TEMPLATE, label: t('dash.homeTemplate', { name: homeTemplate.value.name[lang.value] ?? '' }) }] : []
+  return [...start, ...listed]
+})
 const visibilities = computed(() => (['private', 'company'] as const).map((value) => ({ value, label: t(`dash.visibility.${value}`) })))
 const subtitle = computed(() => {
   const found = dashboard.value
@@ -99,17 +105,19 @@ async function load() {
   void loadOptions()
 }
 
-/** Abre o dashboard da rota; sem id, o escolhido pela pessoa, o padrão, o primeiro da lista ou o modelo. */
+/** Abre o dashboard da rota; sem id, o escolhido pela pessoa, o padrão, o modelo do início ou o primeiro da lista. */
 async function open() {
   editing.value = false
   template.value = null
   const id = route.params.id as string | undefined
+  const [found, home] = await Promise.all([id ? dashboardService.get(id) : Promise.resolve(null), dashboardService.home()])
+  homeTemplate.value = home.dashboard ? null : home.template
   if (id) {
-    dashboard.value = await dashboardService.get(id)
+    dashboard.value = found
   } else {
-    const home = await dashboardService.home()
-    dashboard.value = home.dashboard ?? dashboards.value[0] ?? null
-    if (!dashboard.value) template.value = home.template
+    dashboard.value = home.dashboard
+    template.value = home.dashboard ? null : home.template
+    if (!dashboard.value && !template.value) dashboard.value = dashboards.value[0] ?? null
   }
   empty.value = definition.value === null
   filters.value = { ...(definition.value?.filters ?? {}) }
@@ -120,7 +128,7 @@ async function loadOptions() {
   /** A lista que a pessoa não pode ver fica fora dos filtros. */
   const denied = () => Promise.reject(new Error('sem permissão'))
   const [clients, staff, networks, sites] = await Promise.allSettled([
-    internal.value && session.can('internal.clients.view') ? clientService.options() : denied(),
+    internal.value && session.can('internal.clients.view') ? clientService.companyOptions() : denied(),
     internal.value ? staffService.options() : denied(),
     !internal.value && session.can('network.view') ? networkService.options() : denied(),
     !internal.value && session.can('sites.view') ? siteService.options() : denied(),
@@ -139,8 +147,8 @@ watch(
   () => void open().catch((error) => (loadError.value = apiMessage(error))),
 )
 
-/** Troca de dashboard pelo seletor do topo. */
-const switchTo = (id: string) => router.push(`/dashboards/${id}`)
+/** Abre o dashboard escolhido no seletor, ou o início quando é o modelo. */
+const switchTo = (id: string) => router.push(id === HOME_TEMPLATE ? '/' : `/dashboards/${id}`)
 
 /** Entra no modo de edição com uma cópia da grade, do nome e da visibilidade. */
 function startEditing() {
@@ -314,9 +322,9 @@ async function remove() {
         <Button :loading="saving" :disabled="!draftName.trim()" @click="save">{{ t('dash.save') }}</Button>
       </template>
       <template v-else>
-        <NativeSelect
-          v-if="dashboard && dashboards.length > 1"
-          :model-value="dashboard.id"
+        <Select
+          v-if="switchOptions.length > 1"
+          :model-value="dashboard?.id ?? HOME_TEMPLATE"
           :options="switchOptions"
           class="w-[240px]"
           :aria-label="t('dash.switch')"
@@ -353,7 +361,7 @@ async function remove() {
         <p class="flex items-center gap-2 text-[14px]"><LayoutGrid class="size-4 shrink-0" aria-hidden="true" /><span class="md:hidden">{{ t('dash.editHintMenu') }}</span><span class="hidden md:inline">{{ t('dash.editHint') }}</span></p>
         <div class="flex flex-wrap gap-2">
           <Input v-model="draftName" :maxlength="NAME_MAX" class="max-w-[320px]" :aria-label="t('dash.new.name')" />
-          <NativeSelect v-if="dashboard.visibility !== 'roles'" v-model="draftVisibility" :options="visibilities" class="w-[220px]" :aria-label="t('dash.visibility.label')" />
+          <Select v-if="dashboard.visibility !== 'roles'" v-model="draftVisibility" :options="visibilities" class="w-[220px]" :aria-label="t('dash.visibility.label')" />
         </div>
       </div>
       <DashboardFiltersBar v-model="filters" :options="options" :internal="internal" />

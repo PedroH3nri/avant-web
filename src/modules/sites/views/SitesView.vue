@@ -1,5 +1,6 @@
 <script setup lang="ts">
 /** Lista de sites e de ad units sem site, com cadastro manual. */
+import OpenLink from '@/components/OpenLink.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useDebounceFn } from '@vueuse/core'
 import { useRouter } from 'vue-router'
@@ -16,12 +17,14 @@ import DataTable from '@/components/ui/DataTable.vue'
 import Pagination from '@/components/ui/Pagination.vue'
 import Field from '@/components/ui/Field.vue'
 import Input from '@/components/ui/Input.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import Status from '@/components/ui/Status.vue'
 import TableState from '@/components/ui/TableState.vue'
 import { ApiError } from '@/lib/api'
 import { latestCall } from '@/lib/latest'
-import { errorText, formatAgo, formatDate, t } from '@/lib/i18n'
+import { errorText, formatAgo, formatDate, t, type Key } from '@/lib/i18n'
+import FiltersMenu from '@/modules/views/components/FiltersMenu.vue'
+import { useLocalBarFilters } from '@/modules/views/barFilters'
 import { networkName } from '@/modules/networks/rules'
 import ClassifySitesDialog from '@/modules/sites/components/ClassifySitesDialog.vue'
 import { NONE, SITE_CATEGORIES, approval, categoryLabel } from '@/modules/sites/rules'
@@ -33,6 +36,15 @@ import { useSession } from '@/stores/session'
 import { networkService } from '@/modules/networks/service'
 import { siteService } from '@/modules/sites/service'
 import { teamService } from '@/modules/team/service'
+
+const FILTERS = ['network', 'category', 'responsible', 'archived']
+const DEFAULT_FILTERS = ['network', 'category', 'archived']
+const FILTER_LABELS: Record<string, Key> = {
+  network: 'sites.col.network',
+  category: 'sites.col.category',
+  responsible: 'sites.col.responsible',
+  archived: 'sites.archived',
+}
 
 const SEARCH_DELAY_MS = 300
 const session = useSession()
@@ -56,6 +68,16 @@ const networkId = ref('')
 const archived = ref(false)
 const categoryFilter = ref('')
 const responsibleFilter = ref('')
+const barFilters = useLocalBarFilters('sites', FILTERS, DEFAULT_FILTERS, {
+  network: () => (networkId.value = ''),
+  category: () => (categoryFilter.value = ''),
+  responsible: () => (responsibleFilter.value = ''),
+  archived: () => (archived.value = false),
+})
+/** O nome do filtro no menu de filtros. */
+const filterLabel = (filter: string) => t(FILTER_LABELS[filter] as Key)
+/** Os filtros que a pessoa pode pôr na barra: rede só com mais de uma, responsável só com equipe. */
+const availableFilters = computed(() => FILTERS.filter((key) => (key !== 'network' || networks.value.length > 1) && (key !== 'responsible' || people.value.length > 0)))
 const canAssign = computed(() => session.can('sites.assign'))
 const assignedOnly = computed(() => session.me?.site_scope === 'assigned' && !session.can('sites.assign'))
 
@@ -257,10 +279,11 @@ const tab = (on: boolean) =>
         </button>
       </div>
       <template v-if="view === 'sites'">
-        <NativeSelect v-if="networks.length > 1" v-model="networkId" :options="networkOptions" class="w-full sm:w-56" :aria-label="t('sites.col.network')" />
-        <NativeSelect v-model="categoryFilter" :options="categoryOptions" class="w-full sm:w-48" :aria-label="t('sites.col.category')" />
-        <NativeSelect v-if="people.length" v-model="responsibleFilter" :options="responsibleOptions" class="w-full sm:w-48" :aria-label="t('sites.col.responsible')" />
-        <Checkbox id="sites-archived" v-model="archived" :label="t('sites.archived')" />
+        <Select v-if="networks.length > 1 && barFilters.isShown('network')" v-model="networkId" :options="networkOptions" class="w-full sm:w-56" :aria-label="t('sites.col.network')" />
+        <Select v-if="barFilters.isShown('category')" v-model="categoryFilter" :options="categoryOptions" class="w-full sm:w-48" :aria-label="t('sites.col.category')" />
+        <Select v-if="people.length && barFilters.isShown('responsible')" v-model="responsibleFilter" :options="responsibleOptions" class="w-full sm:w-48" :aria-label="t('sites.col.responsible')" />
+        <Checkbox v-if="barFilters.isShown('archived')" id="sites-archived" v-model="archived" :label="t('sites.archived')" />
+        <FiltersMenu v-model:shown="barFilters.shown.value" :filters="availableFilters" :label="filterLabel" />
         <div class="relative w-full sm:ml-auto sm:w-64">
           <Search class="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
           <Input v-model="searchText" :aria-label="t('sites.searchLabel')" class="h-9 bg-card pl-9" :placeholder="t('sites.search')" />
@@ -293,11 +316,12 @@ const tab = (on: boolean) =>
             <th :class="th">{{ t('sites.col.responsible') }}</th>
             <th :class="[th, 'text-right']">{{ t('sites.col.units') }}</th>
             <th :class="th">{{ t('sites.col.synced') }}</th>
+            <th :class="[th, 'w-px']"><span class="sr-only">{{ t('common.open') }}</span></th>
           </tr>
         </thead>
         <tbody>
           <TableState
-            :cols="(networks.length ? 7 : 6) + (canManage ? 1 : 0)"
+            :cols="((networks.length ? 7 : 6) + (canManage ? 1 : 0)) + 1"
             :loading="!sites"
             :empty="!!sites && sites.length === 0"
             :icon="Globe"
@@ -333,6 +357,7 @@ const tab = (on: boolean) =>
             <td :class="[td, 'text-muted-foreground']" :title="site.synced_at ? formatDate(site.synced_at) : undefined">
               {{ site.synced_at ? formatAgo(site.synced_at) : '' }}
             </td>
+            <td :class="[td, 'text-right']"><OpenLink :to="`/sites/${site.id}`" :name="site.domain" /></td>
           </tr>
         </tbody>
       </DataTable>
@@ -358,7 +383,7 @@ const tab = (on: boolean) =>
             <td :class="[td, 'font-mono text-[13px] text-muted-foreground']">{{ unit.code ?? '' }}</td>
             <td v-if="networks.length" :class="[td, 'text-muted-foreground']">{{ netName(unit.network_id) }}</td>
             <td :class="td">
-              <NativeSelect
+              <Select
                 :model-value="choice[unit.id] ?? ''"
                 :options="siteOptionsFor(unit)"
                 class="w-full max-w-[260px]"

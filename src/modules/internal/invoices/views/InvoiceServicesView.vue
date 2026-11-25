@@ -158,7 +158,7 @@ async function remove() {
           v-model="description"
           maxlength="500"
           rows="2"
-          class="w-full rounded-md border border-input bg-background px-3 py-2 text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          class="w-full rounded-md border border-input bg-[hsl(var(--field))] px-3 py-2 text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         />
       </Field>
     </form>

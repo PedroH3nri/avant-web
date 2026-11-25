@@ -22,9 +22,17 @@ export function parseSort(value: string): ViewSort | null {
   return key && (direction === 'asc' || direction === 'desc') ? { key, direction } : null
 }
 
-/** Diz se duas definições guardam as mesmas colunas, filtros e ordem. */
+/** Diz se duas definições guardam as mesmas colunas, filtros, ordem e filtros na barra. */
 export function sameDefinition(first: ViewDefinition, second: ViewDefinition): boolean {
-  return normalized(first) === normalized(second)
+  if (normalized(first) !== normalized(second)) return false
+  if (!first.shown_filters || !second.shown_filters) return true
+  return [...first.shown_filters].sort().join() === [...second.shown_filters].sort().join()
+}
+
+/** Os filtros da barra de uma visão, na ordem da tela; visão antiga usa os padrão e os que têm valor. */
+export function shownFromView(definition: ViewDefinition, all: string[], defaults: string[]): string[] {
+  const chosen = definition.shown_filters ?? [...defaults, ...Object.keys(cleanFilters(definition.filters))]
+  return all.filter((key) => chosen.includes(key))
 }
 
 /** A definição em texto, com os filtros vazios fora e as chaves em ordem, para comparar. */
@@ -40,6 +48,12 @@ function normalized(definition: ViewDefinition): string {
 export function toggleColumn(shown: string[], column: string, order: string[]): string[] {
   const next = shown.includes(column) ? shown.filter((kept) => kept !== column) : [...shown, column]
   if (next.length === 0) return shown
+  return order.filter((key) => next.includes(key))
+}
+
+/** Liga ou desliga um filtro extra, mantendo a ordem do catálogo; pode ficar sem nenhum. */
+export function toggleFilter(shown: string[], filter: string, order: string[]): string[] {
+  const next = shown.includes(filter) ? shown.filter((kept) => kept !== filter) : [...shown, filter]
   return order.filter((key) => next.includes(key))
 }
 

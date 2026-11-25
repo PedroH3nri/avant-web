@@ -3,12 +3,12 @@ import { lang, t } from '@/lib/i18n'
 import { linkActive, visibleGroups, type NavItem } from '@/lib/navigation'
 
 /** Os rótulos de todos os itens do menu, na ordem. */
-const labels = (staff: boolean) => visibleGroups(staff).flatMap((section) => section.items.map((link) => t(link.key)))
+const labels = (onGroone: boolean) => visibleGroups(onGroone).flatMap((section) => section.items.map((link) => t(link.key)))
 /** Os títulos dos grupos com título. */
-const headers = (staff: boolean) => visibleGroups(staff).flatMap((section) => (section.key ? [t(section.key)] : []))
+const headers = (onGroone: boolean) => visibleGroups(onGroone).flatMap((section) => (section.key ? [t(section.key)] : []))
 /** Os itens ativos no caminho; as telas internas começam com /interno. */
-const activeLabels = (staff: boolean, path: string) =>
-  visibleGroups(staff)
+const activeLabels = (onGroone: boolean, path: string) =>
+  visibleGroups(onGroone)
     .flatMap((section) => section.items)
     .filter((link: NavItem) => linkActive(link, path, path.startsWith('/interno')))
     .map((link) => t(link.key))
@@ -16,14 +16,14 @@ const activeLabels = (staff: boolean, path: string) =>
 describe('menu do painel', () => {
   beforeAll(() => (lang.value = 'pt'))
 
-  it('mostra os mesmos itens para a equipe Groone, sem filtrar por permissão', () => {
-    expect(labels(true)).toEqual(['Dashboard', 'Tarefas', 'Clientes', 'Equipes', 'Networks do GAM', 'Contratos', 'Sites', 'Rewards', 'Ad tags', 'Loaders', 'Regras de preço', 'Checklists', 'Ad Manager', 'Page Views', 'Resultado', 'Resultado dos clientes', 'Metas', 'Relatórios customizados', 'Ferramentas do GAM', 'Alertas', 'Envios agendados', 'Modelos de dashboard', 'Minha comissão', 'Minhas invoices', 'Comissões', 'Invoices', 'Equipe Groone', 'Papéis da equipe', 'Custos'])
-    expect(headers(true)).toEqual(['Inventário', 'Relatórios', 'Ferramentas', 'Comissões', 'Empresa'])
+  it('com a Company Groone ativa mostra o painel interno, sem filtrar por permissão', () => {
+    expect(labels(true)).toEqual(['Dashboard', 'Tarefas', 'Clientes', 'Empresas', 'Networks do GAM', 'Contratos', 'Sites', 'Rewards', 'Ad tags', 'Loaders', 'Regras de preço', 'Checklists', 'Ad Manager', 'Page Views', 'Resultado', 'Resultado dos clientes', 'Metas', 'Campanhas do Facebook', 'Campanhas do Google Ads', 'Relatórios customizados', 'Facebook', 'Google Ads', 'Ferramentas do GAM', 'Alertas', 'Envios agendados', 'Modelos de dashboard', 'Minha comissão', 'Minhas invoices', 'Comissões', 'Invoices', 'Equipe Groone', 'Papéis da equipe', 'Custos'])
+    expect(headers(true)).toEqual(['Inventário', 'Relatórios', 'Integrações', 'Ferramentas', 'Comissões', 'Empresa'])
   })
 
-  it('quem não é da equipe Groone não vê os itens internos', () => {
-    expect(labels(false)).toEqual(['Dashboard', 'Equipes', 'Networks do GAM', 'Sites', 'Rewards', 'Ad tags', 'Loaders', 'Regras de preço', 'Ad Manager', 'Page Views', 'Resultado', 'Relatórios customizados', 'Papéis e permissões', 'Custos'])
-    expect(headers(false)).toEqual(['Inventário', 'Relatórios', 'Empresa'])
+  it('com uma Empresa cliente ativa mostra os links dela, sem os internos (também para a equipe Groone)', () => {
+    expect(labels(false)).toEqual(['Dashboard', 'Equipes', 'Networks do GAM', 'Sites', 'Rewards', 'Ad tags', 'Loaders', 'Regras de preço', 'Ad Manager', 'Page Views', 'Resultado', 'Campanhas do Facebook', 'Campanhas do Google Ads', 'Relatórios customizados', 'Facebook', 'Google Ads', 'Papéis e permissões', 'Custos'])
+    expect(headers(false)).toEqual(['Inventário', 'Relatórios', 'Integrações', 'Empresa'])
     expect(labels(false)).not.toContain('Equipe Groone')
   })
 
@@ -32,11 +32,10 @@ describe('menu do painel', () => {
     expect(labels(false)).not.toContain('Configurações')
   })
 
-  it('Equipes, para a equipe Groone, são as equipes dos clientes, nunca a própria', () => {
-    const team = visibleGroups(true)
-      .flatMap((section) => section.items)
-      .find((link) => link.key === 'nav.team')
-    expect(team?.to).toBe('/interno/equipes')
+  it('no painel interno aparece Empresas no lugar de Equipes', () => {
+    const links = visibleGroups(true).flatMap((section) => section.items)
+    expect(links.find((link) => link.key === 'int.companies')?.to).toBe('/interno/empresas')
+    expect(links.some((link) => link.key === 'nav.team')).toBe(false)
   })
 
   it('telas sem item próprio acendem o item de onde se chega, e só ele', () => {
@@ -58,6 +57,10 @@ describe('menu do painel', () => {
       ['/interno/tarefas/123', 'Tarefas'],
       ['/interno/alertas', 'Alertas'],
       ['/interno/envios', 'Envios agendados'],
+      ['/interno/campanhas-facebook/123', 'Campanhas do Facebook'],
+      ['/interno/facebook', 'Facebook'],
+      ['/interno/campanhas-google-ads/campaign/123', 'Campanhas do Google Ads'],
+      ['/interno/google-ads', 'Google Ads'],
       ['/interno/modelos-de-dashboard', 'Modelos de dashboard'],
     ]
     for (const [path, label] of cases) expect(activeLabels(true, path)).toEqual([label])

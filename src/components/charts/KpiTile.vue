@@ -15,7 +15,7 @@ const up = computed(() => (props.delta ?? 0) >= 0)
     :aria-pressed="selected"
     :class="
       cn(
-        'relative bg-card p-4 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring',
+        'kpi-motion relative bg-card p-4 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring',
         selected && 'after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:bg-primary',
       )
     "

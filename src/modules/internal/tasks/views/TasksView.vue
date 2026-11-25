@@ -1,5 +1,6 @@
 <script setup lang="ts">
 /** Tarefas de suporte da equipe Groone: as minhas ou todas, com filtros, e a janela de tarefa nova. */
+import OpenLink from '@/components/OpenLink.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { Plus, Search } from 'lucide-vue-next'
@@ -9,12 +10,14 @@ import PageHeader from '@/components/PageHeader.vue'
 import Button from '@/components/ui/Button.vue'
 import DataTable from '@/components/ui/DataTable.vue'
 import Input from '@/components/ui/Input.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import Pagination from '@/components/ui/Pagination.vue'
 import Status from '@/components/ui/Status.vue'
 import TableState from '@/components/ui/TableState.vue'
 import { ApiError } from '@/lib/api'
-import { errorText, formatDate, t } from '@/lib/i18n'
+import { errorText, formatDate, t, type Key } from '@/lib/i18n'
+import FiltersMenu from '@/modules/views/components/FiltersMenu.vue'
+import { useLocalBarFilters } from '@/modules/views/barFilters'
 import { td, th } from '@/lib/table'
 import { clientService } from '@/modules/internal/clients/service'
 import { staffService } from '@/modules/internal/staff/service'
@@ -33,6 +36,13 @@ import { taskService } from '@/modules/internal/tasks/service'
 import type { SupportTask, SupportTaskDetail, TaskPriority, TaskScope } from '@/modules/internal/tasks/types'
 import { useSession } from '@/stores/session'
 
+const FILTERS = ['status', 'priority']
+const DEFAULT_FILTERS = ['status', 'priority']
+const FILTER_LABELS: Record<string, Key> = {
+  status: 'task.status',
+  priority: 'task.priority',
+}
+
 const ANY = 'any'
 const session = useSession()
 const router = useRouter()
@@ -45,6 +55,12 @@ const pages = ref(0)
 const scope = ref<TaskScope>('mine')
 const status = ref<StatusFilter>('active')
 const priority = ref<TaskPriority | typeof ANY>(ANY)
+const barFilters = useLocalBarFilters('tasks', FILTERS, DEFAULT_FILTERS, {
+  status: () => (status.value = ANY),
+  priority: () => (priority.value = ANY),
+})
+/** O nome do filtro no menu de filtros. */
+const filterLabel = (filter: string) => t(FILTER_LABELS[filter] as Key)
 const query = ref('')
 const creating = ref(false)
 const clients = ref<{ value: string; label: string }[]>([])
@@ -87,7 +103,7 @@ async function load() {
 
 /** Carrega clientes e equipe para a janela de tarefa nova; sem acesso, o seletor fica vazio. */
 async function loadOptions() {
-  const [clientList, staffList] = await Promise.allSettled([clientService.options(), staffService.options()])
+  const [clientList, staffList] = await Promise.allSettled([clientService.companyOptions(), staffService.options()])
   if (clientList.status === 'fulfilled') clients.value = clientList.value.items.map((item) => ({ value: item.id, label: item.name }))
   if (staffList.status === 'fulfilled') staff.value = staffList.value.items.map((member) => ({ value: member.user.id, label: member.user.name }))
 }
@@ -137,8 +153,9 @@ const openCreated = (task: SupportTaskDetail) => router.push(`/interno/tarefas/$
         <Search class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input v-model="query" :aria-label="t('task.search')" class="h-9 pl-9" :placeholder="t('task.searchPlaceholder')" />
       </div>
-      <NativeSelect v-model="status" :options="statusOptions" :aria-label="t('task.status')" class="w-full sm:w-[230px] [&_select]:h-9" />
-      <NativeSelect v-model="priority" :options="priorityOptions" :aria-label="t('task.priority')" class="w-full sm:w-[170px] [&_select]:h-9" />
+      <Select v-if="barFilters.isShown('status')" v-model="status" :options="statusOptions" :aria-label="t('task.status')" class="w-full sm:w-[230px] h-9" />
+      <Select v-if="barFilters.isShown('priority')" v-model="priority" :options="priorityOptions" :aria-label="t('task.priority')" class="w-full sm:w-[170px] h-9" />
+      <FiltersMenu v-model:shown="barFilters.shown.value" :filters="FILTERS" :label="filterLabel" />
     </div>
     <LoadError v-if="loadError" :message="loadError" @retry="load" />
     <p v-else-if="!tasks" class="text-[14px] text-muted-foreground" role="status">{{ t('common.loading') }}</p>
@@ -152,10 +169,11 @@ const openCreated = (task: SupportTaskDetail) => router.push(`/interno/tarefas/$
             <th :class="th">{{ t('task.status') }}</th>
             <th :class="th">{{ t('task.assignee') }}</th>
             <th :class="th">{{ t('task.col.updated') }}</th>
+            <th :class="[th, 'w-px']"><span class="sr-only">{{ t('common.open') }}</span></th>
           </tr>
         </thead>
         <tbody>
-          <TableState :cols="6" :empty="tasks.length === 0" :desc="t('task.empty')" />
+          <TableState :cols="7" :empty="tasks.length === 0" :desc="t('task.empty')" />
           <tr v-for="task in tasks" :key="task.id" class="hover:bg-muted">
             <td :class="td">
               <RouterLink :to="`/interno/tarefas/${task.id}`" class="font-medium hover:underline focus-visible:underline focus-visible:outline-none">{{ task.subject }}</RouterLink>
@@ -171,6 +189,7 @@ const openCreated = (task: SupportTaskDetail) => router.push(`/interno/tarefas/$
             <td :class="td"><Status :tone="STATUS_TONE[task.status]">{{ statusLabel(task.status) }}</Status></td>
             <td :class="[td, 'text-muted-foreground']">{{ task.assignee?.name ?? t('task.noAssignee') }}</td>
             <td :class="[td, 'whitespace-nowrap tnum text-[13px] text-muted-foreground']">{{ formatDate(task.updated_at) }}</td>
+            <td :class="[td, 'text-right']"><OpenLink :to="`/interno/tarefas/${task.id}`" :name="task.subject" /></td>
           </tr>
         </tbody>
       </DataTable>

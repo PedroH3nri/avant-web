@@ -8,7 +8,7 @@ import Checkbox from '@/components/ui/Checkbox.vue'
 import Dialog from '@/components/ui/Dialog.vue'
 import Field from '@/components/ui/Field.vue'
 import Input from '@/components/ui/Input.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import { copy } from '@/modules/account/rules'
 import { ApiError } from '@/lib/api'
 import { errorText, permissionGroupLabel, pick, t } from '@/lib/i18n'
@@ -133,7 +133,7 @@ async function copyToken() {
           <Input id="key-name" v-model="name" maxlength="100" />
         </Field>
         <Field id="key-days" :label="t('key.validity')">
-          <NativeSelect id="key-days" v-model="days" :options="options" />
+          <Select id="key-days" v-model="days" :options="options" />
         </Field>
       </div>
       <fieldset class="grid gap-4">

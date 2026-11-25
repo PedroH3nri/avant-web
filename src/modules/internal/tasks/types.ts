@@ -8,6 +8,7 @@ export type TaskEventKind = 'created' | 'comment' | 'status_changed' | 'priority
 export interface TaskPerson {
   id: string
   name: string
+  image_url?: string | null
 }
 
 export interface SupportTask {
