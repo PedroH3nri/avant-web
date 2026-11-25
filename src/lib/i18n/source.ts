@@ -1032,6 +1032,15 @@ export const dict = {
     'The panel would be hard to read. Adjust the colors to save:',
     'Así el panel queda difícil de leer. Ajusta los colores para guardar:',
   ],
+  'fontSize.title': ['Tamanho do texto', 'Text size', 'Tamaño del texto'],
+  'fontSize.desc': [
+    'Deixe o painel maior em telas grandes. Só para você, guardado na sua conta.',
+    'Make the panel bigger on large screens. Just for you, saved in your account.',
+    'Agrande el panel en pantallas grandes. Solo para usted, guardado en su cuenta.',
+  ],
+  'fontSize.default': ['Padrão', 'Default', 'Estándar'],
+  'fontSize.large': ['Grande', 'Large', 'Grande'],
+  'fontSize.larger': ['Maior', 'Larger', 'Más grande'],
   'motion.title': ['Animações', 'Animations', 'Animaciones'],
   'motion.desc': [
     'Escolha onde o painel anima ao passar o mouse e ao selecionar. Só para você, guardado na sua conta.',
