@@ -148,7 +148,7 @@ watch(days, load)
         <a v-if="!internal" :href="ACCOUNT_QUALITY_URL" target="_blank" rel="noopener noreferrer" class="mt-3 inline-flex items-center gap-1 text-[13px] text-link hover:underline">{{ t('fb.appeal') }}<ExternalLink class="size-3.5" aria-hidden="true" /></a>
       </div>
       <dl class="grid grid-cols-2 gap-px overflow-hidden rounded-lg border bg-border sm:grid-cols-4">
-        <div v-for="item in summary" :key="item.key" class="bg-card p-4">
+        <div v-for="item in summary" :key="item.key" class="kpi-motion relative bg-card p-4 transition-colors hover:bg-muted">
           <dt class="text-[13px] text-muted-foreground">{{ t(item.key) }}</dt>
           <dd class="mt-1 text-[20px] font-semibold tracking-tight tnum">{{ item.value }}</dd>
         </div>
