@@ -56,6 +56,12 @@ export function formatRatio(value: number | null, locale: string): string {
   return new Intl.NumberFormat(locale, { style: 'percent', minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(value)
 }
 
+/** Cor do ROI: verde quando dá lucro, vermelho quando dá prejuízo e neutro no zero ou sem receita. */
+export function roiTone(value: number | null): string {
+  if (value === null || value === 0) return ''
+  return value > 0 ? 'text-ok' : 'text-bad'
+}
+
 /** Número inteiro no idioma. */
 export function formatCount(value: number | null, locale: string): string {
   return value === null ? '–' : new Intl.NumberFormat(locale).format(value)

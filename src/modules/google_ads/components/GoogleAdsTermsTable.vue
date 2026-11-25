@@ -5,7 +5,7 @@ import TableState from '@/components/ui/TableState.vue'
 import DataTable from '@/components/ui/DataTable.vue'
 import { locale, t } from '@/lib/i18n'
 import { td, th } from '@/lib/table'
-import { formatCount, formatMoney, formatRatio } from '@/modules/google_ads/rules'
+import { formatCount, formatMoney, formatRatio, roiTone } from '@/modules/google_ads/rules'
 import type { GoogleAdsTerm } from '@/modules/google_ads/types'
 
 const props = defineProps<{ rows: GoogleAdsTerm[] | null; currency: string; kind: 'terms' | 'placements' }>()
@@ -35,7 +35,7 @@ const detailKey = computed(() => (props.kind === 'terms' ? 'gads.terms.col.keywo
         <td :class="[td, 'text-right tnum']">{{ formatCount(row.totals.clicks, locale) }}</td>
         <td :class="[td, 'text-right tnum']">{{ formatCount(row.totals.conversions, locale) }}</td>
         <td :class="[td, 'text-right tnum']">{{ formatMoney(row.totals.revenue, currency, locale) }}</td>
-        <td :class="[td, 'text-right tnum']">{{ formatRatio(row.totals.roi, locale) }}</td>
+        <td :class="[td, 'text-right tnum', roiTone(row.totals.roi)]">{{ formatRatio(row.totals.roi, locale) }}</td>
       </tr>
     </tbody>
   </DataTable>
