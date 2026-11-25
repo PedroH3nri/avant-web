@@ -2,7 +2,7 @@
    Do HubSpot para o Avant só vem o que o Avant não tem; clientes, networks, contratos e métricas só vão. */
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
-import { AlertTriangle, ArrowRight, Code2, Gift, BookOpen, CalendarClock, CalendarDays, Check, CheckCircle2, ChevronRight, CircleDollarSign, ClipboardCheck, ExternalLink, Filter, Inbox, LayoutGrid, List, ListChecks, Loader2, Mail, MessageSquare, NotebookPen, Paperclip, Phone, Plus, RefreshCw, Search, Send, SmilePlus, ThumbsDown, ThumbsUp, TrendingDown, UserPlus, Video, X } from 'lucide-react'
+import { AlertTriangle, ArrowRight, Code2, Gift, BookOpen, CalendarClock, CalendarDays, Check, CheckCircle2, ChevronRight, CircleDollarSign, ClipboardCheck, ExternalLink, Filter, Inbox, LayoutGrid, List, ListChecks, Loader2, Mail, MessageSquare, NotebookPen, Phone, Plus, RefreshCw, Search, Send, SmilePlus, ThumbsDown, ThumbsUp, TrendingDown, UserPlus, Video, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -10,7 +10,6 @@ import { Switch } from '@/components/ui/switch'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
-import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { cn } from '@/lib/utils'
 import { Avatar, Badge, Body, Card, Field, PageHeader, Status } from './App'
 
@@ -341,31 +340,37 @@ const TICKETS: Ticket[] = [
 ]
 const TICKET_TONE: Record<Ticket['status'], Tone> = { Aberto: 'neutral', 'Esperando você': 'ochre', Resolvido: 'ok' }
 
-/** Chamados do cliente: ele abre e acompanha aqui, e a equipe Groone responde pelo HubSpot (Service Hub). */
+const GROONE_WHATSAPP = '5511900000000'
+
+/** O link do WhatsApp de atendimento da Groone (caixa do HubSpot), com a mensagem já escrita. */
+function whatsappLink(text: string) {
+  return `https://wa.me/${GROONE_WHATSAPP}?text=${encodeURIComponent(text)}`
+}
+
+/** O ícone do WhatsApp, no tamanho dos ícones dos botões. */
+function WhatsappIcon() {
+  return <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.3-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6a2.7 2.7 0 0 0 1.8-1.2 2.2 2.2 0 0 0 .1-1.3c0-.1-.2-.2-.5-.3Z" /></svg>
+}
+
+/** Chamados do cliente: o atendimento é no WhatsApp da Groone (ligado ao HubSpot); aqui ele abre e acompanha. */
 export function TicketsScreen() {
   const [tickets, setTickets] = useState(TICKETS)
   const [values, setValues] = useState<Record<string, string>>({})
   const [query, setQuery] = useState('')
   const [open, setOpen] = useState<Ticket | null>(null)
   const [creating, setCreating] = useState(false)
-  const [reply, setReply] = useState('')
   const [form, setForm] = useState({ subject: '', category: 'Pagamento', text: '' })
   const rows = tickets.filter((ticket) => passes({ ...ticket, id: String(ticket.id) } as unknown as Record<string, string>, values, query, ['subject', 'id']))
   /** Cria o chamado (vira um ticket no HubSpot, com o cliente e o site associados). */
   const create = () => {
     const ticket: Ticket = { id: 1043, subject: form.subject, category: form.category, site: 'blogexemplo.com.br', status: 'Aberto', updated: 'agora', messages: [{ from: 'client', who: 'Caio Prado', text: form.text, when: 'agora' }] }
     setTickets([ticket, ...tickets]); setCreating(false); setForm({ subject: '', category: 'Pagamento', text: '' })
-    toast.success('Chamado #1043 aberto', { description: 'A Marina, sua gerente de conta, recebe agora. Você é avisado aqui e por e-mail.' })
-  }
-  /** Manda a resposta do cliente no chamado aberto. */
-  const send = () => {
-    if (!open || !reply.trim()) return
-    const next = { ...open, status: 'Aberto' as const, updated: 'agora', messages: [...open.messages, { from: 'client' as const, who: 'Caio Prado', text: reply, when: 'agora' }] }
-    setTickets(tickets.map((ticket) => (ticket.id === open.id ? next : ticket))); setOpen(next); setReply('')
+    toast.success('Chamado #1043 aberto', { description: 'A equipe responde no seu WhatsApp. O histórico aparece aqui.' })
   }
   return (
     <>
-      <PageHeader title="Chamados" sub="Fale com a Groone sobre pagamento, anúncios ou qualquer dúvida. A resposta chega aqui e no seu e-mail." actions={<Button onClick={() => setCreating(true)}><Plus className="h-4 w-4" />Novo chamado</Button>} />
+      <PageHeader title="Chamados" sub="O atendimento da Groone é pelo WhatsApp. Aqui você acompanha cada chamado: número, assunto, situação e o histórico da conversa."
+        actions={<><Button variant="outline" onClick={() => setCreating(true)}><Plus className="h-4 w-4" />Abrir chamado</Button><Button asChild><a href={whatsappLink('Olá! Sou Caio Prado, do Blog Exemplo (blogexemplo.com.br).')} target="_blank" rel="noreferrer"><WhatsappIcon />Falar no WhatsApp</a></Button></>} />
       <Body>
         <section className="overflow-hidden rounded-lg border bg-card animate-in fade-in slide-in-from-bottom-2 duration-500">
           <TableFilters defs={[{ key: 'status', label: 'Situação', options: ['Aberto', 'Esperando você', 'Resolvido'] }, { key: 'category', label: 'Assunto', options: ['Pagamento', 'Anúncios', 'Inventário', 'Outro'] }, { key: 'site', label: 'Site', options: ['blogexemplo.com.br'] }]} initial={['status']} values={values} setValues={setValues} query={query} setQuery={setQuery} placeholder="Buscar pelo assunto ou número" />
@@ -382,24 +387,24 @@ export function TicketsScreen() {
         </section>
         <ManagerCard />
       </Body>
-      <Sheet open={open !== null} onOpenChange={(value) => !value && setOpen(null)}>
-        <SheetContent className="flex w-full flex-col gap-0 p-0 sm:max-w-[520px]">
+      <Dialog open={open !== null} onOpenChange={(value) => !value && setOpen(null)}>
+        <DialogContent className="flex max-h-[85vh] flex-col gap-0 p-0 sm:max-w-[720px]">
           {open && <>
-            <div className="border-b p-6"><SheetTitle className="pr-6 text-[18px]">{open.subject}</SheetTitle><div className="mt-2 flex flex-wrap items-center gap-3 text-[13px] text-muted-foreground"><span className="tnum">#{open.id}</span><span>{open.category}</span><Status tone={TICKET_TONE[open.status]}>{open.status}</Status></div></div>
+            <DialogHeader className="border-b p-6 text-left"><DialogTitle className="pr-6 text-[20px]">{open.subject}</DialogTitle><DialogDescription asChild><div className="flex flex-wrap items-center gap-3 text-[13px]"><span className="tnum">#{open.id}</span><span>{open.category}</span><span>{open.site}</span><Status tone={TICKET_TONE[open.status]}>{open.status}</Status></div></DialogDescription></DialogHeader>
             <ol className="flex-1 space-y-4 overflow-y-auto p-6">{open.messages.map((message, index) => (
               <li key={index} {...rise(index, cn('flex gap-3', message.from === 'client' && 'flex-row-reverse text-right'))}>
                 <Avatar name={message.who} size={28} />
-                <div className={cn('max-w-[80%] rounded-lg px-3 py-2 text-[14px]', message.from === 'client' ? 'bg-primary text-primary-foreground' : 'bg-muted')}><p>{message.text}</p><p className={cn('mt-1 text-[12px]', message.from === 'client' ? 'text-primary-foreground/70' : 'text-muted-foreground')}>{message.who} · {message.when}</p></div>
+                <div className={cn('max-w-[80%] rounded-lg px-3 py-2 text-[14px]', message.from === 'client' ? 'bg-primary text-primary-foreground' : 'bg-muted')}><p>{message.text}</p><p className={cn('mt-1 text-[12px]', message.from === 'client' ? 'text-primary-foreground/70' : 'text-muted-foreground')}>{message.who} · {message.when} · WhatsApp</p></div>
               </li>
             ))}</ol>
-            {open.status !== 'Resolvido' ? <div className="border-t p-4"><Textarea value={reply} onChange={(event) => setReply(event.target.value)} placeholder="Escreva a resposta" rows={3} /><div className="mt-2 flex justify-between"><Button variant="ghost" size="sm"><Paperclip className="h-4 w-4" />Anexar</Button><Button size="sm" disabled={!reply.trim()} onClick={send}><Send className="h-4 w-4" />Responder</Button></div></div>
-              : <div className="border-t bg-muted p-4 text-[13px] text-muted-foreground">Resolvido. Se voltar a acontecer, abra um chamado novo.</div>}
+            {open.status !== 'Resolvido' ? <div className="flex flex-wrap items-center justify-between gap-3 border-t bg-muted p-4 text-[13px] text-muted-foreground"><span>A conversa deste chamado continua no WhatsApp da Groone.</span><Button size="sm" asChild><a href={whatsappLink(`Chamado #${open.id}: ${open.subject}`)} target="_blank" rel="noreferrer"><WhatsappIcon />Continuar no WhatsApp</a></Button></div>
+              : <div className="border-t bg-muted p-4 text-[13px] text-muted-foreground">Resolvido. Se voltar a acontecer, chame a Groone no WhatsApp.</div>}
           </>}
-        </SheetContent>
-      </Sheet>
+        </DialogContent>
+      </Dialog>
       <Dialog open={creating} onOpenChange={setCreating}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Novo chamado</DialogTitle><DialogDescription>Vai para a sua gerente de conta, Marina Souza.</DialogDescription></DialogHeader>
+          <DialogHeader><DialogTitle>Novo chamado</DialogTitle><DialogDescription>Vira um chamado na Groone e a resposta chega no seu WhatsApp (+55 11 98888-7777).</DialogDescription></DialogHeader>
           <div className="grid gap-4">
             <Field id="tk-subject" label="Resumo"><Input id="tk-subject" className="h-10" value={form.subject} onChange={(event) => setForm({ ...form, subject: event.target.value })} placeholder="Ex.: pagamento de outubro" /></Field>
             <Field id="tk-category" label="Assunto"><Select value={form.category} onValueChange={(category) => setForm({ ...form, category })}><SelectTrigger id="tk-category" className="h-10"><SelectValue /></SelectTrigger><SelectContent>{['Pagamento', 'Anúncios', 'Inventário', 'Outro'].map((option) => <SelectItem key={option} value={option}>{option}</SelectItem>)}</SelectContent></Select></Field>
@@ -428,7 +433,7 @@ export function ManagerCard() {
         <Avatar name="Marina Souza" size={48} />
         <div className="min-w-0 flex-1"><div className="text-[13px] text-muted-foreground">Sua gerente de conta</div><div className="text-[18px] font-semibold tracking-tight">Marina Souza</div><div className="text-[13px] text-muted-foreground">marina@groone.com · responde em até 1 dia útil</div></div>
         {booked ? <Status tone="ok">Reunião marcada: {booked}</Status> : null}
-        <div className="flex flex-wrap gap-2"><Button variant="outline" asChild><a href="mailto:marina@groone.com"><Mail className="h-4 w-4" />E-mail</a></Button><Button onClick={() => setOpen(true)}><CalendarClock className="h-4 w-4" />Marcar uma conversa</Button></div>
+        <div className="flex flex-wrap gap-2"><Button variant="outline" asChild><a href={whatsappLink('Olá, Marina! Sou Caio Prado, do Blog Exemplo.')} target="_blank" rel="noreferrer"><WhatsappIcon />WhatsApp</a></Button><Button onClick={() => setOpen(true)}><CalendarClock className="h-4 w-4" />Marcar uma conversa</Button></div>
       </section>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-[520px]">
@@ -488,7 +493,7 @@ function GuideShot({ kind }: { kind: GuideStep['shot'] }) {
   return (
     <div className="overflow-hidden rounded-md border bg-background shadow-sm" aria-hidden="true">
       <div className="flex items-center gap-1.5 border-b bg-muted px-3 py-2"><span className="h-2 w-2 rounded-full bg-bad/60" /><span className="h-2 w-2 rounded-full bg-ochre/60" /><span className="h-2 w-2 rounded-full bg-ok/60" /><span className="ml-3 h-3 w-40 rounded bg-background" /></div>
-      <div className="grid grid-cols-[48px_1fr] gap-3 p-3">
+      <div className="grid min-h-[260px] grid-cols-[48px_1fr] gap-3 p-4">
         <div className="grid content-start gap-2">{[0, 1, 2, 3].map((index) => <span key={index} className={cn('h-6 rounded', index === 1 ? 'bg-foreground/80' : 'bg-muted')} />)}</div>
         <div className="grid content-start gap-2">
           <span className="h-4 w-1/3 rounded bg-foreground/80" />
@@ -521,6 +526,7 @@ export function HelpCenterScreen({ go }: { go: Go }) {
   const [reading, setReading] = useState<Article | null>(null)
   const [helpful, setHelpful] = useState<boolean | null>(null)
   const [guide, setGuide] = useState<Guide | null>(null)
+  const [step, setStep] = useState(0)
   const list = ARTICLES.filter((article) => (category === 'Todas' || article.category === category) && (article.title + article.summary).toLowerCase().includes(query.trim().toLowerCase()))
   return (
     <>
@@ -554,34 +560,43 @@ export function HelpCenterScreen({ go }: { go: Go }) {
         </div>
         <ManagerCard />
       </Body>
-      <Sheet open={reading !== null} onOpenChange={(value) => !value && setReading(null)}>
-        <SheetContent className="w-full overflow-y-auto sm:max-w-[560px]">
-          {reading && <article className="grid gap-4 pt-4">
+      <Dialog open={reading !== null} onOpenChange={(value) => !value && setReading(null)}>
+        <DialogContent className="max-h-[88vh] overflow-y-auto sm:max-w-[820px] sm:p-10">
+          {reading && <article className="grid gap-4">
             <div className="text-[12px] font-medium text-muted-foreground">{reading.category} · {reading.minutes} min de leitura</div>
-            <SheetTitle className="text-[24px] tracking-tight">{reading.title}</SheetTitle>
+            <DialogTitle className="text-[28px] tracking-[-0.03em]">{reading.title}</DialogTitle>
             <p className="text-[15px] leading-relaxed text-muted-foreground">{reading.summary}</p>
             <div className="grid gap-3 text-[15px] leading-relaxed"><p>1. Em Inventário &gt; Ad tags, abra a tag do site e clique em <b>Copiar o script</b>.</p><p>2. Cole o script dentro do <code className="rounded bg-muted px-1">&lt;head&gt;</code> de todas as páginas.</p><p>3. Volte ao Avant e clique em <b>Verificar de novo</b>. Em um minuto o site aparece como instalado.</p></div>
             <div className="mt-4 rounded-lg border p-4">{helpful === null ? <div className="flex flex-wrap items-center justify-between gap-3 text-[14px]"><span>Este artigo ajudou?</span><div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => setHelpful(true)}><ThumbsUp className="h-4 w-4" />Sim</Button><Button size="sm" variant="outline" onClick={() => setHelpful(false)}><ThumbsDown className="h-4 w-4" />Não</Button></div></div>
               : <p className="animate-in fade-in text-[14px] text-muted-foreground">{helpful ? 'Obrigado!' : 'Poxa. Que tal abrir um chamado? A equipe responde em até 1 dia útil.'}</p>}</div>
             <p className="text-[12px] text-muted-foreground">Da base de conhecimento da Groone no HubSpot. Atualizado em 20/11.</p>
           </article>}
-        </SheetContent>
-      </Sheet>
-      <Sheet open={guide !== null} onOpenChange={(value) => !value && setGuide(null)}>
-        <SheetContent className="w-full overflow-y-auto sm:max-w-[640px]">
-          {guide && <div className="grid gap-6 pt-4">
-            <div><div className="text-[12px] font-medium text-muted-foreground">Passo a passo · {guide.steps.length} passos</div><SheetTitle className="mt-1 text-[24px] tracking-tight">{guide.name}</SheetTitle><p className="mt-1 text-[15px] text-muted-foreground">{guide.summary}</p></div>
-            <ol className="grid gap-6">{guide.steps.map((step, index) => (
-              <li key={step.title} {...rise(index, 'grid gap-3')}>
-                <div className="flex items-start gap-3"><span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-foreground text-[13px] font-semibold text-background tnum">{index + 1}</span><div><div className="text-[15px] font-medium">{step.title}</div><p className="text-[14px] text-muted-foreground">{step.text}</p></div></div>
-                <div className="pl-10"><GuideShot kind={step.shot} /></div>
-              </li>
-            ))}</ol>
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-4 text-[14px]"><span>Travou em algum passo?</span><Button size="sm" onClick={() => go('chamados')}><MessageSquare className="h-4 w-4" />Falar com a Groone</Button></div>
-            <p className="text-[12px] text-muted-foreground">Da base de conhecimento da Groone no HubSpot. A equipe edita os passos e os prints lá, sem deploy.</p>
-          </div>}
-        </SheetContent>
-      </Sheet>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={guide !== null} onOpenChange={(value) => { if (!value) setGuide(null); setStep(0) }}>
+        <DialogContent className="flex h-[88vh] max-h-[880px] w-[calc(100vw-32px)] max-w-[1120px] flex-col gap-0 overflow-hidden p-0 sm:max-w-[1120px]">
+          {guide && <>
+            <DialogHeader className="border-b px-6 py-5 text-left"><DialogDescription className="text-[12px] font-medium">Passo a passo · {guide.steps.length} passos</DialogDescription><DialogTitle className="text-[24px] tracking-[-0.03em]">{guide.name}</DialogTitle></DialogHeader>
+            <div className="grid min-h-0 flex-1 md:grid-cols-[280px_1fr]">
+              <ol className="hidden overflow-y-auto border-r bg-muted p-3 md:block">{guide.steps.map((item, index) => (
+                <li key={item.title}><button onClick={() => setStep(index)} className={cn('flex w-full items-start gap-3 rounded-md p-3 text-left text-[14px] transition-colors', step === index ? 'bg-card shadow-sm' : 'hover:bg-card/60')}>
+                  <span className={cn('grid h-6 w-6 shrink-0 place-items-center rounded-full text-[12px] font-semibold tnum transition-colors', index < step ? 'bg-ok text-white' : step === index ? 'bg-foreground text-background' : 'border bg-background')}>{index < step ? <Check className="h-3.5 w-3.5" /> : index + 1}</span>
+                  <span className={cn(step === index ? 'font-medium' : 'text-muted-foreground')}>{item.title}</span>
+                </button></li>
+              ))}</ol>
+              <div key={step} className="grid content-start gap-5 overflow-y-auto p-6 animate-in fade-in slide-in-from-right-2 duration-300 md:p-8">
+                <div className="h-1 overflow-hidden rounded-full bg-muted"><span className="block h-full rounded-full bg-foreground transition-[width] duration-500" style={{ width: `${((step + 1) / guide.steps.length) * 100}%` }} /></div>
+                <div><div className="text-[13px] text-muted-foreground tnum">Passo {step + 1} de {guide.steps.length}</div><h3 className="mt-1 text-[22px] font-semibold tracking-tight">{guide.steps[step].title}</h3><p className="mt-1 max-w-[70ch] text-[15px] text-muted-foreground">{guide.steps[step].text}</p></div>
+                <GuideShot kind={guide.steps[step].shot} />
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t bg-muted px-6 py-3">
+              <span className="text-[13px] text-muted-foreground">Travou? <a className="text-link hover:underline" href={whatsappLink(`Preciso de ajuda no guia ${guide.name}, passo ${step + 1}.`)} target="_blank" rel="noreferrer">Fale com a Groone no WhatsApp</a></span>
+              <div className="flex gap-2"><Button variant="outline" disabled={step === 0} onClick={() => setStep(step - 1)}>Voltar</Button>{step < guide.steps.length - 1 ? <Button onClick={() => setStep(step + 1)}>Próximo<ArrowRight className="h-4 w-4" /></Button> : <Button onClick={() => { setGuide(null); setStep(0); toast.success(`Guia ${guide.name} concluído`) }}><Check className="h-4 w-4" />Concluir</Button>}</div>
+            </div>
+          </>}
+        </DialogContent>
+      </Dialog>
       <NpsPrompt />
     </>
   )
