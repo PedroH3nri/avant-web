@@ -181,3 +181,16 @@ export interface GoogleAdsAlertSetting {
   connector: boolean
   email: boolean
 }
+
+/** A soma de todo o filtro numa moeda só, igual ao ``GoogleAdsSummaryOut`` da API. */
+export interface GoogleAdsSummary {
+  currency: string
+  spend: string
+  impressions: number
+  clicks: number
+  conversions: number
+  cpc: string | null
+  revenue: string | null
+  profit: string | null
+  roi: number | null
+}

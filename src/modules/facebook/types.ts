@@ -328,3 +328,15 @@ export interface FacebookMedia {
   kind: 'image' | 'video'
   ref: string
 }
+
+/** A soma de todo o filtro numa moeda só, igual ao ``FacebookSummaryOut`` da API. */
+export interface FacebookSummary {
+  currency: string
+  spend: string
+  impressions: number
+  link_clicks: number
+  cpc: string | null
+  revenue: string | null
+  profit: string | null
+  roi: number | null
+}
