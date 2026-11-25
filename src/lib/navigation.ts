@@ -2,7 +2,9 @@
 
 import { computed, type Component } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { BellRing, Building, Building2, ChartLine, CircleDollarSign, Code2, Coins, Eye, FileChartColumn, FileSignature, FileText, Gift, Globe, IdCard, LayoutDashboard, LayoutTemplate, ListChecks, ListTodo, LoaderCircle, MailCheck, Megaphone, Network, Plug, Receipt, ReceiptText, Scale, ShieldCheck, Target, Users, UsersRound, Wallet, Wrench } from 'lucide-vue-next'
+import { BellRing, Building, Building2, ChartLine, CircleDollarSign, Code2, Coins, Eye, FileChartColumn, FileSignature, FileText, Gift, Globe, IdCard, LayoutDashboard, LayoutTemplate, ListChecks, ListTodo, LoaderCircle, MailCheck, Network, Plug, Receipt, ReceiptText, Scale, ShieldCheck, Target, Users, UsersRound, Wallet, Wrench } from 'lucide-vue-next'
+import FacebookIcon from '@/components/FacebookIcon.vue'
+import GoogleAdsIcon from '@/components/GoogleAdsIcon.vue'
 import type { Key } from '@/lib/i18n'
 import { useSession } from '@/stores/session'
 
@@ -53,10 +55,10 @@ export const NAV_GROUPS: NavGroup[] = [
       { to: '/resultado', key: 'nav.results', icon: Scale },
       { to: '/interno/resultados', key: 'int.results', icon: Scale, internal: true },
       { to: '/interno/metas', key: 'goals.title', icon: Target, internal: true },
-      { to: '/campanhas-facebook', key: 'nav.facebookCampaigns', icon: Megaphone, clientOnly: true, separated: true },
-      { to: '/interno/campanhas-facebook', key: 'nav.facebookCampaigns', icon: Megaphone, internal: true, separated: true },
-      { to: '/campanhas-google-ads', key: 'nav.googleAdsCampaigns', icon: Megaphone, clientOnly: true },
-      { to: '/interno/campanhas-google-ads', key: 'nav.googleAdsCampaigns', icon: Megaphone, internal: true },
+      { to: '/campanhas-facebook', key: 'nav.facebookCampaigns', icon: FacebookIcon, clientOnly: true, separated: true },
+      { to: '/interno/campanhas-facebook', key: 'nav.facebookCampaigns', icon: FacebookIcon, internal: true, separated: true },
+      { to: '/campanhas-google-ads', key: 'nav.googleAdsCampaigns', icon: GoogleAdsIcon, clientOnly: true },
+      { to: '/interno/campanhas-google-ads', key: 'nav.googleAdsCampaigns', icon: GoogleAdsIcon, internal: true },
       { to: '/relatorios', key: 'nav.customReports', icon: FileChartColumn, separated: true },
     ],
   },
@@ -66,10 +68,10 @@ export const NAV_GROUPS: NavGroup[] = [
     label: 'nav.groupIntegrations',
     icon: Plug,
     items: [
-      { to: '/facebook', key: 'nav.facebook', icon: Megaphone, clientOnly: true },
-      { to: '/interno/facebook', key: 'nav.facebook', icon: Megaphone, internal: true },
-      { to: '/google-ads', key: 'nav.googleAds', icon: Megaphone, clientOnly: true },
-      { to: '/interno/google-ads', key: 'nav.googleAds', icon: Megaphone, internal: true },
+      { to: '/facebook', key: 'nav.facebook', icon: FacebookIcon, clientOnly: true },
+      { to: '/interno/facebook', key: 'nav.facebook', icon: FacebookIcon, internal: true },
+      { to: '/google-ads', key: 'nav.googleAds', icon: GoogleAdsIcon, clientOnly: true },
+      { to: '/interno/google-ads', key: 'nav.googleAds', icon: GoogleAdsIcon, internal: true },
     ],
   },
   {

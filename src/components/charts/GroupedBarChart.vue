@@ -18,12 +18,12 @@ const props = withDefaults(
 const box = useTemplateRef<HTMLDivElement>('box')
 const { width } = useElementSize(box)
 const legend = useTemplateRef<HTMLDivElement>('legend')
-const { height: legendHeight } = useElementSize(legend)
+const { height: legendHeight } = useElementSize(legend, undefined, { box: 'border-box' })
 const hovered = ref<number | null>(null)
 const padding = { top: 12, right: 12, bottom: 28, left: 64 }
 const chartWidth = computed(() => Math.max(width.value, 240))
 const plotWidth = computed(() => chartWidth.value - padding.left - padding.right)
-const svgHeight = computed(() => (props.fillHeight ? Math.max(140, Math.floor(props.fillHeight - (legendHeight.value + 12))) : props.height))
+const svgHeight = computed(() => (props.fillHeight ? Math.max(140, Math.floor(props.fillHeight - legendHeight.value)) : props.height))
 const plotHeight = computed(() => svgHeight.value - padding.top - padding.bottom)
 const ticks = computed(() => niceTicks(Math.max(0, ...props.series.flatMap((line) => line.values).filter((value): value is number => value !== null))))
 const top = computed(() => ticks.value[ticks.value.length - 1] || 1)
@@ -38,7 +38,7 @@ const xOf = (index: number, seriesIndex: number) => padding.left + index * group
 
 <template>
   <div ref="box" class="relative w-full">
-    <div ref="legend" class="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-muted-foreground">
+    <div ref="legend" class="flex pb-3 flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-muted-foreground">
       <span v-for="line in series" :key="line.key" class="flex items-center gap-1.5">
         <span class="h-2.5 w-2.5 rounded-sm bg-foreground" :style="{ background: line.color }" aria-hidden="true" />{{ line.name }}
       </span>
@@ -77,14 +77,16 @@ const xOf = (index: number, seriesIndex: number) => padding.left + index * group
         <span class="tnum">{{ format(line.values[hovered] ?? null) }}</span>
       </div>
     </div>
-    <table class="sr-only">
-      <caption>{{ description }}</caption>
-      <tbody>
-        <tr v-for="(label, index) in labels" :key="label">
-          <th scope="row">{{ label }}</th>
-          <td v-for="line in series" :key="line.key">{{ line.name }}: {{ format(line.values[index] ?? null) }}</td>
-        </tr>
-      </tbody>
-    </table>
+    <div class="sr-only">
+      <table>
+        <caption>{{ description }}</caption>
+        <tbody>
+          <tr v-for="(label, index) in labels" :key="label">
+            <th scope="row">{{ label }}</th>
+            <td v-for="line in series" :key="line.key">{{ line.name }}: {{ format(line.values[index] ?? null) }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </template>
