@@ -1,6 +1,11 @@
 <script setup lang="ts">
 /** Campanhas, conjuntos e anúncios do Facebook com gasto, receita, lucro e ROI do período; no interno, de todos os clientes.
  * Quem gerencia campanhas liga ou pausa um por um ou vários de uma vez. */
+import StatTile from '@/components/StatTile.vue'
+import DateRangePicker from '@/components/ui/DateRangePicker.vue'
+import { todayIso } from '@/lib/dates'
+import { periodFromQuery, periodPresets, periodQuery, type PeriodValue } from '@/lib/periods'
+import OpenLink from '@/components/OpenLink.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useDebounceFn } from '@vueuse/core'
@@ -13,20 +18,29 @@ import Button from '@/components/ui/Button.vue'
 import Checkbox from '@/components/ui/Checkbox.vue'
 import DataTable from '@/components/ui/DataTable.vue'
 import Input from '@/components/ui/Input.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import Pagination from '@/components/ui/Pagination.vue'
 import Segmented from '@/components/ui/Segmented.vue'
 import Status from '@/components/ui/Status.vue'
 import Switch from '@/components/ui/Switch.vue'
 import TableState from '@/components/ui/TableState.vue'
-import { ApiError } from '@/lib/api'
+import { ApiError, type Query } from '@/lib/api'
 import { errorText, locale, t, type Key } from '@/lib/i18n'
+import FiltersMenu from '@/modules/views/components/FiltersMenu.vue'
+import { useLocalBarFilters } from '@/modules/views/barFilters'
 import { td, th } from '@/lib/table'
 import { clientService } from '@/modules/internal/clients/service'
-import { PERIODS, campaignsPath, childLevel, controlErrorText, formatCount, formatMoney, formatRatio, objectState, periodRange } from '@/modules/facebook/rules'
+import { ADS_MAX_DAYS, ADS_PRESETS, campaignsPath, childLevel, controlErrorText, formatCount, formatMoney, formatRatio, objectState, roiTone } from '@/modules/facebook/rules'
 import { facebookReader, facebookService } from '@/modules/facebook/service'
 import { useSession } from '@/stores/session'
-import type { FacebookAccount, FacebookLevel, FacebookObject } from '@/modules/facebook/types'
+import type { FacebookAccount, FacebookLevel, FacebookObject, FacebookSummary } from '@/modules/facebook/types'
+
+const FILTERS = ['client', 'in_review']
+const DEFAULT_FILTERS = ['client', 'in_review']
+const FILTER_LABELS: Record<string, Key> = {
+  client: 'fb.col.client',
+  in_review: 'fb.inReview',
+}
 
 const route = useRoute()
 const router = useRouter()
@@ -42,9 +56,17 @@ const level = ref<FacebookLevel>('campaign')
 const parent = ref<{ id: string; name: string; level: FacebookLevel } | null>(null)
 const accountId = ref(typeof route.query.conta === 'string' ? route.query.conta : '')
 const companyId = ref('')
-const days = ref('7')
+const period = ref<PeriodValue>(periodFromQuery(route.query, ADS_PRESETS, 'last_7_days', todayIso(), true))
 const query = ref('')
 const inReview = ref(false)
+const barFilters = useLocalBarFilters('fb-campaigns', FILTERS, DEFAULT_FILTERS, {
+  client: () => (companyId.value = ''),
+  in_review: () => (inReview.value = false),
+})
+/** O nome do filtro no menu de filtros. */
+const filterLabel = (filter: string) => t(FILTER_LABELS[filter] as Key)
+/** Os filtros que a pessoa pode pôr na barra: cliente só no painel interno. */
+const availableFilters = FILTERS.filter((key) => key !== 'client' || internal)
 const items = ref<FacebookObject[] | null>(null)
 const accounts = ref<FacebookAccount[]>([])
 const clients = ref<{ id: string; name: string }[]>([])
@@ -52,13 +74,16 @@ const page = ref(1)
 const total = ref(0)
 const pages = ref(0)
 const loadError = ref<string | null>(null)
+const summary = ref<FacebookSummary | null>(null)
+let summaryKey = ''
+let summaryTicket = 0
 
 const levelOptions = computed(() => [
   { value: 'campaign', label: t('fb.level.campaign') },
   { value: 'adset', label: t('fb.level.adset') },
   { value: 'ad', label: t('fb.level.ad') },
 ])
-const periodOptions = computed(() => PERIODS.map((count) => ({ value: String(count), label: t('fb.period.days', { n: count }) })))
+const presets = computed(() => periodPresets(ADS_PRESETS, todayIso(), true))
 const accountOptions = computed(() => [{ value: '', label: t('fb.allAccounts') }, ...accounts.value.map((account) => ({ value: account.id, label: account.name }))])
 const clientOptions = computed(() => [{ value: '', label: t('fb.allClients') }, ...clients.value.map((client) => ({ value: client.id, label: client.name }))])
 const columns = computed(() => (internal ? 10 : canManage.value ? 11 : 9))
@@ -73,16 +98,18 @@ function clientName(id: string): string {
 async function load() {
   loadError.value = null
   try {
-    const found = await reader.objects({
-      ...periodRange(Number(days.value), new Date()),
+    const filters = {
+      from: period.value.start,
+      to: period.value.end,
       level: level.value,
       parent: parent.value?.id,
       account_id: accountId.value || undefined,
       company_id: internal ? companyId.value || undefined : undefined,
       in_review: inReview.value || undefined,
       q: query.value.trim() || undefined,
-      page: page.value,
-    })
+    }
+    void loadSummary(filters)
+    const found = await reader.objects({ ...filters, page: page.value })
     items.value = found.items
     selected.value = []
     total.value = found.total
@@ -91,6 +118,35 @@ async function load() {
     loadError.value = errorText(error instanceof ApiError ? error.code : 'unknown')
   }
 }
+
+/** Busca a soma de todo o filtro quando ele muda (trocar de página não muda a soma); só a última resposta vale. */
+async function loadSummary(filters: Query) {
+  const key = JSON.stringify(filters)
+  if (key === summaryKey) return
+  summaryKey = key
+  const ticket = ++summaryTicket
+  summary.value = null
+  try {
+    const found = await reader.summary({ ...filters, currency: session.displayCurrency })
+    if (ticket === summaryTicket) summary.value = found
+  } catch {
+    if (ticket === summaryTicket) summaryKey = ''
+  }
+}
+
+/** Os cards com a soma de todo o filtro, na ordem das colunas da tabela. */
+const tiles = computed(() => {
+  const found = summary.value
+  if (!found) return []
+  return [
+    { key: 'spend', label: 'fb.metric.spend', text: formatMoney(found.spend, found.currency, locale.value), tone: '' },
+    { key: 'link_clicks', label: 'fb.metric.linkClicks', text: formatCount(found.link_clicks, locale.value), tone: '' },
+    { key: 'cpc', label: 'fb.metric.cpc', text: formatMoney(found.cpc, found.currency, locale.value), tone: '' },
+    { key: 'revenue', label: 'fb.metric.revenue', text: formatMoney(found.revenue, found.currency, locale.value), tone: '' },
+    { key: 'profit', label: 'fb.metric.profit', text: formatMoney(found.profit, found.currency, locale.value), tone: Number(found.profit) < 0 ? 'text-bad' : '' },
+    { key: 'roi', label: 'fb.metric.roi', text: formatRatio(found.roi, locale.value), tone: roiTone(found.roi) },
+  ]
+})
 
 /** Volta para a primeira página quando um filtro muda. */
 function refilter() {
@@ -104,7 +160,7 @@ const searchLater = useDebounceFn(refilter, 300)
 function open(item: FacebookObject) {
   const next = childLevel(item.level)
   if (!next) {
-    void router.push({ path: `${base}/${item.external_id}`, query: { dias: days.value } })
+    void router.push({ path: `${base}/${item.external_id}`, query: periodQuery(period.value) })
     return
   }
   parent.value = { id: item.external_id, name: item.name, level: item.level }
@@ -115,11 +171,6 @@ function open(item: FacebookObject) {
 function pickLevel(value: string) {
   parent.value = null
   level.value = value as FacebookLevel
-}
-
-/** Abre o detalhe com os números por dia e por país. */
-function details(item: FacebookObject) {
-  void router.push({ path: `${base}/${item.external_id}`, query: { dias: days.value } })
 }
 
 /** Marca ou desmarca um item para a ação em lote. */
@@ -154,11 +205,11 @@ async function setStatus(externalIds: string[], active: boolean) {
 onMounted(() => {
   void load()
   void reader.accounts().then((found) => (accounts.value = found)).catch(() => undefined)
-  if (internal) void clientService.options().then((found) => (clients.value = found.items)).catch(() => undefined)
+  if (internal) void clientService.companyOptions().then((found) => (clients.value = found.items)).catch(() => undefined)
 })
 watch(page, load)
 watch(query, searchLater)
-watch([level, parent, accountId, companyId, days, inReview], refilter)
+watch([level, parent, accountId, companyId, period, inReview], refilter)
 </script>
 
 <template>
@@ -170,14 +221,15 @@ watch([level, parent, accountId, companyId, days, inReview], refilter)
   <PageBody>
     <div class="flex flex-wrap items-center gap-3">
       <Segmented :model-value="level" :label="t('fb.level')" :options="levelOptions" @update:model-value="pickLevel" />
-      <NativeSelect v-model="days" :aria-label="t('fb.period')" class="w-full sm:w-[160px]" :options="periodOptions" />
-      <NativeSelect v-if="internal" v-model="companyId" :aria-label="t('fb.col.client')" class="w-full sm:w-[220px]" :options="clientOptions" />
-      <NativeSelect v-model="accountId" :aria-label="t('fb.account')" class="w-full sm:w-[220px]" :options="accountOptions" />
+      <DateRangePicker v-model="period" :presets="presets" :max-days="ADS_MAX_DAYS" :aria-label="t('fb.period')" class="w-full sm:w-auto" />
+      <Select v-if="internal && barFilters.isShown('client')" v-model="companyId" :aria-label="t('fb.col.client')" class="w-full sm:w-[220px]" :options="clientOptions" />
+      <Select v-model="accountId" :aria-label="t('fb.account')" class="w-full sm:w-[220px]" :options="accountOptions" />
       <div class="relative w-full sm:w-[240px]">
         <Search class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
         <Input v-model="query" :aria-label="t('fb.search')" class="h-9 bg-card pl-9" :placeholder="t('fb.searchPlaceholder')" />
       </div>
-      <Checkbox id="fb-in-review" v-model="inReview" :label="t('fb.inReview')" />
+      <Checkbox v-if="barFilters.isShown('in_review')" id="fb-in-review" v-model="inReview" :label="t('fb.inReview')" />
+      <FiltersMenu v-model:shown="barFilters.shown.value" :filters="availableFilters" :label="filterLabel" />
     </div>
     <p v-if="parent" class="flex flex-wrap items-center gap-1 text-[14px]">
       <button type="button" class="text-muted-foreground hover:text-foreground hover:underline" @click="pickLevel(parent.level)">{{ t(`fb.levelPlural.${parent.level}` as Key) }}</button>
@@ -189,6 +241,9 @@ watch([level, parent, accountId, companyId, days, inReview], refilter)
       <Button size="sm" variant="outline" :disabled="switching" @click="setStatus(selected, true)">{{ t('fb.control.activate') }}</Button>
       <Button size="sm" variant="outline" :disabled="switching" @click="setStatus(selected, false)">{{ t('fb.control.pause') }}</Button>
       <Button size="sm" variant="ghost" @click="pickAll(false)">{{ t('fb.control.clear') }}</Button>
+    </div>
+    <div v-if="!loadError && tiles.length" class="grid grid-cols-2 gap-px overflow-hidden rounded-lg border bg-border md:grid-cols-3 xl:grid-cols-6">
+      <StatTile v-for="tile in tiles" :key="tile.key" :label="t(tile.label as Key)" :value="tile.text" :tone="tile.tone" />
     </div>
     <LoadError v-if="loadError" :message="loadError" @retry="load" />
     <DataTable v-else :min="internal ? 1240 : canManage ? 1240 : 1120">
@@ -227,12 +282,12 @@ watch([level, parent, accountId, companyId, days, inReview], refilter)
           <td :class="[td, 'text-right tnum']">{{ formatMoney(item.totals.cpc, item.account.currency, locale) }}</td>
           <td :class="[td, 'text-right tnum']">{{ formatMoney(item.totals.revenue, item.account.currency, locale) }}</td>
           <td :class="[td, 'text-right tnum', Number(item.totals.profit) < 0 ? 'text-bad' : '']">{{ formatMoney(item.totals.profit, item.account.currency, locale) }}</td>
-          <td :class="[td, 'text-right tnum']">{{ formatRatio(item.totals.roi, locale) }}</td>
+          <td :class="[td, 'text-right tnum', roiTone(item.totals.roi)]">{{ formatRatio(item.totals.roi, locale) }}</td>
           <td v-if="canManage" :class="td">
             <Switch :model-value="item.active" :label="t('fb.control.toggle', { name: item.name })" :disabled="switching" @update:model-value="(active) => setStatus([item.external_id], active)" />
           </td>
           <td :class="[td, 'text-right']">
-            <button type="button" class="text-[13px] text-link hover:underline" @click="details(item)">{{ t('fb.details') }}</button>
+            <OpenLink :to="{ path: `${base}/${item.external_id}`, query: periodQuery(period) }" :name="item.name" />
           </td>
         </tr>
       </tbody>

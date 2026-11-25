@@ -8,7 +8,7 @@ import Button from '@/components/ui/Button.vue'
 import Card from '@/components/ui/Card.vue'
 import Dialog from '@/components/ui/Dialog.vue'
 import Field from '@/components/ui/Field.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import { ApiError } from '@/lib/api'
 import { errorText, pick, t, tn, type Key } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
@@ -125,7 +125,7 @@ async function save() {
   >
     <div class="grid gap-4">
       <Field id="account-manager" :label="t('com.manager.pick')">
-        <NativeSelect id="account-manager" v-model="picked" :options="[{ value: '', label: t('com.manager.choose') }, ...options]" />
+        <Select id="account-manager" v-model="picked" :options="[{ value: '', label: t('com.manager.choose') }, ...options]" />
       </Field>
       <div v-if="changeLines.length" :class="cn('flex gap-3 rounded-md border p-3 text-[13px]', warns ? 'border-ochre/40 bg-ochre-soft' : 'bg-muted')">
         <Info :class="cn('mt-0.5 size-4 shrink-0', warns ? 'text-ochre' : 'text-muted-foreground')" aria-hidden="true" />

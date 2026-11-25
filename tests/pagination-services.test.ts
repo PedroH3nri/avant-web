@@ -86,16 +86,16 @@ describe('custos e relatórios em páginas', () => {
 describe('clientes do painel interno em páginas', () => {
   afterEach(() => vi.restoreAllMocks())
 
-  it('pede a página dos clientes, equipes, convites de dono e auditoria', async () => {
+  it('pede a página dos clientes, os grupos de um cliente, convites de dono e auditoria', async () => {
     const get = vi.spyOn(api, 'get').mockResolvedValue({ items: [], total: 0, page: 1, pages: 0, page_size: 10 })
     await clientService.list({ page: 2, status: 'active' })
-    await clientService.teams({ page: 3 })
+    await clientService.groups('c3')
     await clientService.ownerInvitations({ page: 4 })
     await clientService.audit('c1', { page: 5 })
     await clientService.options()
     expect(get.mock.calls.map((call) => [call[0], call[1]])).toEqual([
       ['/internal/clients', { page: 2, status: 'active' }],
-      ['/internal/teams', { page: 3 }],
+      ['/internal/clients/c3/groups', undefined],
       ['/internal/owner-invitations', { page: 4 }],
       ['/internal/clients/c1/audit', { page: 5 }],
       ['/internal/clients/options', undefined],
@@ -122,5 +122,21 @@ describe('listas do painel interno em páginas', () => {
       ['/internal/goal-templates', { page: 6 }],
       ['/internal/goal-templates/options', undefined],
     ])
+  })
+})
+
+describe('clientes com Empresa nos seletores', () => {
+  afterEach(() => vi.restoreAllMocks())
+
+  it('troca o id do cliente pelo da Empresa e deixa de fora quem ainda não criou', async () => {
+    vi.spyOn(api, 'get').mockResolvedValue({
+      items: [
+        { id: 'cl1', name: 'Alfa', status: 'active', company_id: 'co1' },
+        { id: 'cl2', name: 'Beta', status: 'pending', company_id: null },
+      ],
+      next_cursor: null,
+    })
+    const found = await clientService.companyOptions()
+    expect(found.items).toEqual([{ id: 'co1', name: 'Alfa', status: 'active', company_id: 'co1' }])
   })
 })

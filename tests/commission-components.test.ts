@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
+import { chooseOption } from './select-helper'
 import { lang } from '@/lib/i18n'
 import type { ClientDetail } from '@/modules/internal/clients/types'
 import type { PersonMonth } from '@/modules/internal/commissions/types'
@@ -58,14 +59,12 @@ describe('card do responsável Groone', () => {
     await flushPromises()
     await card.get('button').trigger('click')
     await flushPromises()
-    const select = document.querySelector<HTMLSelectElement>('#account-manager')!
-    select.value = 'caio'
-    select.dispatchEvent(new Event('change'))
+    const select = document.querySelector('#account-manager')!
+    await chooseOption(select, 'caio')
     await flushPromises()
     expect(document.body.textContent).toContain('1 prazo aberto para hoje')
     expect(document.body.textContent).toContain('2 prazos sem responsável passam para Caio')
-    select.value = 'bia'
-    select.dispatchEvent(new Event('change'))
+    await chooseOption(select, 'bia')
     await flushPromises()
     expect(document.body.textContent).toContain('continua com Bia')
   })
@@ -77,9 +76,8 @@ describe('card do responsável Groone', () => {
     await flushPromises()
     await card.get('button').trigger('click')
     await flushPromises()
-    const select = document.querySelector<HTMLSelectElement>('#account-manager')!
-    select.value = 'bia'
-    select.dispatchEvent(new Event('change'))
+    const select = document.querySelector('#account-manager')!
+    await chooseOption(select, 'bia')
     await flushPromises()
     const text = document.body.textContent ?? ''
     expect(text).toContain('1 prazo aberto continua com Bia')
@@ -95,9 +93,8 @@ describe('card do responsável Groone', () => {
     await flushPromises()
     await card.get('button').trigger('click')
     await flushPromises()
-    const select = document.querySelector<HTMLSelectElement>('#account-manager')!
-    select.value = 'caio'
-    select.dispatchEvent(new Event('change'))
+    const select = document.querySelector('#account-manager')!
+    await chooseOption(select, 'caio')
     await flushPromises()
     expect(document.querySelector('#account-manager')).not.toBeNull()
     expect(document.body.textContent).not.toContain('não muda comissão')

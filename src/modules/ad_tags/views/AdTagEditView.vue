@@ -9,6 +9,7 @@ import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import LoadError from '@/components/LoadError.vue'
 import PageBody from '@/components/PageBody.vue'
 import PageHeader from '@/components/PageHeader.vue'
+import InstallCheckCell from '@/modules/install_checks/components/InstallCheckCell.vue'
 import Badge from '@/components/ui/Badge.vue'
 import Button from '@/components/ui/Button.vue'
 import Card from '@/components/ui/Card.vue'
@@ -19,13 +20,14 @@ import Field from '@/components/ui/Field.vue'
 import Input from '@/components/ui/Input.vue'
 import MenuContent from '@/components/ui/MenuContent.vue'
 import MenuItem from '@/components/ui/MenuItem.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import Status from '@/components/ui/Status.vue'
 import { ApiError } from '@/lib/api'
 import { errorText, formatDate, lang, locale, t, tn } from '@/lib/i18n'
 import { td, th } from '@/lib/table'
 import AdTagBlockCard from '@/modules/ad_tags/components/AdTagBlockCard.vue'
 import AdTagChoice from '@/modules/ad_tags/components/AdTagChoice.vue'
+import AdTagIntegrationCard from '@/modules/ad_tags/components/AdTagIntegrationCard.vue'
 import AdTagInstallDialog from '@/modules/ad_tags/components/AdTagInstallDialog.vue'
 import AdTagPreview from '@/modules/ad_tags/components/AdTagPreview.vue'
 import {
@@ -50,6 +52,7 @@ import { ADBLOCK_SHORT, inputOf, loadersPath, previewLoader, TEMPLATE_LABEL, typ
 import { loaderService } from '@/modules/loaders/service'
 import type { LoaderOption } from '@/modules/loaders/types'
 import { dayText } from '@/modules/rewards/rules'
+import { PAGE_WIDTH } from '@/lib/layout'
 import { useSession } from '@/stores/session'
 
 type Tab = 'blocks' | 'integrations' | 'versions'
@@ -437,6 +440,7 @@ async function goToLoader(loaderId: string | null) {
       <RouterLink :to="base" class="mb-3 inline-flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-foreground"><ArrowLeft class="size-4" />{{ t('at.back') }}</RouterLink>
     </template>
     <template v-if="tag" #actions>
+      <InstallCheckCell v-if="tag.live" target="ad_tag" :id="tag.id" :name="tag.name" :internal="internal" large />
       <Button v-if="tag.live" variant="outline" @click="router.push(`${base}/${tagId}/metricas`)"><BarChart3 />{{ t('at.metrics') }}</Button>
       <Button variant="outline" @click="installOpen = true"><Code2 />{{ t('at.install') }}</Button>
       <Button v-if="canManage" :disabled="!canPublish" :title="blocking ? t('at.publishBlocked') : undefined" @click="publishOpen = true">
@@ -456,7 +460,7 @@ async function goToLoader(loaderId: string | null) {
     </template>
   </PageHeader>
   <div v-if="tag && draft" class="sticky top-0 z-20 border-b bg-background">
-    <div class="mx-auto flex max-w-[1200px] flex-wrap items-center gap-x-6 gap-y-2 px-4 sm:px-6">
+    <div :class="PAGE_WIDTH" class="mx-auto flex flex-wrap items-center gap-x-6 gap-y-2 px-4 sm:px-6">
       <nav class="-mb-px flex max-w-full gap-1 overflow-x-auto" :aria-label="t('at.tabs')">
         <button
           v-for="item in ['blocks', 'integrations', 'versions'] as const"
@@ -484,7 +488,7 @@ async function goToLoader(loaderId: string | null) {
       <div v-if="!tag.active" class="flex items-start gap-2 rounded-md border border-ochre/40 bg-ochre-soft px-3 py-2 text-[13px] text-ochre">
         <AlertTriangle class="mt-0.5 size-4 shrink-0" />{{ t('at.pausedNote') }}
       </div>
-      <div v-if="tab === 'blocks'" class="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,400px)_minmax(0,1fr)]">
+      <div v-if="tab === 'blocks'" class="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-2">
         <div class="grid grid-cols-[minmax(0,1fr)] content-start gap-3">
           <div class="flex flex-wrap items-center justify-between gap-2">
             <h2 class="text-[15px] font-semibold">
@@ -588,11 +592,12 @@ async function goToLoader(loaderId: string | null) {
             </Field>
             <Checkbox id="at-lazy" :model-value="settings.lazy_load" :label="t('at.lazyLoad')" :hint="t('at.lazyLoadHint')" @update:model-value="(value) => changeSettings({ lazy_load: value })" />
             <Field id="at-day" :label="t('at.adUnits')" :hint="dayHint" :error="!day && settings.ad_unit_day ? t('at.adUnitsGone') : null">
-              <NativeSelect id="at-day" :model-value="settings.ad_unit_day ?? ''" :options="dayOptions" @update:model-value="(value) => changeSettings({ ad_unit_day: value || null })" />
+              <Select id="at-day" :model-value="settings.ad_unit_day ?? ''" :options="dayOptions" @update:model-value="(value) => changeSettings({ ad_unit_day: value || null })" />
             </Field>
           </div>
         </Card>
-        <Card :title="t('at.analytics')" :desc="t('at.analyticsDesc')">
+        <div class="grid content-start gap-6">
+        <AdTagIntegrationCard kind="analytics" :title="t('at.analytics')" :desc="t('at.analyticsDesc')" :on="!!settings.analytics_id">
           <Field id="at-ga" :label="t('at.analyticsId')" :error="integrationProblem === 'at.problem.analytics' && t('at.problem.analytics')">
             <Input
               id="at-ga"
@@ -603,8 +608,8 @@ async function goToLoader(loaderId: string | null) {
               @update:model-value="(value) => changeSettings({ analytics_id: String(value).toUpperCase() })"
             />
           </Field>
-        </Card>
-        <Card :title="t('at.mgid')" :desc="t('at.mgidDesc')">
+        </AdTagIntegrationCard>
+        <AdTagIntegrationCard kind="mgid" :title="t('at.mgid')" :desc="t('at.mgidDesc')" :on="!!settings.mgid_tag_id">
           <div class="grid gap-4 sm:grid-cols-2">
             <Field
               v-for="[key, label] in [['mgid_tag_id', 'at.mgid.tag'], ['mgid_smart_widget', 'at.mgid.smart'], ['mgid_back_button', 'at.mgid.back'], ['mgid_sidebar', 'at.mgid.sidebar']] as const"
@@ -624,8 +629,9 @@ async function goToLoader(loaderId: string | null) {
             </Field>
           </div>
           <p v-if="integrationProblem === 'at.problem.mgid'" class="mt-3 text-[13px] text-bad">{{ t('at.problem.mgid') }}</p>
-        </Card>
-        <Card :title="t('at.loader')" :desc="t('at.loaderDesc')">
+        </AdTagIntegrationCard>
+        </div>
+        <AdTagIntegrationCard kind="loader" :title="t('at.loader')" :desc="t('at.loaderDesc')" :on="!!settings.loader_id">
           <AdTagChoice :model-value="settings.loader_id ?? ''" :label="t('at.loader')" :options="loaderChoices" @update:model-value="(value) => changeSettings({ loader_id: value || null })" />
           <p v-if="loaderConfig" class="mt-3 text-[12px] text-muted-foreground">{{ t('at.loaderSummary', { seconds: loaderConfig.max_seconds, adblock: t(ADBLOCK_SHORT[loaderConfig.adblock]) }) }}</p>
           <div class="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[13px]">
@@ -640,8 +646,8 @@ async function goToLoader(loaderId: string | null) {
             <button v-if="settings.loader_id" type="button" class="text-link hover:underline" @click="goToLoader(settings.loader_id)">{{ t('at.loaderEdit') }}</button>
             <button v-if="canManage" type="button" class="text-link hover:underline" @click="goToLoader(null)">{{ t('at.loaderCreate') }}</button>
           </div>
-        </Card>
-        <Card :title="t('at.reward')" :desc="t('at.rewardDesc', { domain: tag.domain })">
+        </AdTagIntegrationCard>
+        <AdTagIntegrationCard kind="reward" :title="t('at.reward')" :desc="t('at.rewardDesc', { domain: tag.domain })" :on="settings.reward">
           <AdTagChoice
             :model-value="settings.reward ? 'on' : 'off'"
             :label="t('at.reward')"
@@ -651,8 +657,8 @@ async function goToLoader(loaderId: string | null) {
             ]"
             @update:model-value="(value) => changeSettings({ reward: value === 'on' })"
           />
-        </Card>
-        <Card :title="t('at.priceRules')" :desc="t('at.priceRulesDesc')">
+        </AdTagIntegrationCard>
+        <AdTagIntegrationCard kind="priceRules" :title="t('at.priceRules')" :desc="t('at.priceRulesDesc')" :on="settings.price_rules">
           <AdTagChoice
             :model-value="settings.price_rules ? 'on' : 'off'"
             :label="t('at.priceRules')"
@@ -663,7 +669,7 @@ async function goToLoader(loaderId: string | null) {
             @update:model-value="(value) => changeSettings({ price_rules: value === 'on' })"
           />
           <p class="mt-3 text-[12px] text-muted-foreground">{{ t('at.priceRulesLater') }}</p>
-        </Card>
+        </AdTagIntegrationCard>
       </fieldset>
       <DataTable v-else :min="720">
         <thead>

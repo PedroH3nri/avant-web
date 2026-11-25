@@ -7,8 +7,8 @@ describe('cadastro de cliente', () => {
     const profile = { ...emptyProfile(), first_name: 'Ana', last_name: 'Souza', email: 'ana@portal.com' }
     expect(profileOk(profile)).toBe(true)
     expect(profileOk({ ...profile, email: 'sem-arroba' })).toBe(false)
-    expect(profileOk({ ...profile, referred_by_company_id: 'x', referral_percentage: '150' })).toBe(false)
-    expect(profileOk({ ...profile, referred_by_company_id: 'x', referral_percentage: '3,5' })).toBe(true)
+    expect(profileOk({ ...profile, referred_by_client_id: 'x', referral_percentage: '150' })).toBe(false)
+    expect(profileOk({ ...profile, referred_by_client_id: 'x', referral_percentage: '3,5' })).toBe(true)
     expect(percentageOk('0')).toBe(false)
     expect(percentageOk('2')).toBe(true)
   })
@@ -20,7 +20,7 @@ describe('cadastro de cliente', () => {
     expect(body.referral_percentage).toBeNull()
     expect(body.phone_ddi).toBeNull()
     expect(body.notes).toBeNull()
-    expect(profileBody({ ...profile, referred_by_company_id: 'x', referral_percentage: '3,5' }).referral_percentage).toBe('3.5')
+    expect(profileBody({ ...profile, referred_by_client_id: 'x', referral_percentage: '3,5' }).referral_percentage).toBe('3.5')
   })
 
   it('tem os 84 tipos de documento do Genius', () => {

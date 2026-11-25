@@ -8,11 +8,12 @@ import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import LoadError from '@/components/LoadError.vue'
 import PageBody from '@/components/PageBody.vue'
 import PageHeader from '@/components/PageHeader.vue'
+import InstallCheckCell from '@/modules/install_checks/components/InstallCheckCell.vue'
 import Button from '@/components/ui/Button.vue'
 import Card from '@/components/ui/Card.vue'
 import Field from '@/components/ui/Field.vue'
 import Input from '@/components/ui/Input.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import { ApiError } from '@/lib/api'
 import { errorText, lang, t, type Key } from '@/lib/i18n'
 import { clientService } from '@/modules/internal/clients/service'
@@ -95,7 +96,7 @@ async function load() {
       input.value = inputOf(loader)
     } else {
       input.value = blankInput(internal ? '' : undefined)
-      if (internal) clients.value = (await clientService.options()).items
+      if (internal) clients.value = (await clientService.companyOptions()).items
     }
   } catch (error) {
     loadError.value = errorText(error instanceof ApiError ? error.code : 'unknown')
@@ -206,16 +207,17 @@ const segment = (selected: boolean) => ['h-8 rounded px-3 text-[13px] font-mediu
         <ArrowLeft class="size-4" />{{ t('nav.loaders') }}
       </RouterLink>
     </template>
-    <template v-if="input && canManage" #actions>
-      <Button v-if="loaderId" variant="outline" :disabled="busy || usedBy.length > 0" :title="usedBy.length ? t('ld.deleteInUse') : undefined" @click="removeOpen = true">
+    <template v-if="input && (canManage || loaderId)" #actions>
+      <InstallCheckCell v-if="loaderId && original" target="loader" :id="loaderId" :name="original.name" :internal="internal" large />
+      <Button v-if="loaderId && canManage" variant="outline" :disabled="busy || usedBy.length > 0" :title="usedBy.length ? t('ld.deleteInUse') : undefined" @click="removeOpen = true">
         <Trash2 />{{ t('common.delete') }}
       </Button>
-      <Button :disabled="busy" @click="save">{{ loaderId ? t('common.save') : t('ld.create') }}</Button>
+      <Button v-if="canManage" :disabled="busy" @click="save">{{ loaderId ? t('common.save') : t('ld.create') }}</Button>
     </template>
   </PageHeader>
   <PageBody>
     <LoadError v-if="loadError" :message="loadError" @retry="load" />
-    <div v-else-if="input && preview" class="grid gap-6 lg:grid-cols-[minmax(0,440px)_minmax(0,1fr)]">
+    <div v-else-if="input && preview" class="grid gap-6 lg:grid-cols-2">
       <fieldset class="grid min-w-0 content-start gap-6" :disabled="!canManage">
         <Card :title="t('ld.card.loader')">
           <div class="grid gap-4">
@@ -223,7 +225,7 @@ const segment = (selected: boolean) => ['h-8 rounded px-3 text-[13px] font-mediu
               <Input id="ld-name" v-model="input.name" :maxlength="LIMITS.name" :placeholder="t('ld.namePlaceholder')" :invalid="!!problem('name')" />
             </Field>
             <Field v-if="internal && !loaderId" id="ld-client" :label="t('ld.col.client')" :error="problem('company', 'ld.clientRequired')">
-              <NativeSelect id="ld-client" v-model="input.company_id" :options="clientOptions" />
+              <Select id="ld-client" v-model="input.company_id" :options="clientOptions" />
             </Field>
             <div class="grid gap-2">
               <p class="text-[13px] font-medium">{{ t('ld.col.template') }}</p>

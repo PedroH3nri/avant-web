@@ -9,11 +9,11 @@ const button = cva(
   {
     variants: {
       variant: {
-        default: 'bg-primary text-primary-foreground shadow-[inset_0_0_0_1px_hsl(var(--primary-edge))] hover:bg-primary/90',
-        outline: 'border bg-background hover:bg-accent',
+        default: 'btn-motion bg-primary text-primary-foreground shadow-[inset_0_0_0_1px_hsl(var(--primary-edge))] hover:bg-primary/90',
+        outline: 'btn-motion border bg-[hsl(var(--field))] hover:bg-accent',
         ghost: 'hover:bg-accent',
         destructive: 'text-bad hover:bg-bad-soft',
-        danger: 'bg-bad text-white hover:bg-bad/90',
+        danger: 'btn-motion bg-bad text-white hover:bg-bad/90',
         link: 'h-auto px-0 text-link underline-offset-[3px] hover:underline',
       },
       size: {
@@ -46,7 +46,7 @@ const classes = computed(() => cn(button({ variant: props.variant, size: props.s
 </script>
 
 <template>
-  <button :type="type" :class="classes" :disabled="disabled || loading" :aria-busy="loading || undefined">
+  <button :type="type" :class="classes" :data-variant="variant ?? 'default'" :disabled="disabled || loading" :aria-busy="loading || undefined">
     <Loader2 v-if="loading" class="animate-spin" aria-hidden="true" />
     <slot />
   </button>

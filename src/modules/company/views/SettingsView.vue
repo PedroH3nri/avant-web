@@ -82,11 +82,11 @@ const saveName = () => save({ name: name.value.trim() }, savingName)
       </RouterLink>
     </template>
   </PageHeader>
-  <PageBody class="[&>*]:max-w-[880px]">
-    <LoadError v-if="loadError" :message="loadError" @retry="load" />
+  <PageBody class="lg:grid-cols-2">
+    <LoadError v-if="loadError" class="lg:col-span-2" :message="loadError" @retry="load" />
 
     <template v-if="company">
-      <h2 class="text-[13px] font-medium text-muted-foreground">{{ t('set.general') }}</h2>
+      <h2 class="text-[13px] font-medium text-muted-foreground lg:col-span-2">{{ t('set.general') }}</h2>
       <Card :title="t('set.nameTitle')" :desc="t('company.nameHint')">
         <Input v-model="name" class="max-w-[360px]" maxlength="120" :aria-label="t('set.nameTitle')" :disabled="!canEdit" :invalid="nameInvalid" />
         <p v-if="nameInvalid" class="mt-2 text-[13px] text-bad">{{ t('set.nameEmpty') }}</p>
@@ -96,8 +96,8 @@ const saveName = () => save({ name: name.value.trim() }, savingName)
         </template>
       </Card>
       <CompanyImageCard :name="company.name" :image-url="company.image_url" :readonly="!canEdit" :save="saveImage" :remove="removeImage" />
-      <FiscalDataCard v-if="canEdit && !session.company?.is_internal" />
-      <CompanyDocumentsCard v-if="canEdit && !session.company?.is_internal" />
+      <FiscalDataCard v-if="canEdit && !session.company?.is_internal" class="lg:col-span-2" />
+      <CompanyDocumentsCard v-if="canEdit && !session.company?.is_internal" class="lg:col-span-2" />
     </template>
   </PageBody>
 </template>

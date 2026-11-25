@@ -2,8 +2,9 @@
 
 import { api, type Query } from '@/lib/api'
 import type { Items, Page } from '@/lib/types'
+import type { Group } from '@/modules/groups/types'
 import type { ClientDocument, ClientDocumentsOverview, DocumentKind } from '@/modules/documents/types'
-import type { AuditEntry, Client, ClientDetail, ClientMember, ClientNote, ClientOption, ManagerChange, OwnerInvitation } from '@/modules/internal/clients/types'
+import type { AuditEntry, Client, ClientDetail, ClientNote, ClientOption, ManagerChange, OwnerInvitation, ReservedNetwork } from '@/modules/internal/clients/types'
 
 /** Serviço dos clientes, das equipes deles e dos convites de dono. */
 export const clientService = {
@@ -11,6 +12,12 @@ export const clientService = {
   list: (query?: Query) => api.get<Page<Client>>('/internal/clients', query),
   /** Todas as Empresas cliente (id, nome e situação), para seletores e as abas. */
   options: () => api.get<Items<ClientOption>>('/internal/clients/options'),
+  /** Os clientes que já têm Empresa, com o id da Empresa, para os seletores que filtram por Empresa. */
+  companyOptions: async (): Promise<Items<ClientOption>> => {
+    const found = await api.get<Items<ClientOption>>('/internal/clients/options')
+    const items = found.items.flatMap((item) => (item.company_id ? [{ ...item, id: item.company_id }] : []))
+    return { ...found, items }
+  },
   /** Uma Empresa cliente com membros e convites. */
   show: (companyId: string) => api.get<ClientDetail>(`/internal/clients/${companyId}`),
   /** Cadastra um cliente pendente. */
@@ -25,12 +32,14 @@ export const clientService = {
   removeImage: (companyId: string) => api.delete<Client>(`/internal/clients/${companyId}/image`),
   /** Troca a situação do cliente. */
   setStatus: (companyId: string, status: string) => api.put(`/internal/clients/${companyId}/status`, { status }),
-  /** Passa a posse para outro membro. */
-  changeOwner: (companyId: string, membershipId: string) => api.post(`/internal/clients/${companyId}/owner`, { membership_id: membershipId }),
   /** Uma página numerada da auditoria do cliente, a mais nova primeiro. */
   audit: (companyId: string, query?: Query) => api.get<Page<AuditEntry>>(`/internal/clients/${companyId}/audit`, query),
-  /** Uma página das pessoas das equipes das Empresas cliente. */
-  teams: (query?: Query) => api.get<Page<ClientMember>>('/internal/teams', query),
+  /** Os grupos que uma Empresa cliente cadastrou, com as pessoas de cada um. */
+  groups: (companyId: string) => api.get<Items<Group>>(`/internal/clients/${companyId}/groups`),
+  /** Guarda um network code no cliente que ainda não criou a Empresa. */
+  reserveNetwork: (clientId: string, networkCode: string) => api.post<ReservedNetwork>('/internal/networks/reserved', { client_id: clientId, network_code: networkCode }),
+  /** Tira o network code guardado no cliente. */
+  unreserveNetwork: (reservedId: string) => api.delete(`/internal/networks/reserved/${reservedId}`),
   /** Envia o convite de dono. */
   inviteOwner: (companyId: string) => api.post<OwnerInvitation>(`/internal/clients/${companyId}/owner-invitation`),
   /** Uma página dos convites de dono pendentes e vencidos. */

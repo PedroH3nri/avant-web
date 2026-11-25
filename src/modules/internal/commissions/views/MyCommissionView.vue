@@ -5,7 +5,7 @@ import LoadError from '@/components/LoadError.vue'
 import PageBody from '@/components/PageBody.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import DataTable from '@/components/ui/DataTable.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import Status from '@/components/ui/Status.vue'
 import TableState from '@/components/ui/TableState.vue'
 import { ApiError } from '@/lib/api'
@@ -71,7 +71,7 @@ function endText(entry: WindowMonth): string {
 <template>
   <PageHeader :title="t('com.mine.title')" :sub="t('com.mine.sub')">
     <template #actions>
-      <NativeSelect v-model="month" :options="months" :aria-label="t('com.month')" class="h-9 w-[200px]" />
+      <Select v-model="month" :options="months" :aria-label="t('com.month')" class="h-9 w-[200px]" />
     </template>
   </PageHeader>
   <PageBody>

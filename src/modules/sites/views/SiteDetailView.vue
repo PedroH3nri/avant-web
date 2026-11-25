@@ -18,7 +18,7 @@ import Dialog from '@/components/ui/Dialog.vue'
 import Field from '@/components/ui/Field.vue'
 import MenuContent from '@/components/ui/MenuContent.vue'
 import MenuItem from '@/components/ui/MenuItem.vue'
-import NativeSelect from '@/components/ui/NativeSelect.vue'
+import Select from '@/components/ui/Select.vue'
 import Status from '@/components/ui/Status.vue'
 import TableState from '@/components/ui/TableState.vue'
 import { ApiError } from '@/lib/api'
@@ -239,7 +239,7 @@ async function move() {
     <ClassifySitesDialog v-if="site" v-model:open="classifying" :sites="[site]" :people="peopleOptions" @saved="applyClassified" />
     <Dialog v-model:open="moveOpen" :title="t('site.move')" :desc="moving ? `${moving.name} · ${t('site.childrenNote')}` : ''">
       <Field id="move-site" :label="t('sites.col.site')">
-        <NativeSelect id="move-site" v-model="target" :options="targetOptions" />
+        <Select id="move-site" v-model="target" :options="targetOptions" />
       </Field>
       <template #footer>
         <Button variant="outline" @click="moving = null">{{ t('common.cancel') }}</Button>

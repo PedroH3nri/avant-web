@@ -23,9 +23,9 @@ function me(active: string, permissions: string[]): Me {
     is_staff: true,
     mfa_enabled: true,
     mfa_setup_required: false,
+    can_create_company: false,
     display_currency: 'USD',
     theme: 'system',
-    accent: 'default',
   }
 }
 
@@ -90,14 +90,13 @@ describe('SidebarRail', () => {
     const [, , clients, reports, , tools] = wrapper.findAll('nav[aria-label="Menu principal"] > *')
     await hoverAndWait(clients!)
     expect(wrapper.find('#rail-panel').attributes('aria-hidden')).toBe('false')
-    expect(panelLabels(wrapper)).toEqual(['Clientes', 'Equipes', 'Networks do GAM', 'Contratos', 'Sites', 'Rewards', 'Ad tags', 'Loaders', 'Regras de preço', 'Checklists'])
+    expect(panelLabels(wrapper)).toEqual(['Clientes', 'Empresas', 'Networks do GAM', 'Contratos', 'Sites', 'Rewards', 'Ad tags', 'Loaders', 'Regras de preço', 'Checklists'])
     expect(wrapper.find('#rail-panel [aria-current="page"]').text()).toBe('Clientes')
     expect(wrapper.find('#rail-panel hr').element.nextElementSibling?.textContent).toBe('Rewards')
     await hoverAndWait(reports!)
-    expect(panelLabels(wrapper)).toEqual(['Ad Manager', 'Page Views', 'Resultado', 'Resultado dos clientes', 'Metas', 'Relatórios customizados'])
-    const separator = wrapper.find('#rail-panel hr')
-    expect(separator.exists()).toBe(true)
-    expect(separator.element.nextElementSibling?.textContent).toBe('Relatórios customizados')
+    expect(panelLabels(wrapper)).toEqual(['Ad Manager', 'Page Views', 'Resultado', 'Resultado dos clientes', 'Metas', 'Campanhas do Facebook', 'Campanhas do Google Ads', 'Relatórios customizados'])
+    const separators = wrapper.findAll('#rail-panel hr')
+    expect(separators.map((separator) => separator.element.nextElementSibling?.textContent)).toEqual(['Campanhas do Facebook', 'Relatórios customizados'])
     await hoverAndWait(tools!)
     expect(panelLabels(wrapper)).toEqual(['Ferramentas do GAM', 'Alertas', 'Envios agendados', 'Modelos de dashboard'])
   })

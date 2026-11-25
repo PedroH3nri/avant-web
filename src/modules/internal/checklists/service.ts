@@ -7,6 +7,8 @@ import type {
   ChecklistItem,
   ChecklistItemInput,
   ChecklistMonth,
+  ChecklistOverride,
+  ChecklistOverrideInput,
   SiteChecklist,
   SiteChecklistDetail,
 } from '@/modules/internal/checklists/types'
@@ -43,4 +45,15 @@ export const checklistItemService = {
   update: (itemId: string, body: ChecklistItemInput) => api.put<ChecklistItem>(`/internal/checklist-items/${itemId}`, body),
   /** Sobe (-1) ou desce (1) o item e devolve a lista na ordem nova. */
   move: (itemId: string, step: -1 | 1) => api.post<Items<ChecklistItem>>(`/internal/checklist-items/${itemId}/move`, { step }),
+}
+
+/** Serviço da configuração própria dos itens num site: o padrão vale para os outros sites. */
+export const checklistOverrideService = {
+  /** A configuração própria de cada item no site. */
+  list: (siteId: string) => api.get<Items<ChecklistOverride>>(`/internal/sites/${siteId}/checklist-overrides`),
+  /** Grava a configuração do item no site. */
+  set: (siteId: string, itemId: string, body: ChecklistOverrideInput) =>
+    api.put<ChecklistOverride>(`/internal/sites/${siteId}/checklist-overrides/${itemId}`, body),
+  /** Tira a configuração: o item volta ao padrão no site. */
+  remove: (siteId: string, itemId: string) => api.delete(`/internal/sites/${siteId}/checklist-overrides/${itemId}`),
 }

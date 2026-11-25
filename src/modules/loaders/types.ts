@@ -1,5 +1,7 @@
 /** Formatos da API dos loaders (iguais ao dto.py de modules/loaders no avant-api). Datas em ISO 8601 UTC. */
 
+import type { InstallSummary } from '@/modules/install_checks/types'
+
 export type LoaderTemplate = 'groone' | 'solid'
 export type LoaderStyle = 'bar' | 'spinner' | 'dots'
 export type LoaderAdblock = 'off' | 'warn' | 'block'
@@ -15,6 +17,8 @@ export interface LoaderTag {
 /** Um loader como a API devolve; `client` só no painel interno. */
 export interface Loader {
   id: string
+  /** A última verificação de instalação; só nas listas. */
+  install?: InstallSummary | null
   client: { id: string; name: string } | null
   name: string
   template: LoaderTemplate
