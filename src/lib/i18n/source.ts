@@ -2557,6 +2557,7 @@ export const dict = {
   'revenue.trend.stopped': ['Parado', 'Stopped', 'Detenido'],
   'revenue.none': ['Sem receita', 'No revenue', 'Sin ingresos'],
   'revenue.perDay': ['{value}/dia', '{value}/day', '{value}/día'],
+  'revenue.perDayUnit': ['por dia', 'per day', 'por día'],
   'revenue.hint': [
     'Média por dia dos últimos 30 dias contra os 30 anteriores. Parado: menos de US$ 100 somados nos últimos 30 dias.',
     'Daily average of the last 30 days against the previous 30. Stopped: less than US$ 100 in total over the last 30 days.',
