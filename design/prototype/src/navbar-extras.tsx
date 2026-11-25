@@ -100,7 +100,7 @@ export function NotificationCenter({ className }: { className?: string }) {
       <PopoverTrigger asChild>
         <button aria-label={unread ? `Notificações: ${unread} não lidas` : 'Notificações'} className={cn('relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md border bg-background text-muted-foreground transition-[border-color,transform,box-shadow,color] duration-200 hover:-translate-y-px hover:border-[hsl(var(--ring)/0.45)] hover:text-foreground hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', className)}>
           <Bell className={cn('h-4 w-4', unread > 0 && 'origin-top animate-[bell_1s_ease-in-out_1]')} />
-          {unread > 0 && <span className="absolute -right-1.5 -top-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[hsl(var(--bad))] px-1 text-[11px] font-semibold leading-none text-white tnum ring-2 ring-background">{unread > 9 ? '9+' : unread}</span>}
+          {unread > 0 && <span className="absolute -right-1.5 -top-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-foreground px-1 text-[11px] font-semibold leading-none text-background tnum ring-2 ring-background">{unread > 9 ? '9+' : unread}</span>}
         </button>
       </PopoverTrigger>
       <PopoverContent align="end" collisionPadding={8} className="w-[min(380px,calc(100vw-16px))] p-0">
