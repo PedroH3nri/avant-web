@@ -53,6 +53,10 @@ export const NAV_GROUPS: NavGroup[] = [
       { to: '/resultado', key: 'nav.results', icon: Scale },
       { to: '/interno/resultados', key: 'int.results', icon: Scale, internal: true },
       { to: '/interno/metas', key: 'goals.title', icon: Target, internal: true },
+      { to: '/campanhas-facebook', key: 'nav.facebookCampaigns', icon: Megaphone, clientOnly: true, separated: true },
+      { to: '/interno/campanhas-facebook', key: 'nav.facebookCampaigns', icon: Megaphone, internal: true, separated: true },
+      { to: '/campanhas-google-ads', key: 'nav.googleAdsCampaigns', icon: Megaphone, clientOnly: true },
+      { to: '/interno/campanhas-google-ads', key: 'nav.googleAdsCampaigns', icon: Megaphone, internal: true },
       { to: '/relatorios', key: 'nav.customReports', icon: FileChartColumn, separated: true },
     ],
   },
@@ -64,12 +68,8 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { to: '/facebook', key: 'nav.facebook', icon: Megaphone, clientOnly: true },
       { to: '/interno/facebook', key: 'nav.facebook', icon: Megaphone, internal: true },
-      { to: '/campanhas-facebook', key: 'nav.facebookCampaigns', icon: ChartLine, clientOnly: true },
-      { to: '/interno/campanhas-facebook', key: 'nav.facebookCampaigns', icon: ChartLine, internal: true },
       { to: '/google-ads', key: 'nav.googleAds', icon: Megaphone, clientOnly: true },
       { to: '/interno/google-ads', key: 'nav.googleAds', icon: Megaphone, internal: true },
-      { to: '/campanhas-google-ads', key: 'nav.googleAdsCampaigns', icon: ChartLine, clientOnly: true },
-      { to: '/interno/campanhas-google-ads', key: 'nav.googleAdsCampaigns', icon: ChartLine, internal: true },
     ],
   },
   {

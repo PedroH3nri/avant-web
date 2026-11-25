@@ -38,17 +38,19 @@ const SEARCH_DELAY_MS = 300
 const ALL = 'all'
 const YES = 'yes'
 const STATUSES = ['pending', 'connected', 'error', 'disconnected']
-const COLUMNS = ['network', 'client', 'status', 'revenue', 'sites']
+const DELEGATIONS = ['manage_inventory', 'manage_account']
+const COLUMNS = ['network', 'client', 'delegation', 'status', 'revenue', 'sites']
 const SORTS: ViewSort[] = [
   { key: 'created_at', direction: 'desc' },
   { key: 'created_at', direction: 'asc' },
   { key: 'name', direction: 'asc' },
   { key: 'name', direction: 'desc' },
 ]
-const FILTERS = ['status', 'company_id', 'account_manager_ids', 'awaiting']
+const FILTERS = ['status', 'delegation', 'company_id', 'account_manager_ids', 'awaiting']
 const DEFAULT_FILTERS = ['status', 'company_id', 'awaiting']
 const FILTER_LABELS: Record<string, Key> = {
   status: 'inv.filter.status',
+  delegation: 'netd.delegation',
   company_id: 'inv.filter.client',
   account_manager_ids: 'inv.column.manager',
   awaiting: 'inv.awaitingOnly',
@@ -65,10 +67,12 @@ const loadError = ref<string | null>(null)
 const searchText = ref('')
 const awaitingOnly = ref(false)
 const networkStatus = ref(ALL)
+const delegation = ref(ALL)
 const company = ref(ALL)
 const manager = ref(ALL)
 const barFilters = useBarFilters(FILTERS, DEFAULT_FILTERS, {
   status: () => (networkStatus.value = ALL),
+  delegation: () => (delegation.value = ALL),
   company_id: () => (company.value = ALL),
   account_manager_ids: () => (manager.value = ALL),
   awaiting: () => (awaitingOnly.value = false),
@@ -86,6 +90,7 @@ const current = computed<ViewDefinition>(() => ({
   filters: cleanFilters({
     query: searchText.value,
     status: chosen(networkStatus.value),
+    delegation: chosen(delegation.value),
     awaiting: awaitingOnly.value ? YES : undefined,
     company_id: chosen(company.value),
     account_manager_ids: manager.value === ALL ? [] : [manager.value],
@@ -107,6 +112,7 @@ async function load() {
         q: searchText.value.trim() || undefined,
         awaiting_confirmation: awaitingOnly.value || undefined,
         status: chosen(networkStatus.value),
+        delegation: chosen(delegation.value),
         client_id: chosen(company.value),
         manager: manager.value === ALL ? undefined : [manager.value],
         sort: order?.key,
@@ -138,10 +144,11 @@ function firstPage() {
 }
 const searchNetworks = useDebounceFn(firstPage, SEARCH_DELAY_MS)
 watch(searchText, () => void searchNetworks())
-watch([awaitingOnly, networkStatus, company, manager, sort], firstPage)
+watch([awaitingOnly, networkStatus, delegation, company, manager, sort], firstPage)
 watch(page, load)
 
 const statusOptions = computed(() => [{ value: ALL, label: t('int.allStatuses') }, ...STATUSES.map((value) => ({ value, label: t(`net.status.${value}` as Key) }))])
+const delegationOptions = computed(() => [{ value: ALL, label: t('inv.allDelegations') }, ...DELEGATIONS.map((value) => ({ value, label: t(`netd.delegation.${value}` as Key) }))])
 const companyOptions = computed(() => [{ value: ALL, label: t('int.allClients') }, ...companies.value])
 const managerOptions = computed(() => [{ value: ALL, label: t('int.allManagers') }, ...staff.value])
 const sortOptions = SORTS.map((option) => ({ value: sortValue(option), label: t(`int.sort.${option.key}.${option.direction}` as Key) }))
@@ -159,6 +166,8 @@ function applyView(definition: ViewDefinition) {
   searchText.value = firstValue(definition.filters.query)
   const status = firstValue(definition.filters.status)
   networkStatus.value = STATUSES.includes(status) ? status : ALL
+  const kind = firstValue(definition.filters.delegation)
+  delegation.value = DELEGATIONS.includes(kind) ? kind : ALL
   awaitingOnly.value = firstValue(definition.filters.awaiting) === YES
   company.value = firstValue(definition.filters.company_id) || ALL
   manager.value = firstValue(definition.filters.account_manager_ids) || ALL
@@ -172,6 +181,7 @@ function clearFilters() {
   searchText.value = ''
   awaitingOnly.value = false
   networkStatus.value = ALL
+  delegation.value = ALL
   company.value = ALL
   manager.value = ALL
 }
@@ -186,6 +196,7 @@ function clearFilters() {
         <Input v-model="searchText" type="search" :aria-label="t('inv.networksSearch')" class="h-9 bg-card pl-9" :placeholder="t('inv.networksSearch')" />
       </div>
       <Select v-if="barFilters.isShown('status')" v-model="networkStatus" :options="statusOptions" :aria-label="t('inv.filter.status')" class="h-9 w-full sm:w-48" />
+      <Select v-if="barFilters.isShown('delegation')" v-model="delegation" :options="delegationOptions" :aria-label="t('netd.delegation')" class="h-9 w-full sm:w-48" />
       <Select v-if="barFilters.isShown('company_id')" v-model="company" :options="companyOptions" :aria-label="t('inv.filter.client')" class="h-9 w-full sm:w-52" />
       <Select v-if="barFilters.isShown('account_manager_ids')" v-model="manager" :options="managerOptions" :aria-label="t('inv.column.manager')" class="h-9 w-full sm:w-52" />
       <Select v-model="sort" :options="sortOptions" :aria-label="t('views.sort')" class="h-9 w-full sm:w-52" />
@@ -199,6 +210,7 @@ function clearFilters() {
         <tr>
           <th v-if="shown('network')" :class="th">{{ t('net.col.network') }}</th>
           <th v-if="shown('client')" :class="th">{{ t('int.column.client') }}</th>
+          <th v-if="shown('delegation')" :class="th">{{ t('netd.delegation') }}</th>
           <th v-if="shown('status')" :class="th">{{ t('net.col.status') }}</th>
           <th v-if="shown('revenue')" :class="th">{{ t('int.column.revenue') }}</th>
           <th v-if="shown('sites')" :class="[th, 'text-right']">{{ t('net.col.sites') }}</th>
@@ -227,6 +239,16 @@ function clearFilters() {
               <CompanyIcon :name="network.client.name" :image-url="network.client.image_url" :size="20" />
               <RouterLink :to="`/interno/clientes/${network.client.id}`" class="truncate hover:underline">{{ network.client.name }}</RouterLink>
             </div>
+          </td>
+          <td v-if="shown('delegation')" :class="td">
+            <span
+              v-if="network.delegation"
+              class="inline-flex rounded-md border px-1.5 py-0.5 font-mono text-[12px] font-medium"
+              :title="t(`netd.delegation.${network.delegation}` as Key)"
+            >
+              {{ t(`inv.delegationShort.${network.delegation}` as Key) }}
+            </span>
+            <span v-else class="text-muted-foreground">–</span>
           </td>
           <td v-if="shown('status')" :class="td">
             <Status :tone="networkTone(network)">{{ t(statusKey(network)) }}</Status>
