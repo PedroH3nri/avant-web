@@ -17,6 +17,7 @@ import { Slider } from '@/components/ui/slider'
 import { cn } from '@/lib/utils'
 import { translate, type Key, type Lang } from './i18n'
 import { Mark, SeatBar, SeatDot, SeatStrip, type SeatState } from './tiles'
+import { DateField, MonthField, PeriodPicker, PRESETS } from './date-pickers'
 
 /* ---------- prototype routing ---------- */
 
@@ -121,6 +122,7 @@ const SCREENS = [
   ['gadscampanhainterno', 'Painel interno · Campanha do Google Ads'],
   ['gadsgrupointerno', 'Painel interno · Grupo do Google Ads'],
   ['gadsanunciointerno', 'Painel interno · Anúncio do Google Ads'],
+  ['seletordatas', 'Componentes · Seletor de datas'],
 ] as const
 type Screen = (typeof SCREENS)[number][0]
 const INTERNAL_SCREENS: Screen[] = ['gadsinterno', 'gadscampanhasinterno', 'gadscampanhainterno', 'gadsgrupointerno', 'gadsanunciointerno', 'fbinterno', 'fbcampanhasinterno', 'fbcampanhainterno', 'fbconjuntointerno', 'fbanunciointerno', 'interno', 'cliente', 'siteinterno', 'contratos', 'resultados', 'papelcomissao', 'minhacomissao', 'comissoes', 'minhasinvoices', 'invoice', 'invoices', 'servicosinvoice', 'modelosdash', 'tarefas', 'tarefa', 'checklists', 'checklist', 'checklistitens', 'ferramentasgam', 'execucaogam', 'rewardsinterno', 'rewardinterno', 'rewardmetricasinterno', 'adtagsinterno', 'adtaginterno', 'adtagmetricasinterno', 'loadersinterno', 'loaderinterno', 'regrasprecointerno', 'regrasiteinterno', 'regrainterno', 'cascatainterno']
@@ -689,6 +691,30 @@ function PageHeader({ title, sub, actions, back }: { title: string; sub?: string
 }
 function Body({ children, className }: { children: React.ReactNode; className?: string }) {
   return <div className="flex-1 bg-muted"><div className={cn('mx-auto grid max-w-[1200px] min-[1600px]:max-w-[1440px] min-[1920px]:max-w-[1760px] min-[2560px]:max-w-[2160px] content-start gap-6 px-4 py-8 sm:px-6 [&>*]:min-w-0', className)}>{children}</div></div>
+}
+
+/* Os três seletores de data do painel (período, data e mês), no lugar dos campos de data do navegador. */
+function DatePickersScreen() {
+  const [period, setPeriod] = useState({ preset: 'last_7' as string | null, range: PRESETS[2].range() })
+  const [day, setDay] = useState<Date | undefined>(new Date(2026, 11, 1))
+  const [month, setMonth] = useState({ year: 2026, month: 10 })
+  const open = new URLSearchParams(window.location.search).get('aberto')
+  return (
+    <>
+      <PageHeader title="Seletor de datas" sub="Um componente para cada jeito de escolher data. Substitui os campos de data do navegador em todas as telas e segue o tema, o idioma e as animações." />
+      <Body>
+        <Card title="Período" desc="Relatórios, campanhas do Facebook e do Google Ads, Desempenho, Page Views, comparação e comissões. Atalhos à esquerda, dois meses ao lado e Aplicar no rodapé; o período só muda a tela depois de aplicar.">
+          <div className="flex flex-wrap items-center gap-3"><PeriodPicker value={period} onChange={setPeriod} defaultOpen={open === 'periodo'} /></div>
+        </Card>
+        <Card title="Data" desc="Início das comissões, validade do acesso de um membro e outros campos de formulário. Parece um campo de texto; dias fora do limite ficam apagados.">
+          <div className="grid max-w-[220px] gap-2"><Label htmlFor="date-demo">Acesso até</Label><DateField id="date-demo" value={day} onChange={setDay} min={new Date(2026, 10, 25)} defaultOpen={open === 'data'} /></div>
+        </Card>
+        <Card title="Mês" desc="Resultado dos clientes, Invoices e metas. O ano em cima e os doze meses numa grade; meses que ainda não chegaram ficam apagados.">
+          <MonthField value={month} onChange={setMonth} defaultOpen={open === 'mes'} />
+        </Card>
+      </Body>
+    </>
+  )
 }
 
 /* ---------- Início ---------- */
@@ -10688,6 +10714,7 @@ export default function App() {
       case 'resultado': return <ResultScreen go={go} />
       case 'custos': return <CostsScreen />
       case 'controlecustos': return <CostControlScreen go={go} />
+      case 'seletordatas': return <DatePickersScreen />
       case 'equipe': return <TeamScreen t={t} go={go} members={members} setMembers={setMembers} groupCount={groups.length} />
       case 'grupos': return <GroupsScreen t={t} go={go} members={members} groups={groups} setGroups={setGroups} openGroup={openGroup} />
       case 'grupo': return <GroupScreen key={groupId} t={t} go={go} members={members} groups={groups} setGroups={setGroups} groupId={groupId === 'parcerias' ? 'trafego' : groupId} openMember={() => go('membro')} />
