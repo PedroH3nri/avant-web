@@ -127,13 +127,13 @@ function blur(event: FocusEvent) {
 const railItem = (section: NavGroup) =>
   cn(
     'flex w-full flex-col items-center gap-1.5 rounded-md py-2.5 text-[12px] font-medium leading-none transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-[18px]',
-    groupActive(section) ? 'bg-[hsl(var(--sidebar-selected))] text-[hsl(var(--sidebar-highlight))]' : open.value && shown.value?.id === section.id ? 'bg-[hsl(var(--sidebar-hover))] text-[hsl(var(--sidebar-highlight))]' : 'text-sidebar-muted hover:bg-[hsl(var(--sidebar-hover))] hover:text-[hsl(var(--sidebar-highlight))]',
+    groupActive(section) ? 'bg-[hsl(var(--sidebar-selected))] text-sidebar-foreground [&_svg]:text-[hsl(var(--sidebar-highlight))]' : open.value && shown.value?.id === section.id ? 'bg-[hsl(var(--sidebar-hover))] text-sidebar-foreground [&_svg]:text-[hsl(var(--sidebar-highlight))]' : 'text-sidebar-muted hover:bg-[hsl(var(--sidebar-hover))] hover:text-sidebar-foreground hover:[&_svg]:text-[hsl(var(--sidebar-highlight))]',
   )
 /** Classes do link no painel, ativo ou não. */
 const panelItem = (on: boolean) =>
   cn(
     'flex h-9 w-full items-center gap-2.5 rounded-md px-2.5 text-left text-[14px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-4',
-    on ? 'bg-[hsl(var(--sidebar-selected))] font-medium text-[hsl(var(--sidebar-highlight))]' : 'text-sidebar-muted hover:bg-[hsl(var(--sidebar-hover))] hover:text-[hsl(var(--sidebar-highlight))]',
+    on ? 'bg-[hsl(var(--sidebar-selected))] font-medium text-sidebar-foreground [&_svg]:text-[hsl(var(--sidebar-highlight))]' : 'text-sidebar-muted hover:bg-[hsl(var(--sidebar-hover))] hover:text-sidebar-foreground hover:[&_svg]:text-[hsl(var(--sidebar-highlight))]',
   )
 </script>
 
