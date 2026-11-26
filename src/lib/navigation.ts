@@ -2,7 +2,7 @@
 
 import { computed, type Component } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { BellRing, BookOpen, Building, Building2, ChartLine, CircleDollarSign, Code2, Coins, Eye, FileChartColumn, FileSignature, FileText, Gift, Globe, IdCard, LayoutDashboard, LayoutTemplate, ListChecks, ListTodo, LifeBuoy, LoaderCircle, MailCheck, MessageSquareHeart, Network, Plug, Receipt, ReceiptText, Scale, ShieldCheck, Target, Users, UsersRound, Wallet, Wrench } from 'lucide-vue-next'
+import { BellRing, BookOpen, Building, Building2, ChartLine, CircleDollarSign, Code2, Coins, Eye, FileChartColumn, FileSignature, FileText, Gift, Globe, IdCard, LayoutDashboard, LayoutTemplate, ListChecks, ListTodo, LifeBuoy, LoaderCircle, MailCheck, MessageSquareHeart, Network, Plug, Receipt, ReceiptText, Scale, ShieldCheck, Target, Users, UserSearch, UsersRound, Wallet, Wrench } from 'lucide-vue-next'
 import FacebookIcon from '@/components/FacebookIcon.vue'
 import GoogleAdsIcon from '@/components/GoogleAdsIcon.vue'
 import HubspotIcon from '@/components/HubspotIcon.vue'
@@ -29,6 +29,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { to: '/interno', key: 'int.clients', icon: Building2, internal: true },
       { to: '/equipe', key: 'nav.team', icon: Users, clientOnly: true },
       { to: '/interno/empresas', key: 'int.companies', icon: Building, internal: true },
+      { to: '/interno/prospeccao', key: 'nav.prospects', icon: UserSearch, internal: true },
       { to: '/networks', key: 'nav.networks', icon: Network, clientOnly: true },
       { to: '/interno/networks', key: 'nav.networks', icon: Network, internal: true },
       { to: '/interno/contratos', key: 'int.contracts', icon: FileSignature, internal: true },

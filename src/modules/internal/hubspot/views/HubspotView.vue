@@ -1,6 +1,7 @@
 <script setup lang="ts">
-/** Integrações > HubSpot: o que o Avant manda para o HubSpot da Groone, por tipo (com os objetos personalizados), os registros com erro e a sincronia na hora. */
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+/** Integrações > HubSpot: a sincronia por tipo (com os objetos personalizados) e os registros com erro, a saúde e o onboarding no contato e os avisos que viram tarefa do gerente. */
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
 import { ChevronRight, CircleCheck, RefreshCw, Search } from 'lucide-vue-next'
 import LoadError from '@/components/LoadError.vue'
@@ -9,26 +10,47 @@ import PageHeader from '@/components/PageHeader.vue'
 import Button from '@/components/ui/Button.vue'
 import DataTable from '@/components/ui/DataTable.vue'
 import Input from '@/components/ui/Input.vue'
+import Segmented from '@/components/ui/Segmented.vue'
 import Select from '@/components/ui/Select.vue'
 import Status from '@/components/ui/Status.vue'
 import TableState from '@/components/ui/TableState.vue'
+import HubspotHealthTab from '@/modules/internal/hubspot/components/HubspotHealthTab.vue'
 import HubspotMark from '@/modules/internal/hubspot/components/HubspotMark.vue'
+import HubspotTasksTab from '@/modules/internal/hubspot/components/HubspotTasksTab.vue'
 import { ApiError } from '@/lib/api'
 import { errorText, formatAgo, formatDate, locale, t, tn, type Key } from '@/lib/i18n'
 import { nextPollDelay } from '@/lib/poll'
 import { td, th } from '@/lib/table'
 import FiltersMenu from '@/modules/views/components/FiltersMenu.vue'
 import { useLocalBarFilters } from '@/modules/views/barFilters'
-import { CUSTOM_KINDS, KINDS, KIND_LABEL, KIND_SOURCE, filterFailures, isRunning, runSummary } from '@/modules/internal/hubspot/rules'
+import { CUSTOM_KINDS, KINDS, KIND_LABEL, KIND_SOURCE, filterFailures, isRunning, runSummary, settingsBody } from '@/modules/internal/hubspot/rules'
 import { hubspotService } from '@/modules/internal/hubspot/service'
-import type { HubspotKind, HubspotStatus } from '@/modules/internal/hubspot/types'
+import type { HubspotKind, HubspotSettings, HubspotStatus, HubspotTask, HubspotTaskRuleSetting } from '@/modules/internal/hubspot/types'
 import { useSession } from '@/stores/session'
 
 const FILTERS = ['kind']
 const DEFAULT_FILTERS = ['kind']
 const FILTER_LABELS: Record<string, Key> = { kind: 'hs.col.kind' }
 
+type Tab = 'sync' | 'health' | 'tasks'
+const TABS: Tab[] = ['sync', 'health', 'tasks']
+const TAB_LABEL: Record<Tab, Key> = { sync: 'hs.tab.sync', health: 'hs.tab.health', tasks: 'hs.tab.tasks' }
+
 const session = useSession()
+const route = useRoute()
+const router = useRouter()
+const tab = ref<Tab>(TABS.includes(route.query.aba as Tab) ? (route.query.aba as Tab) : 'sync')
+const tabOptions = TABS.map((value) => ({ value, label: t(TAB_LABEL[value]) }))
+const settings = ref<HubspotSettings | null>(null)
+const enabled = ref<Record<string, boolean>>({})
+const rules = ref<HubspotTaskRuleSetting[]>([])
+const tasks = ref<HubspotTask[] | null>(null)
+const saving = ref(false)
+const dirty = computed(() => {
+  if (!settings.value) return false
+  const saved = settingsBody(Object.fromEntries(settings.value.properties.map((item) => [item.name, item.enabled])), settings.value.rules)
+  return JSON.stringify(saved) !== JSON.stringify(settingsBody(enabled.value, rules.value))
+})
 const canRun = computed(() => session.can('internal.hubspot.run'))
 const status = ref<HubspotStatus | null>(null)
 const loadError = ref<string | null>(null)
@@ -91,6 +113,42 @@ async function syncNow() {
   }
 }
 
+/** Põe as escolhas salvas nos campos das abas. */
+function fillSettings(found: HubspotSettings) {
+  settings.value = found
+  enabled.value = Object.fromEntries(found.properties.map((item) => [item.name, item.enabled]))
+  rules.value = found.rules.map((rule) => ({ ...rule }))
+}
+
+/** Carrega as escolhas da saúde e das tarefas e as últimas tarefas, na primeira vez que uma das abas abre. */
+async function loadSettings() {
+  if (settings.value) return
+  try {
+    const [found, recent] = await Promise.all([hubspotService.settings(), hubspotService.tasks()])
+    fillSettings(found)
+    tasks.value = recent
+  } catch (error) {
+    toast.error(errorText(error instanceof ApiError ? error.code : 'unknown'))
+  }
+}
+
+/** Salva as propriedades desligadas e as regras dos avisos. */
+async function saveSettings() {
+  saving.value = true
+  try {
+    fillSettings(await hubspotService.saveSettings(settingsBody(enabled.value, rules.value)))
+    toast.success(t('hst.saved'))
+  } catch (error) {
+    toast.error(errorText(error instanceof ApiError ? error.code : 'unknown'))
+  } finally {
+    saving.value = false
+  }
+}
+
+watch(tab, (value) => {
+  void router.replace({ query: { ...route.query, aba: value === 'sync' ? undefined : value } })
+  if (value !== 'sync') void loadSettings()
+}, { immediate: true })
 onMounted(load)
 onBeforeUnmount(() => clearTimeout(pollTimer))
 </script>
@@ -107,6 +165,12 @@ onBeforeUnmount(() => clearTimeout(pollTimer))
   <PageBody>
     <LoadError v-if="loadError" :message="loadError" @retry="load" />
     <template v-else>
+      <Segmented v-model="tab" :options="tabOptions" :label="t('hs.tabs')" />
+      <HubspotHealthTab v-if="tab === 'health' && settings" v-model="enabled" :properties="settings.properties" :can-run="canRun" :dirty="dirty" :saving="saving" @save="saveSettings" />
+      <HubspotTasksTab v-if="tab === 'tasks' && settings" v-model="rules" :tasks="tasks" :can-run="canRun" :dirty="dirty" :saving="saving" @save="saveSettings" />
+      <p v-if="tab !== 'sync' && !settings" class="text-[14px] text-muted-foreground">{{ t('common.loading') }}</p>
+    </template>
+    <template v-if="!loadError && tab === 'sync'">
       <p v-if="status && !status.configured" class="rounded-lg border border-dashed bg-card p-4 text-[14px] text-muted-foreground">{{ t('hs.notConfiguredHelp') }}</p>
       <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <div
