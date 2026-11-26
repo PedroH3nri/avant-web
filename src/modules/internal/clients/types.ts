@@ -65,6 +65,10 @@ export interface Client {
   revenue_status?: RevenueStatus | null
   /** Último acesso da conta do cliente; vazio se ele nunca entrou. */
   last_access_at?: string | null
+  /** Só na lista: dias com uso do cliente e da Empresa e pessoas ativas, em 30 dias. */
+  client_active_days_30d?: number | null
+  company_active_days_30d?: number | null
+  active_people_30d?: number | null
 }
 
 /** Membro da Empresa cliente com o último acesso da pessoa. */

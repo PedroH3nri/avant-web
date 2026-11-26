@@ -45,7 +45,7 @@ type Tab = 'all' | CompanyStatus
 
 const SEARCH_DELAY_MS = 300
 const ALL = 'all'
-const COLUMNS = ['client', 'contact', 'manager', 'employees', 'status', 'revenue', 'last_access']
+const COLUMNS = ['client', 'contact', 'manager', 'employees', 'status', 'revenue', 'last_access', 'client_days', 'company_days', 'company_people']
 const SORTS: ViewSort[] = [
   { key: 'created_at', direction: 'desc' },
   { key: 'created_at', direction: 'asc' },
@@ -389,6 +389,9 @@ const referrerName = (client: Client) => (client.profile?.referred_by_client_id 
             <th v-if="shown('status')" :class="th">{{ t('int.situation') }}</th>
             <th v-if="shown('revenue')" :class="th">{{ t('int.column.revenue') }}</th>
             <th v-if="shown('last_access')" :class="th">{{ t('int.column.last_access') }}</th>
+            <th v-if="shown('client_days')" :class="th">{{ t('int.column.client_days') }}</th>
+            <th v-if="shown('company_days')" :class="th">{{ t('int.column.company_days') }}</th>
+            <th v-if="shown('company_people')" :class="th">{{ t('int.column.company_people') }}</th>
             <th :class="[th, 'w-px']"><span class="sr-only">{{ t('common.open') }}</span></th>
           </tr>
         </thead>
@@ -442,6 +445,15 @@ const referrerName = (client: Client) => (client.profile?.referred_by_client_id 
             <td v-if="shown('revenue')" :class="td"><RevenueStatusBadge :status="client.revenue_status" /></td>
             <td v-if="shown('last_access')" :class="[td, 'text-[13px]', staleAccess(client.last_access_at) ? 'text-ochre' : 'text-muted-foreground']">
               {{ client.last_access_at ? formatAgo(client.last_access_at) : t('int.neverAccessed') }}
+            </td>
+            <td v-if="shown('client_days')" :class="[td, 'tnum']">{{ client.client_active_days_30d ?? 0 }}<span class="text-muted-foreground"> {{ t('usage.of', { n: 30 }) }}</span></td>
+            <td v-if="shown('company_days')" :class="[td, 'tnum']">
+              <template v-if="client.company">{{ client.company_active_days_30d ?? 0 }}<span class="text-muted-foreground"> {{ t('usage.of', { n: 30 }) }}</span></template>
+              <span v-else class="text-muted-foreground">{{ t('int.none.dash') }}</span>
+            </td>
+            <td v-if="shown('company_people')" :class="[td, 'tnum']">
+              <template v-if="client.company">{{ client.active_people_30d ?? 0 }}</template>
+              <span v-else class="text-muted-foreground">{{ t('int.none.dash') }}</span>
             </td>
             <td :class="[td, 'text-right']"><OpenLink :to="`/interno/clientes/${client.id}`" :name="client.name" /></td>
           </tr>
