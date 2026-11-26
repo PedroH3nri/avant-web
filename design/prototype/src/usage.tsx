@@ -24,20 +24,20 @@ const COLD_DAYS = 14
 
 /* ---------- 1. Último acesso na tabela de clientes ---------- */
 
-export type ClientAccess = { label: string; daysAgo: number | null; companyDays: number; companyPeople: number; seats: number }
+export type ClientAccess = { label: string; daysAgo: number | null; clientDays: number; companyDays: number; companyPeople: number; seats: number }
 
 export const CLIENT_ACCESS: Record<string, ClientAccess> = {
-  'Blog Exemplo': { label: 'ontem, 19:05', daysAgo: 1, companyDays: 24, companyPeople: 4, seats: 5 },
-  'Receitas da Vó': { label: '17/11, 09:10', daysAgo: 9, companyDays: 11, companyPeople: 2, seats: 2 },
-  'Tech Notícias': { label: 'Nunca entrou', daysAgo: null, companyDays: 0, companyPeople: 0, seats: 0 },
-  'Guia do Pet': { label: '19/10, 16:45', daysAgo: 38, companyDays: 3, companyPeople: 1, seats: 6 },
-  'Apostas Já': { label: '16/09, 11:02', daysAgo: 71, companyDays: 0, companyPeople: 0, seats: 1 },
+  'Blog Exemplo': { label: 'ontem, 19:05', daysAgo: 1, clientDays: 18, companyDays: 24, companyPeople: 4, seats: 5 },
+  'Receitas da Vó': { label: '17/11, 09:10', daysAgo: 9, clientDays: 6, companyDays: 11, companyPeople: 2, seats: 2 },
+  'Tech Notícias': { label: 'Nunca entrou', daysAgo: null, clientDays: 0, companyDays: 0, companyPeople: 0, seats: 0 },
+  'Guia do Pet': { label: '19/10, 16:45', daysAgo: 38, clientDays: 0, companyDays: 3, companyPeople: 1, seats: 6 },
+  'Apostas Já': { label: '16/09, 11:02', daysAgo: 71, clientDays: 0, companyDays: 0, companyPeople: 0, seats: 1 },
 }
 
 export const ACCESS_FILTERS = [['all', 'Todos'], ['7', '7 dias ou mais'], ['15', '15 dias ou mais'], ['30', '30 dias ou mais'], ['60', '60 dias ou mais'], ['never', 'Nunca entrou']] as const
 export type AccessFilter = (typeof ACCESS_FILTERS)[number][0]
 export type AccessSort = 'none' | 'recent' | 'oldest'
-export type UsageColumn = 'companyDays' | 'companyPeople'
+export type UsageColumn = 'clientDays' | 'companyDays' | 'companyPeople'
 
 /** Diz se o cliente passa pelo filtro "Sem acesso há". */
 export function matchesAccess(name: string, filter: AccessFilter) {
@@ -71,13 +71,13 @@ export function AccessFilterSelect({ value, onChange }: { value: AccessFilter; o
 
 /** O menu "Colunas" que mostra ou esconde as colunas de uso. */
 export function UsageColumnsMenu({ shown, setShown }: { shown: UsageColumn[]; setShown: (next: UsageColumn[]) => void }) {
-  const options: [UsageColumn, string][] = [['companyDays', 'Dias ativos da Empresa (30d)'], ['companyPeople', 'Pessoas ativas na Empresa (30d)']]
+  const options: [UsageColumn, string][] = [['clientDays', 'Dias ativos do cliente (30d)'], ['companyDays', 'Dias ativos da Empresa (30d)'], ['companyPeople', 'Pessoas ativas na Empresa (30d)']]
   /** Liga ou desliga uma coluna. */
   const toggle = (column: UsageColumn) => setShown(shown.includes(column) ? shown.filter((item) => item !== column) : [...shown, column])
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild><Button variant="outline" size="sm" className="h-9 bg-card"><Columns3 className="h-4 w-4" />Colunas</Button></DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56"><DropdownMenuLabel>Uso da Empresa do cliente</DropdownMenuLabel><DropdownMenuSeparator />
+      <DropdownMenuContent align="end" className="w-56"><DropdownMenuLabel>Colunas de uso</DropdownMenuLabel><DropdownMenuSeparator />
         {options.map(([column, label]) => <DropdownMenuCheckboxItem key={column} checked={shown.includes(column)} onCheckedChange={() => toggle(column)} onSelect={(event) => event.preventDefault()}>{label}</DropdownMenuCheckboxItem>)}
       </DropdownMenuContent>
     </DropdownMenu>
@@ -109,10 +109,11 @@ export function LastAccessCell({ name }: { name: string }) {
   )
 }
 
-/** A célula de uma coluna de uso da Empresa do cliente nos últimos 30 dias. */
+/** A célula de uma coluna de uso (do cliente ou da Empresa dele) nos últimos 30 dias. */
 export function UsageCell({ name, column }: { name: string; column: UsageColumn }) {
   const access = CLIENT_ACCESS[name]
   if (!access || access.daysAgo === null) return <span className="text-muted-foreground">—</span>
+  if (column === 'clientDays') return <span className="tnum">{access.clientDays}<span className="text-muted-foreground"> de 30</span></span>
   return column === 'companyDays'
     ? <span className="tnum">{access.companyDays}<span className="text-muted-foreground"> de 30</span></span>
     : <span className="tnum">{access.companyPeople}<span className="text-muted-foreground"> de {access.seats}</span></span>
@@ -120,14 +121,16 @@ export function UsageCell({ name, column }: { name: string; column: UsageColumn 
 
 /* ---------- 2. Página do cliente (o login dele) e página da Empresa (a equipe) ---------- */
 
-type PersonAccess = { name: string; role: string; label: string; daysAgo: number | null }
+type PersonAccess = { name: string; role: string; label: string; daysAgo: number | null; days: number; sessions: number; screens: number; minutes: string; area: string }
 const PEOPLE: PersonAccess[] = [
-  { name: 'Ana Souza', role: 'Gestor de tráfego', label: 'hoje, 14:32', daysAgo: 0 },
-  { name: 'Pedro Henrique', role: 'Dono (o cliente)', label: 'ontem, 19:05', daysAgo: 1 },
-  { name: 'João Lima', role: 'Financeiro', label: '20/11, 10:40', daysAgo: 6 },
-  { name: 'Carla Mendes', role: 'Marketing', label: '05/11, 15:12', daysAgo: 21 },
-  { name: 'Rafael Dias', role: 'Gestor de tráfego', label: 'Convite pendente', daysAgo: null },
+  { name: 'Ana Souza', role: 'Gestor de tráfego', label: 'hoje, 14:32', daysAgo: 0, days: 22, sessions: 21, screens: 512, minutes: '6 h 02', area: 'Relatórios' },
+  { name: 'Pedro Henrique', role: 'Dono (o cliente)', label: 'ontem, 19:05', daysAgo: 1, days: 18, sessions: 34, screens: 498, minutes: '6 h 10', area: 'Dashboard' },
+  { name: 'João Lima', role: 'Financeiro', label: '20/11, 10:40', daysAgo: 6, days: 4, sessions: 5, screens: 244, minutes: '3 h 05', area: 'Comissões' },
+  { name: 'Carla Mendes', role: 'Marketing', label: '05/11, 15:12', daysAgo: 21, days: 0, sessions: 1, screens: 30, minutes: '25 min', area: 'Inventário' },
+  { name: 'Rafael Dias', role: 'Gestor de tráfego', label: 'Convite pendente', daysAgo: null, days: 0, sessions: 0, screens: 0, minutes: '—', area: '—' },
 ]
+const CLIENT_DAYS = [1, 1, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 1, 0]
+const CLIENT_AREAS = [['Dashboard', 41], ['Relatórios', 29], ['Comissões', 14], ['Inventário', 10], ['Empresa', 6]] as const
 const DAILY_PEOPLE = [2, 3, 0, 0, 3, 4, 3, 2, 3, 1, 0, 2, 3, 4, 3, 3, 2, 0, 0, 3, 4, 2, 3, 3, 1, 0, 2, 3, 4, 3]
 const AREAS = [['Relatórios', 38], ['Dashboard', 27], ['Inventário', 18], ['Rewards', 9], ['Comissões', 5], ['Empresa', 3]] as const
 
@@ -175,15 +178,36 @@ function PeriodTabs({ period, setPeriod }: { period: '7' | '30'; setPeriod: (nex
   )
 }
 
-/** O card "Acesso do cliente" da página do cliente: só o último login dele; o uso fica na página da Empresa. */
-export function ClientAccessCard({ go, empty = false }: { go: Go; empty?: boolean }) {
-  const row = (label: string, value: React.ReactNode) => <div className="grid grid-cols-[180px_1fr] gap-3 py-2 text-[14px]"><dt className="text-muted-foreground">{label}</dt><dd className="min-w-0">{value}</dd></div>
+/** As áreas mais usadas, com a parte de cada uma nas telas vistas. */
+function AreaBars({ areas }: { areas: readonly (readonly [string, number])[] }) {
   return (
-    <Card title="Acesso do cliente" desc="O último login do cliente, com a conta dele. O uso do Avant é medido na Empresa."
+    <div><div className="mb-2 text-[13px] font-medium">Áreas mais usadas <span className="font-normal text-muted-foreground">(telas vistas)</span></div>
+      <ul className="grid gap-2">{areas.map(([area, share]) => (
+        <li key={area} className="grid grid-cols-[96px_1fr_40px] items-center gap-2 text-[13px]"><span>{area}</span><span className="h-2 overflow-hidden rounded-full bg-muted"><span className="block h-full rounded-full bg-foreground" style={{ width: `${share}%` }} /></span><span className="text-right tnum text-muted-foreground">{share}%</span></li>
+      ))}</ul>
+    </div>
+  )
+}
+
+/** O card "Uso do cliente" da página do cliente: o uso do próprio login dele, sem a equipe. */
+export function ClientAccessCard({ go, empty = false }: { go: Go; empty?: boolean }) {
+  const [period, setPeriod] = useState<'7' | '30'>('30')
+  const figures = period === '30'
+    ? [['Último acesso', 'ontem, 19:05', ''], ['Dias ativos', '18', 'de 30'], ['Sessões', '34', ''], ['Telas vistas', '498', ''], ['Minutos ativos', '6 h 10', '']]
+    : [['Último acesso', 'ontem, 19:05', ''], ['Dias ativos', '4', 'de 7'], ['Sessões', '9', ''], ['Telas vistas', '121', ''], ['Minutos ativos', '1 h 35', '']]
+  return (
+    <Card title="Uso do cliente" className="lg:col-span-2"
+      desc="O uso do login do cliente (Pedro Henrique, pedro@blogexemplo.com). A equipe dele e o total da Empresa ficam na página da Empresa. Guardado por 13 meses."
       footer={empty ? undefined : <Button size="sm" variant="outline" onClick={() => go('empresauso')}>Ver uso da Empresa</Button>}
-      footerNote={empty ? undefined : 'Vai para o HubSpot como avant_last_login.'}>
-      {empty ? <p className="text-[14px] text-muted-foreground">O cliente nunca entrou: ainda não aceitou o convite.</p>
-        : <dl className="-my-2 divide-y">{row('Último acesso', <span className="tnum">ontem, 19:05</span>)}{row('Conta', 'Pedro Henrique · pedro@blogexemplo.com')}{row('Empresa', <button className="text-link hover:underline" onClick={() => go('empresauso')}>Blog Exemplo Mídia</button>)}{row('Uso da Empresa (30d)', <span className="tnum">24 dias ativos · 4 de 5 pessoas</span>)}</dl>}
+      footerNote={empty ? undefined : 'Vai para o HubSpot como avant_last_login e avant_active_days_30d.'}>
+      {empty ? <p className="py-4 text-center text-[14px] text-muted-foreground">O cliente nunca entrou: ainda não aceitou o convite.</p> : <div className="grid gap-6">
+        <PeriodTabs period={period} setPeriod={setPeriod} />
+        <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-5">{figures.map(([label, value, of]) => <UsageFigure key={label} label={label} value={value} of={of || undefined} />)}</div>
+        <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
+          <div><div className="mb-2 text-[13px] font-medium">Dias em que o cliente entrou</div><DailyBars values={CLIENT_DAYS} label="Dias em que o cliente entrou nos últimos 30 dias" unit="(1 = entrou)" /></div>
+          <AreaBars areas={CLIENT_AREAS} />
+        </div>
+      </div>}
     </Card>
   )
 }
@@ -196,41 +220,42 @@ export function CompanyUsageCard() {
     : [['Dias ativos', '5', 'de 7'], ['Pessoas ativas', '3', 'de 5'], ['Sessões', '14', ''], ['Telas vistas', '297', ''], ['Minutos ativos', '3 h 50', '']]
   return (
     <Card title="Uso do Avant" className="lg:col-span-2"
-      desc="Toda a equipe da Empresa, o dono incluído, somada (não guardamos o uso por pessoa). Guardado por 13 meses. Um dia ativo é um dia em que alguém da equipe entrou. A equipe Groone entrando na Empresa não conta."
-      footerNote="Vai para o HubSpot como avant_active_days_30d e avant_active_people_30d.">
+      desc="A soma do uso de cada pessoa da equipe, o cliente incluído. O uso de cada um está na tabela abaixo. Um dia ativo é um dia em que alguém da equipe entrou. A equipe Groone entrando na Empresa não conta."
+      footerNote="Vai para o HubSpot como avant_company_active_days_30d e avant_active_people_30d.">
       <div className="grid gap-6">
         <PeriodTabs period={period} setPeriod={setPeriod} />
         <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-5">{figures.map(([label, value, of]) => <UsageFigure key={label} label={label} value={value} of={of || undefined} />)}</div>
         <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
           <div><div className="mb-2 text-[13px] font-medium">Pessoas ativas por dia</div><DailyBars values={DAILY_PEOPLE} label="Pessoas ativas por dia nos últimos 30 dias" unit="pessoa(s)" /></div>
-          <div><div className="mb-2 text-[13px] font-medium">Áreas mais usadas <span className="font-normal text-muted-foreground">(telas vistas)</span></div>
-            <ul className="grid gap-2">{AREAS.map(([area, share]) => (
-              <li key={area} className="grid grid-cols-[96px_1fr_40px] items-center gap-2 text-[13px]"><span>{area}</span><span className="h-2 overflow-hidden rounded-full bg-muted"><span className="block h-full rounded-full bg-foreground" style={{ width: `${share}%` }} /></span><span className="text-right tnum text-muted-foreground">{share}%</span></li>
-            ))}</ul>
-          </div>
+          <AreaBars areas={AREAS} />
         </div>
       </div>
     </Card>
   )
 }
 
-/** O card "Último acesso da equipe" da página da Empresa: cada pessoa, de quem entrou por último para trás. */
+/** O card "Uso por pessoa" da página da Empresa: o login e o uso de cada pessoa da equipe. */
 export function CompanyTeamAccessCard() {
   const [values, setValues] = useState<Record<string, string>>({})
   const [query, setQuery] = useState('')
   const rows = useMemo(() => PEOPLE.filter((person) => passes({ name: person.name, role: person.role }, values, query, ['name'])), [values, query])
   return (
     <section className="overflow-hidden rounded-lg border bg-card lg:col-span-2">
-      <div className="p-6 pb-4"><h2 className="text-[20px] font-semibold tracking-tight">Último acesso da equipe</h2><p className="mt-2 text-[14px] text-muted-foreground">Quando cada pessoa da Empresa entrou no Avant pela última vez. Por pessoa só guardamos o login; o uso fica somado na Empresa.</p></div>
+      <div className="p-6 pb-4"><h2 className="text-[20px] font-semibold tracking-tight">Uso por pessoa</h2><p className="mt-2 text-[14px] text-muted-foreground">O último login e o uso de cada pessoa nos últimos 30 dias. O card acima é a soma destas linhas.</p></div>
       <TableFilters defs={[{ key: 'role', label: 'Papel', options: [...new Set(PEOPLE.map((person) => person.role))] }]} initial={['role']} values={values} setValues={setValues} query={query} setQuery={setQuery} placeholder="Buscar pessoa" />
-      <div className="overflow-x-auto"><table className="w-full min-w-[560px] text-[14px]"><thead className="border-b"><tr><th className={th}>Pessoa</th><th className={th}>Último acesso</th></tr></thead>
+      <div className="overflow-x-auto"><table className="w-full min-w-[880px] text-[14px]"><thead className="border-b"><tr><th className={th}>Pessoa</th><th className={th}>Último acesso</th><th className={th}>Dias ativos</th><th className={th}>Sessões</th><th className={th}>Telas</th><th className={th}>Minutos</th><th className={th}>Área mais usada</th></tr></thead>
         <tbody className="divide-y">{rows.map((person) => (
           <tr key={person.name} className="hover:bg-muted/50">
             <td className={td}><div className="font-medium">{person.name}</div><div className="text-[12px] text-muted-foreground">{person.role}</div></td>
             <td className={td}>{person.daysAgo === null ? <span className="text-muted-foreground">{person.label}</span> : <span className={cn('tnum', person.daysAgo >= COLD_DAYS && 'text-ochre')}>{person.label}{person.daysAgo > 1 && <span className="text-[12px] text-muted-foreground"> · há {person.daysAgo} dias</span>}</span>}</td>
+            <td className={td}><span className="tnum">{person.days}</span><span className="text-muted-foreground"> de 30</span></td>
+            <td className={cn(td, 'tnum')}>{person.sessions}</td>
+            <td className={cn(td, 'tnum')}>{person.screens.toLocaleString('pt-BR')}</td>
+            <td className={cn(td, 'tnum')}>{person.minutes}</td>
+            <td className={cn(td, 'text-muted-foreground')}>{person.area}</td>
           </tr>
         ))}
-        {!rows.length && <tr><td colSpan={2} className="py-10 text-center text-muted-foreground">Ninguém com esses filtros.</td></tr>}</tbody></table></div>
+        {!rows.length && <tr><td colSpan={7} className="py-10 text-center text-muted-foreground">Ninguém com esses filtros.</td></tr>}</tbody></table></div>
     </section>
   )
 }
@@ -282,9 +307,11 @@ export function CompanyUsageScreen({ go }: { go: Go }) {
 
 /* ---------- 3. Ferramentas > Nutrição ---------- */
 
-type Measure = 'days_without_access' | 'company_active_days_30d' | 'active_people_30d' | 'screens_30d' | 'minutes_30d' | 'onboarding_step'
+type Measure = 'days_without_access' | 'active_days_30d' | 'client_sessions_30d' | 'company_active_days_30d' | 'active_people_30d' | 'screens_30d' | 'minutes_30d' | 'onboarding_step'
 const MEASURES: Record<Measure, { label: string; unit: string }> = {
   days_without_access: { label: 'Dias sem o cliente entrar', unit: 'dias' },
+  active_days_30d: { label: 'Dias ativos do cliente (30d)', unit: 'dias' },
+  client_sessions_30d: { label: 'Sessões do cliente (30d)', unit: 'sessões' },
   company_active_days_30d: { label: 'Dias ativos da Empresa (30d)', unit: 'dias' },
   active_people_30d: { label: 'Pessoas ativas na Empresa (30d)', unit: 'pessoas' },
   screens_30d: { label: 'Telas vistas na Empresa (30d)', unit: 'telas' },
