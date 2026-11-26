@@ -80,7 +80,7 @@
 - account/service.ts
 - tsconfig.json
 - session-start.sh
-- fontSize.test.ts
+- postcss-scale-rem.js
 - ReportsView.vue
 - TaskView.vue
 - ScheduleDialog.vue
@@ -141,7 +141,7 @@
 - BarChart.vue
 - CustomThemeDialog.vue
 - GoogleAdsObjectView.vue
-- vue-sonner
+- vue
 - formatDate
 - ThemeCard.vue
 - ChecklistNotesCard.vue
@@ -167,7 +167,7 @@
 - 19. Cliente e Empresa em dois cadastros
 - NewTaskDialog.vue
 - AddWidgetDialog.vue
-- Input.vue
+- SaveReportDialog.vue
 - ApiKeysCard.vue
 - virtual-i18n.d.ts
 - t
@@ -246,6 +246,10 @@
 ## Surprising Connections (you probably didn't know these)
 - `Painel` --references--> `errorText()`  [INFERRED]
   docs/superpowers/specs/2026-10-28-construtor-de-relatorios-design.md → src/lib/i18n/index.ts
+- `Task 6: Web — construtor` --references--> `errorText()`  [INFERRED]
+  docs/superpowers/plans/2026-10-28-construtor-de-relatorios.md → src/lib/i18n/index.ts
+- `Task 7: Web — modal de métrica personalizada e "Minhas métricas"` --references--> `errorText()`  [INFERRED]
+  docs/superpowers/plans/2026-10-28-construtor-de-relatorios.md → src/lib/i18n/index.ts
 - `Task 3: Web — tipos, serviço e regras do construtor` --references--> `ReportDraft`  [INFERRED]
   docs/superpowers/plans/2026-10-28-construtor-de-relatorios.md → src/modules/reports/rules.ts
 - `Task 3: Web — tipos, serviço e regras do construtor` --references--> `ChartType`  [INFERRED]
@@ -337,8 +341,8 @@ Cohesion: 0.11
 Nodes (22): filterFailures(), isRunning(), runSummary(), barFilters, canRun, DEFAULT_FILTERS, failures, FILTER_LABELS (+14 more)
 
 ### Community 19 - "StaffView.vue"
-Cohesion: 0.08
-Nodes (28): assign(), busy, canEditGroone, canManageTeam, canSeeGoal, canSeeInvites, editable(), email (+20 more)
+Cohesion: 0.05
+Nodes (41): pick(), metricOptions, options, ruleEnd(), setGoal(), assign(), busy, canEditGroone (+33 more)
 
 ### Community 20 - "InstallCheckCell.vue"
 Cohesion: 0.07
@@ -453,8 +457,8 @@ Cohesion: 0.20
 Nodes (9): Avant: conexão com o GAM, Caminho conta de serviço, Caminho MCM, Decisões de Pedro (23/10/2026), Erros e estados, Fontes, Importação, Resumo (+1 more)
 
 ### Community 48 - "NetworksView.vue"
-Cohesion: 0.08
-Nodes (28): busy, canConnect, canDisconnect, canSync, disconnect(), disconnecting, disconnectOpen, errorToast() (+20 more)
+Cohesion: 0.09
+Nodes (27): busy, canConnect, canDisconnect, canSync, disconnect(), disconnecting, disconnectOpen, errorToast() (+19 more)
 
 ### Community 49 - "Avant: repositório e plano do MVP"
 Cohesion: 0.22
@@ -534,7 +538,11 @@ Nodes (37): sameComparison(), savedPeriod(), viewChanged(), viewDraft(), ViewPer
 
 ### Community 71 - "FacebookAdForm.vue"
 Cohesion: 0.10
-Nodes (23): ad, blankCard(), buttonOptions, format, formatOptions, instagram, instagramOptions, pageOptions (+15 more)
+Nodes (22): ACCOUNT_TONES, accountTone(), ALERT_KEYS, alertText(), byManager(), CHANGE_KEYS, changeText(), CHANNEL_KEYS (+14 more)
+
+### Community 73 - "HubspotRecordCard.vue"
+Cohesion: 0.11
+Nodes (23): activities, ACTIVITY_ICON, emptyText, facts, kinds, linked, props, shownKind (+15 more)
 
 ### Community 72 - "google_ads/rules.ts"
 Cohesion: 0.08
@@ -545,8 +553,8 @@ Cohesion: 0.08
 Nodes (26): activities, ACTIVITY_ICON, emptyText, facts, kinds, linked, props, shownKind (+18 more)
 
 ### Community 74 - "ReservedNetworksCard.vue"
-Cohesion: 0.15
-Nodes (13): add(), addBusy, addError, addOpen, canAssign, code, emit, props (+5 more)
+Cohesion: 0.12
+Nodes (17): add(), addBusy, addError, addOpen, canAssign, code, emit, props (+9 more)
 
 ### Community 75 - "AlertsView.vue"
 Cohesion: 0.06
@@ -670,7 +678,7 @@ Nodes (57): cascadeLadder(), dropPercent(), nearestTier(), percentText(), priceR
 
 ### Community 105 - "FacebookCampaignsView.vue"
 Cohesion: 0.05
-Nodes (39): accountId, accountOptions, accounts, allSelected, availableFilters, barFilters, base, canManage (+31 more)
+Nodes (41): childLevel(), accountId, accountOptions, accounts, allSelected, availableFilters, barFilters, base (+33 more)
 
 ### Community 106 - "CompaniesView.vue"
 Cohesion: 0.06
@@ -689,8 +697,8 @@ Cohesion: 0.07
 Nodes (34): company, error, hasSeats, load(), lost, networks, router, session (+26 more)
 
 ### Community 110 - "events.ts"
-Cohesion: 0.11
-Nodes (17): close(), EventMap, FacebookJobUpdated, GamToolRunUpdated, Handler, handlers, InstallCheckUpdated, listen() (+9 more)
+Cohesion: 0.16
+Nodes (16): close(), EventMap, FacebookJobUpdated, GamToolRunUpdated, Handler, handlers, InstallCheckUpdated, listen() (+8 more)
 
 ### Community 111 - "reports/types.ts"
 Cohesion: 0.10
@@ -802,7 +810,7 @@ Nodes (19): awaiting, busy, Check, checks, code, done, dot(), failed (+11 more)
 
 ### Community 138 - "PriceRuleSiteView.vue"
 Cohesion: 0.05
-Nodes (53): gainQuery(), gainSeries(), modelChoices(), modelCounts(), recommendedModel(), siteStatus(), active, automaticRuleCount (+45 more)
+Nodes (52): cascadeFunnel(), gainQuery(), gainSeries(), modelCounts(), siteStatus(), funnel, active, automaticRuleCount (+44 more)
 
 ### Community 139 - "ResetView.vue"
 Cohesion: 0.17
@@ -865,8 +873,8 @@ Cohesion: 0.04
 Nodes (51): adTagPermission(), canManage, availableFilters, base, busy, canManage, COLUMN_LABELS, columnLabel() (+43 more)
 
 ### Community 155 - "FacebookCampaignForm.vue"
-Cohesion: 0.18
-Nodes (14): account, accountOptions, bidOptions, budgetAt, budgetKind, draft, patch(), pickObjective() (+6 more)
+Cohesion: 0.14
+Nodes (17): account, accountOptions, bidOptions, budgetAt, budgetKind, draft, patch(), pickObjective() (+9 more)
 
 ### Community 156 - "AdjustmentDialog.vue"
 Cohesion: 0.18
@@ -961,8 +969,8 @@ Cohesion: 0.25
 Nodes (7): cards, error, load(), loading, props, withDeal, HubspotNetworkCards
 
 ### Community 179 - "SiteDetailView.vue"
-Cohesion: 0.08
-Nodes (25): busy, canAssign, canManage, classifying, errorToast(), id, load(), loadError (+17 more)
+Cohesion: 0.07
+Nodes (28): rows, tree(), busy, canAssign, canManage, classifying, errorToast(), id (+20 more)
 
 ### Community 180 - "cn"
 Cohesion: 0.10
@@ -1009,8 +1017,8 @@ Cohesion: 0.15
 Nodes (25): current, current, current, rows, current, current, current, readShown() (+17 more)
 
 ### Community 191 - "ProfileImageCard.vue"
-Cohesion: 0.13
-Nodes (19): busy, drop(), input, pick(), problem, props, run(), ACCEPTED_IMAGES (+11 more)
+Cohesion: 0.10
+Nodes (23): box, failed, initial, props, busy, drop(), input, pick() (+15 more)
 
 ### Community 192 - "dashboards/rules.ts"
 Cohesion: 0.10
@@ -1060,6 +1068,14 @@ Nodes (8): alertService, Alert, AlertCheck, AlertDefinition, AlertEvent, AlertIn
 Cohesion: 0.15
 Nodes (13): finishedSteps(), RUN_TONE, runStateLabel(), STEP_TONE, stepStateLabel(), toolName(), done, load() (+5 more)
 
+### Community 203 - "GamRunView.vue"
+Cohesion: 0.15
+Nodes (13): finishedSteps(), RUN_TONE, runStateLabel(), STEP_TONE, stepStateLabel(), toolName(), done, load() (+5 more)
+
+### Community 204 - "report-view-rules.test.ts"
+Cohesion: 0.19
+Nodes (10): pageCount(), pageSlice(), shownRows, NO_COMPARISON, presetRange(), previousRange(), shiftDay(), ThumbShape (+2 more)
+
 ### Community 205 - "20. CDN dos scripts do site (cdn.groone.com)"
 Cohesion: 0.40
 Nodes (4): 20. CDN dos scripts do site (cdn.groone.com), Chamadas da API e nome dos scripts (Pedro, 23/11, 23h52), Como fica no ar (proposta para o avant-infra), O que ficou decidido
@@ -1099,6 +1115,22 @@ Nodes (4): tailwindcss@3.4.19, tailwindcss-animate@^1.0.7, tailwindcss, tailwind
 ### Community 215 - "overrides"
 Cohesion: 0.50
 Nodes (4): glob, minimatch, pnpm, overrides
+
+### Community 212 - "priorityLabel"
+Cohesion: 0.25
+Nodes (8): priorityOptions, eventText(), priorityLabel(), statusLabel(), priorityOptions, statusOptions, priorityOptions, statusOptions
+
+### Community 214 - "Avatar.vue"
+Cohesion: 0.40
+Nodes (4): broken, hue, initials, props
+
+### Community 215 - "overrides"
+Cohesion: 0.50
+Nodes (4): glob, minimatch, pnpm, overrides
+
+### Community 216 - "networkName"
+Cohesion: 0.50
+Nodes (4): networkName(), loadExtras(), netName(), networkOptions
 
 ## Knowledge Gaps
 - **5 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
