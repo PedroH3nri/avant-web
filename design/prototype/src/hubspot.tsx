@@ -52,7 +52,7 @@ function Kpi({ label, value, suffix, note, tone }: { index?: number; label: stri
 type FilterDef = { key: string; label: string; options: string[] }
 
 /** Filtros da tabela no padrão do Avant: a vista enxuta mostra poucos, e "Mais filtros" adiciona e tira os outros. */
-function TableFilters({ defs, initial, values, setValues, query, setQuery, placeholder }: { defs: FilterDef[]; initial: string[]; values: Record<string, string>; setValues: (next: Record<string, string>) => void; query: string; setQuery: (next: string) => void; placeholder: string }) {
+export function TableFilters({ defs, initial, values, setValues, query, setQuery, placeholder }: { defs: FilterDef[]; initial: string[]; values: Record<string, string>; setValues: (next: Record<string, string>) => void; query: string; setQuery: (next: string) => void; placeholder: string }) {
   const [shown, setShown] = useState<string[]>(initial)
   /** Liga ou desliga um filtro na barra; tirar um filtro limpa o valor dele. */
   const toggle = (key: string) => {
@@ -81,7 +81,7 @@ function TableFilters({ defs, initial, values, setValues, query, setQuery, place
 }
 
 /** Diz se a linha passa pelos filtros escolhidos e pela busca. */
-function passes(row: Record<string, string>, values: Record<string, string>, query: string, searchIn: string[]) {
+export function passes(row: Record<string, string>, values: Record<string, string>, query: string, searchIn: string[]) {
   const text = query.trim().toLowerCase()
   if (text && !searchIn.some((key) => row[key]?.toLowerCase().includes(text))) return false
   return Object.entries(values).every(([key, value]) => !value || value === 'all' || row[key] === value)
@@ -609,7 +609,10 @@ const HEALTH = [
   { key: 'checklist_progress', label: 'Checklist do site', example: '83%', group: 'Onboarding' },
   { key: 'install_ok', label: 'Instalação ok', example: 'Não: loader sem resposta', group: 'Onboarding' },
   { key: 'ad_tag_published', label: 'Ad tag publicada', example: 'Sim, 12/11', group: 'Onboarding' },
-  { key: 'last_login', label: 'Último login no Avant', example: '24/11/2026', group: 'Uso' },
+  { key: 'last_login', label: 'Último acesso ao Avant', example: '26/11/2026', group: 'Uso' },
+  { key: 'active_days_30d', label: 'Dias ativos nos últimos 30 dias', example: '24', group: 'Uso' },
+  { key: 'active_people_30d', label: 'Pessoas ativas nos últimos 30 dias', example: '4', group: 'Uso' },
+  { key: 'nurture_stage', label: 'Régua de nutrição atual', example: 'esfriando', group: 'Uso' },
   { key: 'revenue_30d', label: 'Receita dos últimos 30 dias (US$)', example: '1.240,18', group: 'Saúde' },
   { key: 'revenue_change', label: 'Variação contra os 30 dias anteriores', example: '−18%', group: 'Saúde' },
   { key: 'last_revenue_day', label: 'Último dia com receita', example: '24/11/2026', group: 'Saúde' },
