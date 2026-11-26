@@ -19,7 +19,7 @@ import { translate, type Key, type Lang } from './i18n'
 import { Mark, SeatBar, SeatDot, SeatStrip, type SeatState } from './tiles'
 import { DateField, MonthField, PeriodPicker, PRESETS } from './date-pickers'
 import { DollarRate, NotificationCenter } from './navbar-extras'
-import { AccessFilterSelect, AccessSortHeader, ClientAccessCard, ClientNurtureCard, ClientUsageCard, ClientUsageScreen, LastAccessCell, NurtureRuleScreen, NurtureScreen, UnsubscribeScreen, UsageCell, UsageColumnsMenu, matchesAccess, sortByAccess, useNurtureRules, type AccessFilter, type AccessSort, type UsageColumn } from './usage'
+import { AccessFilterSelect, AccessSortHeader, ClientAccessCard, ClientNurtureCard, ClientUsageScreen, CompanyUsageScreen, LastAccessCell, NurtureRuleScreen, NurtureScreen, UnsubscribeScreen, UsageCell, UsageColumnsMenu, matchesAccess, sortByAccess, useNurtureRules, type AccessFilter, type AccessSort, type UsageColumn } from './usage'
 import { HelpCenterScreen, HubspotRecordCard, HubspotScreen, HelpEditorScreen, NetworkDetailScreen, NpsScreen, ProspectsScreen } from './hubspot'
 
 /* ---------- prototype routing ---------- */
@@ -52,7 +52,8 @@ const SCREENS = [
   ['configuracoes', 'Configurações'],
   ['interno', 'Painel interno · Clientes'],
   ['cliente', 'Painel interno · Página do cliente'],
-  ['clienteuso', 'Painel interno · Página do cliente · Uso do Avant'],
+  ['clienteuso', 'Painel interno · Página do cliente · Acesso do cliente'],
+  ['empresauso', 'Painel interno · Página da Empresa · Uso da equipe'],
   ['nutricaointerno', 'Painel interno · Ferramentas · Nutrição'],
   ['nutricaoregrainterno', 'Painel interno · Ferramentas · Régua de nutrição'],
   ['descadastro', 'E-mail · Descadastro da nutrição'],
@@ -138,7 +139,7 @@ const SCREENS = [
   ['seletordatas', 'Componentes · Seletor de datas'],
 ] as const
 type Screen = (typeof SCREENS)[number][0]
-const INTERNAL_SCREENS: Screen[] = ['clienteuso', 'nutricaointerno', 'nutricaoregrainterno', 'networkinterno', 'hubspotinterno', 'ajudainterno', 'prospeccao', 'npsinterno', 'gadsinterno', 'gadscampanhasinterno', 'gadscampanhainterno', 'gadsgrupointerno', 'gadsanunciointerno', 'fbinterno', 'fbcampanhasinterno', 'fbcampanhainterno', 'fbconjuntointerno', 'fbanunciointerno', 'interno', 'cliente', 'siteinterno', 'contratos', 'resultados', 'papelcomissao', 'minhacomissao', 'comissoes', 'minhasinvoices', 'invoice', 'invoices', 'servicosinvoice', 'modelosdash', 'tarefas', 'tarefa', 'checklists', 'checklist', 'checklistitens', 'ferramentasgam', 'execucaogam', 'rewardsinterno', 'rewardinterno', 'rewardmetricasinterno', 'adtagsinterno', 'adtaginterno', 'adtagmetricasinterno', 'loadersinterno', 'loaderinterno', 'regrasprecointerno', 'regrasiteinterno', 'regrainterno', 'cascatainterno']
+const INTERNAL_SCREENS: Screen[] = ['clienteuso', 'empresauso', 'nutricaointerno', 'nutricaoregrainterno', 'networkinterno', 'hubspotinterno', 'ajudainterno', 'prospeccao', 'npsinterno', 'gadsinterno', 'gadscampanhasinterno', 'gadscampanhainterno', 'gadsgrupointerno', 'gadsanunciointerno', 'fbinterno', 'fbcampanhasinterno', 'fbcampanhainterno', 'fbconjuntointerno', 'fbanunciointerno', 'interno', 'cliente', 'siteinterno', 'contratos', 'resultados', 'papelcomissao', 'minhacomissao', 'comissoes', 'minhasinvoices', 'invoice', 'invoices', 'servicosinvoice', 'modelosdash', 'tarefas', 'tarefa', 'checklists', 'checklist', 'checklistitens', 'ferramentasgam', 'execucaogam', 'rewardsinterno', 'rewardinterno', 'rewardmetricasinterno', 'adtagsinterno', 'adtaginterno', 'adtagmetricasinterno', 'loadersinterno', 'loaderinterno', 'regrasprecointerno', 'regrasiteinterno', 'regrainterno', 'cascatainterno']
 const isScreen = (s: string): s is Screen => SCREENS.some(([k]) => k === s)
 type T = (k: Key) => string
 
@@ -1580,7 +1581,7 @@ function InternalScreen({ t, go }: { t: T; go: (s: Screen) => void }) {
           <UsageColumnsMenu shown={usageColumns} setShown={setUsageColumns} />
         </div>
         <Table min={960}>
-          <thead><tr><th className={th}>Cliente</th><th className={th}>Contato</th><th className={th}>Funcionários</th><th className={th}>Situação</th><AccessSortHeader className={th} sort={accessSort} setSort={setAccessSort} />{usageColumns.includes('activeDays') && <th className={th}>Dias ativos (30d)</th>}{usageColumns.includes('activePeople') && <th className={th}>Pessoas ativas (30d)</th>}<th className={th}>Faturamento</th><th className={cn(th, 'w-16')}><span className="sr-only">Abrir</span></th></tr></thead>
+          <thead><tr><th className={th}>Cliente</th><th className={th}>Contato</th><th className={th}>Funcionários</th><th className={th}>Situação</th><AccessSortHeader className={th} sort={accessSort} setSort={setAccessSort} />{usageColumns.includes('activeDays') && <th className={th}>Dias ativos (30d)</th>}{usageColumns.includes('sessions') && <th className={th}>Sessões (30d)</th>}<th className={th}>Faturamento</th><th className={cn(th, 'w-16')}><span className="sr-only">Abrir</span></th></tr></thead>
           <tbody>
             {list.map((c) => (
               <tr key={c.name} className="hover:bg-muted">
@@ -1590,7 +1591,7 @@ function InternalScreen({ t, go }: { t: T; go: (s: Screen) => void }) {
                 <td className={td}><Status tone={SITUATION[c.situation][1]}>{SITUATION[c.situation][0]}</Status></td>
                 <td className={td}><LastAccessCell name={c.name} /></td>
                 {usageColumns.includes('activeDays') && <td className={td}><UsageCell name={c.name} column="activeDays" /></td>}
-                {usageColumns.includes('activePeople') && <td className={td}><UsageCell name={c.name} column="activePeople" /></td>}
+                {usageColumns.includes('sessions') && <td className={td}><UsageCell name={c.name} column="sessions" /></td>}
                 <td className={td}><RevenueStatus data={c.revenue} /></td>
                 <td className={td}><Button variant="ghost" size="sm" onClick={() => go(c.name === 'Blog Exemplo' ? 'clienteuso' : 'cliente')}>Abrir</Button></td>
               </tr>
@@ -1934,8 +1935,7 @@ function ClientScreen({ go }: { go: (s: Screen) => void }) {
         <Card title="Dados fiscais" desc="Só o cliente preenche e muda, em Configurações. A equipe Groone só lê." className="lg:col-span-2">
           <div className="flex items-center gap-3 text-[14px] text-muted-foreground"><Lock className="h-4 w-4" />O cliente ainda não preencheu os dados fiscais.</div>
         </Card>
-        <ClientUsageCard empty />
-        <ClientAccessCard empty />
+        <ClientAccessCard go={(next) => go(next as Screen)} empty />
         <ClientNurtureCard go={(next) => go(next as Screen)} empty />
         <ClientNetworksCard />
         <StaffDocumentsCard />
@@ -10739,6 +10739,7 @@ export default function App() {
       case 'interno': return <InternalScreen t={t} go={go} />
       case 'cliente': return <ClientScreen go={go} />
       case 'clienteuso': return <ClientUsageScreen go={(next) => go(next as Screen)} />
+      case 'empresauso': return <CompanyUsageScreen go={(next) => go(next as Screen)} />
       case 'nutricaointerno': return <NurtureScreen go={(next) => go(next as Screen)} rules={nurture.rules} setRules={nurture.setRules} open={nurture.setOpenId} />
       case 'nutricaoregrainterno': return <NurtureRuleScreen key={nurture.openId ?? 'nova'} go={(next) => go(next as Screen)} rule={nurture.openRule} save={nurture.save} />
       case 'descadastro': return <UnsubscribeScreen />
