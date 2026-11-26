@@ -1581,7 +1581,7 @@ function InternalScreen({ t, go }: { t: T; go: (s: Screen) => void }) {
           <UsageColumnsMenu shown={usageColumns} setShown={setUsageColumns} />
         </div>
         <Table min={960}>
-          <thead><tr><th className={th}>Cliente</th><th className={th}>Contato</th><th className={th}>Funcionários</th><th className={th}>Situação</th><AccessSortHeader className={th} sort={accessSort} setSort={setAccessSort} />{usageColumns.includes('activeDays') && <th className={th}>Dias ativos (30d)</th>}{usageColumns.includes('sessions') && <th className={th}>Sessões (30d)</th>}<th className={th}>Faturamento</th><th className={cn(th, 'w-16')}><span className="sr-only">Abrir</span></th></tr></thead>
+          <thead><tr><th className={th}>Cliente</th><th className={th}>Contato</th><th className={th}>Funcionários</th><th className={th}>Situação</th><AccessSortHeader className={th} sort={accessSort} setSort={setAccessSort} />{usageColumns.includes('companyDays') && <th className={th}>Dias ativos da Empresa (30d)</th>}{usageColumns.includes('companyPeople') && <th className={th}>Pessoas ativas (30d)</th>}<th className={th}>Faturamento</th><th className={cn(th, 'w-16')}><span className="sr-only">Abrir</span></th></tr></thead>
           <tbody>
             {list.map((c) => (
               <tr key={c.name} className="hover:bg-muted">
@@ -1590,8 +1590,8 @@ function InternalScreen({ t, go }: { t: T; go: (s: Screen) => void }) {
                 <td className={td}><span className="tnum text-[13px] text-muted-foreground">{c.used}/{c.limit}</span></td>
                 <td className={td}><Status tone={SITUATION[c.situation][1]}>{SITUATION[c.situation][0]}</Status></td>
                 <td className={td}><LastAccessCell name={c.name} /></td>
-                {usageColumns.includes('activeDays') && <td className={td}><UsageCell name={c.name} column="activeDays" /></td>}
-                {usageColumns.includes('sessions') && <td className={td}><UsageCell name={c.name} column="sessions" /></td>}
+                {usageColumns.includes('companyDays') && <td className={td}><UsageCell name={c.name} column="companyDays" /></td>}
+                {usageColumns.includes('companyPeople') && <td className={td}><UsageCell name={c.name} column="companyPeople" /></td>}
                 <td className={td}><RevenueStatus data={c.revenue} /></td>
                 <td className={td}><Button variant="ghost" size="sm" onClick={() => go(c.name === 'Blog Exemplo' ? 'clienteuso' : 'cliente')}>Abrir</Button></td>
               </tr>
