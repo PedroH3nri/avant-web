@@ -157,7 +157,7 @@ onBeforeUnmount(() => {
             :key="String(option)"
             type="button"
             :aria-pressed="unreadOnly === option"
-            :class="cn('rounded-md px-2.5 py-1 font-medium transition-colors', unreadOnly === option ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground')"
+            :class="cn('rounded-md px-2.5 py-1 font-medium transition-colors', unreadOnly === option ? 'bg-secondary text-[hsl(var(--highlight))] transition-colors duration-200' : 'text-muted-foreground transition-colors duration-200 hover:bg-accent hover:text-[hsl(var(--highlight))]')"
             @click="unreadOnly = option"
           >
             {{ option ? (unread ? t('notif.unreadCount', { n: unread }) : t('notif.unread')) : t('notif.all') }}

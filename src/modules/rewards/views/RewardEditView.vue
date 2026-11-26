@@ -637,7 +637,7 @@ const segment = (selected: boolean) => ['h-8 rounded px-3 text-[13px] font-mediu
                 :aria-checked="device === value"
                 :aria-label="t(`rw.device.${value}`)"
                 :title="t(`rw.device.${value}`)"
-                :class="['flex h-8 w-9 items-center justify-center rounded', device === value ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground']"
+                :class="['flex h-8 w-9 items-center justify-center rounded', device === value ? 'bg-secondary text-[hsl(var(--highlight))] transition-colors duration-200' : 'text-muted-foreground transition-colors duration-200 hover:bg-accent hover:text-[hsl(var(--highlight))]']"
                 @click="device = value"
               >
                 <component :is="icon" class="size-4" />

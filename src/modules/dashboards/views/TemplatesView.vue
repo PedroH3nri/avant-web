@@ -53,7 +53,7 @@ const apiMessage = (error: unknown) =>
 const tab = (on: boolean) =>
   cn(
     'h-8 rounded-[4px] px-3 text-[13px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-    on ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground',
+    on ? 'bg-secondary text-[hsl(var(--highlight))] transition-colors duration-200' : 'text-muted-foreground transition-colors duration-200 hover:bg-accent hover:text-[hsl(var(--highlight))]',
   )
 
 /** Carrega os modelos e os papéis que limitam quem vê. */
