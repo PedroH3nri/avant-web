@@ -23,13 +23,10 @@ const emptyText = computed(() => {
   if (!linked.value) return t('hs.card.notSent')
   return null
 })
-
-/** A animação em cascata de cada linha, um pouco depois da anterior. */
-const rise = (index: number) => ({ animationDelay: `${Math.min(index, 8) * 60}ms` })
 </script>
 
 <template>
-  <section :class="cn('card-motion flex flex-col overflow-hidden rounded-lg border bg-card animate-in fade-in-0 slide-in-from-bottom-2 fill-mode-both duration-500', $props.class)">
+  <section :class="cn('flex flex-col overflow-hidden rounded-lg border bg-card', $props.class)">
     <div class="flex flex-wrap items-start justify-between gap-3 p-6 pb-0">
       <div class="min-w-0">
         <h2 class="flex items-center gap-2 text-[20px] font-semibold tracking-[-0.025em]"><HubspotMark :size="18" />{{ t('hs.card.title', { object: t(KIND_LABEL[kind]) }) }}</h2>
@@ -56,15 +53,15 @@ const rise = (index: number) => ({ animationDelay: `${Math.min(index, 8) * 60}ms
     <p v-else-if="emptyText" class="p-6 text-[14px] text-muted-foreground">{{ emptyText }}</p>
     <template v-else-if="card">
       <dl class="grid gap-4 p-6 sm:grid-cols-2 xl:grid-cols-4">
-        <div class="animate-in fade-in-0 slide-in-from-bottom-1 fill-mode-both" :style="rise(0)">
+        <div>
           <dt class="text-[13px] text-muted-foreground">{{ t('hs.fact.owner') }}</dt>
           <dd class="mt-1 text-[14px]">{{ card.owner ?? t('hs.card.noOwner') }}</dd>
         </div>
-        <div v-if="stage" class="animate-in fade-in-0 slide-in-from-bottom-1 fill-mode-both" :style="rise(1)">
+        <div v-if="stage">
           <dt class="text-[13px] text-muted-foreground">{{ t(kind === 'deal' ? 'hs.fact.dealStage' : 'hs.fact.lifecycle') }}</dt>
           <dd class="mt-1 text-[14px]">{{ stage }}</dd>
         </div>
-        <div v-for="(fact, index) in facts" :key="fact.code" class="animate-in fade-in-0 slide-in-from-bottom-1 fill-mode-both" :style="rise(index + 2)">
+        <div v-for="fact in facts" :key="fact.code">
           <dt class="text-[13px] text-muted-foreground">{{ fact.label }}</dt>
           <dd class="mt-1 text-[14px] tnum">{{ fact.value }}</dd>
         </div>
@@ -84,7 +81,7 @@ const rise = (index: number) => ({ animationDelay: `${Math.min(index, 8) * 60}ms
           </button>
         </div>
         <ol v-if="activities.length" class="grid px-6 py-4">
-          <li v-for="(activity, index) in activities" :key="`${activity.kind}-${index}`" class="flex gap-3 py-3 animate-in fade-in-0 slide-in-from-bottom-1 fill-mode-both" :style="rise(index)">
+          <li v-for="(activity, index) in activities" :key="`${activity.kind}-${index}`" class="flex gap-3 py-3">
             <span class="grid size-8 shrink-0 place-items-center rounded-full border bg-background">
               <component :is="ACTIVITY_ICON[activity.kind]" class="size-4 text-muted-foreground" aria-hidden="true" />
             </span>

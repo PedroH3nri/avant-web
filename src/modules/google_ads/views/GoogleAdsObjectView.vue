@@ -159,7 +159,7 @@ watch(termKind, loadTerms)
       </div>
       <p v-if="detail.final_url" class="text-[13px] text-muted-foreground">{{ t('gads.finalUrl') }}: <span class="font-mono">{{ detail.final_url }}</span></p>
       <div class="grid grid-cols-2 gap-px overflow-hidden rounded-lg border bg-border sm:grid-cols-4">
-        <StatTile v-for="item in summary" :key="item.key" :label="t(item.key)" :value="item.value" />
+        <StatTile report v-for="item in summary" :key="item.key" :label="t(item.key)" :value="item.value" />
       </div>
       <p v-if="detail.totals.revenue === null" class="text-[13px] text-muted-foreground">{{ t('gads.noRevenue') }}</p>
       <p v-if="detail.channel_type === 'PERFORMANCE_MAX'" class="rounded-md border px-3 py-2 text-[13px] text-muted-foreground">{{ t('gads.pmaxNote') }}</p>

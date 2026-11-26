@@ -95,7 +95,7 @@ const marginText = computed(() => {
     <LoadError v-if="loadError" :message="loadError" @retry="load" />
     <template v-else>
       <div v-if="selected" class="grid grid-cols-2 gap-px overflow-hidden rounded-lg border bg-border md:grid-cols-5">
-        <StatTile v-for="tile in tiles" :key="tile.key" :label="`${t(`res.${tile.key}`)} · ${formatMonth(selected.month, locale)}`" :value="money(tile.value)" :tone="valueClass(tile.value, tile.strong)">
+        <StatTile report v-for="tile in tiles" :key="tile.key" :label="`${t(`res.${tile.key}`)} · ${formatMonth(selected.month, locale)}`" :value="money(tile.value)" :tone="valueClass(tile.value, tile.strong)">
           <Status v-if="tile.key === 'deductions' && selected.deductions_pending" tone="ochre" class="mt-1">{{ t('res.pending') }}</Status>
           <span v-if="tile.key === 'result'" class="mt-1 block text-[13px] text-muted-foreground tnum">{{ t('res.margin', { value: marginText }) }}</span>
         </StatTile>

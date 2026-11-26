@@ -200,7 +200,7 @@ watch([level, parent, accountId, companyId, period, withIssues], refilter)
       <span class="font-medium">{{ parent.name }}</span>
     </p>
     <div v-if="!loadError && tiles.length" class="grid grid-cols-2 gap-px overflow-hidden rounded-lg border bg-border md:grid-cols-4 xl:grid-cols-7">
-      <StatTile v-for="tile in tiles" :key="tile.key" :label="t(tile.label as Key)" :value="tile.text" :tone="tile.tone" />
+      <StatTile report v-for="tile in tiles" :key="tile.key" :label="t(tile.label as Key)" :value="tile.text" :tone="tile.tone" />
     </div>
     <LoadError v-if="loadError" :message="loadError" @retry="load" />
     <DataTable v-else :min="internal ? 1240 : 1120">

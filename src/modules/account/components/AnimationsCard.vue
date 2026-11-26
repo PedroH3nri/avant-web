@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** Onde a pessoa quer animação de hover e foco: campos e selects, botões e cards de métrica. Cada
+/** Onde a pessoa quer animação de hover e foco: campos e selects, botões e cards de relatório. Cada
  * chave salva na hora e vale em todas as Empresas e navegadores da pessoa. */
 import { computed } from 'vue'
 import { toast } from 'vue-sonner'

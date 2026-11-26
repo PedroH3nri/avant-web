@@ -1,12 +1,12 @@
 <script setup lang="ts">
-/** Card de número (rótulo, valor e dica) com a animação dos cards de métrica; use em toda faixa de totais. */
+/** Card de número (rótulo, valor e dica) de toda faixa de totais; só anima com `report` (telas de relatório). */
 import { cn } from '@/lib/utils'
 
-defineProps<{ label?: string; value?: string | number; hint?: string; tone?: string; framed?: boolean; class?: string }>()
+defineProps<{ label?: string; value?: string | number; hint?: string; tone?: string; framed?: boolean; report?: boolean; class?: string }>()
 </script>
 
 <template>
-  <div :class="cn('kpi-motion relative min-w-0 bg-card p-4 transition-colors hover:bg-muted', framed && 'overflow-hidden rounded-lg border', $props.class)">
+  <div :class="cn('relative min-w-0 bg-card p-4', report && 'kpi-motion transition-colors hover:bg-muted', framed && 'overflow-hidden rounded-lg border', $props.class)">
     <div class="flex flex-wrap items-center gap-2 text-[13px] font-medium text-muted-foreground">
       <slot name="label">{{ label }}</slot>
     </div>

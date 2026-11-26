@@ -109,7 +109,7 @@ watch(period, load)
       <Card v-if="!health.last_seen_at" :title="t('at.notSeenTitle')" :desc="t('at.notSeenDesc')" />
       <template v-else>
         <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <StatTile v-for="tile in tiles" :key="tile.label" framed :label="tile.label" :value="tile.value" :hint="tile.note" />
+          <StatTile report v-for="tile in tiles" :key="tile.label" framed :label="tile.label" :value="tile.value" :hint="tile.note" />
         </div>
         <Card :title="t('at.daily')">
           <div class="mb-4 inline-flex flex-wrap rounded-md border bg-muted p-0.5" role="radiogroup" :aria-label="t('at.series')">

@@ -61,7 +61,7 @@ export interface Me {
   theme: Theme
   /** O tema personalizado em uso quando ``theme`` é ``custom`` (cores em /auth/me/themes). */
   custom_theme_id?: string | null
-  /** Áreas com animação de hover e foco (campos, botões, cards de métrica). */
+  /** Áreas com animação de hover e foco (campos, botões, cards de relatório). */
   animations?: AnimationArea[]
   font_size?: FontSize
 }

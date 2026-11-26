@@ -47,8 +47,6 @@ const tiles = computed(() => KINDS.map((value) => status.value?.kinds.find((item
 
 /** O nome do filtro no menu de filtros. */
 const filterLabel = (filter: string) => t(FILTER_LABELS[filter] as Key)
-/** A animação em cascata de cada card, um pouco depois do anterior. */
-const rise = (index: number) => ({ animationDelay: `${Math.min(index, 8) * 60}ms` })
 
 /** Carrega a situação da sincronia e volta a olhar enquanto ela roda. */
 async function load() {
@@ -109,13 +107,12 @@ onBeforeUnmount(() => clearTimeout(pollTimer))
   <PageBody>
     <LoadError v-if="loadError" :message="loadError" @retry="load" />
     <template v-else>
-      <p v-if="status && !status.configured" class="rounded-lg border border-dashed bg-card p-4 text-[14px] text-muted-foreground animate-in fade-in-0">{{ t('hs.notConfiguredHelp') }}</p>
+      <p v-if="status && !status.configured" class="rounded-lg border border-dashed bg-card p-4 text-[14px] text-muted-foreground">{{ t('hs.notConfiguredHelp') }}</p>
       <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <div
-          v-for="(tile, index) in tiles"
+          v-for="tile in tiles"
           :key="tile.kind"
-          class="card-motion rounded-lg border bg-card p-5 animate-in fade-in-0 slide-in-from-bottom-2 fill-mode-both duration-500"
-          :style="rise(index)"
+          class="rounded-lg border bg-card p-5"
         >
           <div class="flex items-center justify-between gap-2">
             <span class="flex items-center gap-2 text-[14px] font-medium"><HubspotMark />{{ t(KIND_LABEL[tile.kind]) }}</span>
@@ -134,7 +131,7 @@ onBeforeUnmount(() => clearTimeout(pollTimer))
         </div>
       </div>
 
-      <section class="card-motion overflow-hidden rounded-lg border bg-card animate-in fade-in-0 slide-in-from-bottom-2 fill-mode-both duration-500" :style="rise(6)">
+      <section class="overflow-hidden rounded-lg border bg-card">
         <div class="p-6 pb-4">
           <h2 class="text-[20px] font-semibold tracking-[-0.025em]">{{ t('hs.failures') }}</h2>
           <p class="mt-2 max-w-[70ch] text-[14px] text-muted-foreground">{{ t('hs.failuresDesc') }}</p>
@@ -158,7 +155,7 @@ onBeforeUnmount(() => clearTimeout(pollTimer))
           </thead>
           <tbody>
             <TableState :cols="4" :loading="!status" :empty="failures.length === 0" :icon="CircleCheck" :title="status?.failures.length ? t('hs.noFailuresFiltered') : t('hs.noFailures')" />
-            <tr v-for="(failure, index) in failures" :key="`${failure.kind}-${failure.avant_id}`" class="hover:bg-muted animate-in fade-in-0 fill-mode-both" :style="rise(index)">
+            <tr v-for="failure in failures" :key="`${failure.kind}-${failure.avant_id}`" class="hover:bg-muted">
               <td :class="[td, 'whitespace-nowrap']">{{ t(KIND_LABEL[failure.kind]) }}</td>
               <td :class="[td, 'font-medium']">{{ failure.label }}</td>
               <td :class="[td, 'text-[13px] text-bad']">{{ failure.error }}</td>
