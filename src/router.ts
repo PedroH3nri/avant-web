@@ -118,6 +118,7 @@ const routes: RouteRecordRaw[] = [
       { path: 'interno/google-ads', component: () => import('@/modules/google_ads/views/GoogleAdsView.vue'), meta: { internal: true, permission: 'internal.google_ads.view' } },
       { path: 'interno/hubspot', component: () => import('@/modules/internal/hubspot/views/HubspotView.vue'), meta: { internal: true, permission: 'internal.hubspot.view' } },
       { path: 'interno/central-de-ajuda', component: () => import('@/modules/internal/help/views/HelpEditorView.vue'), meta: { internal: true, permission: 'internal.help.manage' } },
+      { path: 'interno/prospeccao', component: () => import('@/modules/internal/hubspot/views/ProspectsView.vue'), meta: { internal: true, permission: 'internal.clients.view' } },
       { path: 'interno/nps', component: () => import('@/modules/internal/nps/views/NpsView.vue'), meta: { internal: true, permission: 'internal.clients.view' } },
       { path: 'interno/campanhas-google-ads', component: () => import('@/modules/google_ads/views/GoogleAdsCampaignsView.vue'), meta: { internal: true, permission: 'internal.google_ads.view' } },
       { path: 'interno/campanhas-google-ads/:level/:id', component: () => import('@/modules/google_ads/views/GoogleAdsObjectView.vue'), meta: { internal: true, permission: 'internal.google_ads.view' } },

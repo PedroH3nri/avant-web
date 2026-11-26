@@ -5,7 +5,7 @@ import OpenLink from '@/components/OpenLink.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useDebounceFn } from '@vueuse/core'
 import { toast } from 'vue-sonner'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { Building2, Search, UserSearch } from 'lucide-vue-next'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import ClientProfileForm from '@/modules/internal/clients/components/ClientProfileForm.vue'
@@ -26,7 +26,7 @@ import TableState from '@/components/ui/TableState.vue'
 import RevenueStatusBadge from '@/modules/revenue/components/RevenueStatusBadge.vue'
 import { ApiError } from '@/lib/api'
 import { latestCall } from '@/lib/latest'
-import { emptyProfile, profileBody, profileOk, STATUS_TONE } from '@/modules/internal/clients/rules'
+import { emptyProfile, profileBody, profileOk, prospectDraft, STATUS_TONE } from '@/modules/internal/clients/rules'
 import { errorText, formatAgo, t, type Key } from '@/lib/i18n'
 import { td, th } from '@/lib/table'
 import type { CompanyStatus } from '@/modules/company/types'
@@ -64,6 +64,7 @@ const session = useSession()
 const canManage = computed(() => session.can('internal.clients.manage'))
 const canSearchPeople = computed(() => session.can('internal.users.manage'))
 const router = useRouter()
+const route = useRoute()
 const clients = ref<Client[] | null>(null)
 const page = ref(1)
 const total = ref(0)
@@ -181,6 +182,17 @@ async function load() {
     return
   }
   await Promise.all([loadClients(), loadInvites(), loadStaff()])
+  openFromProspect()
+}
+
+/** Abre o cadastro preenchido quando a pessoa vem da Prospecção ("Cadastrar cliente"). */
+function openFromProspect() {
+  const draft = prospectDraft(route.query, staff.value)
+  if (!draft || !canManage.value) return
+  name.value = draft.name
+  profile.value = { ...emptyProfile(), ...draft.profile }
+  adding.value = true
+  void router.replace({ query: {} })
 }
 onMounted(load)
 

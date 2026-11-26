@@ -36,3 +36,40 @@ export type HubspotCard = {
 export type HubspotClientCards = { configured: boolean; contact: HubspotCard }
 export type HubspotNetworkCards = { configured: boolean; company: HubspotCard; deal: HubspotCard | null }
 export type HubspotSiteCards = { configured: boolean; site: HubspotCard }
+
+export type HubspotTaskRule = 'network_error' | 'network_disconnected' | 'install' | 'alert' | 'detractor'
+export type HubspotTaskDue = 'today' | 'one_business_day' | 'two_business_days' | 'one_week'
+export type HubspotTaskState = 'pending' | 'open' | 'completed' | 'failed'
+
+export type HubspotHealthProperty = { name: string; label: string; enabled: boolean }
+export type HubspotTaskRuleSetting = { rule: HubspotTaskRule; enabled: boolean; due: HubspotTaskDue }
+export type HubspotSettings = { properties: HubspotHealthProperty[]; rules: HubspotTaskRuleSetting[]; updated_at: string | null }
+export type HubspotSettingsInput = { disabled_properties: string[]; rules: HubspotTaskRuleSetting[] }
+
+export type HubspotTask = {
+  id: string
+  rule: HubspotTaskRule
+  subject: string
+  client_id: string
+  client_name: string
+  manager_name: string | null
+  state: HubspotTaskState
+  due_at: string
+  created_at: string
+  hubspot_id: string | null
+  error: string | null
+}
+
+export type HubspotProspect = {
+  hubspot_id: string
+  email: string | null
+  first_name: string
+  last_name: string
+  phone: string | null
+  company: string | null
+  stage: string | null
+  owner: string | null
+  created_at: string | null
+  url: string
+}
+export type HubspotProspectPage = { configured: boolean; items: HubspotProspect[]; total: number; next_after: string | null }

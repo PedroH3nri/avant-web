@@ -78,3 +78,25 @@ export const NOTE_MAX = 5000
 export function personName(person: { name: string } | null): string {
   return person?.name ?? t('note.removedPerson')
 }
+
+const INTERNATIONAL_PHONE = /^\+(\d{1,3})[\s-]+(.+)$/
+
+/** O cadastro de cliente novo vindo da Prospecção (`?novo=1&nome=…`), com o gerente achado pelo nome; sem `novo`, nada. */
+export function prospectDraft(query: Record<string, unknown>, staff: { value: string; label: string }[]): { name: string; profile: Partial<ClientProfileInput> } | null {
+  /** O texto do parâmetro, ou vazio. */
+  const text = (key: string) => (typeof query[key] === 'string' ? (query[key] as string).trim().slice(0, 200) : '')
+  if (text('novo') !== '1') return null
+  const phone = text('telefone')
+  const split = INTERNATIONAL_PHONE.exec(phone)
+  const manager = staff.find((person) => person.label === text('gerente'))
+  return {
+    name: text('nome'),
+    profile: {
+      first_name: text('contato'),
+      last_name: text('sobrenome'),
+      email: text('email'),
+      ...(phone ? { phone_ddi: split ? `+${split[1]}` : '+55', phone: split ? (split[2] as string) : phone } : {}),
+      account_manager_id: manager?.value ?? null,
+    },
+  }
+}
