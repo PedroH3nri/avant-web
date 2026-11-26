@@ -143,7 +143,7 @@ const openCreated = (task: SupportTaskDetail) => router.push(`/interno/tarefas/$
           :key="option.value"
           role="tab"
           :aria-selected="scope === option.value"
-          :class="['h-8 rounded-[4px] px-3 text-[13px] font-medium', scope === option.value ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground']"
+          :class="['h-8 rounded-[4px] px-3 text-[13px] font-medium', scope === option.value ? 'bg-secondary text-[hsl(var(--highlight))] transition-colors duration-200' : 'text-muted-foreground transition-colors duration-200 hover:bg-accent hover:text-[hsl(var(--highlight))]']"
           @click="scope = option.value"
         >
           {{ option.label }}

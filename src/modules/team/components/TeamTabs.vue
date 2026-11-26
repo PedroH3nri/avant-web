@@ -23,7 +23,7 @@ const tabs = computed(() =>
 const tabClass = (active: boolean) =>
   cn(
     'inline-flex h-8 items-center gap-1 whitespace-nowrap rounded-[4px] px-3 text-[13px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-    active ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground',
+    active ? 'bg-secondary text-[hsl(var(--highlight))] transition-colors duration-200' : 'text-muted-foreground transition-colors duration-200 hover:bg-accent hover:text-[hsl(var(--highlight))]',
   )
 
 /** Rota da aba quando ela fica em outra tela que não a atual. */

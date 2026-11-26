@@ -236,7 +236,7 @@ onMounted(load)
           :key="item.key"
           role="tab"
           :aria-selected="tab === item.key"
-          :class="cn('h-8 rounded-[4px] px-3 text-[13px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', tab === item.key ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground')"
+          :class="cn('h-8 rounded-[4px] px-3 text-[13px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', tab === item.key ? 'bg-secondary text-[hsl(var(--highlight))] transition-colors duration-200' : 'text-muted-foreground transition-colors duration-200 hover:bg-accent hover:text-[hsl(var(--highlight))]')"
           @click="tab = item.key"
         >
           {{ t(item.label) }}<span class="ml-1.5 tnum text-muted-foreground">{{ counts[item.key] }}</span>
@@ -254,7 +254,7 @@ onMounted(load)
             type="button"
             :aria-pressed="layout === item.key"
             :title="t(item.label)"
-            :class="cn('flex size-8 items-center justify-center rounded-[4px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', layout === item.key ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground')"
+            :class="cn('flex size-8 items-center justify-center rounded-[4px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', layout === item.key ? 'bg-secondary text-[hsl(var(--highlight))] transition-colors duration-200' : 'text-muted-foreground transition-colors duration-200 hover:bg-accent hover:text-[hsl(var(--highlight))]')"
             @click="layout = item.key"
           >
             <component :is="item.icon" class="size-4" /><span class="sr-only">{{ t(item.label) }}</span>
