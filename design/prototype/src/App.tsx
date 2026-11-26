@@ -19,6 +19,7 @@ import { translate, type Key, type Lang } from './i18n'
 import { Mark, SeatBar, SeatDot, SeatStrip, type SeatState } from './tiles'
 import { DateField, MonthField, PeriodPicker, PRESETS } from './date-pickers'
 import { DollarRate, NotificationCenter } from './navbar-extras'
+import { AccessFilterSelect, AccessSortHeader, ClientAccessCard, ClientNurtureCard, ClientUsageCard, ClientUsageScreen, LastAccessCell, NurtureRuleScreen, NurtureScreen, UnsubscribeScreen, UsageCell, UsageColumnsMenu, matchesAccess, sortByAccess, useNurtureRules, type AccessFilter, type AccessSort, type UsageColumn } from './usage'
 import { HelpCenterScreen, HubspotRecordCard, HubspotScreen, HelpEditorScreen, NetworkDetailScreen, NpsScreen, ProspectsScreen } from './hubspot'
 
 /* ---------- prototype routing ---------- */
@@ -51,6 +52,10 @@ const SCREENS = [
   ['configuracoes', 'Configurações'],
   ['interno', 'Painel interno · Clientes'],
   ['cliente', 'Painel interno · Página do cliente'],
+  ['clienteuso', 'Painel interno · Página do cliente · Uso do Avant'],
+  ['nutricaointerno', 'Painel interno · Ferramentas · Nutrição'],
+  ['nutricaoregrainterno', 'Painel interno · Ferramentas · Régua de nutrição'],
+  ['descadastro', 'E-mail · Descadastro da nutrição'],
   ['siteinterno', 'Painel interno · Detalhes do site'],
   ['networkinterno', 'Painel interno · Detalhes da network (HubSpot)'],
   ['fiscais', 'Configurações · Dados fiscais'],
@@ -133,7 +138,7 @@ const SCREENS = [
   ['seletordatas', 'Componentes · Seletor de datas'],
 ] as const
 type Screen = (typeof SCREENS)[number][0]
-const INTERNAL_SCREENS: Screen[] = ['networkinterno', 'hubspotinterno', 'ajudainterno', 'prospeccao', 'npsinterno', 'gadsinterno', 'gadscampanhasinterno', 'gadscampanhainterno', 'gadsgrupointerno', 'gadsanunciointerno', 'fbinterno', 'fbcampanhasinterno', 'fbcampanhainterno', 'fbconjuntointerno', 'fbanunciointerno', 'interno', 'cliente', 'siteinterno', 'contratos', 'resultados', 'papelcomissao', 'minhacomissao', 'comissoes', 'minhasinvoices', 'invoice', 'invoices', 'servicosinvoice', 'modelosdash', 'tarefas', 'tarefa', 'checklists', 'checklist', 'checklistitens', 'ferramentasgam', 'execucaogam', 'rewardsinterno', 'rewardinterno', 'rewardmetricasinterno', 'adtagsinterno', 'adtaginterno', 'adtagmetricasinterno', 'loadersinterno', 'loaderinterno', 'regrasprecointerno', 'regrasiteinterno', 'regrainterno', 'cascatainterno']
+const INTERNAL_SCREENS: Screen[] = ['clienteuso', 'nutricaointerno', 'nutricaoregrainterno', 'networkinterno', 'hubspotinterno', 'ajudainterno', 'prospeccao', 'npsinterno', 'gadsinterno', 'gadscampanhasinterno', 'gadscampanhainterno', 'gadsgrupointerno', 'gadsanunciointerno', 'fbinterno', 'fbcampanhasinterno', 'fbcampanhainterno', 'fbconjuntointerno', 'fbanunciointerno', 'interno', 'cliente', 'siteinterno', 'contratos', 'resultados', 'papelcomissao', 'minhacomissao', 'comissoes', 'minhasinvoices', 'invoice', 'invoices', 'servicosinvoice', 'modelosdash', 'tarefas', 'tarefa', 'checklists', 'checklist', 'checklistitens', 'ferramentasgam', 'execucaogam', 'rewardsinterno', 'rewardinterno', 'rewardmetricasinterno', 'adtagsinterno', 'adtaginterno', 'adtagmetricasinterno', 'loadersinterno', 'loaderinterno', 'regrasprecointerno', 'regrasiteinterno', 'regrainterno', 'cascatainterno']
 const isScreen = (s: string): s is Screen => SCREENS.some(([k]) => k === s)
 type T = (k: Key) => string
 
@@ -571,7 +576,7 @@ const INTERNAL_RAIL: RailGroup[] = [
   { key: 'clientes', label: 'Inventário', icon: Users, items: [{ id: 'interno', label: 'Clientes', also: ['cliente', 'siteinterno', 'networkinterno'] }, { id: 'prospeccao', label: 'Prospecção' }, { id: 'npsinterno', label: 'NPS dos clientes' }, { id: 'contratos', label: 'Contratos' }, { id: 'resultados', label: 'Resultado dos clientes' }, { id: 'checklists', label: 'Checklists', also: ['checklist', 'checklistitens'] }, { id: 'rewardsinterno', label: 'Rewards', also: ['rewardinterno', 'rewardmetricasinterno'] }, { id: 'adtagsinterno', label: 'Ad tags', also: ['adtaginterno', 'adtagmetricasinterno'] }, { id: 'loadersinterno', label: 'Loaders', also: ['loaderinterno'] }, { id: 'regrasprecointerno', label: 'Regras de preço', also: ['regrasiteinterno', 'regrainterno', 'cascatainterno'] }] },
   { key: 'integracoes', label: 'Integrações', icon: Plug, items: [{ id: 'hubspotinterno', label: 'HubSpot' }, { id: 'fbinterno', label: 'Facebook' }, { id: 'fbcampanhasinterno', label: 'Campanhas do Facebook', also: ['fbcampanhainterno', 'fbconjuntointerno', 'fbanunciointerno'] }, { id: 'gadsinterno', label: 'Google Ads' }, { id: 'gadscampanhasinterno', label: 'Campanhas do Google Ads', also: ['gadscampanhainterno', 'gadsgrupointerno', 'gadsanunciointerno'] }] },
   { key: 'comissoes', label: 'Comissões', icon: Wallet, items: [{ id: 'minhacomissao', label: 'Minha comissão' }, { id: 'minhasinvoices', label: 'Minhas invoices' }, { id: 'comissoes', label: 'Comissões da equipe' }, { id: 'invoices', label: 'Invoices', also: ['servicosinvoice', 'invoice'] }] },
-  { key: 'ferramentas', label: 'Ferramentas', icon: Wrench, items: [{ id: 'tarefas', label: 'Tarefas', also: ['tarefa'] }, { id: 'modelosdash', label: 'Modelos de dashboard' }, { id: 'ferramentasgam', label: 'Ferramentas do GAM', also: ['execucaogam'] }, { id: 'ajudainterno', label: 'Central de ajuda' }] },
+  { key: 'ferramentas', label: 'Ferramentas', icon: Wrench, items: [{ id: 'tarefas', label: 'Tarefas', also: ['tarefa'] }, { id: 'modelosdash', label: 'Modelos de dashboard' }, { id: 'ferramentasgam', label: 'Ferramentas do GAM', also: ['execucaogam'] }, { id: 'nutricaointerno', label: 'Nutrição', also: ['nutricaoregrainterno'] }, { id: 'ajudainterno', label: 'Central de ajuda' }] },
   { key: 'equipegroone', label: 'Equipe', icon: ShieldCheck, items: [{ id: 'papelcomissao', label: 'Papéis da Equipe Groone' }] },
 ]
 const RAIL_WIDTH = 88
@@ -1549,8 +1554,11 @@ function InternalScreen({ t, go }: { t: T; go: (s: Screen) => void }) {
   const [q, setQ] = useState('')
   const [tab, setTab] = useState<'all' | ClientSituation>('all')
   const [adding, setAdding] = useState(false)
+  const [accessFilter, setAccessFilter] = useState<AccessFilter>('all')
+  const [accessSort, setAccessSort] = useState<AccessSort>('none')
+  const [usageColumns, setUsageColumns] = useState<UsageColumn[]>([])
   const count = (k: 'all' | ClientSituation) => (k === 'all' ? clients.length : clients.filter((c) => c.situation === k).length)
-  const list = useMemo(() => clients.filter((c) => (tab === 'all' || c.situation === tab) && (q === '' || `${c.name} ${c.contact} ${c.email}`.toLowerCase().includes(q.toLowerCase()))), [clients, q, tab])
+  const list = useMemo(() => sortByAccess(clients.filter((c) => (tab === 'all' || c.situation === tab) && matchesAccess(c.name, accessFilter) && (q === '' || `${c.name} ${c.contact} ${c.email}`.toLowerCase().includes(q.toLowerCase()))), accessSort), [clients, q, tab, accessFilter, accessSort])
   return (
     <>
       <PageHeader title={t('int.title')} sub={t('int.sub')} actions={!adding && <Button onClick={() => setAdding(true)}>{t('int.new')}</Button>} />
@@ -1564,22 +1572,27 @@ function InternalScreen({ t, go }: { t: T; go: (s: Screen) => void }) {
               </button>
             ))}
           </div>
+          <AccessFilterSelect value={accessFilter} onChange={setAccessFilter} />
           <div className="relative ml-auto w-full sm:w-80">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input aria-label="Buscar clientes" className="h-9 bg-card pl-9" placeholder="Nome do cliente" value={q} onChange={(e) => setQ(e.target.value)} />
           </div>
+          <UsageColumnsMenu shown={usageColumns} setShown={setUsageColumns} />
         </div>
-        <Table min={760}>
-          <thead><tr><th className={th}>Cliente</th><th className={th}>Contato</th><th className={th}>Funcionários</th><th className={th}>Situação</th><th className={th}>Faturamento</th><th className={cn(th, 'w-16')}><span className="sr-only">Abrir</span></th></tr></thead>
+        <Table min={960}>
+          <thead><tr><th className={th}>Cliente</th><th className={th}>Contato</th><th className={th}>Funcionários</th><th className={th}>Situação</th><AccessSortHeader className={th} sort={accessSort} setSort={setAccessSort} />{usageColumns.includes('activeDays') && <th className={th}>Dias ativos (30d)</th>}{usageColumns.includes('activePeople') && <th className={th}>Pessoas ativas (30d)</th>}<th className={th}>Faturamento</th><th className={cn(th, 'w-16')}><span className="sr-only">Abrir</span></th></tr></thead>
           <tbody>
             {list.map((c) => (
               <tr key={c.name} className="hover:bg-muted">
-                <td className={td}><div className="flex items-center gap-3"><CompanyIcon name={c.name} image={c.name === 'Receitas da Vó' ? SAMPLE_LOGO : null} size={28} /><div className="min-w-0"><button className="font-medium hover:underline" onClick={() => go('cliente')}>{c.name}</button>{c.referredBy && <div className="text-[13px] text-muted-foreground">Indicado por {c.referredBy}</div>}</div></div></td>
+                <td className={td}><div className="flex items-center gap-3"><CompanyIcon name={c.name} image={c.name === 'Receitas da Vó' ? SAMPLE_LOGO : null} size={28} /><div className="min-w-0"><button className="font-medium hover:underline" onClick={() => go(c.name === 'Blog Exemplo' ? 'clienteuso' : 'cliente')}>{c.name}</button>{c.referredBy && <div className="text-[13px] text-muted-foreground">Indicado por {c.referredBy}</div>}</div></div></td>
                 <td className={td}><div>{c.contact}</div><div className="text-[13px] text-muted-foreground">{c.email}</div></td>
                 <td className={td}><span className="tnum text-[13px] text-muted-foreground">{c.used}/{c.limit}</span></td>
                 <td className={td}><Status tone={SITUATION[c.situation][1]}>{SITUATION[c.situation][0]}</Status></td>
+                <td className={td}><LastAccessCell name={c.name} /></td>
+                {usageColumns.includes('activeDays') && <td className={td}><UsageCell name={c.name} column="activeDays" /></td>}
+                {usageColumns.includes('activePeople') && <td className={td}><UsageCell name={c.name} column="activePeople" /></td>}
                 <td className={td}><RevenueStatus data={c.revenue} /></td>
-                <td className={td}><Button variant="ghost" size="sm" onClick={() => go('cliente')}>Abrir</Button></td>
+                <td className={td}><Button variant="ghost" size="sm" onClick={() => go(c.name === 'Blog Exemplo' ? 'clienteuso' : 'cliente')}>Abrir</Button></td>
               </tr>
             ))}
           </tbody>
@@ -1921,6 +1934,9 @@ function ClientScreen({ go }: { go: (s: Screen) => void }) {
         <Card title="Dados fiscais" desc="Só o cliente preenche e muda, em Configurações. A equipe Groone só lê." className="lg:col-span-2">
           <div className="flex items-center gap-3 text-[14px] text-muted-foreground"><Lock className="h-4 w-4" />O cliente ainda não preencheu os dados fiscais.</div>
         </Card>
+        <ClientUsageCard empty />
+        <ClientAccessCard empty />
+        <ClientNurtureCard go={(next) => go(next as Screen)} empty />
         <ClientNetworksCard />
         <StaffDocumentsCard />
         <NotesCard />
@@ -10687,7 +10703,8 @@ export default function App() {
 
   const a = ACCENTS.find((x) => x.id === accent)!
   const invoiceState: InvoiceState = { invoices, setInvoices, services, setServices, payee, setPayee, go, open: (id, from) => { setInvoiceView({ id, from }); go('invoice') } }
-  const auth = screen === 'login' || screen === 'convite' || screen === 'construtor'
+  const nurture = useNurtureRules()
+  const auth = screen === 'login' || screen === 'convite' || screen === 'construtor' || screen === 'descadastro'
   const body = (() => {
     switch (screen) {
       case 'login': return <Login t={t} go={go} />
@@ -10721,6 +10738,10 @@ export default function App() {
       case 'configuracoes': return <SettingsScreen t={t} accent={accent} setAccent={setAccent} theme={theme} setTheme={setTheme} image={image} setImage={setImage} groups={groups} />
       case 'interno': return <InternalScreen t={t} go={go} />
       case 'cliente': return <ClientScreen go={go} />
+      case 'clienteuso': return <ClientUsageScreen go={(next) => go(next as Screen)} />
+      case 'nutricaointerno': return <NurtureScreen go={(next) => go(next as Screen)} rules={nurture.rules} setRules={nurture.setRules} open={nurture.setOpenId} />
+      case 'nutricaoregrainterno': return <NurtureRuleScreen key={nurture.openId ?? 'nova'} go={(next) => go(next as Screen)} rule={nurture.openRule} save={nurture.save} />
+      case 'descadastro': return <UnsubscribeScreen />
       case 'siteinterno': return <ClientSiteScreen go={go} />
       case 'networkinterno': return <NetworkDetailScreen go={(next) => go(next as Screen)} />
       case 'fiscais': return <FiscalScreen />
