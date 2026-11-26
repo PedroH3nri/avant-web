@@ -151,7 +151,7 @@ watch(period, load)
         <a v-if="!internal" :href="ACCOUNT_QUALITY_URL" target="_blank" rel="noopener noreferrer" class="mt-3 inline-flex items-center gap-1 text-[13px] text-link hover:underline">{{ t('fb.appeal') }}<ExternalLink class="size-3.5" aria-hidden="true" /></a>
       </div>
       <div class="grid grid-cols-2 gap-px overflow-hidden rounded-lg border bg-border sm:grid-cols-4">
-        <StatTile v-for="item in summary" :key="item.key" :label="t(item.key)" :value="item.value" />
+        <StatTile report v-for="item in summary" :key="item.key" :label="t(item.key)" :value="item.value" />
       </div>
       <p v-if="detail.totals.revenue === null" class="text-[13px] text-muted-foreground">{{ t('fb.noRevenue') }}</p>
       <section class="grid gap-3">

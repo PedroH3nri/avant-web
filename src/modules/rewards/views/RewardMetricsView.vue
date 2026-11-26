@@ -144,12 +144,12 @@ watch(period, load)
         <AlertTriangle class="mt-0.5 size-4 shrink-0" />{{ reward.deleted_at ? t('rw.deletedNote') : t('rw.pausedNote') }}
       </div>
       <div :class="['grid gap-3 sm:grid-cols-2', tiles.length === 5 ? 'lg:grid-cols-5' : 'lg:grid-cols-4']">
-        <StatTile v-for="tile in tiles" :key="tile.label" framed :label="tile.label" :value="integer.format(tile.value)" :hint="tile.note" />
+        <StatTile report v-for="tile in tiles" :key="tile.label" framed :label="tile.label" :value="integer.format(tile.value)" :hint="tile.note" />
       </div>
       <section v-if="quizTiles.length" class="grid gap-3">
         <h2 class="text-[13px] font-medium uppercase tracking-wide text-muted-foreground">{{ t('rw.quiz') }}</h2>
         <div class="grid gap-3 sm:grid-cols-3">
-          <StatTile v-for="tile in quizTiles" :key="tile.label" framed :label="tile.label" :value="tile.value" :hint="tile.note" />
+          <StatTile report v-for="tile in quizTiles" :key="tile.label" framed :label="tile.label" :value="tile.value" :hint="tile.note" />
         </div>
       </section>
       <Card :title="t('rw.daily')">

@@ -19,15 +19,9 @@ type Tone = 'ok' | 'warn' | 'bad' | 'neutral' | 'ochre'
 const th = 'px-4 py-3 text-left text-[12px] font-medium uppercase tracking-[0.04em] text-muted-foreground'
 const td = 'px-4 py-3 align-middle'
 
-/** Entrada com atraso em cascata: cada card sobe e aparece um pouco depois do anterior. */
-function rise(index: number, extra?: string) {
-  return { className: cn('animate-in fade-in slide-in-from-bottom-2 fill-mode-both duration-500', extra), style: { animationDelay: `${index * 60}ms` } }
-}
-
-/** Card que entra com a animação em cascata e sobe de leve no hover. */
-function RiseCard({ index, className, ...props }: React.ComponentProps<typeof Card> & { index: number }) {
-  const motion = rise(index)
-  return <div className={cn(motion.className, className)} style={motion.style}><Card {...props} className="h-full transition-[box-shadow,transform] duration-200 hover:-translate-y-px hover:shadow-sm" /></div>
+/** Card de dados das telas do HubSpot, parado (animação só nos cards de relatório). */
+function RiseCard({ className, ...props }: React.ComponentProps<typeof Card> & { index?: number }) {
+  return <div className={className}><Card {...props} className="h-full" /></div>
 }
 
 /** O selo laranja do HubSpot, para dizer de onde vem cada dado. */
@@ -39,25 +33,15 @@ function HubspotMark({ size = 16 }: { size?: number }) {
   )
 }
 
-/** Indicador de quantos números de uma lista, com o número que sobe de 0 até o valor. */
+/** O número formatado de um card de dados, parado (sem contar de 0 até o valor). */
 function CountUp({ value, suffix = '' }: { value: number; suffix?: string }) {
-  const [shown, setShown] = useState(0)
-  useEffect(() => {
-    let frame = 0
-    const start = performance.now()
-    /** Avança o número até o valor em 600 ms. */
-    const step = (now: number) => { const progress = Math.min(1, (now - start) / 600); setShown(Math.round(value * (1 - (1 - progress) ** 3))); if (progress < 1) frame = requestAnimationFrame(step) }
-    frame = requestAnimationFrame(step)
-    return () => cancelAnimationFrame(frame)
-  }, [value])
-  return <span className="tnum">{shown.toLocaleString('pt-BR')}{suffix}</span>
+  return <span className="tnum">{value.toLocaleString('pt-BR')}{suffix}</span>
 }
 
 /** Um número grande com o rótulo e uma nota, no topo das telas. */
-function Kpi({ index, label, value, suffix, note, tone }: { index: number; label: string; value: number; suffix?: string; note?: string; tone?: Tone }) {
-  const motion = rise(index)
+function Kpi({ label, value, suffix, note, tone }: { index?: number; label: string; value: number; suffix?: string; note?: string; tone?: Tone }) {
   return (
-    <div className={cn('rounded-lg border bg-card p-5 transition-[box-shadow,transform] duration-200 hover:-translate-y-px hover:shadow-sm', motion.className)} style={motion.style}>
+    <div className="rounded-lg border bg-card p-5">
       <div className="text-[13px] font-medium text-muted-foreground">{label}</div>
       <div className={cn('mt-1 text-[28px] font-semibold tracking-[-0.03em]', tone === 'bad' && 'text-bad', tone === 'ok' && 'text-ok')}><CountUp value={value} suffix={suffix} /></div>
       {note && <div className="mt-1 text-[12px] text-muted-foreground">{note}</div>}
@@ -164,7 +148,7 @@ export function HubspotRecordCard({ kind, className }: { kind: RecordKind; class
   const kinds = [...new Set(record.activities.map((activity) => activity.kind))]
   const list = record.activities.filter((activity) => type === 'all' || activity.kind === type)
   return (
-    <section className={cn('overflow-hidden rounded-lg border bg-card animate-in fade-in slide-in-from-bottom-2 duration-500', className)}>
+    <section className={cn('overflow-hidden rounded-lg border bg-card', className)}>
       <div className="flex flex-wrap items-start justify-between gap-3 p-6 pb-0">
         <div>
           <h2 className="flex items-center gap-2 text-[20px] font-semibold tracking-tight"><HubspotMark size={18} />HubSpot · {record.object}</h2>
@@ -173,17 +157,17 @@ export function HubspotRecordCard({ kind, className }: { kind: RecordKind; class
         <Button variant="outline" size="sm" asChild><a href="https://app.hubspot.com" target="_blank" rel="noreferrer"><ExternalLink className="h-4 w-4" />Abrir no HubSpot</a></Button>
       </div>
       <dl className="grid gap-4 p-6 sm:grid-cols-2 xl:grid-cols-4">
-        {record.facts.map(([label, value], index) => <div key={label} {...rise(index)}><dt className="text-[13px] text-muted-foreground">{label}</dt><dd className="mt-1 text-[14px]">{value}</dd></div>)}
+        {record.facts.map(([label, value]) => <div key={label}><dt className="text-[13px] text-muted-foreground">{label}</dt><dd className="mt-1 text-[14px]">{value}</dd></div>)}
       </dl>
       <div className="border-t">
         {kinds.length > 1 && <div className="flex flex-wrap items-center gap-1 px-6 pt-4" role="tablist" aria-label="Tipo de atividade">
           {(['all', ...kinds] as const).map((option) => <button key={option} role="tab" aria-selected={type === option} onClick={() => setType(option)} className={cn('h-8 rounded-md px-3 text-[13px] transition-colors', type === option ? 'bg-secondary font-medium text-foreground' : 'text-muted-foreground hover:text-foreground')}>{option === 'all' ? 'Tudo' : option}</button>)}
         </div>}
         <ol className="grid px-6 py-4">
-          {loading ? [0, 1].map((index) => <li key={index} className="flex gap-3 py-3"><span className="h-8 w-8 animate-pulse rounded-full bg-muted" /><span className="grid flex-1 gap-2"><span className="h-3 w-1/3 animate-pulse rounded bg-muted" /><span className="h-3 w-2/3 animate-pulse rounded bg-muted" /></span></li>) : list.map((activity, index) => {
+          {loading ? [0, 1].map((index) => <li key={index} className="flex gap-3 py-3"><span className="h-8 w-8 animate-pulse rounded-full bg-muted" /><span className="grid flex-1 gap-2"><span className="h-3 w-1/3 animate-pulse rounded bg-muted" /><span className="h-3 w-2/3 animate-pulse rounded bg-muted" /></span></li>) : list.map(activity => {
             const Icon = ACTIVITY_ICON[activity.kind]
             return (
-              <li key={activity.id} {...rise(index, 'flex gap-3 py-3')}>
+              <li key={activity.id} className="flex gap-3 py-3">
                 <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full border bg-background"><Icon className="h-4 w-4 text-muted-foreground" /></span>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-baseline justify-between gap-x-3"><span className="text-[14px] font-medium">{activity.title}</span><span className="text-[12px] text-muted-foreground tnum">{activity.when}</span></div>
@@ -272,18 +256,18 @@ export function ProspectsScreen({ go }: { go: Go }) {
           <Kpi index={2} label="Viram cliente (90 dias)" value={23} suffix="%" />
           <Kpi index={3} label="Dias até virar cliente (média)" value={34} />
         </div>
-        <section className="overflow-hidden rounded-lg border bg-card animate-in fade-in duration-500">
+        <section className="overflow-hidden rounded-lg border bg-card">
           <TableFilters defs={defs} initial={['owner']} values={values} setValues={setValues} query={query} setQuery={setQuery} placeholder="Buscar site, contato ou e-mail" />
           {view === 'board' ? (
             <div className="grid gap-3 overflow-x-auto p-4 md:grid-cols-5">
-              {STAGES.map((stage, column) => {
+              {STAGES.map(stage => {
                 const inStage = rows.filter((deal) => deal.stage === stage)
                 return (
-                  <div key={stage} {...rise(column, 'min-w-[220px] rounded-md bg-muted p-2')}>
+                  <div key={stage} className="min-w-[220px] rounded-md bg-muted p-2">
                     <div className="flex items-center justify-between px-1 pb-2 text-[13px] font-medium"><span className="flex items-center gap-1.5" title={`Fase “${stage}” do ciclo de vida no HubSpot`}><HubspotMark size={12} />{stage}</span><span className="tnum text-muted-foreground">{inStage.length}</span></div>
                     <div className="grid gap-2">
                       {inStage.map((deal) => (
-                        <article key={deal.id} className="rounded-md border bg-card p-3 transition-[box-shadow,transform] duration-200 hover:-translate-y-px hover:shadow-sm">
+                        <article key={deal.id} className="rounded-md border bg-card p-3">
                           <div className="text-[14px] font-medium">{deal.name}</div>
                           <div className="text-[13px] text-muted-foreground">{deal.contact} · {deal.traffic}</div>
                           <div className="mt-2 flex items-center justify-between gap-2"><span className="flex items-center gap-1.5 text-[12px] text-muted-foreground"><Avatar name={deal.owner} size={24} />{deal.owner.split(' ')[0]}</span><span className="text-[12px] text-muted-foreground tnum">{deal.days} d na fase</span></div>
@@ -299,8 +283,8 @@ export function ProspectsScreen({ go }: { go: Go }) {
           ) : (
             <div className="overflow-x-auto"><table className="w-full text-[14px]">
               <thead className="border-b"><tr><th className={th}>Site</th><th className={th}>Contato</th><th className={th}>Estágio</th><th className={th}>Dono</th><th className={th}>Origem</th><th className={th}>Tráfego</th><th className={th}></th></tr></thead>
-              <tbody className="divide-y">{rows.map((deal, index) => (
-                <tr key={deal.id} {...rise(index, 'transition-colors hover:bg-muted/50')}>
+              <tbody className="divide-y">{rows.map(deal => (
+                <tr key={deal.id} className="transition-colors hover:bg-muted/50">
                   <td className={cn(td, 'font-medium')}>{deal.name}</td><td className={td}><div>{deal.contact}</div><div className="text-[13px] text-muted-foreground">{deal.email}</div></td>
                   <td className={td}><Status tone={deal.stage === 'Cliente' ? 'ok' : deal.stage === 'Oportunidade' ? 'ochre' : 'neutral'}>{deal.stage}</Status></td>
                   <td className={td}>{deal.owner}</td><td className={td}>{deal.source}</td><td className={cn(td, 'tnum')}>{deal.traffic}</td><td className={cn(td, 'text-right')}>{action(deal)}</td>
@@ -353,7 +337,7 @@ export function ManagerCard() {
   const [booked, setBooked] = useState<string | null>(null)
   return (
     <>
-      <section className="flex flex-wrap items-center gap-4 overflow-hidden rounded-lg border bg-card p-6 animate-in fade-in slide-in-from-bottom-2 duration-500 [animation-delay:120ms] fill-mode-both">
+      <section className="flex flex-wrap items-center gap-4 overflow-hidden rounded-lg border bg-card p-6">
         <Avatar name="Marina Souza" size={48} />
         <div className="min-w-0 flex-1"><div className="text-[13px] text-muted-foreground">Precisa de ajuda? Sua gerente de conta é</div><div className="text-[18px] font-semibold tracking-tight">Marina Souza</div><div className="text-[13px] text-muted-foreground">O atendimento da Groone é pelo WhatsApp, de segunda a sexta, das 9h às 18h.</div></div>
         {booked ? <Status tone="ok">Reunião marcada: {booked}</Status> : null}
@@ -364,7 +348,7 @@ export function ManagerCard() {
           <DialogHeader><DialogTitle>Marcar uma conversa com a Marina</DialogTitle><DialogDescription>30 minutos por vídeo. Horários de Brasília, pelo link de agendamento dela.</DialogDescription></DialogHeader>
           <div className="grid gap-4">
             <div className="flex flex-wrap gap-2">{Object.keys(SLOTS).map((option) => <button key={option} onClick={() => { setDay(option); setSlot(null) }} className={cn('flex h-9 items-center gap-1.5 rounded-md border px-3 text-[13px] transition-colors', day === option ? 'border-foreground bg-foreground text-background' : 'hover:bg-muted')}><CalendarDays className="h-4 w-4" />{option}</button>)}</div>
-            <div key={day} className="grid grid-cols-3 gap-2 sm:grid-cols-4">{SLOTS[day].map((time, index) => <button key={time} {...rise(index)} onClick={() => setSlot(time)} className={cn('h-10 rounded-md border text-[14px] tnum transition-colors', rise(index).className, slot === time ? 'border-foreground bg-secondary font-medium' : 'hover:bg-muted')}>{time}</button>)}</div>
+            <div key={day} className="grid grid-cols-3 gap-2 sm:grid-cols-4">{SLOTS[day].map((time) => <button key={time} onClick={() => setSlot(time)} className={cn('h-10 rounded-md border text-[14px] tnum transition-colors', slot === time ? 'border-foreground bg-secondary font-medium' : 'hover:bg-muted')}>{time}</button>)}</div>
             <Field id="mt-topic" label="Sobre o que quer falar (opcional)"><Input id="mt-topic" className="h-10" placeholder="Ex.: aumentar o RPM no celular" /></Field>
           </div>
           <DialogFooter><Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button><Button disabled={!slot} onClick={() => { setBooked(`${day} às ${slot}`); setOpen(false); toast.success('Conversa marcada', { description: `${day} às ${slot}. O convite com o link chega no seu e-mail.` }) }}>Confirmar</Button></DialogFooter>
@@ -456,13 +440,13 @@ export function HelpCenterScreen() {
     <>
       <PageHeader title="Central de ajuda" sub="Os artigos da Groone sobre o Avant, a ad tag, o GAM e os pagamentos." actions={<Button variant="outline" asChild><a href={whatsappLink('Olá! Preciso de ajuda com o Avant.')} target="_blank" rel="noreferrer"><WhatsappIcon />Falar no WhatsApp</a></Button>} />
       <Body>
-        <div className="relative animate-in fade-in slide-in-from-bottom-2 duration-500"><Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" /><Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Como podemos ajudar?" className="h-12 bg-card pl-12 text-[16px]" /></div>
+        <div className="relative"><Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" /><Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Como podemos ajudar?" className="h-12 bg-card pl-12 text-[16px]" /></div>
         <section className="grid gap-3">
           <h2 className="text-[18px] font-semibold tracking-tight">Guias por tecnologia</h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{GUIDES.map((guide, index) => {
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{GUIDES.map(guide => {
             const Icon = guide.icon
             return (
-              <button key={guide.id} onClick={() => setGuide(guide)} {...rise(index, 'group flex items-start gap-4 rounded-lg border bg-card p-5 text-left transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-sm')}>
+              <button key={guide.id} onClick={() => setGuide(guide)} className="group flex items-start gap-4 rounded-lg border bg-card p-5 text-left">
                 <span className="grid h-10 w-10 shrink-0 place-items-center rounded-md border bg-background transition-colors group-hover:bg-foreground group-hover:text-background"><Icon className="h-5 w-5" /></span>
                 <span className="min-w-0"><span className="block text-[16px] font-semibold tracking-tight">{guide.name}</span><span className="block text-[14px] text-muted-foreground">{guide.summary}</span><span className="mt-2 inline-flex items-center gap-1 text-[13px] font-medium text-link">Passo a passo · {guide.steps.length} passos<ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" /></span></span>
               </button>
@@ -472,8 +456,8 @@ export function HelpCenterScreen() {
         <h2 className="text-[18px] font-semibold tracking-tight">Artigos</h2>
         <div className="flex flex-wrap gap-2">{['Todas', 'Primeiros passos', 'Pagamentos', 'Anúncios', 'Relatórios'].map((option) => <button key={option} onClick={() => setCategory(option)} className={cn('h-8 rounded-full border px-3 text-[13px] transition-colors', category === option ? 'border-foreground bg-foreground text-background' : 'bg-card hover:bg-muted')}>{option}</button>)}</div>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {list.map((article, index) => (
-            <button key={article.id} onClick={() => { setReading(article); setHelpful(null) }} className={cn('group flex h-full flex-col items-start rounded-lg border bg-card p-5 text-left transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-sm', rise(index).className)} style={rise(index).style}>
+          {list.map(article => (
+            <button key={article.id} onClick={() => { setReading(article); setHelpful(null) }} className={cn('group flex h-full flex-col items-start rounded-lg border bg-card p-5 text-left')}>
               <div className="flex items-center gap-2 text-[12px] font-medium text-muted-foreground"><BookOpen className="h-3.5 w-3.5" />{article.category} · {article.minutes} min</div>
               <div className="mt-2 text-[16px] font-semibold tracking-tight">{article.title}</div>
               <p className="mt-1 text-[14px] text-muted-foreground">{article.summary}</p>
@@ -578,20 +562,20 @@ export function NpsScreen({ go }: { go: Go }) {
           <Kpi index={0} label="NPS (90 dias)" value={score} note="De −100 a 100" tone={score >= 50 ? 'ok' : undefined} />
           <Kpi index={1} label="Respostas" value={NPS.length} note="28% dos clientes ativos" />
           <Kpi index={2} label="Detratores sem contato" value={1} note="Ninguém falou com eles depois da nota" tone="bad" />
-          <div className={cn('rounded-lg border bg-card p-5', rise(3).className)} style={rise(3).style}>
+          <div className={'rounded-lg border bg-card p-5'}>
             <div className="text-[13px] font-medium text-muted-foreground">Distribuição</div>
-            <div className="mt-3 flex h-2.5 overflow-hidden rounded-full bg-muted">{parts.map(([label, count, color]) => <span key={label} className={cn(color, 'animate-in slide-in-from-left-4 fade-in duration-700')} style={{ width: `${(count / NPS.length) * 100}%` }} />)}</div>
+            <div className="mt-3 flex h-2.5 overflow-hidden rounded-full bg-muted">{parts.map(([label, count, color]) => <span key={label} className={color} style={{ width: `${(count / NPS.length) * 100}%` }} />)}</div>
             <div className="mt-3 grid gap-1 text-[12px]">{parts.map(([label, count, color]) => <span key={label} className="flex items-center gap-2"><span className={cn('h-2 w-2 rounded-full', color)} />{label}<span className="ml-auto tnum text-muted-foreground">{count}</span></span>)}</div>
           </div>
         </div>
-        <section className="overflow-hidden rounded-lg border bg-card animate-in fade-in duration-500">
+        <section className="overflow-hidden rounded-lg border bg-card">
           <TableFilters defs={[{ key: 'group', label: 'Grupo', options: ['Promotor', 'Neutro', 'Detrator'] }, { key: 'manager', label: 'Gerente', options: ['Marina Souza', 'João Pedro'] }]} initial={['group']} values={values} setValues={setValues} query={query} setQuery={setQuery} placeholder="Buscar cliente ou comentário" />
           <div className="overflow-x-auto"><table className="w-full text-[14px]">
             <thead className="border-b"><tr><th className={th}>Cliente</th><th className={th}>Nota</th><th className={th}>Comentário</th><th className={th}>Gerente</th><th className={th}>Quando</th></tr></thead>
-            <tbody className="divide-y">{rows.map((answer, index) => {
+            <tbody className="divide-y">{rows.map(answer => {
               const [group, tone] = npsGroup(answer.score)
               return (
-                <tr key={answer.client} onClick={() => go('cliente')} {...rise(index, 'cursor-pointer transition-colors hover:bg-muted/50')}>
+                <tr key={answer.client} onClick={() => go('cliente')} className="cursor-pointer transition-colors hover:bg-muted/50">
                   <td className={cn(td, 'font-medium')}>{answer.client}</td><td className={td}><span className="flex items-center gap-2"><span className="w-6 tnum text-[16px] font-semibold">{answer.score}</span><Status tone={tone}>{group}</Status></span></td>
                   <td className={cn(td, 'max-w-[40ch] text-muted-foreground')}>{answer.comment || '—'}</td><td className={td}>{answer.manager}</td><td className={cn(td, 'tnum text-muted-foreground')}>{answer.when}</td>
                 </tr>
@@ -665,8 +649,8 @@ export function HubspotScreen() {
           {tabs.map(([key, label]) => <button key={key} role="tab" aria-selected={tab === key} onClick={() => setTab(key)} className={cn('h-8 rounded px-3 text-[13px] transition-colors', tab === key ? 'bg-secondary font-medium' : 'text-muted-foreground hover:text-foreground')}>{label}</button>)}
         </div>
         {tab === 'sync' && <>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{SYNC.map((row, index) => (
-            <div key={row.object} className={cn('rounded-lg border bg-card p-5 transition-[box-shadow,transform] duration-200 hover:-translate-y-px hover:shadow-sm', row.custom && 'border-dashed', rise(index).className)} style={rise(index).style}>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{SYNC.map(row => (
+            <div key={row.object} className={cn('rounded-lg border bg-card p-5', row.custom && 'border-dashed')}>
               <div className="flex items-center justify-between"><span className="flex items-center gap-2 text-[14px] font-medium"><HubspotMark />{row.object}</span>{row.custom ? <Status tone="neutral">Precisa da licença</Status> : row.failed ? <Status tone="bad">{row.failed} com erro</Status> : <Status tone="ok">Em dia</Status>}</div>
               <div className="mt-3 text-[28px] font-semibold tracking-[-0.03em]"><CountUp value={row.count} /></div>
               <div className="flex items-center gap-1 text-[13px] text-muted-foreground">{row.avant}<ChevronRight className="h-3.5 w-3.5" />{row.object.toLowerCase()} · {row.last}</div>
@@ -674,11 +658,11 @@ export function HubspotScreen() {
               {running && !row.custom && <div className="mt-3 h-1 overflow-hidden rounded-full bg-muted"><span className="block h-full w-1/3 animate-[loaderbar_1.1s_ease-in-out_infinite] rounded-full bg-foreground" /></div>}
             </div>
           ))}</div>
-          <section className="overflow-hidden rounded-lg border bg-card animate-in fade-in duration-500">
+          <section className="overflow-hidden rounded-lg border bg-card">
             <div className="p-6 pb-4"><h2 className="text-[20px] font-semibold tracking-tight">Registros com erro</h2><p className="mt-2 text-[14px] text-muted-foreground">O Avant tenta de novo a cada sincronia. Corrija o dado no Avant ou crie a propriedade que falta no HubSpot.</p></div>
             <TableFilters defs={[{ key: 'object', label: 'Objeto', options: SYNC.map((row) => row.object) }]} initial={['object']} values={values} setValues={setValues} query={query} setQuery={setQuery} placeholder="Buscar registro ou erro" />
             <div className="overflow-x-auto"><table className="w-full text-[14px]"><thead className="border-b"><tr><th className={th}>Objeto</th><th className={th}>Registro</th><th className={th}>Erro</th><th className={th}>Quando</th></tr></thead>
-              <tbody className="divide-y">{errors.map((row, index) => <tr key={row.label} {...rise(index, 'transition-colors hover:bg-muted/50')}><td className={td}>{row.object}</td><td className={cn(td, 'font-medium')}>{row.label}</td><td className={cn(td, 'text-bad')}>{row.error}</td><td className={cn(td, 'text-muted-foreground')}>{row.when}</td></tr>)}
+              <tbody className="divide-y">{errors.map(row => <tr key={row.label} className="transition-colors hover:bg-muted/50"><td className={td}>{row.object}</td><td className={cn(td, 'font-medium')}>{row.label}</td><td className={cn(td, 'text-bad')}>{row.error}</td><td className={cn(td, 'text-muted-foreground')}>{row.when}</td></tr>)}
               {!errors.length && <tr><td colSpan={4} className="py-10 text-center text-[14px] text-muted-foreground">Nenhum erro com esses filtros.</td></tr>}</tbody></table></div>
           </section>
         </>}
@@ -688,10 +672,10 @@ export function HubspotScreen() {
         </RiseCard>}
         {tab === 'tasks' && <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
           <RiseCard index={0} title="Avisos que também viram tarefa no HubSpot" desc="São os avisos que o Avant já manda por e-mail e no sino, com as mesmas regras. Ligue a chave para também criar uma tarefa para o gerente de conta do cliente (o dono do contato no HubSpot), com o link da tela certa. Uma por problema: enquanto ela estiver aberta, o Avant não cria outra. Tarefa é do CRM grátis.">
-            <ul className="-my-3 divide-y">{rules.map((rule, index) => {
+            <ul className="-my-3 divide-y">{rules.map(rule => {
               const Icon = rule.icon
               return (
-                <li key={rule.id} {...rise(index, 'flex flex-wrap items-start gap-3 py-4')}>
+                <li key={rule.id} className="flex flex-wrap items-start gap-3 py-4">
                   <span className={cn('grid h-9 w-9 shrink-0 place-items-center rounded-md border transition-colors', rule.on ? 'bg-background' : 'bg-muted text-muted-foreground')}><Icon className="h-4 w-4" /></span>
                   <div className="min-w-0 flex-1"><div className="flex items-center gap-2 text-[14px] font-medium">{rule.title}{rule.isNew && <Badge>Novo</Badge>}</div><p className="text-[13px] text-muted-foreground">{rule.text}</p>
                     {rule.on && <div className="mt-2 flex flex-wrap items-center gap-2 text-[13px] animate-in fade-in slide-in-from-top-1">
@@ -704,7 +688,7 @@ export function HubspotScreen() {
             })}</ul>
           </RiseCard>
           <RiseCard index={1} title="Últimas tarefas criadas">
-            <ul className="-my-2 divide-y">{RECENT_TASKS.map((task, index) => <li key={task.title} {...rise(index + 2, 'py-3')}><div className="text-[14px] font-medium">{task.title}</div><div className="mt-0.5 flex items-center justify-between text-[12px] text-muted-foreground"><span>{task.owner} · {task.when}</span><Status tone={task.state === 'Aberta' ? 'ochre' : 'ok'}>{task.state}</Status></div></li>)}</ul>
+            <ul className="-my-2 divide-y">{RECENT_TASKS.map(task => <li key={task.title} className="py-3"><div className="text-[14px] font-medium">{task.title}</div><div className="mt-0.5 flex items-center justify-between text-[12px] text-muted-foreground"><span>{task.owner} · {task.when}</span><Status tone={task.state === 'Aberta' ? 'ochre' : 'ok'}>{task.state}</Status></div></li>)}</ul>
           </RiseCard>
         </div>}
       </Body>
@@ -717,8 +701,8 @@ function PropertyTable({ rows, enabled, setEnabled, grouped = false }: { rows: {
   return (
     <div className="-mx-6 overflow-x-auto"><table className="w-full text-[14px]">
       <thead className="border-y"><tr>{grouped && <th className={th}>Grupo</th>}<th className={th}>Propriedade</th><th className={th}>Nome no HubSpot</th><th className={th}>Exemplo (Tech Notícias)</th><th className={cn(th, 'text-right')}>Enviar</th></tr></thead>
-      <tbody className="divide-y">{rows.map((row, index) => (
-        <tr key={row.key} {...rise(index, cn('transition-colors hover:bg-muted/50', !enabled[row.key] && 'text-muted-foreground'))}>
+      <tbody className="divide-y">{rows.map(row => (
+        <tr key={row.key} className={cn('transition-colors hover:bg-muted/50', !enabled[row.key] && 'text-muted-foreground')}>
           {grouped && <td className={td}><Badge>{row.group}</Badge></td>}<td className={cn(td, 'font-medium')}>{row.label}</td><td className={td}><code className="font-mono text-[13px]">avant_{row.key}</code></td><td className={cn(td, 'tnum')}>{row.example}</td>
           <td className={cn(td, 'text-right')}><Switch checked={enabled[row.key]} onCheckedChange={(on) => setEnabled({ ...enabled, [row.key]: on })} aria-label={row.label} /></td>
         </tr>
@@ -769,12 +753,12 @@ export function HelpEditorScreen() {
           <Kpi index={2} label="Faltando tradução" value={items.filter((item) => item.languages.length < 3).length} tone="ochre" />
           <Kpi index={3} label="Leituras (30 dias)" value={items.reduce((total, item) => total + item.reads, 0)} />
         </div>
-        <section className="overflow-hidden rounded-lg border bg-card animate-in fade-in duration-500">
+        <section className="overflow-hidden rounded-lg border bg-card">
           <TableFilters defs={defs} initial={['kind', 'state']} values={values} setValues={setValues} query={query} setQuery={setQuery} placeholder="Buscar título ou categoria" />
           <div className="overflow-x-auto"><table className="w-full text-[14px]">
             <thead className="border-b"><tr><th className={th}>Título</th><th className={th}>Tipo</th><th className={th}>Idiomas</th><th className={cn(th, 'text-right')}>Passos</th><th className={th}>Situação</th><th className={cn(th, 'text-right')}>Leituras</th><th className={th}>Atualizado</th></tr></thead>
-            <tbody className="divide-y">{rows.map((item, index) => (
-              <tr key={item.id} {...rise(index, 'cursor-pointer transition-colors hover:bg-muted/50')} onClick={() => setEditing(item)}>
+            <tbody className="divide-y">{rows.map(item => (
+              <tr key={item.id} className="cursor-pointer transition-colors hover:bg-muted/50" onClick={() => setEditing(item)}>
                 <td className={cn(td, 'font-medium')}>{item.title}<div className="text-[13px] font-normal text-muted-foreground">{item.category}</div></td>
                 <td className={td}><Badge>{item.kind}</Badge></td>
                 <td className={td}><span className="flex gap-1">{LANGUAGES.map((language) => <span key={language} className={cn('rounded border px-1.5 py-0.5 font-mono text-[11px]', item.languages.includes(language) ? 'bg-background' : 'border-dashed text-muted-foreground line-through')}>{language}</span>)}</span></td>
@@ -832,7 +816,7 @@ function HelpItemEditor({ item, close, save }: { item: HelpItem; close: () => vo
             <div key={language} className="mx-auto grid max-w-[760px] gap-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
               <div><div className="text-[13px] text-muted-foreground">{item.category}</div><h2 className="text-[28px] font-semibold tracking-[-0.03em]">{title || 'Sem título'}</h2><p className="mt-1 text-[15px] text-muted-foreground">{summary}</p></div>
               {steps.map((step, index) => (
-                <div key={index} {...rise(index, 'grid gap-3')}>
+                <div key={index} className="grid gap-3">
                   <div className="flex items-start gap-3"><span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-foreground text-[13px] font-medium text-background tnum">{index + 1}</span><div><div className="text-[16px] font-medium">{step.title || 'Passo sem título'}</div><p className="text-[14px] text-muted-foreground">{step.text}</p></div></div>
                   {step.shot ? <GuideShot kind={step.shot} /> : <div className="grid h-40 place-items-center rounded-md border border-dashed text-[13px] text-muted-foreground">Sem print</div>}
                 </div>
@@ -849,7 +833,7 @@ function HelpItemEditor({ item, close, save }: { item: HelpItem; close: () => vo
               {item.kind === 'Guia' && <div className="grid gap-3">
                 <div className="flex items-center justify-between"><h3 className="text-[16px] font-semibold tracking-tight">Passos</h3><span className="text-[13px] text-muted-foreground tnum">{steps.length} passo{steps.length === 1 ? '' : 's'}</span></div>
                 {steps.map((step, index) => (
-                  <div key={index} {...rise(index, 'grid gap-4 rounded-lg border bg-card p-4 md:grid-cols-[1fr_300px]')}>
+                  <div key={index} className="grid gap-4 rounded-lg border bg-card p-4 md:grid-cols-[1fr_300px]">
                     <div className="grid content-start gap-3">
                       <div className="flex items-center gap-2"><span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-foreground text-[13px] font-medium text-background tnum">{index + 1}</span><Input value={step.title} onChange={(event) => patch(index, { title: event.target.value })} placeholder="Título do passo" aria-label={`Título do passo ${index + 1}`} />
                         <Button size="icon" variant="ghost" className="shrink-0" aria-label={`Tirar o passo ${index + 1}`} onClick={() => setSteps(steps.filter((_, position) => position !== index))}><Trash2 className="h-4 w-4" /></Button></div>
