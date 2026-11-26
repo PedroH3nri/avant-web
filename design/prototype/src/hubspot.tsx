@@ -256,7 +256,7 @@ export function ProspectsScreen({ go }: { go: Go }) {
           <Kpi index={2} label="Viram cliente (90 dias)" value={23} suffix="%" />
           <Kpi index={3} label="Dias até virar cliente (média)" value={34} />
         </div>
-        <section className="overflow-hidden rounded-lg border bg-card animate-in fade-in duration-500">
+        <section className="overflow-hidden rounded-lg border bg-card">
           <TableFilters defs={defs} initial={['owner']} values={values} setValues={setValues} query={query} setQuery={setQuery} placeholder="Buscar site, contato ou e-mail" />
           {view === 'board' ? (
             <div className="grid gap-3 overflow-x-auto p-4 md:grid-cols-5">
@@ -337,7 +337,7 @@ export function ManagerCard() {
   const [booked, setBooked] = useState<string | null>(null)
   return (
     <>
-      <section className="flex flex-wrap items-center gap-4 overflow-hidden rounded-lg border bg-card p-6 [animation-delay:120ms] fill-mode-both">
+      <section className="flex flex-wrap items-center gap-4 overflow-hidden rounded-lg border bg-card p-6">
         <Avatar name="Marina Souza" size={48} />
         <div className="min-w-0 flex-1"><div className="text-[13px] text-muted-foreground">Precisa de ajuda? Sua gerente de conta é</div><div className="text-[18px] font-semibold tracking-tight">Marina Souza</div><div className="text-[13px] text-muted-foreground">O atendimento da Groone é pelo WhatsApp, de segunda a sexta, das 9h às 18h.</div></div>
         {booked ? <Status tone="ok">Reunião marcada: {booked}</Status> : null}
@@ -568,7 +568,7 @@ export function NpsScreen({ go }: { go: Go }) {
             <div className="mt-3 grid gap-1 text-[12px]">{parts.map(([label, count, color]) => <span key={label} className="flex items-center gap-2"><span className={cn('h-2 w-2 rounded-full', color)} />{label}<span className="ml-auto tnum text-muted-foreground">{count}</span></span>)}</div>
           </div>
         </div>
-        <section className="overflow-hidden rounded-lg border bg-card animate-in fade-in duration-500">
+        <section className="overflow-hidden rounded-lg border bg-card">
           <TableFilters defs={[{ key: 'group', label: 'Grupo', options: ['Promotor', 'Neutro', 'Detrator'] }, { key: 'manager', label: 'Gerente', options: ['Marina Souza', 'João Pedro'] }]} initial={['group']} values={values} setValues={setValues} query={query} setQuery={setQuery} placeholder="Buscar cliente ou comentário" />
           <div className="overflow-x-auto"><table className="w-full text-[14px]">
             <thead className="border-b"><tr><th className={th}>Cliente</th><th className={th}>Nota</th><th className={th}>Comentário</th><th className={th}>Gerente</th><th className={th}>Quando</th></tr></thead>
@@ -658,7 +658,7 @@ export function HubspotScreen() {
               {running && !row.custom && <div className="mt-3 h-1 overflow-hidden rounded-full bg-muted"><span className="block h-full w-1/3 animate-[loaderbar_1.1s_ease-in-out_infinite] rounded-full bg-foreground" /></div>}
             </div>
           ))}</div>
-          <section className="overflow-hidden rounded-lg border bg-card animate-in fade-in duration-500">
+          <section className="overflow-hidden rounded-lg border bg-card">
             <div className="p-6 pb-4"><h2 className="text-[20px] font-semibold tracking-tight">Registros com erro</h2><p className="mt-2 text-[14px] text-muted-foreground">O Avant tenta de novo a cada sincronia. Corrija o dado no Avant ou crie a propriedade que falta no HubSpot.</p></div>
             <TableFilters defs={[{ key: 'object', label: 'Objeto', options: SYNC.map((row) => row.object) }]} initial={['object']} values={values} setValues={setValues} query={query} setQuery={setQuery} placeholder="Buscar registro ou erro" />
             <div className="overflow-x-auto"><table className="w-full text-[14px]"><thead className="border-b"><tr><th className={th}>Objeto</th><th className={th}>Registro</th><th className={th}>Erro</th><th className={th}>Quando</th></tr></thead>
@@ -753,7 +753,7 @@ export function HelpEditorScreen() {
           <Kpi index={2} label="Faltando tradução" value={items.filter((item) => item.languages.length < 3).length} tone="ochre" />
           <Kpi index={3} label="Leituras (30 dias)" value={items.reduce((total, item) => total + item.reads, 0)} />
         </div>
-        <section className="overflow-hidden rounded-lg border bg-card animate-in fade-in duration-500">
+        <section className="overflow-hidden rounded-lg border bg-card">
           <TableFilters defs={defs} initial={['kind', 'state']} values={values} setValues={setValues} query={query} setQuery={setQuery} placeholder="Buscar título ou categoria" />
           <div className="overflow-x-auto"><table className="w-full text-[14px]">
             <thead className="border-b"><tr><th className={th}>Título</th><th className={th}>Tipo</th><th className={th}>Idiomas</th><th className={cn(th, 'text-right')}>Passos</th><th className={th}>Situação</th><th className={cn(th, 'text-right')}>Leituras</th><th className={th}>Atualizado</th></tr></thead>
