@@ -63,10 +63,17 @@ export interface Client {
   image_url: string | null
   /** Só na lista; vazio sem receita nos últimos 60 dias. */
   revenue_status?: RevenueStatus | null
+  /** Último acesso da conta do cliente; vazio se ele nunca entrou. */
+  last_access_at?: string | null
+}
+
+/** Membro da Empresa cliente com o último acesso da pessoa. */
+export interface CompanyMember extends Member {
+  last_access_at?: string | null
 }
 
 export interface ClientDetail extends Client {
-  members: Member[]
+  members: CompanyMember[]
   invitations: Invitation[]
   reserved_networks: ReservedNetwork[]
 }

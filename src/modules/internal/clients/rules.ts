@@ -100,3 +100,22 @@ export function prospectDraft(query: Record<string, unknown>, staff: { value: st
     },
   }
 }
+
+/** Opções do filtro "Sem acesso há": qualquer acesso, dias sem entrar ou quem nunca entrou. */
+export const ACCESS_FILTERS = ['any', '7', '15', '30', '60', 'never'] as const
+/** Dias sem entrar a partir dos quais o último acesso fica em destaque. */
+export const STALE_ACCESS_DAYS = 14
+const DAY_MS = 86_400_000
+
+/** Os parâmetros da lista de clientes para o filtro de acesso escolhido. */
+export function accessQuery(choice: string): { inactive_days?: number; never_accessed?: boolean } {
+  if (choice === 'never') return { never_accessed: true }
+  const days = Number(choice)
+  return Number.isInteger(days) && days > 0 ? { inactive_days: days } : {}
+}
+
+/** Diz se o último acesso já passou do limite de destaque; quem nunca entrou também conta. */
+export function staleAccess(iso: string | null | undefined, now = Date.now()): boolean {
+  if (!iso) return true
+  return now - new Date(iso).getTime() >= STALE_ACCESS_DAYS * DAY_MS
+}

@@ -17,6 +17,7 @@ import DataTable from '@/components/ui/DataTable.vue'
 import Status from '@/components/ui/Status.vue'
 import { ApiError } from '@/lib/api'
 import { errorText, formatAgo, formatDate, pick, t } from '@/lib/i18n'
+import { staleAccess } from '@/modules/internal/clients/rules'
 import { td, th } from '@/lib/table'
 import type { Group } from '@/modules/groups/types'
 import ClientNetworksCard from '@/modules/internal/inventory/components/ClientNetworksCard.vue'
@@ -116,6 +117,7 @@ function groupPeople(group: Group) {
               <th :class="th">{{ t('team.role') }}</th>
               <th :class="th">{{ t('team.status') }}</th>
               <th :class="th">{{ t('team.since') }}</th>
+              <th :class="th">{{ t('int.column.last_access') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -132,6 +134,9 @@ function groupPeople(group: Group) {
                 <Status :tone="member.status === 'active' ? 'ok' : 'neutral'">{{ member.status === 'active' ? t('team.active') : t('team.suspended') }}</Status>
               </td>
               <td :class="[td, 'text-muted-foreground']">{{ formatDate(member.joined_at, false) }}</td>
+              <td :class="[td, 'text-[13px]', staleAccess(member.last_access_at) ? 'text-ochre' : 'text-muted-foreground']">
+                {{ member.last_access_at ? formatAgo(member.last_access_at) : t('int.neverAccessed') }}
+              </td>
             </tr>
           </tbody>
         </DataTable>
