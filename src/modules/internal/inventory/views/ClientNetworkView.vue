@@ -24,6 +24,7 @@ import { clientInventoryService } from '@/modules/internal/inventory/service'
 import type { ClientNetworkDetail } from '@/modules/internal/inventory/types'
 import { networkName, networkTone, statusKey } from '@/modules/networks/rules'
 import type { SyncRun } from '@/modules/networks/types'
+import HubspotNetworkCards from '@/modules/internal/hubspot/components/HubspotNetworkCards.vue'
 import NetworkAdsTxtCard from '@/modules/internal/inventory/components/NetworkAdsTxtCard.vue'
 import RevenueStatusCard from '@/modules/revenue/components/RevenueStatusCard.vue'
 import { approval } from '@/modules/sites/rules'
@@ -141,6 +142,8 @@ function runSummary(syncRun: SyncRun) {
         :network-id="network.id"
         :inventory="network.delegation === 'manage_inventory'"
       />
+
+      <HubspotNetworkCards :network-id="network.id" />
 
       <Card class="lg:col-span-2" :title="t('netd.lastRuns')">
         <ul class="-my-2 grid divide-y text-[14px] sm:grid-cols-3 sm:divide-x sm:divide-y-0">

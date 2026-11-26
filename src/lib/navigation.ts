@@ -5,6 +5,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { BellRing, Building, Building2, ChartLine, CircleDollarSign, Code2, Coins, Eye, FileChartColumn, FileSignature, FileText, Gift, Globe, IdCard, LayoutDashboard, LayoutTemplate, ListChecks, ListTodo, LoaderCircle, MailCheck, Network, Plug, Receipt, ReceiptText, Scale, ShieldCheck, Target, Users, UsersRound, Wallet, Wrench } from 'lucide-vue-next'
 import FacebookIcon from '@/components/FacebookIcon.vue'
 import GoogleAdsIcon from '@/components/GoogleAdsIcon.vue'
+import HubspotIcon from '@/components/HubspotIcon.vue'
 import type { Key } from '@/lib/i18n'
 import { useSession } from '@/stores/session'
 
@@ -72,6 +73,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { to: '/interno/facebook', key: 'nav.facebook', icon: FacebookIcon, internal: true },
       { to: '/google-ads', key: 'nav.googleAds', icon: GoogleAdsIcon, clientOnly: true },
       { to: '/interno/google-ads', key: 'nav.googleAds', icon: GoogleAdsIcon, internal: true },
+      { to: '/interno/hubspot', key: 'nav.hubspot', icon: HubspotIcon, internal: true },
     ],
   },
   {
