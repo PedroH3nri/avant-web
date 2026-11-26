@@ -24,20 +24,20 @@ const COLD_DAYS = 14
 
 /* ---------- 1. Último acesso na tabela de clientes ---------- */
 
-export type ClientAccess = { label: string; daysAgo: number | null; person: string | null; activeDays: number; activePeople: number; seats: number }
+export type ClientAccess = { label: string; daysAgo: number | null; activeDays: number; sessions: number }
 
 export const CLIENT_ACCESS: Record<string, ClientAccess> = {
-  'Blog Exemplo': { label: 'hoje, 14:32', daysAgo: 0, person: 'Ana Souza', activeDays: 24, activePeople: 4, seats: 5 },
-  'Receitas da Vó': { label: '17/11, 09:10', daysAgo: 9, person: 'Ana Ribeiro', activeDays: 6, activePeople: 1, seats: 2 },
-  'Tech Notícias': { label: 'Nunca entrou', daysAgo: null, person: null, activeDays: 0, activePeople: 0, seats: 0 },
-  'Guia do Pet': { label: '19/10, 16:45', daysAgo: 38, person: 'Marina Luz', activeDays: 0, activePeople: 0, seats: 6 },
-  'Apostas Já': { label: '16/09, 11:02', daysAgo: 71, person: 'Leo Melo', activeDays: 0, activePeople: 0, seats: 1 },
+  'Blog Exemplo': { label: 'ontem, 19:05', daysAgo: 1, activeDays: 18, sessions: 34 },
+  'Receitas da Vó': { label: '17/11, 09:10', daysAgo: 9, activeDays: 6, sessions: 8 },
+  'Tech Notícias': { label: 'Nunca entrou', daysAgo: null, activeDays: 0, sessions: 0 },
+  'Guia do Pet': { label: '19/10, 16:45', daysAgo: 38, activeDays: 0, sessions: 0 },
+  'Apostas Já': { label: '16/09, 11:02', daysAgo: 71, activeDays: 0, sessions: 0 },
 }
 
 export const ACCESS_FILTERS = [['all', 'Todos'], ['7', '7 dias ou mais'], ['15', '15 dias ou mais'], ['30', '30 dias ou mais'], ['60', '60 dias ou mais'], ['never', 'Nunca entrou']] as const
 export type AccessFilter = (typeof ACCESS_FILTERS)[number][0]
 export type AccessSort = 'none' | 'recent' | 'oldest'
-export type UsageColumn = 'activeDays' | 'activePeople'
+export type UsageColumn = 'activeDays' | 'sessions'
 
 /** Diz se o cliente passa pelo filtro "Sem acesso há". */
 export function matchesAccess(name: string, filter: AccessFilter) {
@@ -71,13 +71,13 @@ export function AccessFilterSelect({ value, onChange }: { value: AccessFilter; o
 
 /** O menu "Colunas" que mostra ou esconde as colunas de uso. */
 export function UsageColumnsMenu({ shown, setShown }: { shown: UsageColumn[]; setShown: (next: UsageColumn[]) => void }) {
-  const options: [UsageColumn, string][] = [['activeDays', 'Dias ativos (30d)'], ['activePeople', 'Pessoas ativas (30d)']]
+  const options: [UsageColumn, string][] = [['activeDays', 'Dias ativos (30d)'], ['sessions', 'Sessões (30d)']]
   /** Liga ou desliga uma coluna. */
   const toggle = (column: UsageColumn) => setShown(shown.includes(column) ? shown.filter((item) => item !== column) : [...shown, column])
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild><Button variant="outline" size="sm" className="h-9 bg-card"><Columns3 className="h-4 w-4" />Colunas</Button></DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56"><DropdownMenuLabel>Colunas de uso</DropdownMenuLabel><DropdownMenuSeparator />
+      <DropdownMenuContent align="end" className="w-56"><DropdownMenuLabel>Uso do cliente</DropdownMenuLabel><DropdownMenuSeparator />
         {options.map(([column, label]) => <DropdownMenuCheckboxItem key={column} checked={shown.includes(column)} onCheckedChange={() => toggle(column)} onSelect={(event) => event.preventDefault()}>{label}</DropdownMenuCheckboxItem>)}
       </DropdownMenuContent>
     </DropdownMenu>
@@ -96,65 +96,41 @@ export function AccessSortHeader({ sort, setSort, className }: { sort: AccessSor
   )
 }
 
-/** A célula do último acesso: quando e quem, em ocre depois de 14 dias sem ninguém entrar. */
+/** A célula do último acesso do cliente (o login dele), em ocre depois de 14 dias sem entrar. */
 export function LastAccessCell({ name }: { name: string }) {
   const access = CLIENT_ACCESS[name]
   if (!access || access.daysAgo === null) return <span className="inline-flex rounded-full border border-dashed px-2 py-0.5 text-[12px] text-muted-foreground">Nunca entrou</span>
   const cold = access.daysAgo >= COLD_DAYS
   return (
-    <div title="O último acesso de qualquer membro do cliente. A equipe Groone entrando na Empresa não conta.">
-      <div className={cn('tnum text-[14px]', cold && 'text-ochre')}>{access.label}{access.daysAgo > 1 && <span className="text-[12px] text-muted-foreground"> · há {access.daysAgo} dias</span>}</div>
-      <div className="text-[12px] text-muted-foreground">{access.person}</div>
+    <div title="O último login do cliente, com a conta dele. A equipe da Empresa aparece na página da Empresa.">
+      <div className={cn('tnum text-[14px]', cold && 'text-ochre')}>{access.label}</div>
+      {access.daysAgo > 1 && <div className="text-[12px] text-muted-foreground">há {access.daysAgo} dias</div>}
     </div>
   )
 }
 
-/** A célula de uma coluna de uso dos últimos 30 dias. */
+/** A célula de uma coluna de uso do cliente nos últimos 30 dias. */
 export function UsageCell({ name, column }: { name: string; column: UsageColumn }) {
   const access = CLIENT_ACCESS[name]
   if (!access || access.daysAgo === null) return <span className="text-muted-foreground">—</span>
   return column === 'activeDays'
     ? <span className="tnum">{access.activeDays}<span className="text-muted-foreground"> de 30</span></span>
-    : <span className="tnum">{access.activePeople}<span className="text-muted-foreground"> de {access.seats}</span></span>
+    : <span className="tnum">{access.sessions}</span>
 }
 
-/* ---------- 2. Página do cliente: último acesso por pessoa e uso do Avant ---------- */
+/* ---------- 2. Página do cliente (o login dele) e página da Empresa (a equipe) ---------- */
 
-type PersonAccess = { name: string; company: string; role: string; label: string; daysAgo: number | null; activeDays: number }
+type PersonAccess = { name: string; role: string; label: string; daysAgo: number | null; activeDays: number }
 const PEOPLE: PersonAccess[] = [
-  { name: 'Ana Souza', company: 'Blog Exemplo', role: 'Gestor de tráfego', label: 'hoje, 14:32', daysAgo: 0, activeDays: 22 },
-  { name: 'Pedro Henrique', company: 'Blog Exemplo', role: 'Dono', label: 'ontem, 19:05', daysAgo: 1, activeDays: 18 },
-  { name: 'João Lima', company: 'Blog Exemplo', role: 'Financeiro', label: '20/11, 10:40', daysAgo: 6, activeDays: 4 },
-  { name: 'Carla Mendes', company: 'Blog Exemplo Kids', role: 'Marketing', label: '05/11, 15:12', daysAgo: 21, activeDays: 0 },
-  { name: 'Rafael Dias', company: 'Blog Exemplo', role: 'Gestor de tráfego', label: 'Convite pendente', daysAgo: null, activeDays: 0 },
+  { name: 'Ana Souza', role: 'Gestor de tráfego', label: 'hoje, 14:32', daysAgo: 0, activeDays: 22 },
+  { name: 'Pedro Henrique', role: 'Dono (o cliente)', label: 'ontem, 19:05', daysAgo: 1, activeDays: 18 },
+  { name: 'João Lima', role: 'Financeiro', label: '20/11, 10:40', daysAgo: 6, activeDays: 4 },
+  { name: 'Carla Mendes', role: 'Marketing', label: '05/11, 15:12', daysAgo: 21, activeDays: 0 },
+  { name: 'Rafael Dias', role: 'Gestor de tráfego', label: 'Convite pendente', daysAgo: null, activeDays: 0 },
 ]
 const DAILY_PEOPLE = [2, 3, 0, 0, 3, 4, 3, 2, 3, 1, 0, 2, 3, 4, 3, 3, 2, 0, 0, 3, 4, 2, 3, 3, 1, 0, 2, 3, 4, 3]
+const CLIENT_DAYS = [1, 1, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 1, 0]
 const AREAS = [['Relatórios', 38], ['Dashboard', 27], ['Inventário', 18], ['Rewards', 9], ['Comissões', 5], ['Empresa', 3]] as const
-
-/** O card "Último acesso" da página do cliente: cada pessoa das Empresas dele, de quem entrou por último para trás. */
-export function ClientAccessCard({ empty = false }: { empty?: boolean }) {
-  const [values, setValues] = useState<Record<string, string>>({})
-  const [query, setQuery] = useState('')
-  const rows = useMemo(() => PEOPLE.filter((person) => passes({ name: person.name, role: person.role, company: person.company }, values, query, ['name', 'role'])), [values, query])
-  return (
-    <section className="overflow-hidden rounded-lg border bg-card lg:col-span-2">
-      <div className="p-6 pb-4"><h2 className="text-[20px] font-semibold tracking-tight">Último acesso</h2><p className="mt-2 text-[14px] text-muted-foreground">Quando cada pessoa das Empresas do cliente entrou no Avant pela última vez. Só conta o acesso de membros do cliente: a equipe Groone entrando na Empresa não muda nada aqui.</p></div>
-      {empty ? <p className="border-t px-6 py-8 text-center text-[14px] text-muted-foreground">Ninguém do cliente entrou ainda. O dono ainda não aceitou o convite.</p> : <>
-        <TableFilters defs={[{ key: 'company', label: 'Empresa', options: ['Blog Exemplo', 'Blog Exemplo Kids'] }]} initial={['company']} values={values} setValues={setValues} query={query} setQuery={setQuery} placeholder="Buscar pessoa ou papel" />
-        <div className="overflow-x-auto"><table className="w-full min-w-[640px] text-[14px]"><thead className="border-b"><tr><th className={th}>Pessoa</th><th className={th}>Empresa</th><th className={th}>Último acesso</th><th className={th}>Dias ativos (30d)</th></tr></thead>
-          <tbody className="divide-y">{rows.map((person) => (
-            <tr key={person.name} className="hover:bg-muted/50">
-              <td className={td}><div className="font-medium">{person.name}</div><div className="text-[12px] text-muted-foreground">{person.role}</div></td>
-              <td className={cn(td, 'text-muted-foreground')}>{person.company}</td>
-              <td className={td}>{person.daysAgo === null ? <span className="text-muted-foreground">{person.label}</span> : <span className={cn('tnum', person.daysAgo >= COLD_DAYS && 'text-ochre')}>{person.label}{person.daysAgo > 1 && <span className="text-[12px] text-muted-foreground"> · há {person.daysAgo} dias</span>}</span>}</td>
-              <td className={td}><span className="tnum">{person.activeDays}</span><span className="text-muted-foreground"> de 30</span></td>
-            </tr>
-          ))}
-          {!rows.length && <tr><td colSpan={4} className="py-10 text-center text-muted-foreground">Ninguém com esses filtros.</td></tr>}</tbody></table></div>
-      </>}
-    </section>
-  )
-}
 
 /** Um número do card de uso, com o rótulo e o total possível. */
 function UsageFigure({ label, value, of, note }: { label: string; value: string; of?: string; note?: string }) {
@@ -173,17 +149,17 @@ function dayLabel(daysBefore: number) {
   return `${String(day.getDate()).padStart(2, '0')}/${String(day.getMonth() + 1).padStart(2, '0')}`
 }
 
-/** As barras de pessoas ativas por dia nos últimos 30 dias, em SVG simples e parado. */
-function DailyBars({ values }: { values: number[] }) {
+/** Barras por dia nos últimos 30 dias, em SVG simples e parado. */
+function DailyBars({ values, label, unit }: { values: number[]; label: string; unit: string }) {
   const width = 600
   const height = 120
   const peak = Math.max(...values, 1)
   const slot = width / values.length
   return (
-    <svg viewBox={`0 0 ${width} ${height + 18}`} className="h-[150px] w-full" role="img" aria-label="Pessoas ativas por dia nos últimos 30 dias">
+    <svg viewBox={`0 0 ${width} ${height + 18}`} className="h-[150px] w-full" role="img" aria-label={label}>
       {values.map((value, index) => {
         const barHeight = value ? Math.max(4, (value / peak) * height) : 2
-        return <rect key={index} x={index * slot + 3} y={height - barHeight} width={slot - 6} height={barHeight} rx={2} className={value ? 'fill-foreground' : 'fill-muted-foreground/30'}><title>{`${dayLabel(values.length - 1 - index)}: ${value} pessoa(s)`}</title></rect>
+        return <rect key={index} x={index * slot + 3} y={height - barHeight} width={slot - 6} height={barHeight} rx={2} className={value ? 'fill-foreground' : 'fill-muted-foreground/30'}><title>{`${dayLabel(values.length - 1 - index)}: ${value} ${unit}`}</title></rect>
       })}
       <text x={0} y={height + 15} className="fill-muted-foreground text-[11px]">28/10</text>
       <text x={width} y={height + 15} textAnchor="end" className="fill-muted-foreground text-[11px]">hoje</text>
@@ -191,35 +167,84 @@ function DailyBars({ values }: { values: number[] }) {
   )
 }
 
-/** O card "Uso do Avant" da página do cliente: dias e pessoas ativas, gráfico diário e áreas mais usadas. */
-export function ClientUsageCard({ empty = false }: { empty?: boolean }) {
+/** As abas de período (7 ou 30 dias) dos cards de uso. */
+function PeriodTabs({ period, setPeriod }: { period: '7' | '30'; setPeriod: (next: '7' | '30') => void }) {
+  return (
+    <div className="flex rounded-md border bg-background p-0.5 sm:w-fit" role="tablist" aria-label="Período">
+      {([['7', 'Últimos 7 dias'], ['30', 'Últimos 30 dias']] as const).map(([key, label]) => <button key={key} role="tab" aria-selected={period === key} onClick={() => setPeriod(key)} className={cn('h-8 rounded px-3 text-[13px]', period === key ? 'bg-secondary font-medium' : 'text-muted-foreground hover:text-foreground')}>{label}</button>)}
+    </div>
+  )
+}
+
+/** O card "Acesso do cliente" da página do cliente: só o login dele, sem a equipe da Empresa. */
+export function ClientAccessCard({ go, empty = false }: { go: Go; empty?: boolean }) {
+  const [period, setPeriod] = useState<'7' | '30'>('30')
+  const figures = period === '30'
+    ? [['Último acesso', 'ontem, 19:05', ''], ['Dias ativos', '18', 'de 30'], ['Sessões', '34', ''], ['Minutos ativos', '6 h 10', '']]
+    : [['Último acesso', 'ontem, 19:05', ''], ['Dias ativos', '4', 'de 7'], ['Sessões', '9', ''], ['Minutos ativos', '1 h 35', '']]
+  return (
+    <Card title="Acesso do cliente" className="lg:col-span-2"
+      desc="Só o login do cliente (Pedro Henrique, pedro@blogexemplo.com). A equipe da Empresa dele fica na página da Empresa. Guardado por 13 meses."
+      footer={empty ? undefined : <Button size="sm" variant="outline" onClick={() => go('empresauso')}>Ver uso da Empresa</Button>}
+      footerNote={empty ? undefined : 'Vai para o HubSpot como avant_last_login e avant_active_days_30d.'}>
+      {empty ? <p className="py-4 text-center text-[14px] text-muted-foreground">O cliente nunca entrou: ainda não aceitou o convite.</p> : <div className="grid gap-6">
+        <PeriodTabs period={period} setPeriod={setPeriod} />
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{figures.map(([label, value, of]) => <UsageFigure key={label} label={label} value={value} of={of || undefined} />)}</div>
+        <div><div className="mb-2 text-[13px] font-medium">Dias em que o cliente entrou</div><DailyBars values={CLIENT_DAYS} label="Dias em que o cliente entrou nos últimos 30 dias" unit="(1 = entrou)" /></div>
+      </div>}
+    </Card>
+  )
+}
+
+/** O card "Uso do Avant" da página da Empresa: dias e pessoas ativas da equipe, gráfico diário e áreas mais usadas. */
+export function CompanyUsageCard() {
   const [period, setPeriod] = useState<'7' | '30'>('30')
   const figures = period === '30'
     ? [['Dias ativos', '24', 'de 30'], ['Pessoas ativas', '4', 'de 5'], ['Sessões', '61', ''], ['Telas vistas', '1.284', ''], ['Minutos ativos', '15 h 42', '']]
     : [['Dias ativos', '5', 'de 7'], ['Pessoas ativas', '3', 'de 5'], ['Sessões', '14', ''], ['Telas vistas', '297', ''], ['Minutos ativos', '3 h 50', '']]
   return (
     <Card title="Uso do Avant" className="lg:col-span-2"
-      desc="Contado pelo Avant a cada tela aberta pelas pessoas do cliente. Um dia ativo é um dia em que alguém entrou. Guardado por 13 meses."
-      footerNote={empty ? undefined : 'Também vai para o HubSpot como avant_active_days_30d e avant_active_people_30d.'}>
-      {empty ? <p className="py-4 text-center text-[14px] text-muted-foreground">Sem uso ainda. Os números aparecem no dia seguinte ao primeiro acesso.</p> : <div className="grid gap-6">
-        <div className="flex rounded-md border bg-background p-0.5 sm:w-fit" role="tablist" aria-label="Período">
-          {([['7', 'Últimos 7 dias'], ['30', 'Últimos 30 dias']] as const).map(([key, label]) => <button key={key} role="tab" aria-selected={period === key} onClick={() => setPeriod(key)} className={cn('h-8 rounded px-3 text-[13px]', period === key ? 'bg-secondary font-medium' : 'text-muted-foreground hover:text-foreground')}>{label}</button>)}
-        </div>
+      desc="Toda a equipe da Empresa, o dono incluído. Um dia ativo é um dia em que alguém da equipe entrou. A equipe Groone entrando na Empresa não conta."
+      footerNote="Vai para o HubSpot como avant_company_active_days_30d e avant_active_people_30d.">
+      <div className="grid gap-6">
+        <PeriodTabs period={period} setPeriod={setPeriod} />
         <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-5">{figures.map(([label, value, of]) => <UsageFigure key={label} label={label} value={value} of={of || undefined} />)}</div>
         <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
-          <div><div className="mb-2 text-[13px] font-medium">Pessoas ativas por dia</div><DailyBars values={DAILY_PEOPLE} /></div>
+          <div><div className="mb-2 text-[13px] font-medium">Pessoas ativas por dia</div><DailyBars values={DAILY_PEOPLE} label="Pessoas ativas por dia nos últimos 30 dias" unit="pessoa(s)" /></div>
           <div><div className="mb-2 text-[13px] font-medium">Áreas mais usadas <span className="font-normal text-muted-foreground">(telas vistas)</span></div>
             <ul className="grid gap-2">{AREAS.map(([area, share]) => (
               <li key={area} className="grid grid-cols-[96px_1fr_40px] items-center gap-2 text-[13px]"><span>{area}</span><span className="h-2 overflow-hidden rounded-full bg-muted"><span className="block h-full rounded-full bg-foreground" style={{ width: `${share}%` }} /></span><span className="text-right tnum text-muted-foreground">{share}%</span></li>
             ))}</ul>
           </div>
         </div>
-      </div>}
+      </div>
     </Card>
   )
 }
 
-/** O card "Nutrição" da página do cliente: em que régua ele está e os e-mails que já recebeu. */
+/** O card "Último acesso da equipe" da página da Empresa: cada pessoa, de quem entrou por último para trás. */
+export function CompanyTeamAccessCard() {
+  const [values, setValues] = useState<Record<string, string>>({})
+  const [query, setQuery] = useState('')
+  const rows = useMemo(() => PEOPLE.filter((person) => passes({ name: person.name, role: person.role }, values, query, ['name'])), [values, query])
+  return (
+    <section className="overflow-hidden rounded-lg border bg-card lg:col-span-2">
+      <div className="p-6 pb-4"><h2 className="text-[20px] font-semibold tracking-tight">Último acesso da equipe</h2><p className="mt-2 text-[14px] text-muted-foreground">Quando cada pessoa da Empresa entrou no Avant pela última vez.</p></div>
+      <TableFilters defs={[{ key: 'role', label: 'Papel', options: [...new Set(PEOPLE.map((person) => person.role))] }]} initial={['role']} values={values} setValues={setValues} query={query} setQuery={setQuery} placeholder="Buscar pessoa" />
+      <div className="overflow-x-auto"><table className="w-full min-w-[560px] text-[14px]"><thead className="border-b"><tr><th className={th}>Pessoa</th><th className={th}>Último acesso</th><th className={th}>Dias ativos (30d)</th></tr></thead>
+        <tbody className="divide-y">{rows.map((person) => (
+          <tr key={person.name} className="hover:bg-muted/50">
+            <td className={td}><div className="font-medium">{person.name}</div><div className="text-[12px] text-muted-foreground">{person.role}</div></td>
+            <td className={td}>{person.daysAgo === null ? <span className="text-muted-foreground">{person.label}</span> : <span className={cn('tnum', person.daysAgo >= COLD_DAYS && 'text-ochre')}>{person.label}{person.daysAgo > 1 && <span className="text-[12px] text-muted-foreground"> · há {person.daysAgo} dias</span>}</span>}</td>
+            <td className={td}><span className="tnum">{person.activeDays}</span><span className="text-muted-foreground"> de 30</span></td>
+          </tr>
+        ))}
+        {!rows.length && <tr><td colSpan={3} className="py-10 text-center text-muted-foreground">Ninguém com esses filtros.</td></tr>}</tbody></table></div>
+    </section>
+  )
+}
+
+/** O card "Nutrição" da página do cliente: em que régua ele está e os e-mails que recebeu. */
 export function ClientNurtureCard({ go, empty = false }: { go: Go; empty?: boolean }) {
   const history = [
     { when: '19/11, 10:00', text: 'Engajado · e-mail 1 de 1 enviado para pedro@blogexemplo.com', state: 'Aberto', tone: 'ok' as Tone },
@@ -227,7 +252,7 @@ export function ClientNurtureCard({ go, empty = false }: { go: Go; empty?: boole
     { when: '25/09, 10:00', text: 'Onboarding parado · e-mail 1 de 3 enviado', state: 'Aberto', tone: 'ok' as Tone },
   ]
   return (
-    <Card title="Nutrição" desc="As réguas de e-mail em que o cliente entrou. Ele fica em uma régua por vez." footer={<Button size="sm" variant="outline" onClick={() => go('nutricaointerno')}>Ver réguas</Button>}>
+    <Card title="Nutrição" className="lg:col-span-2" desc="As réguas de e-mail em que o cliente entrou. Os e-mails vão para o cliente; ele fica em uma régua por vez." footer={<Button size="sm" variant="outline" onClick={() => go('nutricaointerno')}>Ver réguas</Button>}>
       {empty ? <p className="text-[14px] text-muted-foreground">Fora das réguas: só clientes ativos entram.</p> : <>
         <div className="flex flex-wrap items-center gap-2 text-[14px]"><Status tone="ok">Na régua Engajado</Status><span className="text-muted-foreground">desde 19/11 · sem e-mails pendentes</span></div>
         <ul className="mt-4 divide-y border-t">{history.map((item) => <li key={item.when} className="flex flex-wrap items-start justify-between gap-2 py-3 text-[13px]"><div><div>{item.text}</div><div className="tnum text-muted-foreground">{item.when}</div></div><Status tone={item.tone}>{item.state}</Status></li>)}</ul>
@@ -236,16 +261,29 @@ export function ClientNurtureCard({ go, empty = false }: { go: Go; empty?: boole
   )
 }
 
-/** A página do cliente ativo (Blog Exemplo), só com os cards de acesso, uso e nutrição. */
+/** A página do cliente ativo Blog Exemplo, só com os cards novos: acesso dele e nutrição. */
 export function ClientUsageScreen({ go }: { go: Go }) {
   return (
     <>
-      <PageHeader title="Blog Exemplo" sub="Cliente ativo · 2 Empresas · 5 pessoas. Os outros cards da página do cliente ficam como estão."
+      <PageHeader title="Blog Exemplo" sub="Cliente ativo · login de Pedro Henrique (pedro@blogexemplo.com) · Empresa: Blog Exemplo Mídia. Os outros cards da página do cliente ficam como estão."
         back={<button onClick={() => go('interno')} className="inline-flex items-center gap-1 text-[13px] text-muted-foreground hover:text-foreground"><ArrowLeft className="h-3.5 w-3.5" />Clientes</button>} />
       <Body className="lg:grid-cols-2">
-        <ClientUsageCard />
-        <ClientAccessCard />
+        <ClientAccessCard go={go} />
         <ClientNurtureCard go={go} />
+      </Body>
+    </>
+  )
+}
+
+/** A página da Empresa Blog Exemplo Mídia, só com os cards novos: uso da equipe e último acesso de cada pessoa. */
+export function CompanyUsageScreen({ go }: { go: Go }) {
+  return (
+    <>
+      <PageHeader title="Blog Exemplo Mídia" sub="Empresa do cliente Blog Exemplo · 5 pessoas na equipe. Os outros cards da página da Empresa ficam como estão."
+        back={<button onClick={() => go('clienteuso')} className="inline-flex items-center gap-1 text-[13px] text-muted-foreground hover:text-foreground"><ArrowLeft className="h-3.5 w-3.5" />Cliente Blog Exemplo</button>} />
+      <Body className="lg:grid-cols-2">
+        <CompanyUsageCard />
+        <CompanyTeamAccessCard />
       </Body>
     </>
   )
@@ -253,14 +291,14 @@ export function ClientUsageScreen({ go }: { go: Go }) {
 
 /* ---------- 3. Ferramentas > Nutrição ---------- */
 
-type Measure = 'days_without_access' | 'active_days_30d' | 'active_people_30d' | 'sessions_30d' | 'screens_30d' | 'minutes_30d' | 'onboarding_step'
+type Measure = 'days_without_access' | 'active_days_30d' | 'company_active_days_30d' | 'active_people_30d' | 'screens_30d' | 'minutes_30d' | 'onboarding_step'
 const MEASURES: Record<Measure, { label: string; unit: string }> = {
-  days_without_access: { label: 'Dias sem acesso', unit: 'dias' },
-  active_days_30d: { label: 'Dias ativos (30d)', unit: 'dias' },
-  active_people_30d: { label: 'Pessoas ativas (30d)', unit: 'pessoas' },
-  sessions_30d: { label: 'Sessões (30d)', unit: 'sessões' },
-  screens_30d: { label: 'Telas vistas (30d)', unit: 'telas' },
-  minutes_30d: { label: 'Minutos ativos (30d)', unit: 'minutos' },
+  days_without_access: { label: 'Dias sem o cliente entrar', unit: 'dias' },
+  active_days_30d: { label: 'Dias ativos do cliente (30d)', unit: 'dias' },
+  company_active_days_30d: { label: 'Dias ativos da Empresa (30d)', unit: 'dias' },
+  active_people_30d: { label: 'Pessoas ativas na Empresa (30d)', unit: 'pessoas' },
+  screens_30d: { label: 'Telas vistas na Empresa (30d)', unit: 'telas' },
+  minutes_30d: { label: 'Minutos ativos na Empresa (30d)', unit: 'minutos' },
   onboarding_step: { label: 'Etapa do onboarding parada há', unit: 'dias' },
 }
 const COMPARISONS = [['gte', 'maior ou igual a'], ['lte', 'menor ou igual a'], ['eq', 'igual a']] as const
@@ -294,14 +332,14 @@ const INITIAL_RULES: NurtureRule[] = [
   {
     id: 'cold', name: 'Esfriando', priority: 2, on: true, measure: 'days_without_access', comparison: 'gte', value: 14, manager: 'all', minAgeDays: 30,
     emails: [
-      email(1, 0, ['Sua receita da semana está no Avant', 'Your weekly revenue is in Avant', 'Tus ingresos de la semana están en Avant'], 'Oi {nome},\n\nFaz {dias_sem_acesso} dias que ninguém da {empresa} entra no Avant. A receita dos últimos 7 dias e os sites que mais cresceram estão no painel:\n\n{link_avant}'),
+      email(1, 0, ['Sua receita da semana está no Avant', 'Your weekly revenue is in Avant', 'Tus ingresos de la semana están en Avant'], 'Oi {nome},\n\nFaz {dias_sem_acesso} dias que você não entra no Avant. A receita dos últimos 7 dias e os sites que mais cresceram estão no painel:\n\n{link_avant}'),
       email(2, 5, ['{gerente} quer falar com você', '{gerente} would like to talk', '{gerente} quiere hablar contigo'], 'Oi {nome},\n\nSou {gerente}, da Groone. Quer revisar os resultados da {empresa} comigo? É só responder este e-mail.'),
     ],
     hubspotTask: true, taskDue: 'hoje', stage: 'esfriando', repeat: '60', inNow: 6, sent30: 31, openRate: 48, returned: 35,
   },
   {
-    id: 'engaged', name: 'Engajado', priority: 3, on: true, measure: 'active_days_30d', comparison: 'gte', value: 15, manager: 'all', minAgeDays: 30,
-    emails: [email(1, 0, ['Dicas para ir além no Avant', 'Tips to go further with Avant', 'Consejos para ir más allá en Avant'], 'Oi {nome},\n\nA {empresa} usa o Avant quase todo dia. Você já conhece os relatórios customizados e as regras de preço? {link_ajuda}')],
+    id: 'engaged', name: 'Engajado', priority: 3, on: true, measure: 'company_active_days_30d', comparison: 'gte', value: 15, manager: 'all', minAgeDays: 30,
+    emails: [email(1, 0, ['Dicas para ir além no Avant', 'Tips to go further with Avant', 'Consejos para ir más allá en Avant'], 'Oi {nome},\n\nA equipe da {empresa} usa o Avant quase todo dia. Você já conhece os relatórios customizados e as regras de preço? {link_ajuda}')],
     hubspotTask: false, taskDue: '1 semana', stage: 'engajado', repeat: '90', inNow: 5, sent30: 12, openRate: 75, returned: null,
   },
   {
