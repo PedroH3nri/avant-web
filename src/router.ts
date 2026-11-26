@@ -115,6 +115,7 @@ const routes: RouteRecordRaw[] = [
       { path: 'interno/campanhas-facebook', component: () => import('@/modules/facebook/views/FacebookCampaignsView.vue'), meta: { internal: true, permission: 'internal.facebook.view' } },
       { path: 'interno/campanhas-facebook/:id', component: () => import('@/modules/facebook/views/FacebookObjectView.vue'), meta: { internal: true, permission: 'internal.facebook.view' } },
       { path: 'interno/google-ads', component: () => import('@/modules/google_ads/views/GoogleAdsView.vue'), meta: { internal: true, permission: 'internal.google_ads.view' } },
+      { path: 'interno/hubspot', component: () => import('@/modules/internal/hubspot/views/HubspotView.vue'), meta: { internal: true, permission: 'internal.hubspot.view' } },
       { path: 'interno/campanhas-google-ads', component: () => import('@/modules/google_ads/views/GoogleAdsCampaignsView.vue'), meta: { internal: true, permission: 'internal.google_ads.view' } },
       { path: 'interno/campanhas-google-ads/:level/:id', component: () => import('@/modules/google_ads/views/GoogleAdsObjectView.vue'), meta: { internal: true, permission: 'internal.google_ads.view' } },
       { path: 'interno/rewards', component: () => import('@/modules/rewards/views/RewardsView.vue'), meta: { internal: true, permission: 'internal.rewards.view' } },
