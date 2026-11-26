@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { emptyProfile, percentageOk, profileBody, profileOk } from '@/modules/internal/clients/rules'
+import { accessQuery, emptyProfile, percentageOk, profileBody, profileOk, staleAccess } from '@/modules/internal/clients/rules'
 import { TAX_TYPES, taxTypeLabel, taxTypeOptions } from '@/modules/company/fiscal'
 
 describe('cadastro de cliente', () => {
@@ -27,5 +27,21 @@ describe('cadastro de cliente', () => {
     expect(Object.keys(TAX_TYPES)).toHaveLength(84)
     expect(taxTypeLabel('BR_PJ')).toContain('CNPJ')
     expect(taxTypeOptions()).toHaveLength(84)
+  })
+})
+
+describe('último acesso do cliente', () => {
+  it('monta os parâmetros do filtro de acesso', () => {
+    expect(accessQuery('any')).toEqual({})
+    expect(accessQuery('30')).toEqual({ inactive_days: 30 })
+    expect(accessQuery('never')).toEqual({ never_accessed: true })
+    expect(accessQuery('abc')).toEqual({})
+  })
+
+  it('destaca quem está há 14 dias ou mais sem entrar, e quem nunca entrou', () => {
+    const now = Date.parse('2026-11-26T12:00:00Z')
+    expect(staleAccess(null, now)).toBe(true)
+    expect(staleAccess('2026-11-20T12:00:00Z', now)).toBe(false)
+    expect(staleAccess('2026-11-12T12:00:00Z', now)).toBe(true)
   })
 })

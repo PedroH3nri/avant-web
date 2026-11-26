@@ -26,7 +26,7 @@ import TableState from '@/components/ui/TableState.vue'
 import RevenueStatusBadge from '@/modules/revenue/components/RevenueStatusBadge.vue'
 import { ApiError } from '@/lib/api'
 import { latestCall } from '@/lib/latest'
-import { emptyProfile, profileBody, profileOk, prospectDraft, STATUS_TONE } from '@/modules/internal/clients/rules'
+import { ACCESS_FILTERS, accessQuery, emptyProfile, profileBody, profileOk, prospectDraft, staleAccess, STATUS_TONE } from '@/modules/internal/clients/rules'
 import { errorText, formatAgo, t, type Key } from '@/lib/i18n'
 import { td, th } from '@/lib/table'
 import type { CompanyStatus } from '@/modules/company/types'
@@ -45,18 +45,21 @@ type Tab = 'all' | CompanyStatus
 
 const SEARCH_DELAY_MS = 300
 const ALL = 'all'
-const COLUMNS = ['client', 'contact', 'manager', 'employees', 'status', 'revenue']
+const COLUMNS = ['client', 'contact', 'manager', 'employees', 'status', 'revenue', 'last_access']
 const SORTS: ViewSort[] = [
   { key: 'created_at', direction: 'desc' },
   { key: 'created_at', direction: 'asc' },
   { key: 'name', direction: 'asc' },
   { key: 'name', direction: 'desc' },
+  { key: 'last_access', direction: 'desc' },
+  { key: 'last_access', direction: 'asc' },
 ]
-const FILTERS = ['status', 'account_manager_ids']
+const FILTERS = ['status', 'account_manager_ids', 'access']
 const DEFAULT_FILTERS = ['status', 'account_manager_ids']
 const FILTER_LABELS: Record<string, Key> = {
   status: 'int.situation',
   account_manager_ids: 'int.column.manager',
+  access: 'int.access.filter',
 }
 const DEFAULT_VIEW: ViewDefinition = { columns: ['client', 'contact', 'employees', 'status', 'revenue'], filters: {}, sort: SORTS[0] ?? null, shown_filters: DEFAULT_FILTERS }
 
@@ -78,9 +81,11 @@ const loadError = ref<string | null>(null)
 const searchText = ref('')
 const tab = ref<Tab>('all')
 const manager = ref(ALL)
+const access = ref('any')
 const barFilters = useBarFilters(FILTERS, DEFAULT_FILTERS, {
   status: () => (tab.value = 'all'),
   account_manager_ids: () => (manager.value = ALL),
+  access: () => (access.value = 'any'),
 })
 const sort = ref(sortValue(SORTS[0] as ViewSort))
 const columns = ref<string[]>([...DEFAULT_VIEW.columns])
@@ -92,6 +97,7 @@ const current = computed<ViewDefinition>(() => ({
     query: searchText.value,
     status: tab.value === 'all' ? undefined : tab.value,
     account_manager_ids: manager.value === ALL ? [] : [manager.value],
+    access: access.value === 'any' ? undefined : access.value,
   }),
   sort: parseSort(sort.value),
   shown_filters: barFilters.shown.value,
@@ -135,6 +141,7 @@ async function loadClients() {
       manager: manager.value === ALL ? undefined : [manager.value],
       sort: parseSort(sort.value)?.key,
       direction: parseSort(sort.value)?.direction,
+      ...accessQuery(access.value),
     }))
     if (!found) return
     clients.value = found.items
@@ -203,12 +210,18 @@ function firstPage() {
 }
 const searchClients = useDebounceFn(firstPage, SEARCH_DELAY_MS)
 watch(searchText, () => void searchClients())
-watch([tab, manager, sort], firstPage)
+watch([tab, manager, sort, access], firstPage)
 watch(page, loadClients)
 watch(invitePage, loadInvites)
 
 const tabs: Tab[] = ['all', 'active', 'pending', 'inactive', 'banned']
 const statusOptions = computed(() => tabs.map((option) => ({ value: option, label: `${option === 'all' ? t('int.allStatuses') : t(`int.tab.${option}`)} (${counts.value[option]})` })))
+const accessOptions = computed(() =>
+  ACCESS_FILTERS.map((choice) => ({
+    value: choice,
+    label: choice === 'any' ? t('int.access.any') : choice === 'never' ? t('int.access.never') : t('int.access.days', { n: choice }),
+  })),
+)
 const managerOptions = computed(() => [{ value: ALL, label: t('int.allManagers') }, ...staff.value])
 const sortOptions = SORTS.map((option) => ({ value: sortValue(option), label: t(`int.sort.${option.key}.${option.direction}` as Key) }))
 /** O nome do filtro no menu de filtros. */
@@ -226,6 +239,8 @@ function applyView(definition: ViewDefinition) {
   const status = firstValue(definition.filters.status)
   tab.value = (tabs as string[]).includes(status) ? (status as Tab) : 'all'
   manager.value = firstValue(definition.filters.account_manager_ids) || ALL
+  const savedAccess = firstValue(definition.filters.access)
+  access.value = (ACCESS_FILTERS as readonly string[]).includes(savedAccess) ? savedAccess : 'any'
   barFilters.apply(definition)
   const chosen = definition.sort && SORTS.find((option) => sortValue(option) === sortValue(definition.sort as ViewSort))
   sort.value = sortValue(chosen || (SORTS[0] as ViewSort))
@@ -291,6 +306,7 @@ function clearFilters() {
   searchText.value = ''
   tab.value = 'all'
   manager.value = ALL
+  access.value = 'any'
 }
 
 /** Diz se a data já passou. */
@@ -357,6 +373,7 @@ const referrerName = (client: Client) => (client.profile?.referred_by_client_id 
         </div>
         <Select v-if="barFilters.isShown('status')" v-model="tab" :options="statusOptions" :aria-label="t('int.situation')" class="w-full sm:w-44 h-9" />
         <Select v-if="barFilters.isShown('account_manager_ids')" v-model="manager" :options="managerOptions" :aria-label="t('int.column.manager')" class="w-full sm:w-52 h-9" />
+        <Select v-if="barFilters.isShown('access')" v-model="access" :options="accessOptions" :aria-label="t('int.access.filter')" class="w-full sm:w-52 h-9" />
         <Select v-model="sort" :options="sortOptions" :aria-label="t('views.sort')" class="w-full sm:w-56 h-9" />
         <FiltersMenu v-model:shown="barFilters.shown.value" :filters="FILTERS" :label="filterLabel" />
         <ColumnsMenu v-model:shown="columns" :columns="COLUMNS" :label="columnLabel" />
@@ -371,6 +388,7 @@ const referrerName = (client: Client) => (client.profile?.referred_by_client_id 
             <th v-if="shown('employees')" :class="th">{{ t('int.employees') }}</th>
             <th v-if="shown('status')" :class="th">{{ t('int.situation') }}</th>
             <th v-if="shown('revenue')" :class="th">{{ t('int.column.revenue') }}</th>
+            <th v-if="shown('last_access')" :class="th">{{ t('int.column.last_access') }}</th>
             <th :class="[th, 'w-px']"><span class="sr-only">{{ t('common.open') }}</span></th>
           </tr>
         </thead>
@@ -422,6 +440,9 @@ const referrerName = (client: Client) => (client.profile?.referred_by_client_id 
               <Status :tone="STATUS_TONE[client.status]">{{ t(`int.status.${client.status}`) }}</Status>
             </td>
             <td v-if="shown('revenue')" :class="td"><RevenueStatusBadge :status="client.revenue_status" /></td>
+            <td v-if="shown('last_access')" :class="[td, 'text-[13px]', staleAccess(client.last_access_at) ? 'text-ochre' : 'text-muted-foreground']">
+              {{ client.last_access_at ? formatAgo(client.last_access_at) : t('int.neverAccessed') }}
+            </td>
             <td :class="[td, 'text-right']"><OpenLink :to="`/interno/clientes/${client.id}`" :name="client.name" /></td>
           </tr>
         </tbody>
