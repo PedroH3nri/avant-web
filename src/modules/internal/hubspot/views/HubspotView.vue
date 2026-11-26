@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** Integrações > HubSpot: o que o Avant manda para o HubSpot da Groone, por tipo, os registros com erro e a sincronia na hora. */
+/** Integrações > HubSpot: o que o Avant manda para o HubSpot da Groone, por tipo (com os objetos personalizados), os registros com erro e a sincronia na hora. */
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { toast } from 'vue-sonner'
 import { ChevronRight, CircleCheck, RefreshCw, Search } from 'lucide-vue-next'
@@ -19,7 +19,7 @@ import { nextPollDelay } from '@/lib/poll'
 import { td, th } from '@/lib/table'
 import FiltersMenu from '@/modules/views/components/FiltersMenu.vue'
 import { useLocalBarFilters } from '@/modules/views/barFilters'
-import { KINDS, KIND_LABEL, KIND_SOURCE, LICENSED_OBJECTS, filterFailures, isRunning, runSummary } from '@/modules/internal/hubspot/rules'
+import { CUSTOM_KINDS, KINDS, KIND_LABEL, KIND_SOURCE, filterFailures, isRunning, runSummary } from '@/modules/internal/hubspot/rules'
 import { hubspotService } from '@/modules/internal/hubspot/service'
 import type { HubspotKind, HubspotStatus } from '@/modules/internal/hubspot/types'
 import { useSession } from '@/stores/session'
@@ -127,22 +127,10 @@ onBeforeUnmount(() => clearTimeout(pollTimer))
           <div class="flex flex-wrap items-center gap-1 text-[13px] text-muted-foreground">
             {{ t(KIND_SOURCE[tile.kind]) }}<ChevronRight class="size-3.5" aria-hidden="true" />{{ tile.last_synced_at ? formatAgo(tile.last_synced_at) : t('hs.notYet') }}
           </div>
+          <p v-if="CUSTOM_KINDS.includes(tile.kind) && !tile.synced && !tile.failed" class="mt-3 border-t pt-3 text-[12px] text-muted-foreground">{{ t('hs.customHelp') }}</p>
           <div v-if="running" class="mt-3 h-1 overflow-hidden rounded-full bg-muted" aria-hidden="true">
             <span class="block h-full w-1/3 animate-pulse rounded-full bg-foreground" />
           </div>
-        </div>
-        <div
-          v-for="(licensed, index) in LICENSED_OBJECTS"
-          :key="licensed.object"
-          class="card-motion rounded-lg border border-dashed bg-card p-5 animate-in fade-in-0 slide-in-from-bottom-2 fill-mode-both duration-500"
-          :style="rise(index + KINDS.length)"
-        >
-          <div class="flex items-center justify-between gap-2">
-            <span class="flex items-center gap-2 text-[14px] font-medium"><HubspotMark />{{ t(licensed.object) }}</span>
-            <Status tone="neutral">{{ t('hs.needsLicense') }}</Status>
-          </div>
-          <div class="mt-3 text-[13px] text-muted-foreground">{{ t(licensed.source) }}</div>
-          <p class="mt-3 border-t pt-3 text-[12px] text-muted-foreground">{{ t('hs.licenseHelp') }}</p>
         </div>
       </div>
 

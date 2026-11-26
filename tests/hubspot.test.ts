@@ -7,10 +7,12 @@ import type { HubspotCard, HubspotFailure, HubspotRun } from '@/modules/internal
 
 const client = vi.hoisted(() => vi.fn())
 const network = vi.hoisted(() => vi.fn())
-vi.mock('@/modules/internal/hubspot/service', () => ({ hubspotService: { client, network } }))
+const site = vi.hoisted(() => vi.fn())
+vi.mock('@/modules/internal/hubspot/service', () => ({ hubspotService: { client, network, site } }))
 
 import HubspotClientCard from '@/modules/internal/hubspot/components/HubspotClientCard.vue'
 import HubspotNetworkCards from '@/modules/internal/hubspot/components/HubspotNetworkCards.vue'
+import HubspotSiteCard from '@/modules/internal/hubspot/components/HubspotSiteCard.vue'
 
 /** Um card de contato já no HubSpot, com dono, fase e duas atividades. */
 function contactCard(): HubspotCard {
@@ -37,6 +39,7 @@ beforeEach(() => {
   lang.value = 'pt'
   client.mockReset()
   network.mockReset()
+  site.mockReset()
 })
 
 describe('regras do HubSpot', () => {
@@ -56,6 +59,15 @@ describe('regras do HubSpot', () => {
     expect(facts[1]?.value).toBe('1.200')
     expect(facts[2]?.value).toBe('15%')
     expect(facts[0]?.label).toBe('Criado no HubSpot')
+  })
+
+  /** A situação do site no HubSpot vem em código e sai traduzida, antes dos outros fatos. */
+  it('traduz a situação do site', () => {
+    const facts = cardFacts({ created_at: '2026-10-24T14:05:00+00:00', status: 'banned' })
+    expect(facts.map((fact) => fact.code)).toEqual(['status', 'created_at'])
+    expect(facts[0]?.value).toBe('Recusado')
+    lang.value = 'es'
+    expect(cardFacts({ status: 'pending' })[0]?.value).toBe('Pendiente')
   })
 
   /** O filtro de objeto e a busca, no registro ou na mensagem, sem diferença de maiúsculas. */
@@ -122,6 +134,16 @@ describe('cards do HubSpot', () => {
     await cards.setProps({ networkId: 'n2' })
     await flushPromises()
     expect(cards.findAll('section').length).toBe(1)
+  })
+
+  /** O site mostra o objeto personalizado com a situação traduzida. */
+  it('mostra o site no HubSpot', async () => {
+    site.mockResolvedValue({ configured: true, site: { ...contactCard(), kind: 'site', stage: null, facts: { status: 'pending' }, activities: [] } })
+    const card = mount(HubspotSiteCard, { props: { siteId: 's1' } })
+    await flushPromises()
+    expect(site).toHaveBeenCalledWith('s1')
+    expect(card.text()).toContain('HubSpot · Sites')
+    expect(card.text()).toContain('Pendente')
   })
 
   /** Um erro do HubSpot fica no card, sem derrubar a tela. */
