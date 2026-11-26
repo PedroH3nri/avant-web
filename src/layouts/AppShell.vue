@@ -8,6 +8,7 @@ import LangSwitch from '@/components/LangSwitch.vue'
 import DollarRate from '@/modules/currencies/components/DollarRate.vue'
 import NotificationCenter from '@/modules/notifications/components/NotificationCenter.vue'
 import NpsPrompt from '@/modules/help/components/NpsPrompt.vue'
+import UsageTracker from '@/modules/usage/components/UsageTracker.vue'
 import SidebarRail from '@/components/SidebarRail.vue'
 import Button from '@/components/ui/Button.vue'
 import { t } from '@/lib/i18n'
@@ -43,6 +44,7 @@ const session = useSession()
       </header>
       <RouterView :key="session.company?.id ?? 'none'" />
     </div>
+    <UsageTracker v-if="session.company && !session.company.is_internal && !session.me?.mfa_setup_required" :key="`usage-${session.company.id}`" />
     <NpsPrompt v-if="session.company && !session.company.is_internal && !session.me?.mfa_setup_required" :key="session.company.id" />
   </div>
 </template>

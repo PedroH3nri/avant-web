@@ -17,6 +17,7 @@ import Card from '@/components/ui/Card.vue'
 import AccountManagerCard from '@/modules/internal/commissions/components/AccountManagerCard.vue'
 import ClientDocumentsCard from '@/modules/internal/clients/components/ClientDocumentsCard.vue'
 import ClientNotesCard from '@/modules/internal/clients/components/ClientNotesCard.vue'
+import ClientUsageCard from '@/modules/internal/usage/components/ClientUsageCard.vue'
 import HubspotClientCard from '@/modules/internal/hubspot/components/HubspotClientCard.vue'
 import ReservedNetworksCard from '@/modules/internal/clients/components/ReservedNetworksCard.vue'
 import Field from '@/components/ui/Field.vue'
@@ -348,6 +349,8 @@ function who(auditEntry: AuditEntry) {
       </Card>
 
       <ReservedNetworksCard v-if="!client.company" class="lg:col-span-2" :client-id="client.id" :client-name="client.name" :networks="client.reserved_networks" @changed="reload" />
+
+      <ClientUsageCard class="lg:col-span-2" :client-id="client.id" :company-link="client.company ? `/interno/empresas/${client.company.id}` : null" />
 
       <ClientNotesCard v-if="canNotes && client.company" class="lg:col-span-2" :company-id="client.company.id" @changed="auditChanged" />
 

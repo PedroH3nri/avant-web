@@ -18,6 +18,8 @@ import Status from '@/components/ui/Status.vue'
 import { ApiError } from '@/lib/api'
 import { errorText, formatAgo, formatDate, pick, t } from '@/lib/i18n'
 import { staleAccess } from '@/modules/internal/clients/rules'
+import CompanyUsageCard from '@/modules/internal/usage/components/CompanyUsageCard.vue'
+import TeamUsageCard from '@/modules/internal/usage/components/TeamUsageCard.vue'
 import { td, th } from '@/lib/table'
 import type { Group } from '@/modules/groups/types'
 import ClientNetworksCard from '@/modules/internal/inventory/components/ClientNetworksCard.vue'
@@ -107,6 +109,9 @@ function groupPeople(group: Group) {
       </Card>
 
       <ClientNetworksCard v-if="company.company" :client-id="company.company.id" :client-name="company.company.name" />
+
+      <CompanyUsageCard v-if="company.company" class="lg:col-span-2" :company-id="company.company.id" />
+      <TeamUsageCard v-if="company.company" class="lg:col-span-2" :company-id="company.company.id" :company-name="company.company.name" />
 
       <div class="grid gap-3 lg:col-span-2">
         <h2 class="text-[13px] font-medium text-muted-foreground">{{ t('int.members') }}</h2>
