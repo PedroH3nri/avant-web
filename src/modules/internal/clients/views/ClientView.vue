@@ -17,6 +17,7 @@ import Card from '@/components/ui/Card.vue'
 import AccountManagerCard from '@/modules/internal/commissions/components/AccountManagerCard.vue'
 import ClientDocumentsCard from '@/modules/internal/clients/components/ClientDocumentsCard.vue'
 import ClientNotesCard from '@/modules/internal/clients/components/ClientNotesCard.vue'
+import HubspotClientCard from '@/modules/internal/hubspot/components/HubspotClientCard.vue'
 import ReservedNetworksCard from '@/modules/internal/clients/components/ReservedNetworksCard.vue'
 import Field from '@/components/ui/Field.vue'
 import Input from '@/components/ui/Input.vue'
@@ -349,6 +350,8 @@ function who(auditEntry: AuditEntry) {
       <ReservedNetworksCard v-if="!client.company" class="lg:col-span-2" :client-id="client.id" :client-name="client.name" :networks="client.reserved_networks" @changed="reload" />
 
       <ClientNotesCard v-if="canNotes && client.company" class="lg:col-span-2" :company-id="client.company.id" @changed="auditChanged" />
+
+      <HubspotClientCard class="lg:col-span-2" :client-id="client.id" />
 
       <Card class="lg:col-span-2" :title="t('int.audit')" :desc="t('int.auditDesc')">
         <p v-if="!audit.length" class="text-[14px] text-muted-foreground">{{ t('int.auditEmpty') }}</p>
