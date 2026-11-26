@@ -9,6 +9,7 @@ import { toast } from 'vue-sonner'
 import { ShieldAlert } from 'lucide-vue-next'
 import ApiKeysCard from '@/modules/account/components/ApiKeysCard.vue'
 import CurrencyCard from '@/modules/account/components/CurrencyCard.vue'
+import MeetingLinkCard from '@/modules/account/components/MeetingLinkCard.vue'
 import GoogleCard from '@/modules/account/components/GoogleCard.vue'
 import MfaCard from '@/modules/account/components/MfaCard.vue'
 import PasswordCard from '@/modules/account/components/PasswordCard.vue'
@@ -74,6 +75,7 @@ onMounted(() => {
         {{ t('acc.preferences') }}
       </h2>
       <CurrencyCard />
+      <MeetingLinkCard v-if="session.internalCompany" />
 
       <h2 class="text-[13px] font-medium text-muted-foreground">
         {{ t('set.appearance') }}

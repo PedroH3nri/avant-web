@@ -70,4 +70,6 @@ export const accountService = {
   setImage: (file: File) => api.putFile<UserRef>('/auth/me/image', file),
   /** Tira a foto de perfil. */
   removeImage: () => api.delete<UserRef>('/auth/me/image'),
+  /** Troca o link de agendamento da equipe Groone; vazio tira. */
+  setMeetingUrl: (url: string) => api.put<UserRef>('/auth/me/meeting-url', { url: url || null }),
 }

@@ -2,7 +2,7 @@
 
 import { computed, type Component } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { BellRing, Building, Building2, ChartLine, CircleDollarSign, Code2, Coins, Eye, FileChartColumn, FileSignature, FileText, Gift, Globe, IdCard, LayoutDashboard, LayoutTemplate, ListChecks, ListTodo, LoaderCircle, MailCheck, Network, Plug, Receipt, ReceiptText, Scale, ShieldCheck, Target, Users, UsersRound, Wallet, Wrench } from 'lucide-vue-next'
+import { BellRing, BookOpen, Building, Building2, ChartLine, CircleDollarSign, Code2, Coins, Eye, FileChartColumn, FileSignature, FileText, Gift, Globe, IdCard, LayoutDashboard, LayoutTemplate, ListChecks, ListTodo, LifeBuoy, LoaderCircle, MailCheck, MessageSquareHeart, Network, Plug, Receipt, ReceiptText, Scale, ShieldCheck, Target, Users, UsersRound, Wallet, Wrench } from 'lucide-vue-next'
 import FacebookIcon from '@/components/FacebookIcon.vue'
 import GoogleAdsIcon from '@/components/GoogleAdsIcon.vue'
 import HubspotIcon from '@/components/HubspotIcon.vue'
@@ -43,6 +43,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { to: '/regras-de-preco', key: 'nav.priceRules', icon: CircleDollarSign, clientOnly: true },
       { to: '/interno/regras-de-preco', key: 'nav.priceRules', icon: CircleDollarSign, internal: true },
       { to: '/interno/checklists', key: 'nav.checklists', icon: ListChecks, internal: true },
+      { to: '/interno/nps', key: 'nav.nps', icon: MessageSquareHeart, internal: true, separated: true },
     ],
   },
   {
@@ -86,6 +87,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { to: '/interno/alertas', key: 'nav.alerts', icon: BellRing, internal: true },
       { to: '/interno/envios', key: 'nav.schedules', icon: MailCheck, internal: true },
       { to: '/interno/modelos-de-dashboard', key: 'nav.dashboardTemplates', icon: LayoutTemplate, internal: true },
+      { to: '/interno/central-de-ajuda', key: 'nav.helpEditor', icon: BookOpen, internal: true },
     ],
   },
   {
@@ -112,6 +114,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { to: '/custos', key: 'nav.costs', icon: Receipt },
     ],
   },
+  { id: 'help', key: 'nav.groupHelp', label: 'nav.groupHelp', icon: LifeBuoy, items: [{ to: '/ajuda', key: 'nav.helpCenter', icon: LifeBuoy, clientOnly: true }] },
 ]
 // Telas sem item próprio que acendem o item da lista de onde se chega a elas.
 const SIBLINGS: Record<string, string[]> = {

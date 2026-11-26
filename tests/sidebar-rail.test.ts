@@ -90,7 +90,7 @@ describe('SidebarRail', () => {
     const [, , clients, reports, , tools] = wrapper.findAll('nav[aria-label="Menu principal"] > *')
     await hoverAndWait(clients!)
     expect(wrapper.find('#rail-panel').attributes('aria-hidden')).toBe('false')
-    expect(panelLabels(wrapper)).toEqual(['Clientes', 'Empresas', 'Networks do GAM', 'Contratos', 'Sites', 'Rewards', 'Ad tags', 'Loaders', 'Regras de preço', 'Checklists'])
+    expect(panelLabels(wrapper)).toEqual(['Clientes', 'Empresas', 'Networks do GAM', 'Contratos', 'Sites', 'Rewards', 'Ad tags', 'Loaders', 'Regras de preço', 'Checklists', 'NPS dos clientes'])
     expect(wrapper.find('#rail-panel [aria-current="page"]').text()).toBe('Clientes')
     expect(wrapper.find('#rail-panel hr').element.nextElementSibling?.textContent).toBe('Rewards')
     await hoverAndWait(reports!)
@@ -98,7 +98,7 @@ describe('SidebarRail', () => {
     const separators = wrapper.findAll('#rail-panel hr')
     expect(separators.map((separator) => separator.element.nextElementSibling?.textContent)).toEqual(['Campanhas do Facebook', 'Relatórios customizados'])
     await hoverAndWait(tools!)
-    expect(panelLabels(wrapper)).toEqual(['Ferramentas do GAM', 'Alertas', 'Envios agendados', 'Modelos de dashboard'])
+    expect(panelLabels(wrapper)).toEqual(['Ferramentas do GAM', 'Alertas', 'Envios agendados', 'Modelos de dashboard', 'Central de ajuda'])
   })
 
   it('fecha o painel ao abrir uma tela e não abre painel para o Dashboard', async () => {
