@@ -15,6 +15,7 @@ const routes: RouteRecordRaw[] = [
   { path: '/esqueci-a-senha', component: () => import('@/modules/auth/views/ForgotView.vue'), meta: { public: true } },
   { path: '/redefinir-senha/:token', component: () => import('@/modules/auth/views/ResetView.vue'), meta: { public: true } },
   { path: '/convite/:token', component: () => import('@/modules/auth/views/InviteView.vue'), meta: { public: true } },
+  { path: '/descadastro/:token', component: () => import('@/modules/nurture/views/UnsubscribeView.vue'), meta: { public: true } },
   {
     path: '/',
     component: () => import('@/layouts/AppShell.vue'),
@@ -120,6 +121,8 @@ const routes: RouteRecordRaw[] = [
       { path: 'interno/central-de-ajuda', component: () => import('@/modules/internal/help/views/HelpEditorView.vue'), meta: { internal: true, permission: 'internal.help.manage' } },
       { path: 'interno/prospeccao', component: () => import('@/modules/internal/hubspot/views/ProspectsView.vue'), meta: { internal: true, permission: 'internal.clients.view' } },
       { path: 'interno/nps', component: () => import('@/modules/internal/nps/views/NpsView.vue'), meta: { internal: true, permission: 'internal.clients.view' } },
+      { path: 'interno/nutricao', component: () => import('@/modules/internal/nurture/views/NurtureView.vue'), meta: { internal: true, permission: 'internal.clients.view' } },
+      { path: 'interno/nutricao/:id', component: () => import('@/modules/internal/nurture/views/NurtureRuleView.vue'), meta: { internal: true, permission: 'internal.clients.view' } },
       { path: 'interno/campanhas-google-ads', component: () => import('@/modules/google_ads/views/GoogleAdsCampaignsView.vue'), meta: { internal: true, permission: 'internal.google_ads.view' } },
       { path: 'interno/campanhas-google-ads/:level/:id', component: () => import('@/modules/google_ads/views/GoogleAdsObjectView.vue'), meta: { internal: true, permission: 'internal.google_ads.view' } },
       { path: 'interno/rewards', component: () => import('@/modules/rewards/views/RewardsView.vue'), meta: { internal: true, permission: 'internal.rewards.view' } },

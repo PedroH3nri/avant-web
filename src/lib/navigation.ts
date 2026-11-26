@@ -2,7 +2,7 @@
 
 import { computed, type Component } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { BellRing, BookOpen, Building, Building2, ChartLine, CircleDollarSign, Code2, Coins, Eye, FileChartColumn, FileSignature, FileText, Gift, Globe, IdCard, LayoutDashboard, LayoutTemplate, ListChecks, ListTodo, LifeBuoy, LoaderCircle, MailCheck, MessageSquareHeart, Network, Plug, Receipt, ReceiptText, Scale, ShieldCheck, Target, Users, UserSearch, UsersRound, Wallet, Wrench } from 'lucide-vue-next'
+import { BellRing, BookOpen, Building, Building2, ChartLine, CircleDollarSign, Code2, Coins, Eye, FileChartColumn, FileSignature, FileText, Gift, Globe, IdCard, LayoutDashboard, LayoutTemplate, ListChecks, ListTodo, LifeBuoy, LoaderCircle, MailCheck, MailPlus, MessageSquareHeart, Network, Plug, Receipt, ReceiptText, Scale, ShieldCheck, Target, Users, UserSearch, UsersRound, Wallet, Wrench } from 'lucide-vue-next'
 import FacebookIcon from '@/components/FacebookIcon.vue'
 import GoogleAdsIcon from '@/components/GoogleAdsIcon.vue'
 import HubspotIcon from '@/components/HubspotIcon.vue'
@@ -87,6 +87,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { to: '/interno/ferramentas-gam', key: 'nav.gamTools', icon: Wrench, internal: true },
       { to: '/interno/alertas', key: 'nav.alerts', icon: BellRing, internal: true },
       { to: '/interno/envios', key: 'nav.schedules', icon: MailCheck, internal: true },
+      { to: '/interno/nutricao', key: 'nav.nurture', icon: MailPlus, internal: true },
       { to: '/interno/modelos-de-dashboard', key: 'nav.dashboardTemplates', icon: LayoutTemplate, internal: true },
       { to: '/interno/central-de-ajuda', key: 'nav.helpEditor', icon: BookOpen, internal: true },
     ],

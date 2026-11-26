@@ -17,7 +17,7 @@ describe('menu do painel', () => {
   beforeAll(() => (lang.value = 'pt'))
 
   it('com a Company Groone ativa mostra o painel interno, sem filtrar por permissão', () => {
-    expect(labels(true)).toEqual(['Dashboard', 'Tarefas', 'Clientes', 'Empresas', 'Prospecção', 'Networks do GAM', 'Contratos', 'Sites', 'Rewards', 'Ad tags', 'Loaders', 'Regras de preço', 'Checklists', 'NPS dos clientes', 'Ad Manager', 'Page Views', 'Resultado', 'Resultado dos clientes', 'Metas', 'Campanhas do Facebook', 'Campanhas do Google Ads', 'Relatórios customizados', 'Facebook', 'Google Ads', 'HubSpot', 'Ferramentas do GAM', 'Alertas', 'Envios agendados', 'Modelos de dashboard', 'Central de ajuda', 'Minha comissão', 'Minhas invoices', 'Comissões', 'Invoices', 'Equipe Groone', 'Papéis da equipe', 'Custos'])
+    expect(labels(true)).toEqual(['Dashboard', 'Tarefas', 'Clientes', 'Empresas', 'Prospecção', 'Networks do GAM', 'Contratos', 'Sites', 'Rewards', 'Ad tags', 'Loaders', 'Regras de preço', 'Checklists', 'NPS dos clientes', 'Ad Manager', 'Page Views', 'Resultado', 'Resultado dos clientes', 'Metas', 'Campanhas do Facebook', 'Campanhas do Google Ads', 'Relatórios customizados', 'Facebook', 'Google Ads', 'HubSpot', 'Ferramentas do GAM', 'Alertas', 'Envios agendados', 'Nutrição', 'Modelos de dashboard', 'Central de ajuda', 'Minha comissão', 'Minhas invoices', 'Comissões', 'Invoices', 'Equipe Groone', 'Papéis da equipe', 'Custos'])
     expect(headers(true)).toEqual(['Inventário', 'Relatórios', 'Integrações', 'Ferramentas', 'Comissões', 'Empresa'])
   })
 
@@ -57,6 +57,7 @@ describe('menu do painel', () => {
       ['/interno/tarefas/123', 'Tarefas'],
       ['/interno/alertas', 'Alertas'],
       ['/interno/envios', 'Envios agendados'],
+      ['/interno/nutricao/123', 'Nutrição'],
       ['/interno/campanhas-facebook/123', 'Campanhas do Facebook'],
       ['/interno/facebook', 'Facebook'],
       ['/interno/campanhas-google-ads/campaign/123', 'Campanhas do Google Ads'],
