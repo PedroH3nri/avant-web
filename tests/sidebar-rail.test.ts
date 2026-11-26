@@ -98,7 +98,7 @@ describe('SidebarRail', () => {
     const separators = wrapper.findAll('#rail-panel hr')
     expect(separators.map((separator) => separator.element.nextElementSibling?.textContent)).toEqual(['Campanhas do Facebook', 'Relatórios customizados'])
     await hoverAndWait(tools!)
-    expect(panelLabels(wrapper)).toEqual(['Ferramentas do GAM', 'Alertas', 'Envios agendados', 'Modelos de dashboard', 'Central de ajuda'])
+    expect(panelLabels(wrapper)).toEqual(['Ferramentas do GAM', 'Alertas', 'Envios agendados', 'Nutrição', 'Modelos de dashboard', 'Central de ajuda'])
   })
 
   it('fecha o painel ao abrir uma tela e não abre painel para o Dashboard', async () => {
