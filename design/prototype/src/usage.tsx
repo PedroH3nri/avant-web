@@ -234,19 +234,70 @@ export function CompanyUsageCard() {
   )
 }
 
+/** As telas vistas por dia de uma pessoa, montadas a partir dos totais dela (dados de exemplo). */
+function personDaily(person: PersonAccess) {
+  const perDay = person.days ? Math.round(person.screens / person.days) : 0
+  const seed = person.name.length
+  return Array.from({ length: 30 }, (_, index) => (((index * 7 + seed) % 30) < person.days ? Math.max(1, perDay + ((index * 13) % 9) - 4) : 0))
+}
+
+const PERSON_AREAS: Record<string, readonly (readonly [string, number])[]> = {
+  Relatórios: [['Relatórios', 46], ['Dashboard', 22], ['Inventário', 18], ['Rewards', 14]],
+  Dashboard: [['Dashboard', 41], ['Relatórios', 29], ['Comissões', 14], ['Inventário', 10], ['Empresa', 6]],
+  Comissões: [['Comissões', 52], ['Relatórios', 31], ['Dashboard', 17]],
+  Inventário: [['Inventário', 70], ['Dashboard', 30]],
+}
+
+/** A modal com os detalhes de uso de uma pessoa da equipe: números, dias, áreas e últimas sessões. */
+function PersonUsageDialog({ person, close }: { person: PersonAccess | null; close: () => void }) {
+  const [period, setPeriod] = useState<'7' | '30'>('30')
+  if (!person) return null
+  const daily = personDaily(person)
+  const shown = period === '30' ? daily : daily.slice(-7)
+  const activeDays = shown.filter((value) => value > 0).length
+  const screens = shown.reduce((total, value) => total + value, 0)
+  const sessions = period === '30' ? person.sessions : Math.round((person.sessions * 7) / 30)
+  const recent = daily.map((value, index) => ({ value, index })).filter((day) => day.value > 0).slice(-5).reverse()
+  return (
+    <Dialog open onOpenChange={(isOpen) => !isOpen && close()}>
+      <DialogContent className="max-h-[90vh] max-w-[760px] overflow-y-auto">
+        <DialogHeader><DialogTitle>{person.name}</DialogTitle><DialogDescription>{person.role} · Blog Exemplo Mídia · último acesso {person.label}</DialogDescription></DialogHeader>
+        {person.daysAgo === null ? <p className="py-6 text-center text-[14px] text-muted-foreground">Ainda não entrou: o convite está pendente.</p> : <div className="grid gap-5">
+          <PeriodTabs period={period} setPeriod={setPeriod} />
+          <div className="grid gap-3 sm:grid-cols-4">
+            <UsageFigure label="Dias ativos" value={String(activeDays)} of={`de ${period}`} />
+            <UsageFigure label="Sessões" value={String(sessions)} />
+            <UsageFigure label="Telas vistas" value={screens.toLocaleString('pt-BR')} />
+            <UsageFigure label="Minutos ativos" value={period === '30' ? person.minutes : '—'} note={period === '30' ? undefined : 'só em 30 dias no protótipo'} />
+          </div>
+          <div className="grid gap-5 md:grid-cols-[1fr_240px]">
+            <div><div className="mb-2 text-[13px] font-medium">Telas vistas por dia</div><DailyBars values={shown} label={`Telas vistas por dia de ${person.name}`} unit="telas" /></div>
+            <AreaBars areas={PERSON_AREAS[person.area] ?? AREAS} />
+          </div>
+          <div><div className="mb-2 text-[13px] font-medium">Últimos dias com acesso</div>
+            <ul className="divide-y rounded-md border text-[13px]">{recent.map((day) => <li key={day.index} className="flex items-center justify-between px-3 py-2"><span className="tnum">{dayLabel(29 - day.index)}</span><span className="tnum text-muted-foreground">{day.value} telas · {Math.max(1, Math.round(day.value / 12))} sessão(ões)</span></li>)}
+              {!recent.length && <li className="px-3 py-4 text-center text-muted-foreground">Sem acesso nos últimos 30 dias.</li>}</ul>
+          </div>
+        </div>}
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 /** O card "Uso por pessoa" da página da Empresa: o login e o uso de cada pessoa da equipe. */
 export function CompanyTeamAccessCard() {
   const [values, setValues] = useState<Record<string, string>>({})
   const [query, setQuery] = useState('')
+  const [opened, setOpened] = useState<PersonAccess | null>(null)
   const rows = useMemo(() => PEOPLE.filter((person) => passes({ name: person.name, role: person.role }, values, query, ['name'])), [values, query])
   return (
     <section className="overflow-hidden rounded-lg border bg-card lg:col-span-2">
-      <div className="p-6 pb-4"><h2 className="text-[20px] font-semibold tracking-tight">Uso por pessoa</h2><p className="mt-2 text-[14px] text-muted-foreground">O último login e o uso de cada pessoa nos últimos 30 dias. O card acima é a soma destas linhas.</p></div>
+      <div className="p-6 pb-4"><h2 className="text-[20px] font-semibold tracking-tight">Uso por pessoa</h2><p className="mt-2 text-[14px] text-muted-foreground">O último login e o uso de cada pessoa nos últimos 30 dias. O card acima é a soma destas linhas. Clique na pessoa para ver os detalhes.</p></div>
       <TableFilters defs={[{ key: 'role', label: 'Papel', options: [...new Set(PEOPLE.map((person) => person.role))] }]} initial={['role']} values={values} setValues={setValues} query={query} setQuery={setQuery} placeholder="Buscar pessoa" />
       <div className="overflow-x-auto"><table className="w-full min-w-[880px] text-[14px]"><thead className="border-b"><tr><th className={th}>Pessoa</th><th className={th}>Último acesso</th><th className={th}>Dias ativos</th><th className={th}>Sessões</th><th className={th}>Telas</th><th className={th}>Minutos</th><th className={th}>Área mais usada</th></tr></thead>
         <tbody className="divide-y">{rows.map((person) => (
-          <tr key={person.name} className="hover:bg-muted/50">
-            <td className={td}><div className="font-medium">{person.name}</div><div className="text-[12px] text-muted-foreground">{person.role}</div></td>
+          <tr key={person.name} className="cursor-pointer hover:bg-muted/50" onClick={() => setOpened(person)}>
+            <td className={td}><button className="font-medium hover:underline" onClick={(event) => { event.stopPropagation(); setOpened(person) }}>{person.name}</button><div className="text-[12px] text-muted-foreground">{person.role}</div></td>
             <td className={td}>{person.daysAgo === null ? <span className="text-muted-foreground">{person.label}</span> : <span className={cn('tnum', person.daysAgo >= COLD_DAYS && 'text-ochre')}>{person.label}{person.daysAgo > 1 && <span className="text-[12px] text-muted-foreground"> · há {person.daysAgo} dias</span>}</span>}</td>
             <td className={td}><span className="tnum">{person.days}</span><span className="text-muted-foreground"> de 30</span></td>
             <td className={cn(td, 'tnum')}>{person.sessions}</td>
@@ -256,6 +307,7 @@ export function CompanyTeamAccessCard() {
           </tr>
         ))}
         {!rows.length && <tr><td colSpan={7} className="py-10 text-center text-muted-foreground">Ninguém com esses filtros.</td></tr>}</tbody></table></div>
+      <PersonUsageDialog key={opened?.name ?? 'nenhum'} person={opened} close={() => setOpened(null)} />
     </section>
   )
 }
