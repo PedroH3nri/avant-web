@@ -17,7 +17,7 @@ defineProps<{ options: { value: string; label: string; note?: string }[]; label:
       :disabled="disabled"
       :class="[
         'h-7 min-w-10 rounded-[4px] px-3 text-[13px] font-medium tnum focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50',
-        model === option.value ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground',
+        model === option.value ? 'bg-secondary text-[hsl(var(--highlight))] transition-colors duration-200' : 'text-muted-foreground transition-colors duration-200 hover:bg-accent hover:text-[hsl(var(--highlight))]',
       ]"
       @click="model = option.value"
     >

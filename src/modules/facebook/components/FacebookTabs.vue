@@ -30,7 +30,7 @@ const shown = () => TABS.filter((tab) => tab.id !== 'people' || props.people)
       :class="
         cn(
           'inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-[4px] px-3 text-[13px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-          model === tab.id ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground',
+          model === tab.id ? 'bg-secondary text-[hsl(var(--highlight))] transition-colors duration-200' : 'text-muted-foreground transition-colors duration-200 hover:bg-accent hover:text-[hsl(var(--highlight))]',
         )
       "
       @click="model = tab.id"
