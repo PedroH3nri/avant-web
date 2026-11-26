@@ -292,21 +292,22 @@ export function CompanyTeamAccessCard() {
   const rows = useMemo(() => PEOPLE.filter((person) => passes({ name: person.name, role: person.role }, values, query, ['name'])), [values, query])
   return (
     <section className="overflow-hidden rounded-lg border bg-card lg:col-span-2">
-      <div className="p-6 pb-4"><h2 className="text-[20px] font-semibold tracking-tight">Uso por pessoa</h2><p className="mt-2 text-[14px] text-muted-foreground">O último login e o uso de cada pessoa nos últimos 30 dias. O card acima é a soma destas linhas. Clique na pessoa para ver os detalhes.</p></div>
+      <div className="p-6 pb-4"><h2 className="text-[20px] font-semibold tracking-tight">Uso por pessoa</h2><p className="mt-2 text-[14px] text-muted-foreground">O último login e o uso de cada pessoa nos últimos 30 dias. O card acima é a soma destas linhas. Use "Ver detalhes" para abrir o uso de cada um.</p></div>
       <TableFilters defs={[{ key: 'role', label: 'Papel', options: [...new Set(PEOPLE.map((person) => person.role))] }]} initial={['role']} values={values} setValues={setValues} query={query} setQuery={setQuery} placeholder="Buscar pessoa" />
-      <div className="overflow-x-auto"><table className="w-full min-w-[880px] text-[14px]"><thead className="border-b"><tr><th className={th}>Pessoa</th><th className={th}>Último acesso</th><th className={th}>Dias ativos</th><th className={th}>Sessões</th><th className={th}>Telas</th><th className={th}>Minutos</th><th className={th}>Área mais usada</th></tr></thead>
+      <div className="overflow-x-auto"><table className="w-full min-w-[1000px] text-[14px]"><thead className="border-b"><tr><th className={th}>Pessoa</th><th className={th}>Último acesso</th><th className={th}>Dias ativos</th><th className={th}>Sessões</th><th className={th}>Telas</th><th className={th}>Minutos</th><th className={th}>Área mais usada</th><th className={cn(th, 'w-36')}><span className="sr-only">Detalhes</span></th></tr></thead>
         <tbody className="divide-y">{rows.map((person) => (
-          <tr key={person.name} className="cursor-pointer hover:bg-muted/50" onClick={() => setOpened(person)}>
-            <td className={td}><button className="font-medium hover:underline" onClick={(event) => { event.stopPropagation(); setOpened(person) }}>{person.name}</button><div className="text-[12px] text-muted-foreground">{person.role}</div></td>
+          <tr key={person.name} className="hover:bg-muted/50">
+            <td className={td}><div className="font-medium">{person.name}</div><div className="text-[12px] text-muted-foreground">{person.role}</div></td>
             <td className={td}>{person.daysAgo === null ? <span className="text-muted-foreground">{person.label}</span> : <span className={cn('tnum', person.daysAgo >= COLD_DAYS && 'text-ochre')}>{person.label}{person.daysAgo > 1 && <span className="text-[12px] text-muted-foreground"> · há {person.daysAgo} dias</span>}</span>}</td>
             <td className={td}><span className="tnum">{person.days}</span><span className="text-muted-foreground"> de 30</span></td>
             <td className={cn(td, 'tnum')}>{person.sessions}</td>
             <td className={cn(td, 'tnum')}>{person.screens.toLocaleString('pt-BR')}</td>
             <td className={cn(td, 'tnum')}>{person.minutes}</td>
             <td className={cn(td, 'text-muted-foreground')}>{person.area}</td>
+            <td className={cn(td, 'text-right')}>{person.daysAgo !== null && <Button size="sm" variant="outline" onClick={() => setOpened(person)}><Eye className="h-4 w-4" />Ver detalhes</Button>}</td>
           </tr>
         ))}
-        {!rows.length && <tr><td colSpan={7} className="py-10 text-center text-muted-foreground">Ninguém com esses filtros.</td></tr>}</tbody></table></div>
+        {!rows.length && <tr><td colSpan={8} className="py-10 text-center text-muted-foreground">Ninguém com esses filtros.</td></tr>}</tbody></table></div>
       <PersonUsageDialog key={opened?.name ?? 'nenhum'} person={opened} close={() => setOpened(null)} />
     </section>
   )
