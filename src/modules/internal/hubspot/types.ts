@@ -1,6 +1,6 @@
 /** Formatos da API do HubSpot no painel interno, iguais aos `dto.py` de `internal/hubspot` do avant-api. */
 
-export type HubspotKind = 'contact' | 'company' | 'deal'
+export type HubspotKind = 'contact' | 'company' | 'deal' | 'site' | 'metric' | 'commission'
 export type HubspotRunState = 'pending' | 'running' | 'done' | 'failed'
 
 export type HubspotKindStatus = { kind: HubspotKind; synced: number; failed: number; last_synced_at: string | null }
@@ -35,3 +35,4 @@ export type HubspotCard = {
 
 export type HubspotClientCards = { configured: boolean; contact: HubspotCard }
 export type HubspotNetworkCards = { configured: boolean; company: HubspotCard; deal: HubspotCard | null }
+export type HubspotSiteCards = { configured: boolean; site: HubspotCard }
