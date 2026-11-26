@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
  * Painel interno: um site de cliente com tudo o que é dele. Situação (com o revshare e o faturamento),
- * o checklist do mês com os itens e os ad units ativos em árvore.
+ * o checklist do mês com os itens, o card do HubSpot e os ad units ativos em árvore.
  */
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -23,6 +23,7 @@ import { formatRevshare } from '@/modules/internal/contracts/rules'
 import { clientInventoryService } from '@/modules/internal/inventory/service'
 import type { ClientSiteDetail } from '@/modules/internal/inventory/types'
 import SiteChecklistCard from '@/modules/internal/checklists/components/SiteChecklistCard.vue'
+import HubspotSiteCard from '@/modules/internal/hubspot/components/HubspotSiteCard.vue'
 import RevenueStatusBadge from '@/modules/revenue/components/RevenueStatusBadge.vue'
 import { approval, categoryLabel, tree } from '@/modules/sites/rules'
 import { useSession } from '@/stores/session'
@@ -141,6 +142,8 @@ watch(siteId, load, { immediate: true })
 
       <SiteChecklistCard v-if="canSeeChecklists && site.checklist" class="min-[1920px]:col-span-2" :checklist-id="site.checklist.id" />
       <Card v-else-if="canSeeChecklists" class="self-start min-[1920px]:col-span-2" :title="t('check.col.checklist')" :desc="t('sited.noChecklist')" />
+
+      <HubspotSiteCard class="lg:col-span-2 min-[1920px]:col-span-3" :site-id="site.id" />
 
       <section class="grid gap-3 lg:col-span-2 min-[1920px]:col-span-3">
         <h2 class="text-[13px] font-medium text-muted-foreground">{{ t('sited.units') }}</h2>

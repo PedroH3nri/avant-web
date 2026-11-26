@@ -3,17 +3,27 @@
 import { formatDate, locale, t, type Key } from '@/lib/i18n'
 import type { HubspotActivity, HubspotActivityKind, HubspotFailure, HubspotKind, HubspotRun } from '@/modules/internal/hubspot/types'
 
-export const KINDS: HubspotKind[] = ['contact', 'company', 'deal']
+export const KINDS: HubspotKind[] = ['contact', 'company', 'deal', 'site', 'metric', 'commission']
 export const ACTIVITY_KINDS: HubspotActivityKind[] = ['note', 'call', 'meeting', 'task']
-export const FACT_ORDER = ['created_at', 'last_contacted_at', 'deals', 'revshare', 'closed_at']
-export const KIND_LABEL: Record<HubspotKind, Key> = { contact: 'hs.kind.contact', company: 'hs.kind.company', deal: 'hs.kind.deal' }
-export const KIND_SOURCE: Record<HubspotKind, Key> = { contact: 'hs.source.contact', company: 'hs.source.company', deal: 'hs.source.deal' }
+export const FACT_ORDER = ['status', 'created_at', 'last_contacted_at', 'deals', 'revshare', 'closed_at']
+export const KIND_LABEL: Record<HubspotKind, Key> = {
+  contact: 'hs.kind.contact',
+  company: 'hs.kind.company',
+  deal: 'hs.kind.deal',
+  site: 'hs.kind.site',
+  metric: 'hs.kind.metric',
+  commission: 'hs.kind.commission',
+}
+export const KIND_SOURCE: Record<HubspotKind, Key> = {
+  contact: 'hs.source.contact',
+  company: 'hs.source.company',
+  deal: 'hs.source.deal',
+  site: 'hs.source.site',
+  metric: 'hs.source.metric',
+  commission: 'hs.source.commission',
+}
+export const CUSTOM_KINDS: HubspotKind[] = ['site', 'metric', 'commission']
 export const ACTIVITY_LABEL: Record<HubspotActivityKind, Key> = { note: 'hs.activity.note', call: 'hs.activity.call', meeting: 'hs.activity.meeting', task: 'hs.activity.task' }
-export const LICENSED_OBJECTS: { object: Key; source: Key }[] = [
-  { object: 'hs.licensed.sites', source: 'hs.licensed.sitesSource' },
-  { object: 'hs.licensed.metrics', source: 'hs.licensed.metricsSource' },
-  { object: 'hs.licensed.commissions', source: 'hs.licensed.commissionsSource' },
-]
 
 const LIFECYCLE_LABEL: Record<string, Key> = {
   subscriber: 'hs.lifecycle.subscriber',
@@ -25,7 +35,14 @@ const LIFECYCLE_LABEL: Record<string, Key> = {
   evangelist: 'hs.lifecycle.evangelist',
   other: 'hs.lifecycle.other',
 }
+const SITE_STATUS_LABEL: Record<string, Key> = {
+  active: 'hs.siteStatus.active',
+  pending: 'hs.siteStatus.pending',
+  banned: 'hs.siteStatus.banned',
+  inactive: 'hs.siteStatus.inactive',
+}
 const FACT_LABEL: Record<string, Key> = {
+  status: 'hs.fact.status',
   created_at: 'hs.fact.created_at',
   last_contacted_at: 'hs.fact.last_contacted_at',
   deals: 'hs.fact.deals',
@@ -46,8 +63,9 @@ export function cardFacts(facts: Record<string, string>): { code: string; label:
   return FACT_ORDER.filter((code) => facts[code]).map((code) => ({ code, label: t(FACT_LABEL[code] as Key), value: factValue(code, facts[code] as string) }))
 }
 
-/** O valor de um fato: datas no formato da pessoa, revshare em porcentagem e números com separador. */
+/** O valor de um fato: datas no formato da pessoa, revshare em porcentagem, números com separador e a situação do site traduzida. */
 export function factValue(code: string, value: string): string {
+  if (code === 'status') return SITE_STATUS_LABEL[value] ? t(SITE_STATUS_LABEL[value] as Key) : value
   if (DATE_FACTS.has(code)) return formatDate(value, false)
   if (code === 'revshare') return `${new Intl.NumberFormat(locale.value, { maximumFractionDigits: 3 }).format(Number(value))}%`
   if (code === 'deals') return new Intl.NumberFormat(locale.value).format(Number(value))
