@@ -32,6 +32,8 @@ export interface UserRef {
   locale: Lang
   /** Vazio sem foto: o painel mostra as iniciais do nome. */
   image_url: string | null
+  /** O link de agendamento do gerente de conta (equipe Groone); vazio sem link. */
+  meeting_url?: string | null
 }
 
 export interface CompanyRef {
