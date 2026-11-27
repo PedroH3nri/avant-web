@@ -334,9 +334,8 @@ function BreakdownList({ breakdown }: { breakdown: Breakdown }) {
 export function TrafficQualityScreen({ go }: { go: Go }) {
   const [values, setValues] = useState<Record<string, string>>({})
   const [query, setQuery] = useState('')
-  const [open, setOpen] = useState<TrafficAlert>(TRAFFIC[0])
+  const [open, setOpen] = useState<TrafficAlert | null>(null)
   const rows = TRAFFIC.filter((item) => passes({ target: item.target, client: item.client, risk: item.risk }, values, query, ['target', 'client']))
-  const links = investigateLinks(open.domain)
   return (
     <>
       <PageHeader title="Qualidade do tráfego" sub="Sinais de tráfego inválido (IVT) por site, campanha e network, para agir antes de o GAM deduzir a receita ou limitar a conta da Groone." />
@@ -348,19 +347,22 @@ export function TrafficQualityScreen({ go }: { go: Go }) {
           <Kpi label="Campanhas pausadas por alerta" value="3" note="Em novembro, pelo dono da conta" />
         </div>
         <TableCard filters={<TableFilters defs={[{ key: 'risk', label: 'Risco', options: ['Alto', 'Médio'] }]} initial={['risk']} values={values} setValues={setValues} query={query} setQuery={setQuery} placeholder="Buscar site, network ou cliente" />}>
-          <thead className="border-b"><tr><th className={th}>Onde</th><th className={th}>Sinal</th><th className={th}>Desde</th><th className={th}>Risco</th></tr></thead>
+          <thead className="border-b"><tr><th className={th}>Onde</th><th className={th}>Sinal</th><th className={th}>Desde</th><th className={th}>Risco</th><th className={th}><span className="sr-only">Ações</span></th></tr></thead>
           <tbody className="divide-y">{rows.map((item) => (
-            <tr key={item.id} onClick={() => setOpen(item)} className={cn('cursor-pointer transition-colors hover:bg-muted/50', open.id === item.id && 'bg-muted/60')} aria-selected={open.id === item.id}>
+            <tr key={item.id} className="transition-colors hover:bg-muted/50">
               <td className={td}><div className="font-medium">{item.target}</div><div className="text-[13px] text-muted-foreground">{item.source}</div></td>
               <td className={td}><div>{item.signal}</div><div className="text-[13px] text-muted-foreground">Normal: {item.normal}</div></td>
               <td className={cn(td, 'tnum')}>{item.since}</td>
               <td className={td}><Status tone={item.risk === 'Alto' ? 'bad' : 'warn'}>{item.risk}</Status></td>
+              <td className={cn(td, 'text-right')}><Button size="sm" variant="outline" className="h-8" onClick={() => setOpen(item)}>Ver detalhes</Button></td>
             </tr>
           ))}</tbody>
         </TableCard>
-        <Card title={open.target} desc={<>{open.client} · {open.source} · desde {open.since}</>}
-          footerNote="A tarefa leva o print da série, os recortes e os links de investigação."
-          footer={<><Button variant="outline" onClick={() => toast('Alerta dispensado por 7 dias')}>Dispensar</Button><Button onClick={() => { toast.success('Tarefa criada para o gerente', { description: `${open.target}: ${open.signal}.` }); go('tarefas') }}><ShieldAlert className="h-4 w-4" />Criar tarefa</Button></>}>
+      </Body>
+      <Dialog open={!!open} onOpenChange={(next) => !next && setOpen(null)}>
+        {open && (
+          <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[1040px]">
+            <DialogHeader><DialogTitle>{open.target}</DialogTitle><DialogDescription>{open.client} · {open.source} · desde {open.since}</DialogDescription></DialogHeader>
           <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
             <div className="grid content-start gap-2">
               <div className="flex items-center justify-between gap-3"><span className="text-[13px] font-medium">{open.signal}</span><Status tone={open.risk === 'Alto' ? 'bad' : 'warn'}>Risco {open.risk.toLowerCase()}</Status></div>
@@ -384,14 +386,19 @@ export function TrafficQualityScreen({ go }: { go: Go }) {
             <p className="mt-1 text-[13px] text-muted-foreground">Cada link abre, numa aba nova, a busca pronta por <span className="font-mono">{open.domain}</span>. O Avant não consulta esses sites: quem analisa olha e anota na tarefa.</p>
             <div className="mt-4 grid gap-4 md:grid-cols-3">{['Anúncios', 'Divulgação', 'Segurança'].map((group) => (
               <div key={group}><div className="mb-2 text-[12px] font-medium uppercase tracking-[0.04em] text-muted-foreground">{group}</div>
-                <ul className="grid gap-1">{links.filter((link) => link.group === group).map((link) => (
+                <ul className="grid gap-1">{investigateLinks(open.domain).filter((link) => link.group === group).map((link) => (
                   <li key={link.label}><a href={link.href} target="_blank" rel="noreferrer" className="group flex items-start justify-between gap-3 rounded-md px-2 py-1.5 -mx-2 hover:bg-muted"><span><span className="text-[14px] text-link group-hover:underline">{link.label}</span><span className="block text-[12px] text-muted-foreground">{link.hint}</span></span><ExternalLink className="mt-1 h-3.5 w-3.5 shrink-0 text-muted-foreground" /></a></li>
                 ))}</ul>
               </div>
             ))}</div>
           </div>
-        </Card>
-      </Body>
+            <DialogFooter className="items-center gap-2 border-t pt-4 sm:justify-between">
+              <span className="text-[13px] text-muted-foreground">A tarefa leva o print da série, os recortes e os links de investigação.</span>
+              <div className="flex gap-2"><Button variant="outline" onClick={() => { toast('Alerta dispensado por 7 dias'); setOpen(null) }}>Dispensar</Button><Button onClick={() => { toast.success('Tarefa criada para o gerente', { description: `${open.target}: ${open.signal}.` }); setOpen(null) }}><ShieldAlert className="h-4 w-4" />Criar tarefa</Button></div>
+            </DialogFooter>
+          </DialogContent>
+        )}
+      </Dialog>
     </>
   )
 }
