@@ -2,7 +2,7 @@
 
 import { computed, type Component } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { BellRing, BookOpen, Building, Building2, ChartLine, CircleDollarSign, Code2, Coins, Eye, FileChartColumn, FileSignature, FileText, Gift, Globe, HeartPulse, IdCard, LayoutDashboard, LayoutTemplate, ListChecks, ListTodo, LifeBuoy, LoaderCircle, MailCheck, MailPlus, MessageSquareHeart, Network, PiggyBank, Plug, Receipt, ReceiptText, Scale, ShieldAlert, ShieldCheck, Sparkles, Target, TrendingUp, Users, UserSearch, UsersRound, Wallet, Wrench } from 'lucide-vue-next'
+import { BellRing, BookOpen, Building, Building2, ChartLine, CircleDollarSign, Code2, Coins, Eye, FileChartColumn, FileSignature, FileText, Funnel, Gift, Globe, HeartPulse, IdCard, LayoutDashboard, LayoutTemplate, ListChecks, ListTodo, LifeBuoy, LoaderCircle, MailCheck, MailPlus, MessageSquareHeart, Network, PiggyBank, Plug, Receipt, ReceiptText, Scale, ShieldAlert, ShieldCheck, Sparkles, Target, TrendingUp, Users, UserSearch, UsersRound, Wallet, Wrench } from 'lucide-vue-next'
 import FacebookIcon from '@/components/FacebookIcon.vue'
 import GoogleAdsIcon from '@/components/GoogleAdsIcon.vue'
 import HubspotIcon from '@/components/HubspotIcon.vue'
@@ -56,6 +56,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { to: '/interno/saude-da-carteira', key: 'nav.portfolioHealth', icon: HeartPulse, internal: true },
       { to: '/interno/oportunidades', key: 'nav.opportunities', icon: Sparkles, internal: true },
       { to: '/interno/qualidade-do-trafego', key: 'nav.trafficQuality', icon: ShieldAlert, internal: true },
+      { to: '/interno/funil-de-ativacao', key: 'nav.activation', icon: Funnel, internal: true },
     ],
   },
   {
