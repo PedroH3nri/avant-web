@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /** Editar no Google Ads: o nome da campanha ou do grupo, o CPC máximo do grupo (com CPC manual) ou o anúncio responsivo inteiro, que volta para a análise do Google. */
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft } from 'lucide-vue-next'
 import LoadError from '@/components/LoadError.vue'
@@ -18,6 +18,7 @@ import GoogleAdsJobDialog from '@/modules/google_ads/components/GoogleAdsJobDial
 import { amount, blankAd, channelOf, cleanAd, editProblems, problemKey, serverProblems } from '@/modules/google_ads/draft-rules'
 import { MANUAL_BIDDING, isLevel, objectPath } from '@/modules/google_ads/rules'
 import { googleAdsService } from '@/modules/google_ads/service'
+import { siteService } from '@/modules/sites/service'
 import type { GoogleAdsAdInput, GoogleAdsChannel, GoogleAdsEditInput, GoogleAdsJob, GoogleAdsLevel, GoogleAdsObjectDetail } from '@/modules/google_ads/types'
 
 const route = useRoute()
@@ -39,10 +40,10 @@ const failure = ref<string | null>(null)
 const job = ref<GoogleAdsJob | null>(null)
 const following = ref(false)
 
-const siteUrl = computed(() => urlParts(detail.value?.final_url ?? null).origin)
+const siteUrl = ref<string | null>(null)
 const edit = computed<GoogleAdsEditInput>(() => ({
   name: level !== 'ad' && name.value.trim() && name.value.trim() !== detail.value?.name ? name.value.trim() : null,
-  cpc: level === 'ad_group' && manual.value ? amount(cpc.value) : null,
+  cpc: level === 'ad_group' && manual.value && amount(cpc.value) !== amount(detail.value?.cpc_bid ?? '') ? amount(cpc.value) : null,
   ad: level === 'ad' ? cleanAd(ad.value) : null,
 }))
 const problems = computed(() => {
@@ -61,18 +62,29 @@ function urlParts(url: string | null): { origin: string | null; path: string } {
   }
 }
 
+/** O endereço do site da conta, que é onde o Avant monta o link final do anúncio. */
+async function accountSite(accountId: string): Promise<string | null> {
+  const [accounts, sites] = await Promise.all([googleAdsService.accounts(), siteService.options()])
+  const siteId = accounts.find((account) => account.id === accountId)?.site_id
+  const domain = sites.items.find((site) => site.id === siteId)?.domain
+  return domain ? `https://${domain}` : null
+}
+
 /** Busca o objeto com a campanha dele (o tipo decide o anúncio; o lance decide se o grupo tem CPC). */
 async function load() {
   loadError.value = null
   try {
     const found = await googleAdsService.object(level, externalId)
+    siteUrl.value = level === 'ad' ? await accountSite(found.account.id) : null
     const campaign = found.level === 'campaign' ? found : found.campaign
     detail.value = found
     name.value = found.name
     cpc.value = found.cpc_bid ?? ''
     channel.value = channelOf(campaign?.channel_type ?? null)
     manual.value = MANUAL_BIDDING.includes(campaign?.bidding_strategy ?? '')
-    ad.value = { ...blankAd(channel.value ?? 'SEARCH'), link_path: urlParts(found.final_url).path }
+    const current = urlParts(found.final_url)
+    const sameSite = !!siteUrl.value && current.origin === new URL(siteUrl.value).origin
+    ad.value = { ...blankAd(channel.value ?? 'SEARCH'), link_path: sameSite ? current.path : '/' }
   } catch (error) {
     loadError.value = errorText(error instanceof ApiError ? error.code : 'unknown')
   }
@@ -100,6 +112,14 @@ function finished(done: GoogleAdsJob) {
   if (done.state === 'done') router.push(back)
 }
 
+watch(
+  [name, cpc, ad],
+  () => {
+    fromServer.value = []
+    failure.value = null
+  },
+  { deep: true },
+)
 onMounted(load)
 </script>
 

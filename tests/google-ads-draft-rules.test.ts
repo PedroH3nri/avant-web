@@ -111,6 +111,7 @@ describe('textos da criação no Google Ads', () => {
       ...biddingsFor('SEARCH').map((bidding) => `gads.bidding.${bidding}`),
       ...[...KNOWN_PROBLEMS, 'other'].map((problem) => `gads.problem.${problem}`),
       ...['create', 'edit'].flatMap((kind) => [`gads.job.title.${kind}`, `gads.job.done.${kind}`]),
+      'gads.job.syncing',
       ...['campaign', 'ad_group', 'ad'].flatMap((level) => [`gads.edit.title.${level}`, `gads.edit.note.${level}`]),
     ]
     const table = dict as Record<string, readonly string[]>

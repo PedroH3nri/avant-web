@@ -18,7 +18,7 @@ import { errorText, locale, t, type Key } from '@/lib/i18n'
 import GoogleAdsAdForm from '@/modules/google_ads/components/GoogleAdsAdForm.vue'
 import GoogleAdsJobDialog from '@/modules/google_ads/components/GoogleAdsJobDialog.vue'
 import GoogleAdsOptionsField from '@/modules/google_ads/components/GoogleAdsOptionsField.vue'
-import { CHANNELS, MAX_AD_GROUPS, amount, biddingsFor, blankAdGroup, blankDraft, cleanDraft, draftProblems, problemKey, serverProblems, withChannel } from '@/modules/google_ads/draft-rules'
+import { CHANNELS, MAX_AD_GROUPS, amount, biddingsFor, blankAdGroup, blankDraft, cleanDraft, draftProblems, jobFinished, problemKey, serverProblems, withChannel } from '@/modules/google_ads/draft-rules'
 import { campaignsPath, controlErrorText, formatMoney } from '@/modules/google_ads/rules'
 import { googleAdsService } from '@/modules/google_ads/service'
 import type { GoogleAdsAccount, GoogleAdsAdInput, GoogleAdsAdGroupInput, GoogleAdsBidding, GoogleAdsChannel, GoogleAdsDraftInput, GoogleAdsJob, GoogleAdsMatchType, GoogleAdsOption } from '@/modules/google_ads/types'
@@ -57,6 +57,7 @@ const full = computed<GoogleAdsDraftInput>(() => ({
   languages: languages.value.map((item) => item.id),
   ad_groups: draft.value.ad_groups.map((group, index) => withExtras(group, extras.value[index] ?? blankExtras(), draft.value.channel)),
 }))
+const pending = computed(() => !!job.value && !jobFinished(job.value))
 const problems = computed(() => [...new Set([...fromServer.value, ...draftProblems(full.value, !!account.value?.site_id)])])
 const group = computed(() => draft.value.ad_groups[selected.value] ?? null)
 const extra = computed(() => extras.value[selected.value] ?? null)
@@ -163,6 +164,7 @@ async function submit() {
 
 /** Quando o job termina bem, começa um rascunho novo na mesma conta. */
 function finished(done: GoogleAdsJob) {
+  job.value = done
   if (done.state !== 'done') return
   draft.value = blankDraft(draft.value.account_id, groupName(1))
   extras.value = [blankExtras()]
@@ -296,7 +298,7 @@ onMounted(load)
           </ul>
         </Card>
         <p v-if="alertText" class="text-[13px] text-bad" role="alert">{{ alertText }}</p>
-        <Button :disabled="problems.length > 0 || !accounts.length" :loading="sending" @click="submit">{{ t('gads.create.submit') }}</Button>
+        <Button :disabled="problems.length > 0 || !accounts.length || pending" :loading="sending" @click="submit">{{ t('gads.create.submit') }}</Button>
         <p class="text-[13px] text-muted-foreground">{{ t('gads.create.submitHint') }}</p>
       </div>
     </template>
