@@ -64,6 +64,7 @@ onMounted(load)
         <p class="text-[12px] text-muted-foreground tnum">
           {{ t('sec.totals', { flagged: count(totals.flagged), views: count(totals.pageViews), blocked: count(totals.blocked) }) }}
         </p>
+        <RouterLink v-if="internal && security.alert" to="/interno/qualidade-do-trafego" class="w-fit text-[13px] text-link hover:underline">{{ t('sec.trafficLink') }}</RouterLink>
       </div>
     </div>
   </Card>
