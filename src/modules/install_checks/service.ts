@@ -3,7 +3,7 @@
 import { api } from '@/lib/api'
 import type { InstallCheck, InstallTarget } from '@/modules/install_checks/types'
 
-const RESOURCE: Record<InstallTarget, string> = { ad_tag: 'ad-tags', loader: 'loaders', reward: 'rewards' }
+const RESOURCE: Record<InstallTarget, string> = { ad_tag: 'ad-tags', loader: 'loaders', reward: 'rewards', security: 'sites' }
 
 /** A verificação de um dos painéis: o interno verifica os itens dos clientes. */
 export function installCheckService(internal: boolean) {

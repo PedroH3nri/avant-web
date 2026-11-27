@@ -22,8 +22,8 @@ importers:
         specifier: ^15.0.0
         version: 15.0.0(vue@3.5.46(typescript@6.0.3))
       avant-tag:
-        specifier: github:PedroH3nri/avant-tag#v0.2.0
-        version: https://codeload.github.com/PedroH3nri/avant-tag/tar.gz/3487c2894455cde6c3b6b4d1230a1521232e6d8c
+        specifier: github:PedroH3nri/avant-tag#v0.3.0
+        version: https://codeload.github.com/PedroH3nri/avant-tag/tar.gz/dfd10c0bf48871fc9bde24f01c8849b3db71151f
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -685,9 +685,9 @@ packages:
     peerDependencies:
       postcss: ^8.1.0
 
-  avant-tag@https://codeload.github.com/PedroH3nri/avant-tag/tar.gz/3487c2894455cde6c3b6b4d1230a1521232e6d8c:
-    resolution: {tarball: https://codeload.github.com/PedroH3nri/avant-tag/tar.gz/3487c2894455cde6c3b6b4d1230a1521232e6d8c}
-    version: 0.2.0
+  avant-tag@https://codeload.github.com/PedroH3nri/avant-tag/tar.gz/dfd10c0bf48871fc9bde24f01c8849b3db71151f:
+    resolution: {tarball: https://codeload.github.com/PedroH3nri/avant-tag/tar.gz/dfd10c0bf48871fc9bde24f01c8849b3db71151f}
+    version: 0.3.0
 
   balanced-match@4.0.4:
     resolution: {integrity: sha512-BLrgEcRTwX2o6gGxGOCNyMvGSp35YofuYzw9h1IMTRmKqttAZZVU67bdb9Pr2vUHA8+j3i2tJfjO6C6+4myGTA==}
@@ -2233,7 +2233,7 @@ snapshots:
       postcss: 8.5.33
       postcss-value-parser: 4.2.0
 
-  avant-tag@https://codeload.github.com/PedroH3nri/avant-tag/tar.gz/3487c2894455cde6c3b6b4d1230a1521232e6d8c: {}
+  avant-tag@https://codeload.github.com/PedroH3nri/avant-tag/tar.gz/dfd10c0bf48871fc9bde24f01c8849b3db71151f: {}
 
   balanced-match@4.0.4: {}
 

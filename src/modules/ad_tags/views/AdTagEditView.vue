@@ -33,6 +33,7 @@ import AdTagPreview from '@/modules/ad_tags/components/AdTagPreview.vue'
 import {
   adTagPermission,
   adTagsPath,
+  BLOCKING_SIGNALS,
   blockName,
   blockProblem,
   chosenDay,
@@ -41,13 +42,15 @@ import {
   newBlock,
   settingsProblem,
   tagStatus,
+  toggleBlock,
   toPayload,
   unitCode,
   unitName,
   UNIT_ORDER,
+  WATCH_SIGNALS,
 } from '@/modules/ad_tags/rules'
 import { adTagService } from '@/modules/ad_tags/service'
-import type { AdTag, AdTagBlock, AdTagDraft, AdTagSettings, AdTagSide, AdTagUnitDay, AdTagVersion } from '@/modules/ad_tags/types'
+import type { AdTag, AdTagBlock, AdTagDraft, AdTagSettings, AdTagSide, AdTagUnitDay, AdTagVersion, BlockingSignal } from '@/modules/ad_tags/types'
 import { ADBLOCK_SHORT, inputOf, loadersPath, previewLoader, TEMPLATE_LABEL, type PreviewLoader } from '@/modules/loaders/rules'
 import { loaderService } from '@/modules/loaders/service'
 import type { LoaderOption } from '@/modules/loaders/types'
@@ -243,6 +246,11 @@ function changeBlock(index: number, patch: Partial<AdTagBlock>) {
 /** Muda as configurações do rascunho. */
 function changeSettings(patch: Partial<AdTagSettings>) {
   if (draft.value) Object.assign(draft.value.settings, patch)
+}
+
+/** Liga ou desliga o bloqueio de uma detecção da proteção da página. */
+function setBlock(signal: BlockingSignal, block: boolean) {
+  if (draft.value) changeSettings({ security_block: toggleBlock(draft.value.settings.security_block, signal, block) })
 }
 
 /** Troca o bloco de lugar na ordem de carregamento. */
@@ -669,6 +677,32 @@ async function goToLoader(loaderId: string | null) {
             @update:model-value="(value) => changeSettings({ price_rules: value === 'on' })"
           />
           <p class="mt-3 text-[12px] text-muted-foreground">{{ t('at.priceRulesLater') }}</p>
+        </AdTagIntegrationCard>
+        <AdTagIntegrationCard kind="security" :title="t('at.security')" :desc="t('at.securityDesc')" :on="settings.security">
+          <AdTagChoice
+            :model-value="settings.security ? 'on' : 'off'"
+            :label="t('at.security')"
+            :options="[
+              { value: 'on', title: t('at.securityOn'), hint: t('at.securityOnHint') },
+              { value: 'off', title: t('at.securityOff'), hint: t('at.securityOffHint') },
+            ]"
+            @update:model-value="(value) => changeSettings({ security: value === 'on' })"
+          />
+          <div v-if="settings.security" class="mt-5 grid gap-3">
+            <h3 class="text-[13px] font-medium text-muted-foreground">{{ t('at.securityMode') }}</h3>
+            <ul class="grid divide-y rounded-md border">
+              <li v-for="signal in BLOCKING_SIGNALS" :key="signal" class="grid gap-2 px-3 py-2.5 sm:grid-cols-[1fr_auto] sm:items-center">
+                <span class="text-[14px]">{{ t(`integrity.${signal}`) }}</span>
+                <Checkbox
+                  :id="`at-block-${signal}`"
+                  :model-value="settings.security_block.includes(signal)"
+                  :label="t('at.securityBlock')"
+                  @update:model-value="(value) => setBlock(signal, value)"
+                />
+              </li>
+            </ul>
+            <p class="text-[12px] text-muted-foreground">{{ t('at.securityWatch', { signals: WATCH_SIGNALS.map((signal) => t(`integrity.${signal}`)).join(', ') }) }}</p>
+          </div>
         </AdTagIntegrationCard>
       </fieldset>
       <DataTable v-else :min="720">
