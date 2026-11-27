@@ -5642,6 +5642,7 @@ export const dict = {
   'gads.job.title.edit': ['Salvando no Google Ads', 'Saving in Google Ads', 'Guardando en Google Ads'],
   'gads.job.wait': ['Pode fechar esta janela: o Avant continua e o histórico mostra o resultado.', 'You can close this window: Avant keeps going and the history shows the result.', 'Puedes cerrar esta ventana: Avant sigue y el historial muestra el resultado.'],
   'gads.job.running': ['Falando com o Google Ads…', 'Talking to Google Ads…', 'Hablando con Google Ads…'],
+  'gads.job.syncing': ['Trazendo a campanha nova para o Avant…', 'Bringing the new campaign into Avant…', 'Trayendo la campaña nueva a Avant…'],
   'gads.job.done.create': ['Campanha criada pausada no Google Ads. Os anúncios entram na análise do Google.', 'Campaign created paused in Google Ads. The ads go to Google review.', 'Campaña creada en pausa en Google Ads. Los anuncios pasan por la revisión de Google.'],
   'gads.job.done.edit': ['Mudanças salvas no Google Ads.', 'Changes saved in Google Ads.', 'Cambios guardados en Google Ads.'],
   'gads.job.nothingCreated': ['Nada foi criado: o Google cria a campanha inteira ou nada.', 'Nothing was created: Google creates the whole campaign or nothing.', 'No se creó nada: Google crea la campaña entera o nada.'],
