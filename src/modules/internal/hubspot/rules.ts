@@ -119,6 +119,7 @@ export const RULE_LABEL: Record<HubspotTaskRule, Key> = {
   install: 'hst.rule.install',
   alert: 'hst.rule.alert',
   detractor: 'hst.rule.detractor',
+  revenue_drop: 'hst.rule.revenue_drop',
 }
 export const RULE_TEXT: Record<HubspotTaskRule, Key> = {
   network_error: 'hst.ruleText.network_error',
@@ -126,6 +127,7 @@ export const RULE_TEXT: Record<HubspotTaskRule, Key> = {
   install: 'hst.ruleText.install',
   alert: 'hst.ruleText.alert',
   detractor: 'hst.ruleText.detractor',
+  revenue_drop: 'hst.ruleText.revenue_drop',
 }
 export const DUES: HubspotTaskDue[] = ['today', 'one_business_day', 'two_business_days', 'one_week']
 export const DUE_LABEL: Record<HubspotTaskDue, Key> = {

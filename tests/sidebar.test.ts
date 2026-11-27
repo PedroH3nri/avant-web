@@ -17,8 +17,8 @@ describe('menu do painel', () => {
   beforeAll(() => (lang.value = 'pt'))
 
   it('com a Company Groone ativa mostra o painel interno, sem filtrar por permissão', () => {
-    expect(labels(true)).toEqual(['Dashboard', 'Tarefas', 'Clientes', 'Empresas', 'Prospecção', 'Networks do GAM', 'Contratos', 'Sites', 'Rewards', 'Ad tags', 'Loaders', 'Regras de preço', 'Checklists', 'NPS dos clientes', 'Ad Manager', 'Page Views', 'Resultado', 'Resultado dos clientes', 'Metas', 'Campanhas do Facebook', 'Campanhas do Google Ads', 'Controle de custos', 'Relatórios customizados', 'Facebook', 'Google Ads', 'HubSpot', 'Ferramentas do GAM', 'Alertas', 'Envios agendados', 'Nutrição', 'Modelos de dashboard', 'Central de ajuda', 'Minha comissão', 'Minhas invoices', 'Comissões', 'Invoices', 'Equipe Groone', 'Papéis da equipe', 'Custos'])
-    expect(headers(true)).toEqual(['Inventário', 'Relatórios', 'Integrações', 'Ferramentas', 'Comissões', 'Empresa'])
+    expect(labels(true)).toEqual(['Dashboard', 'Tarefas', 'Clientes', 'Empresas', 'Prospecção', 'Networks do GAM', 'Contratos', 'Sites', 'Rewards', 'Ad tags', 'Loaders', 'Regras de preço', 'Checklists', 'NPS dos clientes', 'Saúde da carteira', 'Ad Manager', 'Page Views', 'Resultado', 'Resultado dos clientes', 'Metas', 'Campanhas do Facebook', 'Campanhas do Google Ads', 'Controle de custos', 'Relatórios customizados', 'Facebook', 'Google Ads', 'HubSpot', 'Ferramentas do GAM', 'Alertas', 'Envios agendados', 'Nutrição', 'Modelos de dashboard', 'Central de ajuda', 'Minha comissão', 'Minhas invoices', 'Comissões', 'Invoices', 'Equipe Groone', 'Papéis da equipe', 'Custos'])
+    expect(headers(true)).toEqual(['Inventário', 'Crescimento', 'Relatórios', 'Integrações', 'Ferramentas', 'Comissões', 'Empresa'])
   })
 
   it('com uma Empresa cliente ativa mostra os links dela, sem os internos (também para a equipe Groone)', () => {

@@ -37,7 +37,7 @@ export type HubspotClientCards = { configured: boolean; contact: HubspotCard }
 export type HubspotNetworkCards = { configured: boolean; company: HubspotCard; deal: HubspotCard | null }
 export type HubspotSiteCards = { configured: boolean; site: HubspotCard }
 
-export type HubspotTaskRule = 'network_error' | 'network_disconnected' | 'install' | 'alert' | 'detractor'
+export type HubspotTaskRule = 'network_error' | 'network_disconnected' | 'install' | 'alert' | 'detractor' | 'revenue_drop'
 export type HubspotTaskDue = 'today' | 'one_business_day' | 'two_business_days' | 'one_week'
 export type HubspotTaskState = 'pending' | 'open' | 'completed' | 'failed'
 
