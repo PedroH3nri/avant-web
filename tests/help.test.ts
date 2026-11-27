@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { ref } from 'vue'
 import { flushPromises, mount } from '@vue/test-utils'
 import { filterArticles, filterGuides, npsGroup, paragraphs, readingMinutes, whatsappLink } from '@/modules/help/rules'
 import type { HelpCenterItem } from '@/modules/help/types'
@@ -13,6 +14,7 @@ const dismiss = vi.hoisted(() => vi.fn())
 vi.mock('@/modules/help/service', () => ({ npsService: { prompt, answer, dismiss }, helpService: {} }))
 
 import NpsPrompt from '@/modules/help/components/NpsPrompt.vue'
+import HelpItemEditor from '@/modules/internal/help/components/HelpItemEditor.vue'
 
 /** Um guia ou artigo publicado, em português. */
 function item(kind: HelpCenterItem['kind'], title: string, extra: Partial<HelpCenterItem['content']> = {}, category: HelpCenterItem['category'] = 'getting_started'): HelpCenterItem {
@@ -78,6 +80,16 @@ describe('editor da central de ajuda', () => {
     expect(filterHelpItems(rows, { kind: 'all', state: 'published', category: 'all', query: '' }).map((found) => found.id)).toEqual(['Ad tag'])
     expect(filterHelpItems(rows, { kind: 'all', state: 'all', category: 'payments', query: 'pag' }).map((found) => found.id)).toEqual(['Pagamento'])
     expect(missingLanguages(rows[0]!)).toEqual(['en', 'es'])
+  })
+
+  it('abre o novo guia e o novo artigo a partir do rascunho reativo da tela', async () => {
+    for (const kind of ['guide', 'article'] as const) {
+      const draft = ref(newDraft(kind))
+      const wrapper = mount(HelpItemEditor, { props: { open: true, draft: draft.value } })
+      await flushPromises()
+      expect(wrapper.emitted()).not.toHaveProperty('error')
+      wrapper.unmount()
+    }
   })
 
   it('manda só os idiomas com título e copia os prints para traduzir', () => {
