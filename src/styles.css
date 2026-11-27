@@ -272,20 +272,8 @@
   :root:not([data-motion-off~="buttons"]) .btn-motion:not(:disabled):active { transform: none; }
 }
 
-/* Cards de relatório (widgets do dashboard): sob o mouse, a borda puxa para a cor de destaque,
-   o card sobe 2 px e ganha sombra. Cards de dados e cards com formulário não usam. */
-:root:not([data-motion-off~="cards"]) .card-motion {
-  transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.3s cubic-bezier(0.22, 1, 0.36, 1),
-    border-color 0.2s ease;
-}
-:root:not([data-motion-off~="cards"]) .card-motion:hover {
-  transform: translateY(-2px);
-  border-color: hsl(var(--ring) / 0.45);
-  box-shadow: 0 0 0 3px hsl(var(--ring) / calc(var(--glow-alpha) / 2)), 0 10px 24px -14px hsl(var(--glow-color) / 0.45);
-}
-
-/* KPI de relatório dentro da faixa de KPIs: sem subir (a faixa é uma peça só); uma linha na cor de destaque
-   cresce do centro na base. */
+/* Card de relatório (widget do dashboard, KPI dos relatórios, faixa de totais): sem subir; uma linha na cor
+   de destaque cresce do centro na base. Cards de dados e cards com formulário não usam. */
 :root:not([data-motion-off~="cards"]) .kpi-motion::before {
   content: "";
   position: absolute;
@@ -297,9 +285,6 @@
   transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
 }
 :root:not([data-motion-off~="cards"]) .kpi-motion:not(:disabled):hover::before { transform: scaleX(1); }
-@media (prefers-reduced-motion: reduce) {
-  :root:not([data-motion-off~="cards"]) .card-motion:hover { transform: none; }
-}
 
 /* O sino balança uma vez quando chega notificação nova. */
 @keyframes bell-ring {
