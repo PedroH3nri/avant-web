@@ -1,8 +1,8 @@
 /** Chamadas da API do Google Ads, no painel do cliente (/google-ads) e no interno (/internal/google-ads, só leitura). */
 
-import { api, type Query } from '@/lib/api'
+import { api, request, type Query } from '@/lib/api'
 import type { Page } from '@/lib/types'
-import type { GoogleAdsAccount, GoogleAdsAccountInput, GoogleAdsAlert, GoogleAdsAlertSetting, GoogleAdsBudget, GoogleAdsChange, GoogleAdsControlResult, GoogleAdsCpc, GoogleAdsKeyword, GoogleAdsLevel, GoogleAdsLogin, GoogleAdsObject, GoogleAdsObjectDetail, GoogleAdsPerson, GoogleAdsPersonInput, GoogleAdsRule, GoogleAdsRuleDecision, GoogleAdsRuleInput, GoogleAdsSummary, GoogleAdsTerm } from '@/modules/google_ads/types'
+import type { GoogleAdsAccount, GoogleAdsAccountInput, GoogleAdsAlert, GoogleAdsAlertSetting, GoogleAdsBudget, GoogleAdsChange, GoogleAdsControlResult, GoogleAdsCpc, GoogleAdsDraftInput, GoogleAdsEditInput, GoogleAdsJob, GoogleAdsKeyword, GoogleAdsLevel, GoogleAdsLogin, GoogleAdsMedia, GoogleAdsObject, GoogleAdsObjectDetail, GoogleAdsOption, GoogleAdsOptionKind, GoogleAdsPerson, GoogleAdsPersonInput, GoogleAdsRule, GoogleAdsRuleDecision, GoogleAdsRuleInput, GoogleAdsSummary, GoogleAdsTerm } from '@/modules/google_ads/types'
 
 /** Endereço que abre o login do Google; é uma navegação do navegador, não uma chamada da API. */
 export const GOOGLE_ADS_CONNECT_URL = '/api/v1/google-ads/oauth/start'
@@ -71,4 +71,14 @@ export const googleAdsService = {
   alertSettings: () => api.get<GoogleAdsAlertSetting[]>('/google-ads/alert-settings'),
   /** Grava quem recebe os tipos de aviso enviados. */
   setAlertSettings: (settings: GoogleAdsAlertSetting[]) => api.put<GoogleAdsAlertSetting[]>('/google-ads/alert-settings', settings),
+  /** Cria a campanha do rascunho no Google Ads, pausada (um job). */
+  create: (draft: GoogleAdsDraftInput) => api.post<GoogleAdsJob>('/google-ads/jobs', draft),
+  /** Muda o nome, o CPC do grupo ou o anúncio no Google Ads (um job). */
+  edit: (level: GoogleAdsLevel, externalId: string, input: GoogleAdsEditInput) => api.post<GoogleAdsJob>(`/google-ads/objects/${level}/${externalId}/edit`, input),
+  /** O job com a situação, os ids criados e o erro do Google. */
+  job: (id: string) => api.get<GoogleAdsJob>(`/google-ads/jobs/${id}`),
+  /** Busca locais, idiomas ou públicos da conta, com os nomes no idioma da tela. */
+  options: (kind: GoogleAdsOptionKind, accountId: string, query: string, locale: string) => api.get<GoogleAdsOption[]>('/google-ads/options', { kind, account_id: accountId, q: query || undefined, locale }),
+  /** Manda a imagem para a conta no Google Ads; o Avant guarda só o recurso. */
+  uploadImage: (accountId: string, file: File) => request<GoogleAdsMedia>('POST', '/google-ads/media', { file, query: { account_id: accountId, name: file.name } }),
 }
