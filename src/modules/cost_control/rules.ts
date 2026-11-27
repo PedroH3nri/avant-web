@@ -7,7 +7,7 @@ export const COST_INTEGRATIONS: CostIntegration[] = ['facebook', 'google_ads']
 export const COST_PRESETS: PresetKey[] = ['this_month', 'last_month', 'last_7_days', 'last_30_days', 'last_90_days']
 export const COST_MAX_DAYS = 366
 export const INTEGRATION_COLOR: Record<CostIntegration, string> = { facebook: '#1877F2', google_ads: '#F9AB00' }
-export const INTERNAL_PERMISSIONS = ['internal.facebook.view', 'internal.google_ads.view']
+export const INTERNAL_PERMISSION: Record<CostIntegration, string> = { facebook: 'internal.facebook.view', google_ads: 'internal.google_ads.view' }
 
 export interface CostTotals {
   accounts: number
@@ -48,13 +48,13 @@ export function byIntegration(accounts: CostControlAccount[]): ({ integration: C
   )
 }
 
-/** A chave da pessoa de uma conta; sem pessoa (dono sem cadastro), uma chave só para o dono. */
+/** A chave da pessoa de uma conta; sem pessoa, uma chave para o dono ou outra para quem saiu da Empresa. */
 export function personKey(account: CostControlAccount): string {
-  return account.person?.id ?? 'owner'
+  return account.person?.id ?? (account.by_owner ? 'owner' : 'unknown')
 }
 
 /** As somas de cada pessoa, da que mais gasta para a que menos gasta, com as integrações que ela usa. */
-export function byPerson(accounts: CostControlAccount[], ownerName: string): PersonTotals[] {
+export function byPerson(accounts: CostControlAccount[], ownerName: string, unknownName = ownerName): PersonTotals[] {
   const keys = [...new Set(accounts.map(personKey))]
   return keys
     .map((key) => {
@@ -62,7 +62,7 @@ export function byPerson(accounts: CostControlAccount[], ownerName: string): Per
       const first = own[0]
       return {
         key,
-        name: first?.person?.name ?? ownerName,
+        name: first?.person?.name ?? (key === 'owner' ? ownerName : unknownName),
         byOwner: own.every((account) => account.by_owner),
         integrations: COST_INTEGRATIONS.filter((integration) => own.some((account) => account.integration === integration)),
         ...costTotals(own),
