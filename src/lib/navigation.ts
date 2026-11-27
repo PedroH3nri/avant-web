@@ -2,7 +2,7 @@
 
 import { computed, type Component } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { BellRing, BookOpen, Building, Building2, CalendarClock, ChartLine, CircleDollarSign, Code2, Coins, Eye, FileChartColumn, FileSignature, FileText, Funnel, Gift, Globe, HeartPulse, IdCard, LayoutDashboard, LayoutTemplate, ListChecks, ListTodo, LifeBuoy, LoaderCircle, MailCheck, MailPlus, MessageSquareHeart, Network, PiggyBank, Plug, Receipt, ReceiptText, Scale, ShieldAlert, ShieldCheck, Sparkles, Target, TrendingUp, Users, UserSearch, UsersRound, Wallet, Wrench } from 'lucide-vue-next'
+import { BellRing, BookOpen, Building, Building2, CalendarClock, ChartLine, CircleDollarSign, Code2, Coins, Eye, FileChartColumn, FileSignature, FileText, Funnel, Gauge, Gift, Globe, HeartPulse, IdCard, LayoutDashboard, LayoutTemplate, ListChecks, ListTodo, LifeBuoy, LoaderCircle, MailCheck, MailPlus, MessageSquareHeart, Network, PiggyBank, Plug, Receipt, ReceiptText, Scale, ShieldAlert, ShieldCheck, Sparkles, Target, TrendingUp, Users, UserSearch, UsersRound, Wallet, Wrench } from 'lucide-vue-next'
 import FacebookIcon from '@/components/FacebookIcon.vue'
 import GoogleAdsIcon from '@/components/GoogleAdsIcon.vue'
 import HubspotIcon from '@/components/HubspotIcon.vue'
@@ -69,6 +69,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { to: '/desempenho', key: 'nav.adManager', icon: ChartLine },
       { to: '/visitas', key: 'nav.pageViews', icon: Eye },
       { to: '/resultado', key: 'nav.results', icon: Scale },
+      { to: '/comparativo', key: 'nav.benchmark', icon: Gauge, clientOnly: true },
       { to: '/interno/resultados', key: 'int.results', icon: Scale, internal: true },
       { to: '/interno/metas', key: 'goals.title', icon: Target, internal: true },
       { to: '/campanhas-facebook', key: 'nav.facebookCampaigns', icon: FacebookIcon, clientOnly: true, separated: true },
