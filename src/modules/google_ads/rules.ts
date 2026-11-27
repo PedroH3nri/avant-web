@@ -99,6 +99,7 @@ const CHANGE_KEYS: Record<string, Key> = {
   'object.status': 'gads.change.status',
   'object.budget': 'gads.change.budget',
   'object.rules': 'gads.change.rules',
+  'object.edit': 'gads.change.edit',
   'keyword.status': 'gads.change.keywordStatus',
   'keyword.cpc': 'gads.change.keywordCpc',
   'campaign.negative_term': 'gads.change.negativeTerm',

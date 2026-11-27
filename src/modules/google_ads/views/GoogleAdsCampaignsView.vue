@@ -9,7 +9,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useDebounceFn } from '@vueuse/core'
 import { toast } from 'vue-sonner'
-import { ChevronRight, Search } from 'lucide-vue-next'
+import { ChevronRight, Plus, Search } from 'lucide-vue-next'
 import LoadError from '@/components/LoadError.vue'
 import PageBody from '@/components/PageBody.vue'
 import PageHeader from '@/components/PageHeader.vue'
@@ -29,7 +29,7 @@ import FiltersMenu from '@/modules/views/components/FiltersMenu.vue'
 import { useLocalBarFilters } from '@/modules/views/barFilters'
 import { td, th } from '@/lib/table'
 import { clientService } from '@/modules/internal/clients/service'
-import { ADS_MAX_DAYS, ADS_PRESETS, channelKey, childLevel, controlErrorText, formatCount, formatMoney, formatRatio, objectPath, objectState, roiTone } from '@/modules/google_ads/rules'
+import { ADS_MAX_DAYS, ADS_PRESETS, campaignsPath, channelKey, childLevel, controlErrorText, formatCount, formatMoney, formatRatio, objectPath, objectState, roiTone } from '@/modules/google_ads/rules'
 import { googleAdsReader, googleAdsService } from '@/modules/google_ads/service'
 import type { GoogleAdsAccount, GoogleAdsLevel, GoogleAdsObject, GoogleAdsSummary } from '@/modules/google_ads/types'
 import { useSession } from '@/stores/session'
@@ -217,7 +217,11 @@ watch([level, parent, accountId, companyId, period, withIssues], refilter)
 </script>
 
 <template>
-  <PageHeader :title="t('gads.campaignsTitle')" :sub="internal ? t('gads.campaignsSubInternal') : t('gads.campaignsSub')" />
+  <PageHeader :title="t('gads.campaignsTitle')" :sub="internal ? t('gads.campaignsSubInternal') : t('gads.campaignsSub')">
+    <template v-if="canManage" #actions>
+      <Button @click="router.push(`${campaignsPath(false)}/nova`)"><Plus aria-hidden="true" />{{ t('gads.create.action') }}</Button>
+    </template>
+  </PageHeader>
   <PageBody>
     <div class="flex flex-wrap items-center gap-3">
       <Segmented :model-value="level" :label="t('gads.level')" :options="levelOptions" @update:model-value="pickLevel" />
