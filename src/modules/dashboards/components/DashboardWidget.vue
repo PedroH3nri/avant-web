@@ -128,7 +128,7 @@ function grabTitle(event: PointerEvent) {
 <template>
   <section
     :class="
-      cn('relative flex min-w-0 flex-col rounded-lg border bg-card', !editing && 'card-motion', editing && 'border-dashed border-foreground/40', dragging && 'z-10 border-solid border-foreground shadow-lg')
+      cn('relative flex min-w-0 flex-col overflow-hidden rounded-lg border bg-card', !editing && 'kpi-motion', editing && 'border-dashed border-foreground/40', dragging && 'z-10 border-solid border-foreground shadow-lg')
     "
   >
     <div :class="cn('flex items-center gap-2 px-5 pt-4', editing && 'md:cursor-grab md:touch-none md:select-none', dragging && 'md:cursor-grabbing')" @pointerdown="grabTitle">
