@@ -69,12 +69,13 @@ function setNumber(field: NumberField, text: string) {
   draft.value = { ...draft.value, [field]: Number.isFinite(number) ? number : 0 }
 }
 
-/** Grava as regras; valem a partir da próxima rodada, às 06:05. */
+/** Grava as regras (escala desligada quando o objeto não aceita mais); valem a partir da próxima rodada. */
 async function save() {
   if (!draft.value) return
   saving.value = true
   try {
-    const found = inputOf(await googleAdsService.setRule(props.detail.level, props.detail.external_id, draft.value))
+    const input = canScale.value ? draft.value : { ...draft.value, scale: false }
+    const found = inputOf(await googleAdsService.setRule(props.detail.level, props.detail.external_id, input))
     saved.value = found
     draft.value = { ...found }
     toast.success(t('gads.rules.saved'))
