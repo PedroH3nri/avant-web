@@ -3,7 +3,6 @@ import { toast } from 'vue-sonner'
 import { setCompanyChangedHandler, setTabCompany, setUnauthorizedHandler } from '@/lib/api'
 import { errorText } from '@/lib/i18n'
 import { onCompanyAnnounced } from '@/lib/tabs'
-import { INTERNAL_PERMISSIONS } from '@/modules/cost_control/rules'
 import { useSession } from '@/stores/session'
 
 // Os caminhos de /entrar, /entrar/2fa, /convite/{token}, /redefinir-senha/{token} e
@@ -118,7 +117,7 @@ const routes: RouteRecordRaw[] = [
       { path: 'interno/sites', component: () => import('@/modules/internal/inventory/views/ClientSitesView.vue'), meta: { internal: true, permission: 'internal.clients.view' } },
       { path: 'interno/sites/:id', component: () => import('@/modules/internal/inventory/views/ClientSiteView.vue'), meta: { internal: true, permission: 'internal.clients.view' } },
       { path: 'interno/facebook', component: () => import('@/modules/facebook/views/FacebookView.vue'), meta: { internal: true, permission: 'internal.facebook.view' } },
-      { path: 'interno/controle-de-custos', component: () => import('@/modules/cost_control/views/CostControlView.vue'), meta: { internal: true, anyPermission: INTERNAL_PERMISSIONS } },
+      { path: 'interno/controle-de-custos', component: () => import('@/modules/cost_control/views/CostControlView.vue'), meta: { internal: true, anyPermission: ['internal.facebook.view', 'internal.google_ads.view'] } },
       { path: 'interno/campanhas-facebook', component: () => import('@/modules/facebook/views/FacebookCampaignsView.vue'), meta: { internal: true, permission: 'internal.facebook.view' } },
       { path: 'interno/campanhas-facebook/:id', component: () => import('@/modules/facebook/views/FacebookObjectView.vue'), meta: { internal: true, permission: 'internal.facebook.view' } },
       { path: 'interno/google-ads', component: () => import('@/modules/google_ads/views/GoogleAdsView.vue'), meta: { internal: true, permission: 'internal.google_ads.view' } },

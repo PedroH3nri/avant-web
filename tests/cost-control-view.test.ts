@@ -73,6 +73,9 @@ describe('tela do Controle de custos', () => {
     expect(text).toContain('Dono')
     expect(text).toContain('sem site')
     expect(text).toContain('US$ 100,00 de US$ 400,00')
+    await view.find('button[aria-pressed]').trigger('click')
+    await flushPromises()
+    expect(company).toHaveBeenLastCalledWith(expect.objectContaining({ integration: 'facebook' }))
     view.unmount()
   })
 

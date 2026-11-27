@@ -44,6 +44,7 @@ describe('regras do Controle de custos', () => {
       ['Dono', 50, true, ['google_ads']],
     ])
     expect(byPerson([account({ person: null, by_owner: true })], 'Dono da Empresa')[0]?.name).toBe('Dono da Empresa')
+    expect(byPerson([account({ person: null, by_owner: false })], 'Dono da Empresa', 'Saiu')[0]?.name).toBe('Saiu')
   })
 
   it('ROI da conta, parte do gasto e uso do limite do mês', () => {
