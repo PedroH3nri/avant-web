@@ -51,7 +51,6 @@ export const googleAdsService = {
   searchTerms: (level: GoogleAdsLevel, externalId: string, query?: Query) => api.get<GoogleAdsTerm[]>(`/google-ads/objects/${level}/${externalId}/search-terms`, query),
   /** Os posicionamentos da campanha ou do grupo no período. */
   placements: (level: GoogleAdsLevel, externalId: string, query?: Query) => api.get<GoogleAdsTerm[]>(`/google-ads/objects/${level}/${externalId}/placements`, query),
-  /** Marca o aviso como lido. */
   /** Liga ou pausa campanhas, grupos ou anúncios de um nível no Google Ads. */
   setStatus: (level: GoogleAdsLevel, externalIds: string[], active: boolean) => api.post<GoogleAdsControlResult>('/google-ads/objects/status', { level, external_ids: externalIds, active }),
   /** Troca o orçamento diário da campanha no Google Ads. */
@@ -66,6 +65,7 @@ export const googleAdsService = {
   negateTerm: (campaignId: string, text: string) => api.post<void>(`/google-ads/campaigns/${campaignId}/negative-terms`, { text }),
   /** Exclui o posicionamento da campanha toda. */
   excludePlacement: (campaignId: string, placement: string, placementType: string) => api.post<void>(`/google-ads/campaigns/${campaignId}/excluded-placements`, { placement, placement_type: placementType }),
+  /** Marca o aviso como lido. */
   readAlert: (id: string) => api.post<void>(`/google-ads/alerts/${id}/read`),
   /** Quem recebe cada tipo de aviso. */
   alertSettings: () => api.get<GoogleAdsAlertSetting[]>('/google-ads/alert-settings'),
