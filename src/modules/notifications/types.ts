@@ -1,7 +1,7 @@
 /** Formatos da API do domínio notifications (iguais ao dto.py dele no avant-api). Datas em ISO 8601 UTC. */
 
 /** De onde a notificação veio: os avisos automáticos trazem dados para a tela traduzir. */
-export type NotificationKind = 'alert' | 'task_assigned' | 'task_comment' | 'gam_tool' | 'invite_accepted' | 'manual'
+export type NotificationKind = 'alert' | 'task_assigned' | 'task_comment' | 'gam_tool' | 'invite_accepted' | 'manual' | 'nps_detractor' | 'revenue_drop'
 
 /** Ícones que o envio manual pode escolher (e que os avisos automáticos usam). */
 export type NotificationIcon = 'bell' | 'megaphone' | 'info' | 'alert' | 'check' | 'star' | 'gift' | 'calendar' | 'wrench' | 'chart' | 'dollar' | 'users' | 'task'
