@@ -126,6 +126,7 @@ const routes: RouteRecordRaw[] = [
       { path: 'interno/prospeccao', component: () => import('@/modules/internal/hubspot/views/ProspectsView.vue'), meta: { internal: true, permission: 'internal.clients.view' } },
       { path: 'interno/nps', component: () => import('@/modules/internal/nps/views/NpsView.vue'), meta: { internal: true, permission: 'internal.clients.view' } },
       { path: 'interno/saude-da-carteira', component: () => import('@/modules/internal/portfolio_health/views/PortfolioHealthView.vue'), meta: { internal: true, permission: 'internal.growth.view' } },
+      { path: 'interno/oportunidades', component: () => import('@/modules/internal/opportunities/views/OpportunitiesView.vue'), meta: { internal: true, permission: 'internal.growth.view' } },
       { path: 'interno/qualidade-do-trafego', component: () => import('@/modules/internal/traffic_quality/views/TrafficQualityView.vue'), meta: { internal: true, permission: 'internal.growth.view' } },
       { path: 'interno/nutricao', component: () => import('@/modules/internal/nurture/views/NurtureView.vue'), meta: { internal: true, permission: 'internal.clients.view' } },
       { path: 'interno/nutricao/:id', component: () => import('@/modules/internal/nurture/views/NurtureRuleView.vue'), meta: { internal: true, permission: 'internal.clients.view' } },
