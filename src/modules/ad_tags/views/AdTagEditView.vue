@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /** Editor da ad tag: blocos com a prévia do site, integrações (loader, Analytics, MGID, reward) e versões publicadas. */
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, toRaw, watch } from 'vue'
 import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 import { DropdownMenuLabel, DropdownMenuRoot, DropdownMenuSeparator, DropdownMenuTrigger } from 'reka-ui'
 import { AlertTriangle, ArrowLeft, BarChart3, Check, Code2, History, LoaderCircle, Monitor, MoreHorizontal, MousePointerClick, Plus, Smartphone, Trash2 } from 'lucide-vue-next'
@@ -392,7 +392,7 @@ async function restore() {
 /** Descarta o rascunho: volta para o que está no ar. */
 function discard() {
   if (!live.value || !draft.value) return
-  draft.value = structuredClone(live.value.content)
+  draft.value = structuredClone(toRaw(live.value.content))
   openIndex.value = null
   picking.value = null
   toast.success(t('at.discarded'))

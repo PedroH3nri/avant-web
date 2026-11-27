@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /** O editor grande de um guia ou artigo: idioma em abas, título, categoria, resumo, o texto ou os passos com o print de cada um, a prévia e o publicar. */
-import { computed, ref, watch } from 'vue'
+import { computed, ref, toRaw, watch } from 'vue'
 import { toast } from 'vue-sonner'
 import { Check, ImagePlus, Plus, Trash2 } from 'lucide-vue-next'
 import Button from '@/components/ui/Button.vue'
@@ -45,7 +45,7 @@ const title = computed(() => {
 watch(
   () => props.draft,
   (draft) => {
-    form.value = draft ? structuredClone(draft) : null
+    form.value = draft ? structuredClone(toRaw(draft)) : null
     language.value = 'pt'
     mode.value = 'edit'
   },
