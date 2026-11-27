@@ -2,11 +2,18 @@
 
 import type { CostKind } from '@/modules/costs/types'
 import type { Page } from '@/lib/types'
+import type { CostIntegration } from '@/modules/cost_control/types'
 
 export interface CostLine {
   cost_id: string
   name: string
   kind: CostKind
+  amount: string
+}
+
+/** O gasto de uma integração de anúncios no mês, já somado nos custos. */
+export interface IntegrationLine {
+  integration: CostIntegration
   amount: string
 }
 
@@ -19,6 +26,7 @@ export interface MonthResult {
   result: string
   deductions_pending: boolean
   cost_lines: CostLine[]
+  integration_lines: IntegrationLine[]
   /** Só no painel interno: o que a Groone recebe no mês. */
   groone_revenue?: string | null
 }

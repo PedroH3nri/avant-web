@@ -32,6 +32,7 @@ const routes: RouteRecordRaw[] = [
       { path: 'relatorios/:id/editar', component: () => import('@/modules/reports/views/ReportBuilderView.vue'), meta: { permission: 'reports.view' } },
       { path: 'resultado', component: () => import('@/modules/results/views/ResultsView.vue'), meta: { permission: 'results.view' } },
       { path: 'facebook', component: () => import('@/modules/facebook/views/FacebookView.vue'), meta: { permission: 'facebook.view' } },
+      { path: 'controle-de-custos', component: () => import('@/modules/cost_control/views/CostControlView.vue'), meta: { permission: 'costs.integrations.view' } },
       { path: 'campanhas-facebook', component: () => import('@/modules/facebook/views/FacebookCampaignsView.vue'), meta: { permission: 'facebook.view' } },
       { path: 'campanhas-facebook/nova', component: () => import('@/modules/facebook/views/FacebookCreateView.vue'), meta: { permission: 'facebook.manage' } },
       { path: 'campanhas-facebook/:id', component: () => import('@/modules/facebook/views/FacebookObjectView.vue'), meta: { permission: 'facebook.view' } },
@@ -116,6 +117,7 @@ const routes: RouteRecordRaw[] = [
       { path: 'interno/sites', component: () => import('@/modules/internal/inventory/views/ClientSitesView.vue'), meta: { internal: true, permission: 'internal.clients.view' } },
       { path: 'interno/sites/:id', component: () => import('@/modules/internal/inventory/views/ClientSiteView.vue'), meta: { internal: true, permission: 'internal.clients.view' } },
       { path: 'interno/facebook', component: () => import('@/modules/facebook/views/FacebookView.vue'), meta: { internal: true, permission: 'internal.facebook.view' } },
+      { path: 'interno/controle-de-custos', component: () => import('@/modules/cost_control/views/CostControlView.vue'), meta: { internal: true, anyPermission: ['internal.facebook.view', 'internal.google_ads.view'] } },
       { path: 'interno/campanhas-facebook', component: () => import('@/modules/facebook/views/FacebookCampaignsView.vue'), meta: { internal: true, permission: 'internal.facebook.view' } },
       { path: 'interno/campanhas-facebook/:id', component: () => import('@/modules/facebook/views/FacebookObjectView.vue'), meta: { internal: true, permission: 'internal.facebook.view' } },
       { path: 'interno/google-ads', component: () => import('@/modules/google_ads/views/GoogleAdsView.vue'), meta: { internal: true, permission: 'internal.google_ads.view' } },
@@ -204,6 +206,7 @@ router.beforeEach(async (to) => {
   }
   // Sem a permissão da tela, volta ao início (a API recusaria tudo mesmo).
   if (to.meta.permission && !session.can(to.meta.permission)) return '/'
+  if (to.meta.anyPermission && !to.meta.anyPermission.some((permission) => session.can(permission))) return '/'
   return true
 })
 
