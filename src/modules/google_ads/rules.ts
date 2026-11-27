@@ -2,6 +2,7 @@
  * Dinheiro, porcentagem, períodos e limites seguem as mesmas regras do Facebook. */
 
 import type { Key } from '@/lib/i18n'
+import { formatMoney, limitDetails, parseLimit } from '@/modules/facebook/rules'
 import type {
   GoogleAdsAccount,
   GoogleAdsAccountStatus,
@@ -10,6 +11,8 @@ import type {
   GoogleAdsLevel,
   GoogleAdsLoginStatus,
   GoogleAdsObject,
+  GoogleAdsRuleAction,
+  GoogleAdsRuleDecision,
   GoogleAdsSuffixState,
 } from '@/modules/google_ads/types'
 
@@ -93,6 +96,13 @@ const CHANGE_KEYS: Record<string, Key> = {
   'google.create': 'gads.change.googleCreate',
   'google.update': 'gads.change.googleUpdate',
   'google.remove': 'gads.change.googleRemove',
+  'object.status': 'gads.change.status',
+  'object.budget': 'gads.change.budget',
+  'object.rules': 'gads.change.rules',
+  'keyword.status': 'gads.change.keywordStatus',
+  'keyword.cpc': 'gads.change.keywordCpc',
+  'campaign.negative_term': 'gads.change.negativeTerm',
+  'campaign.placement_excluded': 'gads.change.placementExcluded',
 }
 
 /** Um valor do histórico como texto; vazio vira traço. */
@@ -118,6 +128,12 @@ export function changeText(change: GoogleAdsChange): { key: Key; params: Record<
       monthly: limitText(data.monthly_after),
       fields: shown(fields),
       what: change.what,
+      budgetBefore: limitText(data.before),
+      budgetAfter: limitText(data.after),
+      cpcBefore: limitText(data.cpc_before),
+      cpcAfter: limitText(data.cpc_after),
+      text: shown(data.text),
+      placement: shown(data.placement),
     },
   }
 }
@@ -171,4 +187,51 @@ const MATCH_KEYS: Record<string, Key> = { EXACT: 'gads.match.EXACT', PHRASE: 'ga
 /** A chave do nome da correspondência da palavra-chave; tipo desconhecido vira traço. */
 export function matchKey(matchType: string): Key {
   return MATCH_KEYS[matchType] ?? 'gads.match.other'
+}
+
+/** Os tipos de posicionamento que a campanha pode excluir (o Google não exclui os outros). */
+export const EXCLUDABLE_PLACEMENTS = ['WEBSITE', 'MOBILE_APPLICATION', 'YOUTUBE_CHANNEL', 'YOUTUBE_VIDEO']
+
+/** Os lances em que o CPC de cada palavra-chave é da pessoa; nos automáticos o Google decide. */
+export const MANUAL_BIDDING = ['MANUAL_CPC', 'ENHANCED_CPC']
+
+const DECISION_TONES: Record<GoogleAdsRuleAction, Tone> = {
+  scale_up: 'ok',
+  scale_down: 'warn',
+  pause: 'warn',
+  cpc_up: 'ok',
+  cpc_down: 'warn',
+  keyword_pause: 'warn',
+  held_by_limit: 'neutral',
+  failed: 'bad',
+}
+
+/** A cor da decisão de uma regra automática. */
+export function decisionTone(action: GoogleAdsRuleAction): Tone {
+  return DECISION_TONES[action]
+}
+
+/** O valor antes e depois de uma decisão (orçamento ou CPC), quando ela mexeu nele. */
+export function decisionValues(decision: GoogleAdsRuleDecision): { before: string | null; after: string | null } {
+  const { before, after } = decision.data
+  return {
+    before: typeof before === 'number' ? String(before / MICROS) : null,
+    after: typeof after === 'number' ? String(after / MICROS) : null,
+  }
+}
+
+/** A chave e os valores do erro de um pedido de controle: o de limite diz quanto ainda cabe. */
+export function controlErrorText(code: string, details: Record<string, unknown>, locale: string): { key: Key; params: Record<string, string> } | null {
+  const limit = code === 'google_ads_limit_exceeded' ? limitDetails(details) : null
+  if (!limit) return null
+  return {
+    key: `gads.limitExceeded.${limit.period}.${limit.scope}` as Key,
+    params: { room: formatMoney(limit.room, limit.currency, locale) },
+  }
+}
+
+/** Texto do valor digitado (orçamento ou CPC) para a API: positivo com até 2 casas; senão ``undefined``. */
+export function parseAmount(text: string): string | undefined {
+  const parsed = parseLimit(text)
+  return parsed === null ? undefined : parsed
 }

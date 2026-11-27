@@ -7,25 +7,37 @@ import { todayIso } from '@/lib/dates'
 import { periodFromQuery, periodPresets, periodQuery, type PeriodValue } from '@/lib/periods'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
+import { toast } from 'vue-sonner'
 import { ArrowLeft } from 'lucide-vue-next'
 import LoadError from '@/components/LoadError.vue'
 import PageBody from '@/components/PageBody.vue'
 import PageHeader from '@/components/PageHeader.vue'
+import Button from '@/components/ui/Button.vue'
 import DataTable from '@/components/ui/DataTable.vue'
+import Dialog from '@/components/ui/Dialog.vue'
+import Field from '@/components/ui/Field.vue'
+import Input from '@/components/ui/Input.vue'
+import Switch from '@/components/ui/Switch.vue'
 import Segmented from '@/components/ui/Segmented.vue'
 import Status from '@/components/ui/Status.vue'
 import TableState from '@/components/ui/TableState.vue'
 import { ApiError } from '@/lib/api'
 import { errorText, locale, t, type Key } from '@/lib/i18n'
 import { td, th } from '@/lib/table'
+import GoogleAdsBudgetCard from '@/modules/google_ads/components/GoogleAdsBudgetCard.vue'
+import GoogleAdsDecisionsPanel from '@/modules/google_ads/components/GoogleAdsDecisionsPanel.vue'
 import GoogleAdsHistoryPanel from '@/modules/google_ads/components/GoogleAdsHistoryPanel.vue'
+import GoogleAdsRulesCard from '@/modules/google_ads/components/GoogleAdsRulesCard.vue'
 import GoogleAdsTermsTable from '@/modules/google_ads/components/GoogleAdsTermsTable.vue'
-import { ADS_MAX_DAYS, ADS_PRESETS, campaignsPath, channelKey, childLevel, formatCount, formatMoney, formatRatio, isLevel, matchKey, objectPath, objectState, roiTone } from '@/modules/google_ads/rules'
+import { ADS_MAX_DAYS, ADS_PRESETS, MANUAL_BIDDING, campaignsPath, channelKey, childLevel, controlErrorText, formatCount, formatMoney, formatRatio, isLevel, matchKey, objectPath, objectState, parseAmount, roiTone } from '@/modules/google_ads/rules'
 import { googleAdsReader, googleAdsService } from '@/modules/google_ads/service'
-import type { GoogleAdsKeyword, GoogleAdsLevel, GoogleAdsObject, GoogleAdsObjectDetail, GoogleAdsTerm, GoogleAdsTotals } from '@/modules/google_ads/types'
+import type { GoogleAdsControlResult, GoogleAdsKeyword, GoogleAdsLevel, GoogleAdsObject, GoogleAdsObjectDetail, GoogleAdsTerm, GoogleAdsTotals } from '@/modules/google_ads/types'
+import { useSession } from '@/stores/session'
 
 const route = useRoute()
 const internal = route.meta.internal === true
+const session = useSession()
+const canManage = computed(() => !internal && session.can('google_ads.manage'))
 const reader = googleAdsReader(internal)
 const base = campaignsPath(internal)
 const level = computed<GoogleAdsLevel>(() => (isLevel(route.params.level) ? route.params.level : 'campaign'))
@@ -42,6 +54,18 @@ const loadError = ref<string | null>(null)
 const presets = computed(() => periodPresets(ADS_PRESETS, todayIso(), true))
 const currency = computed(() => detail.value?.account.currency ?? 'USD')
 const showTerms = computed(() => !internal && level.value !== 'ad')
+const switching = ref(false)
+const editingKeyword = ref<GoogleAdsKeyword | null>(null)
+const cpcText = ref('')
+const cpcError = ref<string | null>(null)
+const savingCpc = ref(false)
+const decisionsPanel = ref<InstanceType<typeof GoogleAdsDecisionsPanel> | null>(null)
+const campaignId = computed(() => (detail.value?.level === 'campaign' ? detail.value.external_id : detail.value?.campaign_external_id))
+const manualBidding = computed(() => {
+  const bidding = detail.value?.level === 'campaign' ? detail.value.bidding_strategy : detail.value?.campaign?.bidding_strategy
+  return !!bidding && MANUAL_BIDDING.includes(bidding)
+})
+const keywordColumns = computed(() => (canManage.value ? 10 : 9))
 const termOptions = computed(() => [
   { value: 'terms', label: t('gads.terms.title') },
   { value: 'placements', label: t('gads.placements.title') },
@@ -103,6 +127,78 @@ async function loadTerms() {
   if (request === termsRequest) terms.value = rows
 }
 
+/** Mostra o que mudou num lote: quantos mudaram e o motivo do primeiro que o Google recusou. */
+function reportControl(result: GoogleAdsControlResult, active: boolean) {
+  if (result.done.length) toast.success(active ? t('gads.control.activated', { n: result.done.length }) : t('gads.control.paused', { n: result.done.length }))
+  const failures = Object.values(result.failed)
+  if (failures.length) toast.error(t('gads.control.failed', { n: failures.length, reason: errorText(failures[0] ?? 'unknown') }))
+}
+
+/** O texto do erro de um pedido de controle; o de limite diz quanto ainda cabe. */
+function controlError(error: unknown): string {
+  const api = error instanceof ApiError ? error : null
+  const limit = api ? controlErrorText(api.code, api.details, locale.value) : null
+  return limit ? t(limit.key, limit.params) : errorText(api?.code ?? 'unknown')
+}
+
+/** Liga ou pausa o objeto da tela no Google Ads. */
+async function toggle() {
+  if (!detail.value) return
+  switching.value = true
+  try {
+    reportControl(await googleAdsService.setStatus(detail.value.level, [detail.value.external_id], !detail.value.active), !detail.value.active)
+    await load()
+  } catch (error) {
+    toast.error(controlError(error))
+  } finally {
+    switching.value = false
+  }
+}
+
+/** Liga ou pausa uma palavra-chave do grupo. */
+async function toggleKeyword(keyword: GoogleAdsKeyword, active: boolean) {
+  switching.value = true
+  try {
+    reportControl(await googleAdsService.setKeywordStatus(externalId.value, [keyword.criterion_id], active), active)
+    keywords.value = await reader.keywords(externalId.value, range())
+  } catch (error) {
+    toast.error(controlError(error))
+  } finally {
+    switching.value = false
+  }
+}
+
+/** Abre a janela do CPC máximo da palavra-chave. */
+function editCpc(keyword: GoogleAdsKeyword) {
+  editingKeyword.value = keyword
+  cpcText.value = keyword.cpc_bid ?? detail.value?.cpc_bid ?? ''
+  cpcError.value = null
+}
+
+/** Grava o CPC máximo novo da palavra-chave no Google Ads. */
+async function saveCpc() {
+  const keyword = editingKeyword.value
+  const cpc = parseAmount(cpcText.value)
+  if (!keyword || cpc === undefined) return
+  savingCpc.value = true
+  try {
+    await googleAdsService.setKeywordCpc(externalId.value, keyword.criterion_id, cpc)
+    toast.success(t('gads.keywords.cpcSaved'))
+    editingKeyword.value = null
+    keywords.value = await reader.keywords(externalId.value, range())
+  } catch (error) {
+    cpcError.value = controlError(error)
+  } finally {
+    savingCpc.value = false
+  }
+}
+
+/** Recarrega a tela e as decisões depois de mudar o orçamento ou as regras. */
+function reloadAll() {
+  void load()
+  void decisionsPanel.value?.load()
+}
+
 /** As colunas de uma linha por dia. */
 const row = (totals: GoogleAdsTotals) => [
   formatMoney(totals.spend, currency.value, locale.value),
@@ -145,6 +241,7 @@ watch(termKind, loadTerms)
       </p>
     </template>
     <template #actions>
+      <Button v-if="canManage && detail && detail.status !== 'REMOVED'" variant="outline" :loading="switching" @click="toggle">{{ detail.active ? t('gads.control.pause') : t('gads.control.activate') }}</Button>
       <DateRangePicker v-model="period" :presets="presets" :max-days="ADS_MAX_DAYS" :aria-label="t('gads.period')" class="w-auto" />
     </template>
   </PageHeader>
@@ -208,8 +305,10 @@ watch(termKind, loadTerms)
         <DataTable :min="960">
           <thead>
             <tr>
+              <th v-if="canManage" :class="[th, 'w-14']"><span class="sr-only">{{ t('gads.control.on') }}</span></th>
               <th :class="th">{{ t('gads.keywords.col.keyword') }}</th>
               <th :class="th">{{ t('gads.col.state') }}</th>
+              <th :class="[th, 'text-right']">{{ t('gads.keywords.col.maxCpc') }}</th>
               <th :class="[th, 'text-right']">{{ t('gads.keywords.col.quality') }}</th>
               <th :class="[th, 'text-right']">{{ t('gads.metric.spend') }}</th>
               <th :class="[th, 'text-right']">{{ t('gads.metric.clicks') }}</th>
@@ -219,13 +318,21 @@ watch(termKind, loadTerms)
             </tr>
           </thead>
           <tbody>
-            <TableState :cols="8" :loading="!keywords" :empty="keywords?.length === 0" :desc="t('gads.keywords.empty')" />
+            <TableState :cols="keywordColumns" :loading="!keywords" :empty="keywords?.length === 0" :desc="t('gads.keywords.empty')" />
             <tr v-for="keyword in keywords ?? []" :key="keyword.id" class="hover:bg-muted">
+              <td v-if="canManage" :class="td">
+                <Switch :model-value="keyword.active" :label="t('gads.control.toggle', { name: keyword.text })" :disabled="switching || keyword.status === 'REMOVED'" @update:model-value="(active) => toggleKeyword(keyword, active)" />
+              </td>
               <td :class="td">
                 <span class="block font-medium">{{ keyword.text }}</span>
                 <span class="block text-[12px] text-muted-foreground">{{ t(matchKey(keyword.match_type)) }}</span>
               </td>
               <td :class="td"><Status :tone="keyword.active ? 'ok' : 'neutral'">{{ keyword.active ? t('gads.state.active') : t('gads.state.paused') }}</Status></td>
+              <td :class="[td, 'text-right tnum']">
+                <span v-if="!manualBidding" class="text-[12px] text-muted-foreground">{{ t('gads.keywords.autoBid') }}</span>
+                <button v-else-if="canManage" type="button" class="tnum hover:underline" :aria-label="t('gads.keywords.editCpc', { name: keyword.text })" @click="editCpc(keyword)">{{ formatMoney(keyword.cpc_bid ?? detail.cpc_bid, currency, locale) }}</button>
+                <template v-else>{{ formatMoney(keyword.cpc_bid ?? detail.cpc_bid, currency, locale) }}</template>
+              </td>
               <td :class="[td, 'text-right tnum']">{{ keyword.quality_score ?? '–' }}</td>
               <td :class="[td, 'text-right tnum']">{{ formatMoney(keyword.totals.spend, currency, locale) }}</td>
               <td :class="[td, 'text-right tnum']">{{ formatCount(keyword.totals.clicks, locale) }}</td>
@@ -241,12 +348,26 @@ watch(termKind, loadTerms)
           <h2 class="mr-auto text-[20px] font-semibold tracking-tight">{{ termKind === 'terms' ? t('gads.terms.title') : t('gads.placements.title') }}</h2>
           <Segmented v-model="termKind" :label="t('gads.terms.switch')" :options="termOptions" />
         </div>
-        <GoogleAdsTermsTable :rows="terms" :currency="currency" :kind="termKind === 'placements' ? 'placements' : 'terms'" />
+        <GoogleAdsTermsTable :key="termKind" :rows="terms" :currency="currency" :kind="termKind === 'placements' ? 'placements' : 'terms'" :campaign-id="campaignId" :can-manage="canManage" />
       </section>
+      <div class="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
+        <GoogleAdsBudgetCard :key="`${detail.external_id}-${detail.budget}`" :detail="detail" :internal="internal" :read-only="!canManage" @saved="reloadAll" />
+        <GoogleAdsRulesCard :key="detail.external_id" :detail="detail" :internal="internal" :read-only="!canManage" :manual-bidding="manualBidding" @saved="reloadAll" />
+      </div>
+      <GoogleAdsDecisionsPanel ref="decisionsPanel" :key="`decisions-${detail.external_id}`" :level="detail.level" :external-id="detail.external_id" :internal="internal" :currency="currency" />
       <section class="grid gap-3">
         <h2 class="text-[20px] font-semibold tracking-tight">{{ t('gads.tab.history') }}</h2>
         <GoogleAdsHistoryPanel :internal="internal" company-id="" :key="externalId" :object-id="externalId" :account-name="() => detail?.account.name ?? '–'" :client-name="() => ''" />
       </section>
     </template>
   </PageBody>
+  <Dialog :open="editingKeyword !== null" :title="t('gads.keywords.cpcTitle')" :desc="editingKeyword ? t('gads.keywords.cpcDesc', { name: editingKeyword.text }) : ''" @update:open="(open) => !open && (editingKeyword = null)">
+    <Field id="gads-keyword-cpc" :label="t('gads.keywords.col.maxCpc')" :error="cpcError ?? (cpcText !== '' && parseAmount(cpcText) === undefined ? t('gads.budget.invalid') : null)">
+      <Input id="gads-keyword-cpc" v-model="cpcText" inputmode="decimal" class="h-10 max-w-[200px] tnum" />
+    </Field>
+    <template #footer>
+      <Button variant="outline" @click="editingKeyword = null">{{ t('common.cancel') }}</Button>
+      <Button :loading="savingCpc" :disabled="parseAmount(cpcText) === undefined" @click="saveCpc">{{ t('common.save') }}</Button>
+    </template>
+  </Dialog>
 </template>
