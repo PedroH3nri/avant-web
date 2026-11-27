@@ -30,6 +30,7 @@ import GoogleAdsHistoryPanel from '@/modules/google_ads/components/GoogleAdsHist
 import GoogleAdsRulesCard from '@/modules/google_ads/components/GoogleAdsRulesCard.vue'
 import GoogleAdsTermsTable from '@/modules/google_ads/components/GoogleAdsTermsTable.vue'
 import { ADS_MAX_DAYS, ADS_PRESETS, MANUAL_BIDDING, campaignsPath, channelKey, childLevel, controlErrorText, formatCount, formatMoney, formatRatio, isLevel, matchKey, objectPath, objectState, parseAmount, roiTone } from '@/modules/google_ads/rules'
+import { channelOf } from '@/modules/google_ads/draft-rules'
 import { googleAdsReader, googleAdsService } from '@/modules/google_ads/service'
 import type { GoogleAdsControlResult, GoogleAdsKeyword, GoogleAdsLevel, GoogleAdsObject, GoogleAdsObjectDetail, GoogleAdsTerm, GoogleAdsTotals } from '@/modules/google_ads/types'
 import { useSession } from '@/stores/session'
@@ -60,6 +61,7 @@ const cpcText = ref('')
 const cpcError = ref<string | null>(null)
 const savingCpc = ref(false)
 const decisionsPanel = ref<InstanceType<typeof GoogleAdsDecisionsPanel> | null>(null)
+const campaignChannel = computed(() => (detail.value?.level === 'campaign' ? detail.value.channel_type : (detail.value?.campaign?.channel_type ?? null)))
 const campaignId = computed(() => (detail.value?.level === 'campaign' ? detail.value.external_id : detail.value?.campaign_external_id))
 const manualBidding = computed(() => {
   const bidding = detail.value?.level === 'campaign' ? detail.value.bidding_strategy : detail.value?.campaign?.bidding_strategy
@@ -241,6 +243,7 @@ watch(termKind, loadTerms)
       </p>
     </template>
     <template #actions>
+      <RouterLink v-if="canManage && detail && detail.status !== 'REMOVED' && channelOf(campaignChannel)" :to="`${objectPath(false, detail)}/editar`" class="inline-flex h-9 items-center rounded-md border px-3 text-[14px] font-medium hover:bg-accent">{{ t('gads.edit.action') }}</RouterLink>
       <Button v-if="canManage && detail && detail.status !== 'REMOVED'" variant="outline" :loading="switching" @click="toggle">{{ detail.active ? t('gads.control.pause') : t('gads.control.activate') }}</Button>
       <DateRangePicker v-model="period" :presets="presets" :max-days="ADS_MAX_DAYS" :aria-label="t('gads.period')" class="w-auto" />
     </template>

@@ -118,6 +118,7 @@ export interface GoogleAdsParent {
   external_id: string
   name: string
   bidding_strategy: string | null
+  channel_type: string | null
 }
 
 export interface GoogleAdsObjectDetail extends GoogleAdsObject {
@@ -243,4 +244,82 @@ export interface GoogleAdsRuleDecision {
   decided_at: string
   roi: number | null
   data: Record<string, unknown>
+}
+
+export type GoogleAdsChannel = 'SEARCH' | 'DISPLAY' | 'DEMAND_GEN'
+export type GoogleAdsBidding = 'MANUAL_CPC' | 'MAXIMIZE_CLICKS' | 'MAXIMIZE_CONVERSIONS'
+export type GoogleAdsMatchType = 'EXACT' | 'PHRASE' | 'BROAD'
+export type GoogleAdsOptionKind = 'location' | 'language' | 'audience'
+export type GoogleAdsJobKind = 'create' | 'edit'
+export type GoogleAdsJobState = 'queued' | 'running' | 'done' | 'failed'
+
+export interface GoogleAdsKeywordInput {
+  text: string
+  match_type: GoogleAdsMatchType
+}
+
+/** Um anúncio responsivo: caminho no site da conta, textos e as imagens já enviadas (recursos do Google). */
+export interface GoogleAdsAdInput {
+  link_path: string
+  headlines: string[]
+  descriptions: string[]
+  path1: string
+  path2: string
+  long_headline: string
+  business_name: string
+  marketing_images: string[]
+  square_images: string[]
+  logo_images: string[]
+}
+
+export interface GoogleAdsAdGroupInput {
+  name: string
+  ads: GoogleAdsAdInput[]
+  keywords: GoogleAdsKeywordInput[]
+  audiences: string[]
+  cpc: string | null
+}
+
+/** A campanha nova: sempre nasce pausada, com orçamento diário próprio. */
+export interface GoogleAdsDraftInput {
+  account_id: string
+  name: string
+  channel: GoogleAdsChannel
+  budget: string | null
+  bidding: GoogleAdsBidding
+  ad_groups: GoogleAdsAdGroupInput[]
+  locations: string[]
+  languages: string[]
+}
+
+export interface GoogleAdsEditInput {
+  name: string | null
+  cpc: string | null
+  ad: GoogleAdsAdInput | null
+}
+
+export interface GoogleAdsJob {
+  id: string
+  account_id: string
+  kind: GoogleAdsJobKind
+  state: GoogleAdsJobState
+  target_level: GoogleAdsLevel | null
+  target_external_id: string | null
+  created: Record<string, unknown>
+  error_code: string | null
+  error_message: string | null
+  created_at: string
+  updated_at: string
+  finished_at: string | null
+}
+
+export interface GoogleAdsOption {
+  id: string
+  name: string
+  detail: string
+}
+
+export interface GoogleAdsMedia {
+  asset: string
+  name: string
 }

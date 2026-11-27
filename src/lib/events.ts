@@ -36,6 +36,7 @@ interface EventMap {
   'metrics.updated': MetricsUpdated
   'gam_tool_run.updated': GamToolRunUpdated
   'facebook.job.updated': FacebookJobUpdated
+  'google_ads.job.updated': FacebookJobUpdated
   'install_check.updated': InstallCheckUpdated
 }
 type Type = keyof EventMap
