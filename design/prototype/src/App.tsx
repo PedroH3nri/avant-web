@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import { Toaster, toast } from 'sonner'
-import { Check, ChevronsUpDown, Copy, Plug, Loader2, Plus, RefreshCw, Search, X, AlertTriangle, ArrowLeft, MoreHorizontal, Lock, Mail, ExternalLink, Home, Users, Network, Settings, ShieldCheck, Menu, BarChart3, Wallet, Download, Trash2, Pin, PinOff, Pencil, LayoutGrid, List, Wrench, Gift, Monitor, Smartphone, Code2, MousePointerClick, ChevronUp, ChevronDown, History, PanelBottom, PanelTop, Maximize, TextQuote, CircleDollarSign, GripVertical, LifeBuoy } from 'lucide-react'
+import { Check, ChevronsUpDown, Copy, Plug, Loader2, Plus, RefreshCw, Search, X, AlertTriangle, ArrowLeft, MoreHorizontal, Lock, Mail, ExternalLink, Home, Users, Network, Settings, ShieldCheck, Menu, BarChart3, Wallet, Download, Trash2, Pin, PinOff, Pencil, LayoutGrid, List, Wrench, Gift, Monitor, Smartphone, Code2, MousePointerClick, ChevronUp, ChevronDown, History, PanelBottom, PanelTop, Maximize, TextQuote, CircleDollarSign, GripVertical, LifeBuoy, TrendingUp } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -19,6 +19,7 @@ import { translate, type Key, type Lang } from './i18n'
 import { Mark, SeatBar, SeatDot, SeatStrip, type SeatState } from './tiles'
 import { DateField, MonthField, PeriodPicker, PRESETS } from './date-pickers'
 import { DollarRate, NotificationCenter } from './navbar-extras'
+import { ActivationFunnelScreen, BenchmarkScreen, ForecastScreen, OpportunitiesScreen, PortfolioHealthScreen, TrafficQualityScreen } from './growth'
 import { AccessFilterSelect, AccessSortHeader, ClientAccessCard, ClientNurtureCard, ClientUsageScreen, CompanyUsageScreen, LastAccessCell, NurtureRuleScreen, NurtureScreen, UnsubscribeScreen, UsageCell, UsageColumnsMenu, matchesAccess, sortByAccess, useNurtureRules, type AccessFilter, type AccessSort, type UsageColumn } from './usage'
 import { HelpCenterScreen, HubspotRecordCard, HubspotScreen, HelpEditorScreen, NetworkDetailScreen, NpsScreen, ProspectsScreen } from './hubspot'
 
@@ -42,6 +43,12 @@ const SCREENS = [
   ['ajudainterno', 'Painel interno · Ferramentas · Central de ajuda'],
   ['prospeccao', 'Painel interno · Prospecção (HubSpot)'],
   ['npsinterno', 'Painel interno · NPS dos clientes (HubSpot)'],
+  ['carteira', 'Painel interno · Crescimento · Saúde da carteira'],
+  ['oportunidades', 'Painel interno · Crescimento · Oportunidades de receita'],
+  ['trafego', 'Painel interno · Crescimento · Qualidade do tráfego'],
+  ['funil', 'Painel interno · Crescimento · Funil de ativação'],
+  ['previsao', 'Painel interno · Crescimento · Previsão do mês'],
+  ['comparativo', 'Relatórios · Comparativo com a rede'],
   ['equipe', 'Equipe'],
   ['grupos', 'Equipe · Grupos'],
   ['grupo', 'Equipe · Página do grupo'],
@@ -139,7 +146,7 @@ const SCREENS = [
   ['seletordatas', 'Componentes · Seletor de datas'],
 ] as const
 type Screen = (typeof SCREENS)[number][0]
-const INTERNAL_SCREENS: Screen[] = ['clienteuso', 'empresauso', 'nutricaointerno', 'nutricaoregrainterno', 'networkinterno', 'hubspotinterno', 'ajudainterno', 'prospeccao', 'npsinterno', 'gadsinterno', 'gadscampanhasinterno', 'gadscampanhainterno', 'gadsgrupointerno', 'gadsanunciointerno', 'fbinterno', 'fbcampanhasinterno', 'fbcampanhainterno', 'fbconjuntointerno', 'fbanunciointerno', 'interno', 'cliente', 'siteinterno', 'contratos', 'resultados', 'papelcomissao', 'minhacomissao', 'comissoes', 'minhasinvoices', 'invoice', 'invoices', 'servicosinvoice', 'modelosdash', 'tarefas', 'tarefa', 'checklists', 'checklist', 'checklistitens', 'ferramentasgam', 'execucaogam', 'rewardsinterno', 'rewardinterno', 'rewardmetricasinterno', 'adtagsinterno', 'adtaginterno', 'adtagmetricasinterno', 'loadersinterno', 'loaderinterno', 'regrasprecointerno', 'regrasiteinterno', 'regrainterno', 'cascatainterno']
+const INTERNAL_SCREENS: Screen[] = ['carteira', 'oportunidades', 'trafego', 'funil', 'previsao', 'clienteuso', 'empresauso', 'nutricaointerno', 'nutricaoregrainterno', 'networkinterno', 'hubspotinterno', 'ajudainterno', 'prospeccao', 'npsinterno', 'gadsinterno', 'gadscampanhasinterno', 'gadscampanhainterno', 'gadsgrupointerno', 'gadsanunciointerno', 'fbinterno', 'fbcampanhasinterno', 'fbcampanhainterno', 'fbconjuntointerno', 'fbanunciointerno', 'interno', 'cliente', 'siteinterno', 'contratos', 'resultados', 'papelcomissao', 'minhacomissao', 'comissoes', 'minhasinvoices', 'invoice', 'invoices', 'servicosinvoice', 'modelosdash', 'tarefas', 'tarefa', 'checklists', 'checklist', 'checklistitens', 'ferramentasgam', 'execucaogam', 'rewardsinterno', 'rewardinterno', 'rewardmetricasinterno', 'adtagsinterno', 'adtaginterno', 'adtagmetricasinterno', 'loadersinterno', 'loaderinterno', 'regrasprecointerno', 'regrasiteinterno', 'regrainterno', 'cascatainterno']
 const isScreen = (s: string): s is Screen => SCREENS.some(([k]) => k === s)
 type T = (k: Key) => string
 
@@ -215,7 +222,7 @@ export function Status({ tone, children }: { tone: 'ok' | 'warn' | 'bad' | 'neut
 
 /* ---------- Verificação de instalação (decisão 21) ---------- */
 
-type InstallKind = 'tag' | 'loader' | 'reward'
+type InstallKind = 'tag' | 'loader' | 'reward' | 'security'
 type InstallSeverity = 'error' | 'warn' | 'ok'
 type InstallFinding = { severity: InstallSeverity; title: string; page: string; snippet?: string; fix?: string }
 type InstallResult = { checkedAt: string; by: string; pages: string[]; findings: InstallFinding[] }
@@ -252,7 +259,16 @@ function mockInstallResult(kind: InstallKind, id: string, domain: string, page: 
     if (seed === 1) findings.unshift({ severity: 'warn', title: 'O reward.js está sem async', page: target, snippet: '<script src="https://cdn.groone.com/reward.js">', fix: 'Ponha async na linha para não atrasar a página.' })
     if (seed === 2) findings.unshift({ severity: 'error', title: 'O rewards.min.js antigo do Genius ainda está na página', page: target, snippet: '<script src="https://genius.groone.com/rewards.min.js">', fix: 'Tire a linha antiga. Com as duas, a janela abre duas vezes.' })
   }
-  return { checkedAt: 'agora', by, pages: kind === 'reward' ? [target] : [home, article, `https://${domain}/ads.txt`], findings }
+  if (kind === 'security') {
+    findings.push(
+      { severity: 'error', title: 'Script ofuscado de domínio desconhecido', page: article, snippet: '<script src="https://cdn-stat-js.top/a.js"> · eval(atob("ZG9jdW1lbnQ…"))', fix: 'O script decodifica e executa código na hora, padrão de cloaker e de malware. Pergunte ao cliente o que é e tire do site.' },
+      { severity: 'error', title: 'Script que muda a página conforme a origem da visita', page: article, snippet: 'if (/fbclid|utm_source=facebook/.test(location.search) && !/FBAN|facebookexternalhit/.test(navigator.userAgent)) { … }', fix: 'Mostra uma página para quem vem do anúncio e outra para o revisor da Meta. É cloaker: o cliente precisa tirar.' },
+      { severity: 'warn', title: 'Iframe escondido de outro domínio', page: home, snippet: '<iframe src="https://promo-click.xyz/" width="1" height="1" style="opacity:0">', fix: 'Iframe invisível de terceiros pode gerar tráfego e cliques falsos. Confira com o cliente.' },
+      { severity: 'warn', title: '42 links escondidos para sites de apostas', page: home, snippet: '<div style="display:none"><a href="https://…">…</a> ×42', fix: 'Spam de SEO injetado, comum em WordPress invadido. Recomende atualizar os plugins e trocar as senhas.' },
+      ok('Nenhum minerador de criptomoeda', home), ok('Nenhum script de lista de cloakers conhecidos', home), ok('Google Safe Browsing sem alerta', home),
+    )
+  }
+  return { checkedAt: 'agora', by, pages: kind === 'reward' ? [target] : kind === 'security' ? [home, article, `https://${domain}/contato`] : [home, article, `https://${domain}/ads.txt`], findings }
 }
 
 /** O resumo da última verificação: erros vencem avisos, e sem verificação fica "Não verificado". */
@@ -267,7 +283,7 @@ function installSummary(result: InstallResult | null): { tone: 'bad' | 'warn' | 
 
 /** O resultado de ontem, da rotina diária; um item de cada três ainda não foi verificado. */
 function initialInstallResult(kind: InstallKind, id: string, domain: string, page: string): InstallResult | null {
-  if ((installSeed(`${id}x`) === 0 && kind !== 'tag')) return null
+  if ((installSeed(`${id}x`) === 0 && kind !== 'tag' && kind !== 'security')) return null
   return { ...mockInstallResult(kind, id, domain, page, 'Rotina diária'), checkedAt: 'hoje, 04:12' }
 }
 
@@ -304,14 +320,14 @@ function InstallCheck({ kind, id, domain, page = '', name }: { kind: InstallKind
 
 /** A janela com o resultado: achados por gravidade, a página, o trecho encontrado e o que fazer. */
 function InstallResultDialog({ open, onOpenChange, result, name, kind, running, wait, run }: { open: boolean; onOpenChange: (open: boolean) => void; result: InstallResult | null; name: string; kind: InstallKind; running: boolean; wait: number; run: () => void }) {
-  const what = { tag: 'da ad tag', loader: 'do loader', reward: 'do reward' }[kind]
+  const what = { tag: 'da ad tag', loader: 'do loader', reward: 'do reward', security: 'Segurança' }[kind]
   const order: InstallSeverity[] = ['error', 'warn', 'ok']
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[640px]">
         <DialogHeader>
-          <DialogTitle>Instalação {what} {name}</DialogTitle>
-          <DialogDescription>{result ? `Verificado ${result.checkedAt} · ${result.by}. Lemos o <head> e o <body> de ${result.pages.length === 1 ? 'uma página' : `${result.pages.length} endereços`} do site, sem executar JavaScript.` : 'Ainda não verificado.'}</DialogDescription>
+          <DialogTitle>{kind === 'security' ? `Segurança de ${name}` : `Instalação ${what} ${name}`}</DialogTitle>
+          <DialogDescription>{result ? `Verificado ${result.checkedAt} · ${result.by}. ${kind === 'security' ? `Lemos o HTML e os scripts externos de ${result.pages.length} páginas do site, sem executar nada.` : `Lemos o <head> e o <body> de ${result.pages.length === 1 ? 'uma página' : `${result.pages.length} endereços`} do site, sem executar JavaScript.`}` : 'Ainda não verificado.'}</DialogDescription>
         </DialogHeader>
         {result && (
           <div className="grid max-h-[60vh] gap-5 overflow-y-auto pr-1">
@@ -565,7 +581,7 @@ function CompanySwitcher({ t, internal, image }: { t: T; internal: boolean; imag
 type RailGroup = { key: string; label: string; icon: typeof Home; items: { id: Screen; label: string; also?: Screen[]; separated?: boolean }[] }
 const CLIENT_RAIL: RailGroup[] = [
   { key: 'inicio', label: 'Início', icon: Home, items: [{ id: 'inicio', label: 'Dashboard' }] },
-  { key: 'relatorios', label: 'Relatórios', icon: BarChart3, items: [{ id: 'desempenho', label: 'Ad Manager' }, { id: 'visitas', label: 'Page Views' }, { id: 'relatorios', label: 'Relatórios customizados', also: ['construtor', 'relatorio'], separated: true }] },
+  { key: 'relatorios', label: 'Relatórios', icon: BarChart3, items: [{ id: 'desempenho', label: 'Ad Manager' }, { id: 'visitas', label: 'Page Views' }, { id: 'comparativo', label: 'Comparativo com a rede' }, { id: 'relatorios', label: 'Relatórios customizados', also: ['construtor', 'relatorio'], separated: true }] },
   { key: 'integracoes', label: 'Integrações', icon: Plug, items: [{ id: 'facebook', label: 'Facebook', also: ['fbvazio', 'fbconectar', 'fbpessoas', 'fbavisos', 'fbhistorico'] }, { id: 'fbcampanhas', label: 'Campanhas do Facebook', also: ['fbnovacampanha', 'fbcampanha', 'fbconjunto', 'fbanuncio', 'fbeditar'] }, { id: 'gads', label: 'Google Ads', also: ['gadsvazio', 'gadsconectar', 'gadspessoas', 'gadsavisos', 'gadshistorico'] }, { id: 'gadscampanhas', label: 'Campanhas do Google Ads', also: ['gadsnovacampanha', 'gadscampanha', 'gadsgrupo', 'gadsanuncio', 'gadseditar'] }] },
   { key: 'financeiro', label: 'Financeiro', icon: Wallet, items: [{ id: 'resultado', label: 'Resultado' }, { id: 'custos', label: 'Custos' }, { id: 'controlecustos', label: 'Controle de custos' }] },
   { key: 'inventario', label: 'Inventário', icon: Network, items: [{ id: 'networks', label: 'Networks do GAM', also: ['conectar'] }, { id: 'rewards', label: 'Rewards', also: ['reward', 'rewardmetricas'] }, { id: 'adtags', label: 'Ad tags', also: ['adtag', 'adtagmetricas'] }, { id: 'loaders', label: 'Loaders', also: ['loader'] }, { id: 'regraspreco', label: 'Regras de preço', also: ['regrasite', 'regra', 'cascata'] }] },
@@ -575,6 +591,7 @@ const CLIENT_RAIL: RailGroup[] = [
 ]
 const INTERNAL_RAIL: RailGroup[] = [
   { key: 'clientes', label: 'Inventário', icon: Users, items: [{ id: 'interno', label: 'Clientes', also: ['cliente', 'siteinterno', 'networkinterno'] }, { id: 'prospeccao', label: 'Prospecção' }, { id: 'npsinterno', label: 'NPS dos clientes' }, { id: 'contratos', label: 'Contratos' }, { id: 'resultados', label: 'Resultado dos clientes' }, { id: 'checklists', label: 'Checklists', also: ['checklist', 'checklistitens'] }, { id: 'rewardsinterno', label: 'Rewards', also: ['rewardinterno', 'rewardmetricasinterno'] }, { id: 'adtagsinterno', label: 'Ad tags', also: ['adtaginterno', 'adtagmetricasinterno'] }, { id: 'loadersinterno', label: 'Loaders', also: ['loaderinterno'] }, { id: 'regrasprecointerno', label: 'Regras de preço', also: ['regrasiteinterno', 'regrainterno', 'cascatainterno'] }] },
+  { key: 'crescimento', label: 'Crescimento', icon: TrendingUp, items: [{ id: 'carteira', label: 'Saúde da carteira' }, { id: 'oportunidades', label: 'Oportunidades de receita' }, { id: 'trafego', label: 'Qualidade do tráfego' }, { id: 'funil', label: 'Funil de ativação' }, { id: 'previsao', label: 'Previsão do mês' }] },
   { key: 'integracoes', label: 'Integrações', icon: Plug, items: [{ id: 'hubspotinterno', label: 'HubSpot' }, { id: 'fbinterno', label: 'Facebook' }, { id: 'fbcampanhasinterno', label: 'Campanhas do Facebook', also: ['fbcampanhainterno', 'fbconjuntointerno', 'fbanunciointerno'] }, { id: 'gadsinterno', label: 'Google Ads' }, { id: 'gadscampanhasinterno', label: 'Campanhas do Google Ads', also: ['gadscampanhainterno', 'gadsgrupointerno', 'gadsanunciointerno'] }] },
   { key: 'comissoes', label: 'Comissões', icon: Wallet, items: [{ id: 'minhacomissao', label: 'Minha comissão' }, { id: 'minhasinvoices', label: 'Minhas invoices' }, { id: 'comissoes', label: 'Comissões da equipe' }, { id: 'invoices', label: 'Invoices', also: ['servicosinvoice', 'invoice'] }] },
   { key: 'ferramentas', label: 'Ferramentas', icon: Wrench, items: [{ id: 'tarefas', label: 'Tarefas', also: ['tarefa'] }, { id: 'modelosdash', label: 'Modelos de dashboard' }, { id: 'ferramentasgam', label: 'Ferramentas do GAM', also: ['execucaogam'] }, { id: 'nutricaointerno', label: 'Nutrição', also: ['nutricaoregrainterno'] }, { id: 'ajudainterno', label: 'Central de ajuda' }] },
@@ -1846,6 +1863,21 @@ function ClientSiteScreen({ go }: { go: (s: Screen) => void }) {
               <ul className="flex flex-wrap gap-2"><li><button onClick={() => setCustom('Paginação')} className="inline-flex items-center gap-1.5 rounded-md border border-dashed px-2.5 py-1 text-[13px] text-muted-foreground hover:bg-muted">Paginação</button></li></ul>
             </div>
             <p className="text-[13px] text-muted-foreground">Clique num item para conferir de outro jeito só neste site. Os outros sites seguem o padrão de Checklists › Itens.</p>
+          </div>
+        </Card>
+        <Card title="Segurança do site" className="self-start" desc="Scripts suspeitos e código malicioso nas páginas, mais o que a ad tag notou nas visitas reais." footerNote="Rotina diária às 04:00 · a ad tag reporta o tempo todo">
+          <div className="grid gap-4 text-[14px]">
+            <div className="flex flex-wrap items-center justify-between gap-3"><span className="font-medium">Verificação das páginas</span><InstallCheck kind="security" id="blogexemplo-sec" domain="blogexemplo.com" name="blogexemplo.com" /></div>
+            <div className="grid gap-2 border-t pt-4">
+              <div className="flex items-center justify-between gap-3"><span className="font-medium">Sinais da ad tag (7 dias)</span><Status tone="bad">Suspeita de cloaker</Status></div>
+              <ul className="grid gap-1.5 text-[13px]">
+                <li className="flex justify-between gap-3"><span>Conteúdo diferente na mesma URL com utm_source=facebook</span><span className="tnum text-muted-foreground">214 visitas</span></li>
+                <li className="flex justify-between gap-3"><span>Corpo da página trocado depois de carregar</span><span className="tnum text-muted-foreground">198 visitas</span></li>
+                <li className="flex justify-between gap-3"><span>Iframe de outro domínio em tela cheia</span><span className="tnum text-muted-foreground">0</span></li>
+                <li className="flex justify-between gap-3"><span>Anúncio coberto por elemento transparente</span><span className="tnum text-muted-foreground">0</span></li>
+              </ul>
+              <Button size="sm" variant="outline" className="mt-1 h-8 w-fit" onClick={() => go('trafego')}>Ver na Qualidade do tráfego</Button>
+            </div>
           </div>
         </Card>
         <section className="grid gap-3 lg:col-span-2 min-[1920px]:col-span-3">
@@ -10727,6 +10759,12 @@ export default function App() {
       case 'ajuda': return <HelpCenterScreen />
       case 'hubspotinterno': return <HubspotScreen />
       case 'prospeccao': return <ProspectsScreen go={(next) => go(next as Screen)} />
+      case 'carteira': return <PortfolioHealthScreen go={(next) => go(next as Screen)} />
+      case 'oportunidades': return <OpportunitiesScreen go={(next) => go(next as Screen)} />
+      case 'trafego': return <TrafficQualityScreen go={(next) => go(next as Screen)} />
+      case 'funil': return <ActivationFunnelScreen go={(next) => go(next as Screen)} />
+      case 'previsao': return <ForecastScreen />
+      case 'comparativo': return <BenchmarkScreen />
       case 'npsinterno': return <NpsScreen go={(next) => go(next as Screen)} />
       case 'seletordatas': return <DatePickersScreen />
       case 'equipe': return <TeamScreen t={t} go={go} members={members} setMembers={setMembers} groupCount={groups.length} />

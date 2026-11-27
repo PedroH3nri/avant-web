@@ -23,6 +23,8 @@ export function noticeTitle(item: AppNotification): string {
   if (item.kind === 'task_assigned') return t('notif.taskAssigned.title')
   if (item.kind === 'task_comment') return t('notif.taskComment.title', { author: field(item, 'author') })
   if (item.kind === 'gam_tool') return t(field(item, 'state') === 'failed' ? 'notif.gamTool.failed' : 'notif.gamTool.done')
+  if (item.kind === 'revenue_drop') return t('notif.revenueDrop.title', { client: field(item, 'client') })
+  if (item.kind === 'nps_detractor') return t('notif.npsDetractor.title')
   return t('notif.invite.title')
 }
 
@@ -37,6 +39,8 @@ export function noticeText(item: AppNotification): string {
   if (item.kind === 'task_assigned') return t('notif.taskAssigned.text', { subject: field(item, 'subject'), author: field(item, 'author') })
   if (item.kind === 'task_comment') return `${field(item, 'subject')}: ${field(item, 'comment')}`
   if (item.kind === 'gam_tool') return t('notif.gamTool.text', { network: field(item, 'network'), n: Number(item.data.domains ?? 0) })
+  if (item.kind === 'revenue_drop') return t('notif.revenueDrop.text', { change: Math.abs(Number(item.data.change ?? 0)) })
+  if (item.kind === 'nps_detractor') return t('notif.npsDetractor.text', { person: field(item, 'person'), company: field(item, 'company'), score: field(item, 'score') })
   return t('notif.invite.text', { name: field(item, 'name'), company: field(item, 'company') })
 }
 
