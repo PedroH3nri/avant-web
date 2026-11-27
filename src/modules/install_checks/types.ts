@@ -1,6 +1,6 @@
 /** Formatos da API da verificação de instalação (iguais ao dto.py de modules/install_checks no avant-api). Datas em ISO 8601 UTC. */
 
-export type InstallTarget = 'ad_tag' | 'loader' | 'reward'
+export type InstallTarget = 'ad_tag' | 'loader' | 'reward' | 'security'
 export type FindingSeverity = 'error' | 'warning' | 'ok'
 
 /** O resumo da última verificação, na coluna "Instalação" das listas. */

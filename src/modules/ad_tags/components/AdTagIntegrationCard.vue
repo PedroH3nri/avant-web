@@ -1,10 +1,10 @@
 <script setup lang="ts">
 /** Cartão de uma integração da ad tag: logo, nome, descrição, se está ligada e os campos. */
-import { CircleDollarSign, Gift, LoaderCircle } from 'lucide-vue-next'
+import { CircleDollarSign, Gift, LoaderCircle, ShieldCheck } from 'lucide-vue-next'
 import Status from '@/components/ui/Status.vue'
 import { t } from '@/lib/i18n'
 
-export type IntegrationKind = 'analytics' | 'mgid' | 'loader' | 'reward' | 'priceRules'
+export type IntegrationKind = 'analytics' | 'mgid' | 'loader' | 'reward' | 'priceRules' | 'security'
 
 defineProps<{ kind: IntegrationKind; title: string; desc: string; on: boolean }>()
 </script>
@@ -25,6 +25,7 @@ defineProps<{ kind: IntegrationKind; title: string; desc: string; on: boolean }>
         </svg>
         <span v-else-if="kind === 'loader'" class="grid size-full place-items-center bg-sky-600 text-white"><LoaderCircle class="size-4" /></span>
         <span v-else-if="kind === 'reward'" class="grid size-full place-items-center bg-foreground text-background"><Gift class="size-4" /></span>
+        <span v-else-if="kind === 'security'" class="grid size-full place-items-center bg-foreground text-background"><ShieldCheck class="size-4" /></span>
         <span v-else class="grid size-full place-items-center bg-emerald-600 text-white"><CircleDollarSign class="size-4" /></span>
       </span>
       <div class="min-w-0 flex-1">

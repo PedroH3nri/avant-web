@@ -27,7 +27,7 @@ export interface FacebookJobUpdated {
 }
 
 export interface InstallCheckUpdated {
-  target: 'ad_tag' | 'loader' | 'reward'
+  target: 'ad_tag' | 'loader' | 'reward' | 'security'
   target_id: string
 }
 
