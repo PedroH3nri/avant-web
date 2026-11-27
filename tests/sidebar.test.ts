@@ -22,7 +22,7 @@ describe('menu do painel', () => {
   })
 
   it('com uma Empresa cliente ativa mostra os links dela, sem os internos (também para a equipe Groone)', () => {
-    expect(labels(false)).toEqual(['Dashboard', 'Equipes', 'Networks do GAM', 'Sites', 'Rewards', 'Ad tags', 'Loaders', 'Regras de preço', 'Ad Manager', 'Page Views', 'Resultado', 'Campanhas do Facebook', 'Campanhas do Google Ads', 'Controle de custos', 'Relatórios customizados', 'Facebook', 'Google Ads', 'Papéis e permissões', 'Custos', 'Central de ajuda'])
+    expect(labels(false)).toEqual(['Dashboard', 'Equipes', 'Networks do GAM', 'Sites', 'Rewards', 'Ad tags', 'Loaders', 'Regras de preço', 'Ad Manager', 'Page Views', 'Resultado', 'Comparativo com a rede', 'Campanhas do Facebook', 'Campanhas do Google Ads', 'Controle de custos', 'Relatórios customizados', 'Facebook', 'Google Ads', 'Papéis e permissões', 'Custos', 'Central de ajuda'])
     expect(headers(false)).toEqual(['Inventário', 'Relatórios', 'Integrações', 'Empresa', 'Ajuda'])
     expect(labels(false)).not.toContain('Equipe Groone')
   })
