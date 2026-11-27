@@ -2,7 +2,7 @@
 
 import { computed, type Component } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { BellRing, BookOpen, Building, Building2, ChartLine, CircleDollarSign, Code2, Coins, Eye, FileChartColumn, FileSignature, FileText, Gift, Globe, IdCard, LayoutDashboard, LayoutTemplate, ListChecks, ListTodo, LifeBuoy, LoaderCircle, MailCheck, MailPlus, MessageSquareHeart, Network, Plug, Receipt, ReceiptText, Scale, ShieldCheck, Target, Users, UserSearch, UsersRound, Wallet, Wrench } from 'lucide-vue-next'
+import { BellRing, BookOpen, Building, Building2, ChartLine, CircleDollarSign, Code2, Coins, Eye, FileChartColumn, FileSignature, FileText, Gift, Globe, IdCard, LayoutDashboard, LayoutTemplate, ListChecks, ListTodo, LifeBuoy, LoaderCircle, MailCheck, MailPlus, MessageSquareHeart, Network, PiggyBank, Plug, Receipt, ReceiptText, Scale, ShieldCheck, Target, Users, UserSearch, UsersRound, Wallet, Wrench } from 'lucide-vue-next'
 import FacebookIcon from '@/components/FacebookIcon.vue'
 import GoogleAdsIcon from '@/components/GoogleAdsIcon.vue'
 import HubspotIcon from '@/components/HubspotIcon.vue'
@@ -62,6 +62,8 @@ export const NAV_GROUPS: NavGroup[] = [
       { to: '/interno/campanhas-facebook', key: 'nav.facebookCampaigns', icon: FacebookIcon, internal: true, separated: true },
       { to: '/campanhas-google-ads', key: 'nav.googleAdsCampaigns', icon: GoogleAdsIcon, clientOnly: true },
       { to: '/interno/campanhas-google-ads', key: 'nav.googleAdsCampaigns', icon: GoogleAdsIcon, internal: true },
+      { to: '/controle-de-custos', key: 'nav.costControl', icon: PiggyBank, clientOnly: true },
+      { to: '/interno/controle-de-custos', key: 'nav.costControl', icon: PiggyBank, internal: true },
       { to: '/relatorios', key: 'nav.customReports', icon: FileChartColumn, separated: true },
     ],
   },
