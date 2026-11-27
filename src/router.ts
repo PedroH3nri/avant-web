@@ -31,6 +31,7 @@ const routes: RouteRecordRaw[] = [
       { path: 'relatorios/:id', component: () => import('@/modules/reports/views/ReportView.vue'), meta: { permission: 'reports.view' } },
       { path: 'relatorios/:id/editar', component: () => import('@/modules/reports/views/ReportBuilderView.vue'), meta: { permission: 'reports.view' } },
       { path: 'resultado', component: () => import('@/modules/results/views/ResultsView.vue'), meta: { permission: 'results.view' } },
+      { path: 'comparativo', component: () => import('@/modules/benchmark/views/BenchmarkView.vue'), meta: { permission: 'benchmark.view' } },
       { path: 'facebook', component: () => import('@/modules/facebook/views/FacebookView.vue'), meta: { permission: 'facebook.view' } },
       { path: 'controle-de-custos', component: () => import('@/modules/cost_control/views/CostControlView.vue'), meta: { permission: 'costs.integrations.view' } },
       { path: 'campanhas-facebook', component: () => import('@/modules/facebook/views/FacebookCampaignsView.vue'), meta: { permission: 'facebook.view' } },
