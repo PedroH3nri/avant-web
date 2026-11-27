@@ -14,7 +14,8 @@ import Status from '@/components/ui/Status.vue'
 import TableState from '@/components/ui/TableState.vue'
 import { ApiError } from '@/lib/api'
 import { formatMonth } from '@/modules/costs/rules'
-import { errorText, locale, t } from '@/lib/i18n'
+import { errorText, locale, t, type Key } from '@/lib/i18n'
+import { INTEGRATION_COLOR } from '@/modules/cost_control/rules'
 import { formatMetric } from '@/lib/metrics'
 import { margin, negative, RESULT_PERIODS, resultRange, type ResultPeriod } from '@/modules/results/rules'
 import { td, th } from '@/lib/table'
@@ -147,13 +148,23 @@ const marginText = computed(() => {
       </DataTable>
 
       <Card v-if="selected" :title="t('res.costsOf', { month: formatMonth(selected.month, locale) })" :desc="t('res.costsDesc')" :footer-note="t('res.deductionsNote')">
-        <p v-if="!selected.cost_lines.length" class="text-[14px] text-muted-foreground">{{ t('res.noCosts') }}</p>
+        <p v-if="!selected.cost_lines.length && !selected.integration_lines.length" class="text-[14px] text-muted-foreground">{{ t('res.noCosts') }}</p>
         <ul v-else class="divide-y rounded-md border">
           <li v-for="line in selected.cost_lines" :key="line.cost_id" class="flex items-center justify-between gap-4 px-4 py-3 text-[14px]">
             <span class="min-w-0 truncate">{{ line.name }}</span>
             <span :class="valueClass(negative(line.amount))">{{ money(negative(line.amount)) }}</span>
           </li>
+          <li v-for="line in selected.integration_lines" :key="line.integration" class="flex items-center justify-between gap-4 px-4 py-3 text-[14px]">
+            <span class="flex min-w-0 items-center gap-2 truncate">
+              <span class="size-2 shrink-0 rounded-full" :style="{ background: INTEGRATION_COLOR[line.integration] }" aria-hidden="true" />{{ t('res.integrationLine', { name: t(`cc.int.${line.integration}` as Key) }) }}
+            </span>
+            <span :class="valueClass(negative(line.amount))">{{ money(negative(line.amount)) }}</span>
+          </li>
         </ul>
+        <p v-if="selected.integration_lines.length" class="mt-3 text-[13px] text-muted-foreground">
+          {{ t('res.integrationLinesNote') }}
+          <button v-if="session.can('costs.integrations.view')" type="button" class="text-link hover:underline" @click="router.push('/controle-de-custos')">{{ t('nav.costControl') }}</button>
+        </p>
         <template v-if="session.can('costs.view')" #footer>
           <Button variant="outline" size="sm" @click="router.push('/custos')">{{ t('res.editCosts') }}</Button>
         </template>

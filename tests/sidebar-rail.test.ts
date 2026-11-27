@@ -94,7 +94,7 @@ describe('SidebarRail', () => {
     expect(wrapper.find('#rail-panel [aria-current="page"]').text()).toBe('Clientes')
     expect(wrapper.find('#rail-panel hr').element.nextElementSibling?.textContent).toBe('Rewards')
     await hoverAndWait(reports!)
-    expect(panelLabels(wrapper)).toEqual(['Ad Manager', 'Page Views', 'Resultado', 'Resultado dos clientes', 'Metas', 'Campanhas do Facebook', 'Campanhas do Google Ads', 'Relatórios customizados'])
+    expect(panelLabels(wrapper)).toEqual(['Ad Manager', 'Page Views', 'Resultado', 'Resultado dos clientes', 'Metas', 'Campanhas do Facebook', 'Campanhas do Google Ads', 'Controle de custos', 'Relatórios customizados'])
     const separators = wrapper.findAll('#rail-panel hr')
     expect(separators.map((separator) => separator.element.nextElementSibling?.textContent)).toEqual(['Campanhas do Facebook', 'Relatórios customizados'])
     await hoverAndWait(tools!)
