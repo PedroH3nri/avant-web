@@ -238,9 +238,22 @@ export function OpportunitiesScreen({ go }: { go: Go }) {
 type Share = { label: string; now: number; normal: number }
 type Breakdown = { title: string; rows: Share[] }
 type AdFacts = { platform: 'Facebook' | 'Google Ads'; account: string; campaign: string; spend: string; adCtr: string; cpc: string; holder: string }
-type TrafficAlert = { id: number; target: string; domain: string; client: string; source: string; signal: string; normal: string; since: string; risk: 'Alto' | 'Médio'; series: number[]; baseline: number; unit: string; breakdowns: Breakdown[]; ad?: AdFacts; notes: string[] }
+type TrafficAlert = { id: number; target: string; domain: string; client: string; source: string; signal: string; normal: string; since: string; risk: 'Alto' | 'Médio'; series: number[]; baseline: number; unit: string; breakdowns: Breakdown[]; ad?: AdFacts; notes: string[]; evidence?: { signal: string; visits: number; example: string }[] }
 
 const TRAFFIC: TrafficAlert[] = [
+  {
+    id: 5, target: 'blogexemplo.com', domain: 'blogexemplo.com', client: 'Blog Exemplo', source: 'Ad tag · Suspeita de cloaker', signal: 'Conteúdo diferente na mesma URL', normal: 'mesma página para todos', since: '27/11', risk: 'Alto', series: [0, 0, 0, 0, 0, 0, 12, 61, 140, 214], baseline: 0, unit: 'visitas com sinal',
+    evidence: [
+      { signal: 'Mesma URL, conteúdo diferente com utm_source=facebook', visits: 214, example: '/receitas/bolo-de-cenoura: "Bolo de cenoura fofinho" sem UTM; "Ganhe R$ 500 no cadastro" com UTM' },
+      { signal: 'Corpo da página trocado 1,2 s depois de carregar', visits: 198, example: 'Script de cdn-stat-js.top troca o <main> inteiro' },
+      { signal: 'Só acontece fora do navegador do Facebook', visits: 214, example: 'Nenhum caso com FBAN/FBIOS no navegador' },
+    ],
+    breakdowns: [
+      { title: 'Visitas com o sinal, por origem', rows: [{ label: 'facebook', now: 97, normal: 34 }, { label: 'orgânico', now: 3, normal: 51 }] },
+      { title: 'Por país', rows: [{ label: 'Brasil', now: 100, normal: 92 }, { label: 'outros', now: 0, normal: 8 }] },
+    ],
+    notes: ['Os anúncios continuam: os sinais estão em modo de observação. Quando a regra passar a bloquear, a tag não monta anúncio nessas visitas.', 'O responsável pelo site e o gerente receberam o aviso no sino.'],
+  },
   {
     id: 1, target: 'apostasja.bet', domain: 'apostasja.bet', client: 'Apostas Já', source: 'Facebook · Campanha "Bônus BR 11"', signal: 'CTR de 4,8%', normal: '0,9% no site', since: '23/11', risk: 'Alto', series: [0.8, 0.9, 1, 0.9, 1.1, 0.9, 2.6, 3.9, 4.4, 4.8], baseline: 0.9, unit: '% de CTR',
     breakdowns: [
@@ -341,7 +354,7 @@ export function TrafficQualityScreen({ go }: { go: Go }) {
       <PageHeader title="Qualidade do tráfego" sub="Sinais de tráfego inválido (IVT) por site, campanha e network, para agir antes de o GAM deduzir a receita ou limitar a conta da Groone." />
       <Body>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Kpi label="Alertas abertos" value={String(TRAFFIC.length)} tone="bad" note="2 de risco alto" />
+          <Kpi label="Alertas abertos" value={String(TRAFFIC.length)} tone="bad" note="3 de risco alto, 1 de cloaker" />
           <Kpi label="Dedução do GAM em outubro" value="4,6%" note="Na rede toda; setembro 3,9%" />
           <Kpi label="Receita sob alerta (7 dias)" value={usd(3870)} note="Dos sites e campanhas abaixo" />
           <Kpi label="Campanhas pausadas por alerta" value="3" note="Em novembro, pelo dono da conta" />
@@ -379,6 +392,14 @@ export function TrafficQualityScreen({ go }: { go: Go }) {
               ) : <div className="rounded-md border p-4 text-[13px] text-muted-foreground">Nenhuma campanha conectada no Avant explica esse tráfego. Use os links abaixo para achar quem está divulgando o site.</div>}
             </div>
           </div>
+          {open.evidence && (
+              <div className="mt-6 overflow-hidden rounded-md border">
+                <div className="border-b bg-muted px-4 py-2.5 text-[13px] font-medium">O que a ad tag viu</div>
+                <ul className="divide-y">{open.evidence.map((item) => (
+                  <li key={item.signal} className="grid gap-1 px-4 py-3 sm:grid-cols-[1fr_auto] sm:gap-4"><div><div className="text-[14px] font-medium">{item.signal}</div><div className="text-[13px] text-muted-foreground">{item.example}</div></div><span className="text-[13px] tnum text-muted-foreground">{item.visits} visitas</span></li>
+                ))}</ul>
+              </div>
+            )}
           <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{open.breakdowns.map((breakdown) => <BreakdownList key={breakdown.title} breakdown={breakdown} />)}</div>
           <ul className="mt-5 grid gap-2 text-[13px]">{open.notes.map((note) => <li key={note} className="flex gap-2"><span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-foreground" />{note}</li>)}</ul>
           <div className="mt-6 border-t pt-5">

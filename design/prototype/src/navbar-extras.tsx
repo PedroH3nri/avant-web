@@ -1,6 +1,6 @@
 /* Navbar: o card da cotação do dólar e a central de notificações, ao lado do seletor de idioma. */
 import { useState } from 'react'
-import { AlertTriangle, ArrowDownRight, ArrowUpRight, Bell, BellOff, CalendarDays, ChartLine, CheckCheck, CircleCheck, ClipboardList, DollarSign, Gift, Info, Megaphone, Send, Star, UserPlus, Users, Wrench, X } from 'lucide-react'
+import { AlertTriangle, ArrowDownRight, ArrowUpRight, Bell, BellOff, CalendarDays, ChartLine, CheckCheck, CircleCheck, ClipboardList, DollarSign, Gift, Info, Megaphone, Send, Star, UserPlus, Users, Wrench, X, ShieldAlert } from 'lucide-react'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
@@ -63,7 +63,7 @@ export function DollarRate({ className }: { className?: string }) {
   )
 }
 
-type NoticeKind = 'alert' | 'task' | 'gam' | 'install' | 'invite' | 'manual'
+type NoticeKind = 'alert' | 'task' | 'gam' | 'install' | 'invite' | 'manual' | 'cloaker'
 type Notice = { id: number; kind: NoticeKind; title: string; text: string; at: string; read: boolean }
 
 const NOTICE_ICONS: Record<NoticeKind, { icon: typeof Bell; tone: string }> = {
@@ -73,9 +73,11 @@ const NOTICE_ICONS: Record<NoticeKind, { icon: typeof Bell; tone: string }> = {
   install: { icon: AlertTriangle, tone: 'text-ochre' },
   invite: { icon: UserPlus, tone: 'text-ok' },
   manual: { icon: Megaphone, tone: 'text-foreground' },
+  cloaker: { icon: ShieldAlert, tone: 'text-bad' },
 }
 
 const NOTICES: Notice[] = [
+  { id: 9, kind: 'cloaker', title: 'Suspeita de cloaker em blogexemplo.com', text: 'A ad tag viu conteúdo diferente na mesma URL para quem vem com utm_source=facebook (214 visitas). Veja a Segurança do site.', at: 'agora', read: false },
   { id: 7, kind: 'manual', title: 'Nova tela de resultados', text: 'O relatório de resultados agora mostra a comparação com o mês anterior. · Pedro Henrique', at: 'há 2 min', read: false },
   { id: 1, kind: 'alert', title: 'Alerta: RPM caiu 32%', text: 'technoticias.com.br · hoje até 16h contra a média dos últimos 7 dias', at: 'há 5 min', read: false },
   { id: 2, kind: 'task', title: 'Ana Souza comentou na tarefa', text: '"Conferir ads.txt do Receitas da Vó": já atualizei a linha da Groone.', at: 'há 22 min', read: false },

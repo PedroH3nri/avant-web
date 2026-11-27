@@ -222,7 +222,7 @@ export function Status({ tone, children }: { tone: 'ok' | 'warn' | 'bad' | 'neut
 
 /* ---------- Verificação de instalação (decisão 21) ---------- */
 
-type InstallKind = 'tag' | 'loader' | 'reward'
+type InstallKind = 'tag' | 'loader' | 'reward' | 'security'
 type InstallSeverity = 'error' | 'warn' | 'ok'
 type InstallFinding = { severity: InstallSeverity; title: string; page: string; snippet?: string; fix?: string }
 type InstallResult = { checkedAt: string; by: string; pages: string[]; findings: InstallFinding[] }
@@ -259,7 +259,16 @@ function mockInstallResult(kind: InstallKind, id: string, domain: string, page: 
     if (seed === 1) findings.unshift({ severity: 'warn', title: 'O reward.js está sem async', page: target, snippet: '<script src="https://cdn.groone.com/reward.js">', fix: 'Ponha async na linha para não atrasar a página.' })
     if (seed === 2) findings.unshift({ severity: 'error', title: 'O rewards.min.js antigo do Genius ainda está na página', page: target, snippet: '<script src="https://genius.groone.com/rewards.min.js">', fix: 'Tire a linha antiga. Com as duas, a janela abre duas vezes.' })
   }
-  return { checkedAt: 'agora', by, pages: kind === 'reward' ? [target] : [home, article, `https://${domain}/ads.txt`], findings }
+  if (kind === 'security') {
+    findings.push(
+      { severity: 'error', title: 'Script ofuscado de domínio desconhecido', page: article, snippet: '<script src="https://cdn-stat-js.top/a.js"> · eval(atob("ZG9jdW1lbnQ…"))', fix: 'O script decodifica e executa código na hora, padrão de cloaker e de malware. Pergunte ao cliente o que é e tire do site.' },
+      { severity: 'error', title: 'Script que muda a página conforme a origem da visita', page: article, snippet: 'if (/fbclid|utm_source=facebook/.test(location.search) && !/FBAN|facebookexternalhit/.test(navigator.userAgent)) { … }', fix: 'Mostra uma página para quem vem do anúncio e outra para o revisor da Meta. É cloaker: o cliente precisa tirar.' },
+      { severity: 'warn', title: 'Iframe escondido de outro domínio', page: home, snippet: '<iframe src="https://promo-click.xyz/" width="1" height="1" style="opacity:0">', fix: 'Iframe invisível de terceiros pode gerar tráfego e cliques falsos. Confira com o cliente.' },
+      { severity: 'warn', title: '42 links escondidos para sites de apostas', page: home, snippet: '<div style="display:none"><a href="https://…">…</a> ×42', fix: 'Spam de SEO injetado, comum em WordPress invadido. Recomende atualizar os plugins e trocar as senhas.' },
+      ok('Nenhum minerador de criptomoeda', home), ok('Nenhum script de lista de cloakers conhecidos', home), ok('Google Safe Browsing sem alerta', home),
+    )
+  }
+  return { checkedAt: 'agora', by, pages: kind === 'reward' ? [target] : kind === 'security' ? [home, article, `https://${domain}/contato`] : [home, article, `https://${domain}/ads.txt`], findings }
 }
 
 /** O resumo da última verificação: erros vencem avisos, e sem verificação fica "Não verificado". */
@@ -274,7 +283,7 @@ function installSummary(result: InstallResult | null): { tone: 'bad' | 'warn' | 
 
 /** O resultado de ontem, da rotina diária; um item de cada três ainda não foi verificado. */
 function initialInstallResult(kind: InstallKind, id: string, domain: string, page: string): InstallResult | null {
-  if ((installSeed(`${id}x`) === 0 && kind !== 'tag')) return null
+  if ((installSeed(`${id}x`) === 0 && kind !== 'tag' && kind !== 'security')) return null
   return { ...mockInstallResult(kind, id, domain, page, 'Rotina diária'), checkedAt: 'hoje, 04:12' }
 }
 
@@ -311,14 +320,14 @@ function InstallCheck({ kind, id, domain, page = '', name }: { kind: InstallKind
 
 /** A janela com o resultado: achados por gravidade, a página, o trecho encontrado e o que fazer. */
 function InstallResultDialog({ open, onOpenChange, result, name, kind, running, wait, run }: { open: boolean; onOpenChange: (open: boolean) => void; result: InstallResult | null; name: string; kind: InstallKind; running: boolean; wait: number; run: () => void }) {
-  const what = { tag: 'da ad tag', loader: 'do loader', reward: 'do reward' }[kind]
+  const what = { tag: 'da ad tag', loader: 'do loader', reward: 'do reward', security: 'Segurança' }[kind]
   const order: InstallSeverity[] = ['error', 'warn', 'ok']
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[640px]">
         <DialogHeader>
-          <DialogTitle>Instalação {what} {name}</DialogTitle>
-          <DialogDescription>{result ? `Verificado ${result.checkedAt} · ${result.by}. Lemos o <head> e o <body> de ${result.pages.length === 1 ? 'uma página' : `${result.pages.length} endereços`} do site, sem executar JavaScript.` : 'Ainda não verificado.'}</DialogDescription>
+          <DialogTitle>{kind === 'security' ? `Segurança de ${name}` : `Instalação ${what} ${name}`}</DialogTitle>
+          <DialogDescription>{result ? `Verificado ${result.checkedAt} · ${result.by}. ${kind === 'security' ? `Lemos o HTML e os scripts externos de ${result.pages.length} páginas do site, sem executar nada.` : `Lemos o <head> e o <body> de ${result.pages.length === 1 ? 'uma página' : `${result.pages.length} endereços`} do site, sem executar JavaScript.`}` : 'Ainda não verificado.'}</DialogDescription>
         </DialogHeader>
         {result && (
           <div className="grid max-h-[60vh] gap-5 overflow-y-auto pr-1">
@@ -1854,6 +1863,21 @@ function ClientSiteScreen({ go }: { go: (s: Screen) => void }) {
               <ul className="flex flex-wrap gap-2"><li><button onClick={() => setCustom('Paginação')} className="inline-flex items-center gap-1.5 rounded-md border border-dashed px-2.5 py-1 text-[13px] text-muted-foreground hover:bg-muted">Paginação</button></li></ul>
             </div>
             <p className="text-[13px] text-muted-foreground">Clique num item para conferir de outro jeito só neste site. Os outros sites seguem o padrão de Checklists › Itens.</p>
+          </div>
+        </Card>
+        <Card title="Segurança do site" className="self-start" desc="Scripts suspeitos e código malicioso nas páginas, mais o que a ad tag notou nas visitas reais." footerNote="Rotina diária às 04:00 · a ad tag reporta o tempo todo">
+          <div className="grid gap-4 text-[14px]">
+            <div className="flex flex-wrap items-center justify-between gap-3"><span className="font-medium">Verificação das páginas</span><InstallCheck kind="security" id="blogexemplo-sec" domain="blogexemplo.com" name="blogexemplo.com" /></div>
+            <div className="grid gap-2 border-t pt-4">
+              <div className="flex items-center justify-between gap-3"><span className="font-medium">Sinais da ad tag (7 dias)</span><Status tone="bad">Suspeita de cloaker</Status></div>
+              <ul className="grid gap-1.5 text-[13px]">
+                <li className="flex justify-between gap-3"><span>Conteúdo diferente na mesma URL com utm_source=facebook</span><span className="tnum text-muted-foreground">214 visitas</span></li>
+                <li className="flex justify-between gap-3"><span>Corpo da página trocado depois de carregar</span><span className="tnum text-muted-foreground">198 visitas</span></li>
+                <li className="flex justify-between gap-3"><span>Iframe de outro domínio em tela cheia</span><span className="tnum text-muted-foreground">0</span></li>
+                <li className="flex justify-between gap-3"><span>Anúncio coberto por elemento transparente</span><span className="tnum text-muted-foreground">0</span></li>
+              </ul>
+              <Button size="sm" variant="outline" className="mt-1 h-8 w-fit" onClick={() => go('trafego')}>Ver na Qualidade do tráfego</Button>
+            </div>
           </div>
         </Card>
         <section className="grid gap-3 lg:col-span-2 min-[1920px]:col-span-3">
