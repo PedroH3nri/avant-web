@@ -8,10 +8,12 @@ import OpenLink from '@/components/OpenLink.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useDebounceFn } from '@vueuse/core'
+import { toast } from 'vue-sonner'
 import { ChevronRight, Search } from 'lucide-vue-next'
 import LoadError from '@/components/LoadError.vue'
 import PageBody from '@/components/PageBody.vue'
 import PageHeader from '@/components/PageHeader.vue'
+import Button from '@/components/ui/Button.vue'
 import Checkbox from '@/components/ui/Checkbox.vue'
 import DataTable from '@/components/ui/DataTable.vue'
 import Input from '@/components/ui/Input.vue'
@@ -19,6 +21,7 @@ import Select from '@/components/ui/Select.vue'
 import Pagination from '@/components/ui/Pagination.vue'
 import Segmented from '@/components/ui/Segmented.vue'
 import Status from '@/components/ui/Status.vue'
+import Switch from '@/components/ui/Switch.vue'
 import TableState from '@/components/ui/TableState.vue'
 import { ApiError, type Query } from '@/lib/api'
 import { errorText, locale, t, type Key } from '@/lib/i18n'
@@ -26,8 +29,8 @@ import FiltersMenu from '@/modules/views/components/FiltersMenu.vue'
 import { useLocalBarFilters } from '@/modules/views/barFilters'
 import { td, th } from '@/lib/table'
 import { clientService } from '@/modules/internal/clients/service'
-import { ADS_MAX_DAYS, ADS_PRESETS, channelKey, childLevel, formatCount, formatMoney, formatRatio, objectPath, objectState, roiTone } from '@/modules/google_ads/rules'
-import { googleAdsReader } from '@/modules/google_ads/service'
+import { ADS_MAX_DAYS, ADS_PRESETS, channelKey, childLevel, controlErrorText, formatCount, formatMoney, formatRatio, objectPath, objectState, roiTone } from '@/modules/google_ads/rules'
+import { googleAdsReader, googleAdsService } from '@/modules/google_ads/service'
 import type { GoogleAdsAccount, GoogleAdsLevel, GoogleAdsObject, GoogleAdsSummary } from '@/modules/google_ads/types'
 import { useSession } from '@/stores/session'
 
@@ -43,6 +46,9 @@ const router = useRouter()
 const internal = route.meta.internal === true
 const session = useSession()
 const reader = googleAdsReader(internal)
+const canManage = computed(() => !internal && session.can('google_ads.manage'))
+const selected = ref<string[]>([])
+const switching = ref(false)
 
 const level = ref<GoogleAdsLevel>('campaign')
 const parent = ref<{ id: string; name: string; level: GoogleAdsLevel } | null>(null)
@@ -78,7 +84,8 @@ const levelOptions = computed(() => [
 const presets = computed(() => periodPresets(ADS_PRESETS, todayIso(), true))
 const accountOptions = computed(() => [{ value: '', label: t('gads.allAccounts') }, ...accounts.value.map((account) => ({ value: account.id, label: account.name }))])
 const clientOptions = computed(() => [{ value: '', label: t('gads.allClients') }, ...clients.value.map((client) => ({ value: client.id, label: client.name }))])
-const columns = computed(() => (internal ? 11 : 10))
+const columns = computed(() => (internal ? 11 : canManage.value ? 12 : 10))
+const allSelected = computed(() => !!items.value?.length && items.value.every((item) => selected.value.includes(item.external_id)))
 
 /** O nome do cliente pelo id da Empresa (só no painel interno). */
 function clientName(id: string): string {
@@ -101,6 +108,7 @@ async function load() {
     }
     void loadSummary(filters)
     const found = await reader.objects({ ...filters, page: page.value })
+    selected.value = []
     items.value = found.items
     total.value = found.total
     pages.value = found.pages
@@ -169,6 +177,35 @@ function details(item: GoogleAdsObject) {
   void router.push({ path: objectPath(internal, item), query: periodQuery(period.value) })
 }
 
+/** Marca ou desmarca um item para a ação em lote. */
+function pick(externalId: string, chosen: boolean) {
+  selected.value = chosen ? [...selected.value, externalId] : selected.value.filter((id) => id !== externalId)
+}
+
+/** Marca ou desmarca todos os itens da página. */
+function pickAll(chosen: boolean) {
+  selected.value = chosen ? (items.value ?? []).map((item) => item.external_id) : []
+}
+
+/** Liga ou pausa no Google Ads; o que ele recusar aparece num aviso, e o limite diz quanto ainda cabe. */
+async function setStatus(externalIds: string[], active: boolean) {
+  if (!externalIds.length) return
+  switching.value = true
+  try {
+    const result = await googleAdsService.setStatus(level.value, externalIds, active)
+    if (result.done.length) toast.success(active ? t('gads.control.activated', { n: result.done.length }) : t('gads.control.paused', { n: result.done.length }))
+    const failures = Object.values(result.failed)
+    if (failures.length) toast.error(t('gads.control.failed', { n: failures.length, reason: errorText(failures[0] ?? 'unknown') }))
+    await load()
+  } catch (error) {
+    const api = error instanceof ApiError ? error : null
+    const limit = api ? controlErrorText(api.code, api.details, locale.value) : null
+    toast.error(limit ? t(limit.key, limit.params) : errorText(api?.code ?? 'unknown'))
+  } finally {
+    switching.value = false
+  }
+}
+
 onMounted(() => {
   void load()
   void reader.accounts().then((found) => (accounts.value = found)).catch(() => undefined)
@@ -202,12 +239,22 @@ watch([level, parent, accountId, companyId, period, withIssues], refilter)
     <div v-if="!loadError && tiles.length" class="grid grid-cols-2 gap-px overflow-hidden rounded-lg border bg-border md:grid-cols-4 xl:grid-cols-7">
       <StatTile report v-for="tile in tiles" :key="tile.key" :label="t(tile.label as Key)" :value="tile.text" :tone="tile.tone" />
     </div>
+    <div v-if="canManage && selected.length" class="flex flex-wrap items-center gap-3 rounded-lg border bg-card px-4 py-2.5" role="region" :aria-label="t('gads.control.bulk')">
+      <span class="text-[14px]">{{ t('gads.control.selected', { n: selected.length }) }}</span>
+      <Button size="sm" variant="outline" :disabled="switching" @click="setStatus(selected, true)">{{ t('gads.control.activate') }}</Button>
+      <Button size="sm" variant="outline" :disabled="switching" @click="setStatus(selected, false)">{{ t('gads.control.pause') }}</Button>
+      <Button size="sm" variant="ghost" @click="selected = []">{{ t('gads.control.clear') }}</Button>
+    </div>
     <LoadError v-if="loadError" :message="loadError" @retry="load" />
-    <DataTable v-else :min="internal ? 1240 : 1120">
+    <DataTable v-else :min="internal || canManage ? 1240 : 1120">
       <thead>
         <tr>
+          <th v-if="canManage" :class="[th, 'w-10']">
+            <input type="checkbox" class="size-4 accent-primary" :checked="allSelected" :aria-label="t('gads.control.selectAll')" @change="(event) => pickAll((event.target as HTMLInputElement).checked)" />
+          </th>
           <th :class="th">{{ t(`gads.level.${level}` as Key) }}</th>
           <th v-if="internal" :class="th">{{ t('gads.col.client') }}</th>
+          <th v-if="canManage" :class="th">{{ t('gads.control.on') }}</th>
           <th :class="th">{{ t('gads.col.state') }}</th>
           <th :class="[th, 'text-right']">{{ t('gads.metric.spend') }}</th>
           <th :class="[th, 'text-right']">{{ t('gads.metric.clicks') }}</th>
@@ -222,11 +269,17 @@ watch([level, parent, accountId, companyId, period, withIssues], refilter)
       <tbody>
         <TableState :cols="columns" :loading="!items" :empty="items?.length === 0" :desc="t('gads.objects.empty')" />
         <tr v-for="item in items ?? []" :key="item.id" class="hover:bg-muted">
+          <td v-if="canManage" :class="td">
+            <input type="checkbox" class="size-4 accent-primary" :checked="selected.includes(item.external_id)" :aria-label="t('gads.control.select', { name: item.name })" @change="(event) => pick(item.external_id, (event.target as HTMLInputElement).checked)" />
+          </td>
           <td :class="td">
             <button type="button" class="text-left font-medium hover:underline" @click="open(item)">{{ item.name }}</button>
             <span class="block text-[12px] text-muted-foreground">{{ item.account.name }}<template v-if="item.channel_type"> · {{ t(channelKey(item.channel_type)) }}</template></span>
           </td>
           <td v-if="internal" :class="td">{{ clientName(item.company_id) }}</td>
+          <td v-if="canManage" :class="td">
+            <Switch :model-value="item.active" :label="t('gads.control.toggle', { name: item.name })" :disabled="switching || item.status === 'REMOVED'" @update:model-value="(active) => setStatus([item.external_id], active)" />
+          </td>
           <td :class="td"><Status :tone="objectState(item).tone">{{ t(objectState(item).key) }}</Status></td>
           <td :class="[td, 'text-right tnum']">{{ formatMoney(item.totals.spend, item.account.currency, locale) }}</td>
           <td :class="[td, 'text-right tnum']">{{ formatCount(item.totals.clicks, locale) }}</td>

@@ -117,6 +117,7 @@ export interface GoogleAdsObject {
 export interface GoogleAdsParent {
   external_id: string
   name: string
+  bidding_strategy: string | null
 }
 
 export interface GoogleAdsObjectDetail extends GoogleAdsObject {
@@ -193,4 +194,53 @@ export interface GoogleAdsSummary {
   revenue: string | null
   profit: string | null
   roi: number | null
+}
+
+export type GoogleAdsRuleAction = 'scale_up' | 'scale_down' | 'pause' | 'cpc_up' | 'cpc_down' | 'keyword_pause' | 'held_by_limit' | 'failed'
+
+/** O que mudou num lote de ligar ou pausar e o código do erro de cada item que o Google recusou. */
+export interface GoogleAdsControlResult {
+  done: string[]
+  failed: Record<string, string>
+}
+
+export interface GoogleAdsBudget {
+  external_id: string
+  budget: string | null
+}
+
+export interface GoogleAdsCpc {
+  criterion_id: string
+  cpc: string | null
+}
+
+/** As regras de um objeto: na campanha ``scale`` mexe no orçamento; no grupo, no CPC das palavras-chave. */
+export interface GoogleAdsRuleInput {
+  scale: boolean
+  up_roi: number
+  up_by: number
+  down_roi: number
+  down_by: number
+  pause: boolean
+  min_roi: number
+  days: number
+  pause_keywords: boolean
+}
+
+export interface GoogleAdsRule extends GoogleAdsRuleInput {
+  object_external_id: string
+  level: GoogleAdsLevel
+  enabled: boolean
+  updated_at: string
+  updated_by: string | null
+}
+
+export interface GoogleAdsRuleDecision {
+  id: string
+  object_external_id: string
+  day: string
+  action: GoogleAdsRuleAction
+  decided_at: string
+  roi: number | null
+  data: Record<string, unknown>
 }
