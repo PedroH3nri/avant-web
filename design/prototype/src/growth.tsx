@@ -2,7 +2,7 @@
    qualidade do tráfego, funil de ativação, previsão do mês e o comparativo anônimo com a rede. */
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { ArrowDownRight, ArrowUpRight, ClipboardList, Info, ShieldAlert, Sparkles, X } from 'lucide-react'
+import { ArrowDownRight, ArrowUpRight, ClipboardList, ExternalLink, Info, ShieldAlert, Sparkles, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
@@ -235,14 +235,68 @@ export function OpportunitiesScreen({ go }: { go: Go }) {
 
 /* ---------- 3. Qualidade do tráfego e risco de IVT ---------- */
 
-type TrafficAlert = { id: number; target: string; client: string; source: string; signal: string; normal: string; since: string; risk: 'Alto' | 'Médio'; series: number[]; baseline: number }
+type Share = { label: string; now: number; normal: number }
+type Breakdown = { title: string; rows: Share[] }
+type AdFacts = { platform: 'Facebook' | 'Google Ads'; account: string; campaign: string; spend: string; adCtr: string; cpc: string; holder: string }
+type TrafficAlert = { id: number; target: string; domain: string; client: string; source: string; signal: string; normal: string; since: string; risk: 'Alto' | 'Médio'; series: number[]; baseline: number; unit: string; breakdowns: Breakdown[]; ad?: AdFacts; notes: string[] }
 
 const TRAFFIC: TrafficAlert[] = [
-  { id: 1, target: 'apostasja.bet', client: 'Apostas Já', source: 'Facebook · Campanha "Bônus BR 11"', signal: 'CTR de 4,8%', normal: '0,9% no site', since: '23/11', risk: 'Alto', series: [0.8, 0.9, 1, 0.9, 1.1, 0.9, 2.6, 3.9, 4.4, 4.8], baseline: 0.9 },
-  { id: 2, target: 'guiadopet.com', client: 'Guia do Pet', source: 'Google Ads · "Ração premium"', signal: '71% das sessões com 1 página e 2 cliques', normal: '18% no site', since: '25/11', risk: 'Alto', series: [17, 19, 18, 16, 20, 18, 19, 44, 63, 71], baseline: 18 },
-  { id: 3, target: 'technoticias.net', client: 'Tech Notícias', source: 'Origem desconhecida (referrer t.co)', signal: 'Pico de 6x nas visualizações de página', normal: 'Média de 41 mil por dia', since: '26/11', risk: 'Médio', series: [40, 42, 39, 41, 43, 40, 42, 41, 120, 246], baseline: 41 },
-  { id: 4, target: 'Network 22180457', client: 'Viagem Barata', source: 'Dedução do GAM em outubro', signal: 'Dedução de 14,2%', normal: '3,1% na rede', since: '15/11', risk: 'Médio', series: [2.8, 3.4, 2.9, 3.2, 14.2], baseline: 3.1 },
+  {
+    id: 1, target: 'apostasja.bet', domain: 'apostasja.bet', client: 'Apostas Já', source: 'Facebook · Campanha "Bônus BR 11"', signal: 'CTR de 4,8%', normal: '0,9% no site', since: '23/11', risk: 'Alto', series: [0.8, 0.9, 1, 0.9, 1.1, 0.9, 2.6, 3.9, 4.4, 4.8], baseline: 0.9, unit: '% de CTR',
+    breakdowns: [
+      { title: 'Origem (utm_source)', rows: [{ label: 'facebook', now: 81, normal: 34 }, { label: 'orgânico', now: 12, normal: 51 }, { label: 'direto', now: 7, normal: 15 }] },
+      { title: 'Dispositivo', rows: [{ label: 'Android', now: 88, normal: 61 }, { label: 'iPhone', now: 9, normal: 27 }, { label: 'Desktop', now: 3, normal: 12 }] },
+      { title: 'País', rows: [{ label: 'Brasil', now: 64, normal: 92 }, { label: 'Índia', now: 22, normal: 1 }, { label: 'Vietnã', now: 9, normal: 0 }] },
+      { title: 'Bloco com mais cliques', rows: [{ label: 'Intersticial', now: 58, normal: 21 }, { label: 'Âncora', now: 30, normal: 34 }, { label: 'Content1_Mobile', now: 12, normal: 45 }] },
+    ],
+    ad: { platform: 'Facebook', account: 'Apostas Já - BR 02', campaign: 'Bônus BR 11', spend: 'US$ 412 em 5 dias', adCtr: '6,1% no anúncio', cpc: 'US$ 0,03', holder: 'Rafael Lima' },
+    notes: ['31% do tráfego da campanha vem de fora do Brasil, mas ela é segmentada só para o Brasil.', 'O intersticial concentra os cliques, um padrão comum de clique acidental ou forçado.'],
+  },
+  {
+    id: 2, target: 'guiadopet.com', domain: 'guiadopet.com', client: 'Guia do Pet', source: 'Google Ads · "Ração premium"', signal: '71% das sessões com 1 página e 2 cliques', normal: '18% no site', since: '25/11', risk: 'Alto', series: [17, 19, 18, 16, 20, 18, 19, 44, 63, 71], baseline: 18, unit: '% das sessões',
+    breakdowns: [
+      { title: 'Origem (utm_source)', rows: [{ label: 'google', now: 74, normal: 22 }, { label: 'orgânico', now: 20, normal: 63 }, { label: 'direto', now: 6, normal: 15 }] },
+      { title: 'Rede do Google Ads', rows: [{ label: 'Display (apps)', now: 69, normal: 8 }, { label: 'Pesquisa', now: 24, normal: 80 }, { label: 'YouTube', now: 7, normal: 12 }] },
+      { title: 'Horário', rows: [{ label: '0h às 6h', now: 41, normal: 9 }, { label: '6h às 18h', now: 37, normal: 66 }, { label: '18h às 24h', now: 22, normal: 25 }] },
+      { title: 'Tempo na página', rows: [{ label: 'menos de 5 s', now: 63, normal: 14 }, { label: '5 a 30 s', now: 28, normal: 41 }, { label: 'mais de 30 s', now: 9, normal: 45 }] },
+    ],
+    ad: { platform: 'Google Ads', account: 'Guia do Pet', campaign: 'Ração premium', spend: 'US$ 268 em 3 dias', adCtr: '3,9% no anúncio', cpc: 'US$ 0,05', holder: 'Bruna Alves' },
+    notes: ['69% dos cliques vêm de posicionamentos em apps da Rede de Display, que a campanha não excluiu.', 'Sugestão: excluir apps móveis pelo Avant (Google Ads > Posicionamentos).'],
+  },
+  {
+    id: 3, target: 'technoticias.net', domain: 'technoticias.net', client: 'Tech Notícias', source: 'Origem desconhecida (referrer t.co)', signal: 'Pico de 6x nas visualizações de página', normal: 'Média de 41 mil por dia', since: '26/11', risk: 'Médio', series: [40, 42, 39, 41, 43, 40, 42, 41, 120, 246], baseline: 41, unit: 'mil visualizações',
+    breakdowns: [
+      { title: 'Referrer', rows: [{ label: 't.co (X)', now: 72, normal: 2 }, { label: 'google.com', now: 18, normal: 61 }, { label: 'direto', now: 10, normal: 37 }] },
+      { title: 'Páginas mais vistas', rows: [{ label: '/iphone-gratis-sorteio', now: 66, normal: 0 }, { label: '/', now: 9, normal: 18 }, { label: 'outras', now: 25, normal: 82 }] },
+      { title: 'País', rows: [{ label: 'Brasil', now: 54, normal: 88 }, { label: 'Estados Unidos', now: 31, normal: 6 }, { label: 'outros', now: 15, normal: 6 }] },
+    ],
+    notes: ['Sem campanha conectada no Avant: o tráfego vem de posts no X que linkam uma página de sorteio.', 'Página com promessa de prêmio é risco de política do Google (conteúdo enganoso).'],
+  },
+  {
+    id: 4, target: 'Network 22180457', domain: 'viagembarata.com', client: 'Viagem Barata', source: 'Dedução do GAM em outubro', signal: 'Dedução de 14,2%', normal: '3,1% na rede', since: '15/11', risk: 'Médio', series: [2.8, 3.4, 2.9, 3.2, 14.2], baseline: 3.1, unit: '% de dedução',
+    breakdowns: [
+      { title: 'Dedução por site', rows: [{ label: 'viagembarata.com', now: 18, normal: 3 }, { label: 'passagensjá.com', now: 4, normal: 3 }] },
+      { title: 'Origem em outubro (viagembarata.com)', rows: [{ label: 'facebook', now: 58, normal: 20 }, { label: 'orgânico', now: 35, normal: 70 }, { label: 'outros', now: 7, normal: 10 }] },
+    ],
+    notes: ['A dedução se concentra no site que mais recebeu tráfego do Facebook em outubro.'],
+  },
 ]
+
+/** Os links prontos para investigar o domínio fora do Avant, nas bibliotecas públicas de anúncios e na busca. */
+function investigateLinks(domain: string) {
+  const term = encodeURIComponent(domain)
+  return [
+    { group: 'Anúncios', label: 'Biblioteca de Anúncios da Meta', hint: 'Facebook e Instagram, ativos e inativos', href: `https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=ALL&q=${term}&search_type=keyword_unordered&media_type=all` },
+    { group: 'Anúncios', label: 'Central de Transparência do Google Ads', hint: 'Pesquisa, Display e YouTube pelo domínio', href: `https://adstransparency.google.com/?region=anywhere&domain=${term}` },
+    { group: 'Anúncios', label: 'Biblioteca de Anúncios do TikTok', hint: 'Só anúncios veiculados na Europa', href: `https://library.tiktok.com/ads?region=all&query=${term}` },
+    { group: 'Anúncios', label: 'Repositório de anúncios do X', hint: 'Só anúncios veiculados na Europa', href: 'https://ads.x.com/ads-repository' },
+    { group: 'Divulgação', label: 'Posts no X com link para o site', hint: 'Busca recente por url:', href: `https://x.com/search?q=${encodeURIComponent(`url:${domain}`)}&f=live` },
+    { group: 'Divulgação', label: 'Menções no Google', hint: 'Páginas que citam o domínio, fora dele', href: `https://www.google.com/search?q=${encodeURIComponent(`"${domain}" -site:${domain}`)}` },
+    { group: 'Divulgação', label: 'Posts no Facebook', hint: 'Busca pública pelo domínio', href: `https://www.facebook.com/search/posts/?q=${term}` },
+    { group: 'Segurança', label: 'Google Safe Browsing', hint: 'Malware e phishing', href: `https://transparencyreport.google.com/safe-browsing/search?url=${term}` },
+    { group: 'Segurança', label: 'Histórico no Wayback Machine', hint: 'Como o site era antes', href: `https://web.archive.org/web/*/${term}` },
+  ]
+}
 
 /** Linha simples da série com a faixa normal tracejada. */
 function SeriesLine({ series, baseline, label }: { series: number[]; baseline: number; label: string }) {
@@ -261,12 +315,28 @@ function SeriesLine({ series, baseline, label }: { series: number[]; baseline: n
   )
 }
 
-/** Tela Qualidade do tráfego: sinais de tráfego inválido antes que o GAM corte ou deduza. */
+/** Um recorte do tráfego: a parte de cada item agora e no normal do site. */
+function BreakdownList({ breakdown }: { breakdown: Breakdown }) {
+  return (
+    <div className="rounded-md border p-4">
+      <div className="mb-3 text-[13px] font-medium">{breakdown.title}</div>
+      <ul className="grid gap-2.5">{breakdown.rows.map((row) => (
+        <li key={row.label} className="grid gap-1">
+          <div className="flex items-center justify-between gap-3 text-[13px]"><span className="truncate">{row.label}</span><span className="tnum"><span className={cn('font-medium', row.now - row.normal >= 15 && 'text-bad')}>{row.now}%</span><span className="text-muted-foreground"> · normal {row.normal}%</span></span></div>
+          <div className="relative h-1.5 rounded-full bg-muted-foreground/15" aria-hidden="true"><span className="absolute inset-y-0 left-0 rounded-full bg-foreground" style={{ width: `${row.now}%` }} /><span className="absolute top-[-3px] h-3 w-px bg-muted-foreground" style={{ left: `${row.normal}%` }} /></div>
+        </li>
+      ))}</ul>
+    </div>
+  )
+}
+
+/** Tela Qualidade do tráfego: sinais de tráfego inválido antes que o GAM corte ou deduza, com o detalhe e os links para investigar. */
 export function TrafficQualityScreen({ go }: { go: Go }) {
   const [values, setValues] = useState<Record<string, string>>({})
   const [query, setQuery] = useState('')
-  const [open, setOpen] = useState<TrafficAlert | null>(TRAFFIC[0])
+  const [open, setOpen] = useState<TrafficAlert>(TRAFFIC[0])
   const rows = TRAFFIC.filter((item) => passes({ target: item.target, client: item.client, risk: item.risk }, values, query, ['target', 'client']))
+  const links = investigateLinks(open.domain)
   return (
     <>
       <PageHeader title="Qualidade do tráfego" sub="Sinais de tráfego inválido (IVT) por site, campanha e network, para agir antes de o GAM deduzir a receita ou limitar a conta da Groone." />
@@ -274,32 +344,53 @@ export function TrafficQualityScreen({ go }: { go: Go }) {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Kpi label="Alertas abertos" value={String(TRAFFIC.length)} tone="bad" note="2 de risco alto" />
           <Kpi label="Dedução do GAM em outubro" value="4,6%" note="Na rede toda; setembro 3,9%" />
-          <Kpi label="Receita sob alerta (7 dias)" value={usd(3870)} note="Dos sites e campanhas acima" />
+          <Kpi label="Receita sob alerta (7 dias)" value={usd(3870)} note="Dos sites e campanhas abaixo" />
           <Kpi label="Campanhas pausadas por alerta" value="3" note="Em novembro, pelo dono da conta" />
         </div>
-        <div className="grid gap-6 lg:grid-cols-[1fr_420px]">
-          <TableCard filters={<TableFilters defs={[{ key: 'risk', label: 'Risco', options: ['Alto', 'Médio'] }]} initial={['risk']} values={values} setValues={setValues} query={query} setQuery={setQuery} placeholder="Buscar site, network ou cliente" />}>
-            <thead className="border-b"><tr><th className={th}>Onde</th><th className={th}>Sinal</th><th className={th}>Desde</th><th className={th}>Risco</th></tr></thead>
-            <tbody className="divide-y">{rows.map((item) => (
-              <tr key={item.id} onClick={() => setOpen(item)} className={cn('cursor-pointer transition-colors hover:bg-muted/50', open?.id === item.id && 'bg-muted/60')}>
-                <td className={td}><div className="font-medium">{item.target}</div><div className="text-[13px] text-muted-foreground">{item.source}</div></td>
-                <td className={td}><div>{item.signal}</div><div className="text-[13px] text-muted-foreground">Normal: {item.normal}</div></td>
-                <td className={cn(td, 'tnum')}>{item.since}</td>
-                <td className={td}><Status tone={item.risk === 'Alto' ? 'bad' : 'warn'}>{item.risk}</Status></td>
-              </tr>
-            ))}</tbody>
-          </TableCard>
-          {open && (
-            <Card title={open.target} desc={<>{open.client} · {open.source}</>} footer={<><Button variant="outline" onClick={() => toast('Alerta dispensado por 7 dias')}>Dispensar</Button><Button onClick={() => { toast.success('Tarefa criada para o gerente', { description: 'Com o print da série e o link da campanha.' }); go('tarefas') }}><ShieldAlert className="h-4 w-4" />Criar tarefa</Button></>}>
-              <div className="text-[13px] text-muted-foreground">Últimos {open.series.length} {open.id === 4 ? 'meses' : 'dias'}, com a faixa normal tracejada</div>
+        <TableCard filters={<TableFilters defs={[{ key: 'risk', label: 'Risco', options: ['Alto', 'Médio'] }]} initial={['risk']} values={values} setValues={setValues} query={query} setQuery={setQuery} placeholder="Buscar site, network ou cliente" />}>
+          <thead className="border-b"><tr><th className={th}>Onde</th><th className={th}>Sinal</th><th className={th}>Desde</th><th className={th}>Risco</th></tr></thead>
+          <tbody className="divide-y">{rows.map((item) => (
+            <tr key={item.id} onClick={() => setOpen(item)} className={cn('cursor-pointer transition-colors hover:bg-muted/50', open.id === item.id && 'bg-muted/60')} aria-selected={open.id === item.id}>
+              <td className={td}><div className="font-medium">{item.target}</div><div className="text-[13px] text-muted-foreground">{item.source}</div></td>
+              <td className={td}><div>{item.signal}</div><div className="text-[13px] text-muted-foreground">Normal: {item.normal}</div></td>
+              <td className={cn(td, 'tnum')}>{item.since}</td>
+              <td className={td}><Status tone={item.risk === 'Alto' ? 'bad' : 'warn'}>{item.risk}</Status></td>
+            </tr>
+          ))}</tbody>
+        </TableCard>
+        <Card title={open.target} desc={<>{open.client} · {open.source} · desde {open.since}</>}
+          footerNote="A tarefa leva o print da série, os recortes e os links de investigação."
+          footer={<><Button variant="outline" onClick={() => toast('Alerta dispensado por 7 dias')}>Dispensar</Button><Button onClick={() => { toast.success('Tarefa criada para o gerente', { description: `${open.target}: ${open.signal}.` }); go('tarefas') }}><ShieldAlert className="h-4 w-4" />Criar tarefa</Button></>}>
+          <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+            <div className="grid content-start gap-2">
+              <div className="flex items-center justify-between gap-3"><span className="text-[13px] font-medium">{open.signal}</span><Status tone={open.risk === 'Alto' ? 'bad' : 'warn'}>Risco {open.risk.toLowerCase()}</Status></div>
+              <div className="text-[13px] text-muted-foreground">Últimos {open.series.length} {open.id === 4 ? 'meses' : 'dias'}, em {open.unit}; o tracejado é o normal ({open.normal})</div>
               <SeriesLine series={open.series} baseline={open.baseline} label={`Série do sinal em ${open.target}`} />
-              <ul className="mt-3 grid gap-2 text-[13px]">
-                <li className="flex gap-2"><span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-foreground" />{open.signal} contra {open.normal}.</li>
-                <li className="flex gap-2"><span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-foreground" />{open.id <= 2 ? 'A campanha tem limite no Avant; o dono pode pausar pela tela da campanha.' : 'Sem campanha conectada; o tráfego vem de fora do Avant.'}</li>
-              </ul>
-            </Card>
-          )}
-        </div>
+            </div>
+            <div className="grid content-start gap-3">
+              {open.ad ? (
+                <dl className="grid gap-2 rounded-md border p-4 text-[13px]">
+                  <div className="mb-1 text-[13px] font-medium">Campanha no Avant ({open.ad.platform})</div>
+                  {([['Conta', open.ad.account], ['Campanha', open.ad.campaign], ['Responsável', open.ad.holder], ['Gasto', open.ad.spend], ['CTR do anúncio', open.ad.adCtr], ['CPC', open.ad.cpc]] as const).map(([label, value]) => <div key={label} className="flex justify-between gap-3"><dt className="text-muted-foreground">{label}</dt><dd className="text-right tnum">{value}</dd></div>)}
+                  <Button size="sm" variant="outline" className="mt-2 h-8" onClick={() => go(open.ad?.platform === 'Facebook' ? 'fbcampanhainterno' : 'gadscampanhainterno')}>Abrir a campanha</Button>
+                </dl>
+              ) : <div className="rounded-md border p-4 text-[13px] text-muted-foreground">Nenhuma campanha conectada no Avant explica esse tráfego. Use os links abaixo para achar quem está divulgando o site.</div>}
+            </div>
+          </div>
+          <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{open.breakdowns.map((breakdown) => <BreakdownList key={breakdown.title} breakdown={breakdown} />)}</div>
+          <ul className="mt-5 grid gap-2 text-[13px]">{open.notes.map((note) => <li key={note} className="flex gap-2"><span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-foreground" />{note}</li>)}</ul>
+          <div className="mt-6 border-t pt-5">
+            <div className="text-[14px] font-medium">Investigar fora do Avant</div>
+            <p className="mt-1 text-[13px] text-muted-foreground">Cada link abre, numa aba nova, a busca pronta por <span className="font-mono">{open.domain}</span>. O Avant não consulta esses sites: quem analisa olha e anota na tarefa.</p>
+            <div className="mt-4 grid gap-4 md:grid-cols-3">{['Anúncios', 'Divulgação', 'Segurança'].map((group) => (
+              <div key={group}><div className="mb-2 text-[12px] font-medium uppercase tracking-[0.04em] text-muted-foreground">{group}</div>
+                <ul className="grid gap-1">{links.filter((link) => link.group === group).map((link) => (
+                  <li key={link.label}><a href={link.href} target="_blank" rel="noreferrer" className="group flex items-start justify-between gap-3 rounded-md px-2 py-1.5 -mx-2 hover:bg-muted"><span><span className="text-[14px] text-link group-hover:underline">{link.label}</span><span className="block text-[12px] text-muted-foreground">{link.hint}</span></span><ExternalLink className="mt-1 h-3.5 w-3.5 shrink-0 text-muted-foreground" /></a></li>
+                ))}</ul>
+              </div>
+            ))}</div>
+          </div>
+        </Card>
       </Body>
     </>
   )
