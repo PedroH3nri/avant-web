@@ -24,6 +24,7 @@ import TableState from '@/components/ui/TableState.vue'
 import { ApiError } from '@/lib/api'
 import { errorText, formatDate, t } from '@/lib/i18n'
 import ClassifySitesDialog from '@/modules/sites/components/ClassifySitesDialog.vue'
+import SiteSecurityCard from '@/modules/site_security/components/SiteSecurityCard.vue'
 import { approval, categoryLabel, tree } from '@/modules/sites/rules'
 import { td, th } from '@/lib/table'
 import type { AdUnit, Site, SiteDetail, SiteListItem, SiteMember } from '@/modules/sites/types'
@@ -172,6 +173,7 @@ async function move() {
           <Button variant="outline" size="sm" @click="classifying = true">{{ t('sites.classify.edit') }}</Button>
         </template>
       </Card>
+      <SiteSecurityCard :site-id="site.id" :domain="site.domain" :internal="false" />
       <section v-if="!site.awaiting_gam" class="grid gap-3">
         <div>
           <h2 class="text-[16px] font-semibold tracking-tight">{{ t('site.units') }}</h2>

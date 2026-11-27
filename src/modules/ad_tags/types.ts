@@ -35,7 +35,12 @@ export interface AdTagSettings {
   reward: boolean
   price_rules: boolean
   loader_id: string | null
+  security: boolean
+  security_block: BlockingSignal[]
 }
+
+/** As detecções da ad tag que podem tirar os anúncios; as outras só observam (decisão 23). */
+export type BlockingSignal = 'overlay' | 'frame' | 'cloaker_script' | 'covered_ad'
 
 /** O rascunho, ou o conteúdo de uma versão. */
 export interface AdTagDraft {

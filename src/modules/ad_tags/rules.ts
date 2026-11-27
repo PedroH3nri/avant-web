@@ -1,7 +1,7 @@
 /** Regras de tela das ad tags: nomes dos blocos, problemas do rascunho, o que mudou, situação e saúde. */
 
 import { t, type Key } from '@/lib/i18n'
-import type { AdTag, AdTagBlock, AdTagBlockKind, AdTagDraft, AdTagHealth, AdTagSettings, AdTagUnitDay } from '@/modules/ad_tags/types'
+import type { AdTag, AdTagBlock, AdTagBlockKind, AdTagDraft, AdTagHealth, AdTagSettings, AdTagUnitDay, BlockingSignal } from '@/modules/ad_tags/types'
 
 export const UNIT_ORDER = [...Array.from({ length: 9 }, (_item, index) => `Content${index + 1}`), 'Anchor', 'Interstitial', 'Fixed']
 export const REFRESH_OPTIONS: (number | null)[] = [null, 30, 45, 60, 90, 120]
@@ -41,7 +41,20 @@ export function blankSettings(): AdTagSettings {
     reward: false,
     price_rules: false,
     loader_id: null,
+    security: true,
+    security_block: ['overlay'],
   }
+}
+
+export const BLOCKING_SIGNALS: BlockingSignal[] = ['overlay', 'frame', 'cloaker_script', 'covered_ad']
+export const WATCH_SIGNALS = ['body_swap', 'redirect', 'back_hijack', 'content_mismatch'] as const
+
+/** Liga ou desliga o bloqueio de uma detecção, na ordem fixa que a API guarda. */
+export function toggleBlock(current: BlockingSignal[], signal: BlockingSignal, block: boolean): BlockingSignal[] {
+  const chosen = new Set(current)
+  if (block) chosen.add(signal)
+  else chosen.delete(signal)
+  return BLOCKING_SIGNALS.filter((item) => chosen.has(item))
 }
 
 /** O tipo do ad unit no GAM do bloco (`Content3`, `Anchor`...). */
@@ -196,10 +209,12 @@ export function draftChanges(live: AdTagDraft | null, draft: AdTagDraft): string
     ['mgid_sidebar', 'at.mgid.sidebar'],
     ['reward', 'at.reward'],
     ['price_rules', 'at.priceRules'],
+    ['security', 'at.security'],
   ]
   labels.forEach(([key, label]) => {
     if ((live.settings[key] ?? null) !== (draft.settings[key] ?? null)) changes.push(t('at.change.setting', { name: t(label) }))
   })
+  if ((live.settings.security_block ?? ['overlay']).join() !== (draft.settings.security_block ?? ['overlay']).join()) changes.push(t('at.change.setting', { name: t('at.securityMode') }))
   return changes
 }
 
