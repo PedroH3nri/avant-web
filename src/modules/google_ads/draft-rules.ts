@@ -117,7 +117,8 @@ export function amount(text: string | null): string | null {
   const hasDecimals = decimalMark >= 0 && compact.length - decimalMark - 1 <= 2
   const whole = hasDecimals ? compact.slice(0, decimalMark) : compact
   const cents = hasDecimals ? compact.slice(decimalMark + 1) : ''
-  const grouped = /^\d{1,3}([.,]\d{3})+$/.test(whole)
+  const groupMarks = new Set(whole.replace(/\d/g, ''))
+  const grouped = /^\d{1,3}([.,]\d{3})+$/.test(whole) && groupMarks.size === 1
   if (!grouped && !/^\d+$/.test(whole)) return null
   if (hasDecimals && (!/^\d{1,2}$/.test(cents) || whole.includes(compact.charAt(decimalMark)))) return null
   const clean = whole.replace(/[.,]/g, '') + (cents ? `.${cents}` : '')

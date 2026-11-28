@@ -89,6 +89,9 @@ describe('rascunho de campanha do Google Ads', () => {
     expect(amount('1 000,00')).toBe('1000.00')
     expect(amount('1.2.3')).toBeNull()
     expect(amount('12,345,6')).toBeNull()
+    expect(amount('1,234.567')).toBeNull()
+    expect(amount('1.234,567')).toBeNull()
+    expect(amount('1.234.567,8')).toBe('1234567.8')
   })
 
   it('ao trocar o tipo, limpa os anúncios, as palavras-chave e acerta o lance', () => {
