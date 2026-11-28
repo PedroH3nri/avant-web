@@ -57,9 +57,8 @@ function remove(pick: GoogleAdsOption) {
 watch(
   () => props.accountId,
   () => {
-    ++latestSearch
-    options.value = []
-    loading.value = false
+    failure.value = null
+    void load(text.value)
   },
 )
 watch(text, (query) => {
