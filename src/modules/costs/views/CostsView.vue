@@ -180,6 +180,7 @@ const kindClass = (on: boolean) =>
     </template>
   </PageHeader>
   <PageBody>
+    <p class="max-w-[80ch] rounded-md border bg-card px-4 py-3 text-[13px] text-muted-foreground">{{ t('cost.integrationsNote') }}</p>
     <LoadError v-if="loadError" :message="loadError" @retry="load" />
     <DataTable v-else :min="760">
       <thead>

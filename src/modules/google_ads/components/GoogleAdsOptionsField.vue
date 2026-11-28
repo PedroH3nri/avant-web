@@ -18,23 +18,27 @@ const options = ref<GoogleAdsOption[]>([])
 const failure = ref<string | null>(null)
 const loading = ref(false)
 let timer: ReturnType<typeof setTimeout> | null = null
+let latestSearch = 0
 
 const left = computed(() => options.value.filter((option) => !model.value.some((pick) => pick.id === option.id)).slice(0, 12))
 
-/** Busca o texto digitado no Google; o erro aparece embaixo do campo. */
+/** Busca o texto digitado no Google; resposta de uma busca antiga é ignorada e o erro aparece embaixo do campo. */
 async function load(query: string) {
+  const current = ++latestSearch
   if (!props.accountId || query.trim().length < MIN_QUERY) {
     options.value = []
+    loading.value = false
     return
   }
   loading.value = true
   failure.value = null
   try {
-    options.value = await googleAdsService.options(props.kind, props.accountId, query.trim(), lang.value)
+    const found = await googleAdsService.options(props.kind, props.accountId, query.trim(), lang.value)
+    if (current === latestSearch) options.value = found
   } catch (error) {
-    failure.value = errorText(error instanceof ApiError ? error.code : 'unknown')
+    if (current === latestSearch) failure.value = errorText(error instanceof ApiError ? error.code : 'unknown')
   } finally {
-    loading.value = false
+    if (current === latestSearch) loading.value = false
   }
 }
 
@@ -50,6 +54,13 @@ function remove(pick: GoogleAdsOption) {
   model.value = model.value.filter((item) => item.id !== pick.id)
 }
 
+watch(
+  () => props.accountId,
+  () => {
+    failure.value = null
+    void load(text.value)
+  },
+)
 watch(text, (query) => {
   if (timer) clearTimeout(timer)
   timer = setTimeout(() => load(query), WAIT_MS)

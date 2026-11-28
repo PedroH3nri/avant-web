@@ -13,9 +13,11 @@ import {
   createdCampaign,
   draftProblems,
   editProblems,
+  hasAdContent,
   jobFinished,
   problemKey,
   serverProblems,
+  withAccount,
   withChannel,
 } from '@/modules/google_ads/draft-rules'
 import type { GoogleAdsAdInput, GoogleAdsDraftInput } from '@/modules/google_ads/types'
@@ -63,6 +65,33 @@ describe('rascunho de campanha do Google Ads', () => {
     expect(clean.ad_groups[0]?.cpc).toBeNull()
     expect(amount('0')).toBeNull()
     expect(amount('abc')).toBeNull()
+  })
+
+  it('pede confirmação só quando algum anúncio já tem conteúdo e limpa as imagens ao trocar de conta', () => {
+    const empty = blankDraft('conta-1', 'Grupo 1')
+    expect(hasAdContent(empty)).toBe(false)
+    expect(hasAdContent(searchDraft())).toBe(true)
+    const withImages = withChannel(searchDraft(), 'DISPLAY')
+    const ad = withImages.ad_groups[0]?.ads[0]
+    if (!ad) throw new Error('sem anúncio')
+    const pictured = { ...withImages, ad_groups: [{ ...withImages.ad_groups[0]!, ads: [{ ...ad, marketing_images: ['customers/1/assets/1'] }] }] }
+    const moved = withAccount(pictured, 'conta-2')
+    expect(moved.account_id).toBe('conta-2')
+    expect(moved.ad_groups[0]?.ads[0]?.marketing_images).toEqual([])
+    expect(withAccount(pictured, pictured.account_id)).toBe(pictured)
+  })
+
+  it('entende valor com milhar, com vírgula ou com ponto', () => {
+    expect(amount('1.234,56')).toBe('1234.56')
+    expect(amount('1,234.56')).toBe('1234.56')
+    expect(amount('1.234')).toBe('1234')
+    expect(amount('12,5')).toBe('12.5')
+    expect(amount('1 000,00')).toBe('1000.00')
+    expect(amount('1.2.3')).toBeNull()
+    expect(amount('12,345,6')).toBeNull()
+    expect(amount('1,234.567')).toBeNull()
+    expect(amount('1.234,567')).toBeNull()
+    expect(amount('1.234.567,8')).toBe('1234567.8')
   })
 
   it('ao trocar o tipo, limpa os anúncios, as palavras-chave e acerta o lance', () => {
