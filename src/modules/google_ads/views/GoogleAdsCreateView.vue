@@ -2,6 +2,7 @@
 /** Nova campanha do Google Ads pelo Avant: Pesquisa, Display ou Demand Gen, com os grupos, as palavras-chave ou os públicos, o anúncio responsivo de cada grupo e a lista "Para criar". */
 import { computed, onMounted, ref, watch } from 'vue'
 import { ArrowLeft, Plus, Trash2 } from 'lucide-vue-next'
+import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import LoadError from '@/components/LoadError.vue'
 import PageBody from '@/components/PageBody.vue'
 import PageHeader from '@/components/PageHeader.vue'
@@ -18,7 +19,7 @@ import { errorText, locale, t, type Key } from '@/lib/i18n'
 import GoogleAdsAdForm from '@/modules/google_ads/components/GoogleAdsAdForm.vue'
 import GoogleAdsJobDialog from '@/modules/google_ads/components/GoogleAdsJobDialog.vue'
 import GoogleAdsOptionsField from '@/modules/google_ads/components/GoogleAdsOptionsField.vue'
-import { CHANNELS, MAX_AD_GROUPS, amount, biddingsFor, blankAdGroup, blankDraft, cleanDraft, draftProblems, jobFinished, problemKey, serverProblems, withChannel } from '@/modules/google_ads/draft-rules'
+import { CHANNELS, MAX_AD_GROUPS, amount, biddingsFor, blankAdGroup, blankDraft, cleanDraft, draftProblems, hasAdContent, jobFinished, problemKey, serverProblems, withAccount, withChannel } from '@/modules/google_ads/draft-rules'
 import { campaignsPath, controlErrorText, formatMoney } from '@/modules/google_ads/rules'
 import { googleAdsService } from '@/modules/google_ads/service'
 import type { GoogleAdsAccount, GoogleAdsAdInput, GoogleAdsAdGroupInput, GoogleAdsBidding, GoogleAdsChannel, GoogleAdsDraftInput, GoogleAdsJob, GoogleAdsMatchType, GoogleAdsOption } from '@/modules/google_ads/types'
@@ -32,6 +33,13 @@ interface GroupExtras {
 }
 
 const accounts = ref<GoogleAdsAccount[]>([])
+const pendingChannel = ref<GoogleAdsChannel | null>(null)
+const channelConfirmOpen = computed({
+  get: () => pendingChannel.value !== null,
+  set: (open: boolean) => {
+    if (!open) pendingChannel.value = null
+  },
+})
 const sites = ref<Map<string, string>>(new Map())
 const loadError = ref<string | null>(null)
 const draft = ref<GoogleAdsDraftInput>(blankDraft('', groupName(1)))
@@ -104,9 +112,26 @@ function patch(changes: Partial<GoogleAdsDraftInput>) {
   draft.value = { ...draft.value, ...changes }
 }
 
-/** Troca o tipo da campanha; os anúncios recomeçam em branco. */
+/** Troca o tipo da campanha; os anúncios recomeçam em branco, então anúncio já preenchido pede confirmação antes. */
 function pickChannel(channel: string) {
-  draft.value = withChannel(draft.value, channel as GoogleAdsChannel)
+  const chosen = channel as GoogleAdsChannel
+  if (chosen === draft.value.channel) return
+  if (hasAdContent(draft.value)) {
+    pendingChannel.value = chosen
+    return
+  }
+  draft.value = withChannel(draft.value, chosen)
+}
+
+/** Confirma a troca de tipo que apaga os anúncios. */
+function confirmChannel() {
+  if (pendingChannel.value) draft.value = withChannel(draft.value, pendingChannel.value)
+  pendingChannel.value = null
+}
+
+/** Troca a conta; as imagens da conta anterior saem dos anúncios. */
+function pickAccount(accountId: string) {
+  draft.value = withAccount(draft.value, accountId)
 }
 
 /** Muda campos do grupo escolhido. */
@@ -223,7 +248,7 @@ onMounted(load)
             </div>
             <div class="grid items-start gap-4 border-t p-6 sm:grid-cols-2">
               <Field id="gads-new-account" :label="t('gads.create.account')" :error="account && !account.site_id && t('gads.problem.account_without_site')">
-                <Select id="gads-new-account" :model-value="draft.account_id" :options="accountOptions" @update:model-value="patch({ account_id: $event })" />
+                <Select id="gads-new-account" :model-value="draft.account_id" :options="accountOptions" @update:model-value="pickAccount" />
               </Field>
               <Field id="gads-new-name" :label="t('gads.create.campaignName')">
                 <Input id="gads-new-name" :model-value="draft.name" maxlength="255" @update:model-value="patch({ name: $event })" />
@@ -275,7 +300,7 @@ onMounted(load)
             <div class="grid gap-4 border-t p-6">
               <div class="text-[14px] font-medium">{{ t(`gads.create.adTitle.${draft.channel}` as Key) }}</div>
               <p class="-mt-2 max-w-[70ch] text-[13px] text-muted-foreground">{{ t(`gads.create.adDesc.${draft.channel}` as Key) }}</p>
-              <GoogleAdsAdForm v-if="group.ads[0]" :key="`ad-${selected}-${draft.channel}`" :model-value="group.ads[0]" :channel="draft.channel" :account-id="draft.account_id" :site-url="siteUrl" id-prefix="gads-ad" @update:model-value="setAd" />
+              <GoogleAdsAdForm v-if="group.ads[0]" :key="`ad-${selected}-${draft.channel}-${draft.account_id}`" :model-value="group.ads[0]" :channel="draft.channel" :account-id="draft.account_id" :site-url="siteUrl" id-prefix="gads-ad" @update:model-value="setAd" />
             </div>
           </section>
         </template>
@@ -304,4 +329,11 @@ onMounted(load)
     </template>
   </PageBody>
   <GoogleAdsJobDialog v-model:open="following" :job="job" @finished="finished" />
+  <ConfirmDialog
+    v-model:open="channelConfirmOpen"
+    :title="t('gads.create.changeTypeTitle', { type: pendingChannel ? t(`gads.channel.${pendingChannel}` as Key) : '' })"
+    :desc="t('gads.create.changeTypeDesc')"
+    :action="t('gads.create.changeTypeAction')"
+    @confirm="confirmChannel"
+  />
 </template>

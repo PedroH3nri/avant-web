@@ -72,6 +72,24 @@ export function withChannel(draft: GoogleAdsDraftInput, channel: GoogleAdsChanne
   return { ...draft, channel, bidding, ad_groups: groups }
 }
 
+/** Diz se algum anúncio do rascunho já tem texto ou imagem (trocar o tipo apagaria isso). */
+export function hasAdContent(draft: GoogleAdsDraftInput): boolean {
+  return draft.ad_groups.some((group) =>
+    group.ads.some((ad) => {
+      const texts = [...ad.headlines, ...ad.descriptions, ad.path1, ad.path2, ad.long_headline, ad.business_name]
+      const images = ad.marketing_images.length + ad.square_images.length + ad.logo_images.length
+      return images > 0 || texts.some((text) => text.trim() !== '') || ad.link_path.trim() !== '/'
+    }),
+  )
+}
+
+/** Troca a conta do rascunho: as imagens enviadas ficam na conta antiga, então saem dos anúncios. */
+export function withAccount(draft: GoogleAdsDraftInput, accountId: string): GoogleAdsDraftInput {
+  if (accountId === draft.account_id) return draft
+  const groups = draft.ad_groups.map((group) => ({ ...group, ads: group.ads.map((ad) => ({ ...ad, marketing_images: [], square_images: [], logo_images: [] })) }))
+  return { ...draft, account_id: accountId, ad_groups: groups }
+}
+
 /** Os textos preenchidos, sem espaço nas pontas, como vão para a API. */
 export function filled(texts: string[]): string[] {
   return texts.map((text) => text.trim()).filter((text) => text !== '')
@@ -92,10 +110,18 @@ export function cleanDraft(draft: GoogleAdsDraftInput): GoogleAdsDraftInput {
   }
 }
 
-/** Valor digitado (vírgula ou ponto) como texto decimal da API; vazio ou inválido é ``null``. */
+/** Valor digitado como texto decimal da API, com milhar ou não ("1.234,56", "1,234.56", "1234,5"); vazio ou inválido é ``null``. */
 export function amount(text: string | null): string | null {
-  const clean = (text ?? '').trim().replace(/\s/g, '').replace(',', '.')
-  return /^\d+(\.\d{1,2})?$/.test(clean) && Number(clean) > 0 ? clean : null
+  const compact = (text ?? '').trim().replace(/\s/g, '')
+  const decimalMark = Math.max(compact.lastIndexOf(','), compact.lastIndexOf('.'))
+  const hasDecimals = decimalMark >= 0 && compact.length - decimalMark - 1 <= 2
+  const whole = hasDecimals ? compact.slice(0, decimalMark) : compact
+  const cents = hasDecimals ? compact.slice(decimalMark + 1) : ''
+  const grouped = /^\d{1,3}([.,]\d{3})+$/.test(whole)
+  if (!grouped && !/^\d+$/.test(whole)) return null
+  if (hasDecimals && (!/^\d{1,2}$/.test(cents) || whole.includes(compact.charAt(decimalMark)))) return null
+  const clean = whole.replace(/[.,]/g, '') + (cents ? `.${cents}` : '')
+  return Number(clean) > 0 ? clean : null
 }
 
 /** O que falta no anúncio, com os mesmos códigos que a API devolve. */
@@ -168,6 +194,11 @@ export const KNOWN_PROBLEMS = new Set([
   'ad_images_missing',
   'ad_logo_missing',
   'ad_images_invalid',
+  'audiences_not_for_search',
+  'keywords_only_for_search',
+  'too_many_ads',
+  'edit_level_invalid',
+  'ad_type_not_supported',
   'edit_empty',
   'channel_not_supported',
 ])
