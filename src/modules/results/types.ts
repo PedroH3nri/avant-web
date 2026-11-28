@@ -11,10 +11,11 @@ export interface CostLine {
   amount: string
 }
 
-/** O gasto de uma integração de anúncios no mês, já somado nos custos. */
+/** O gasto de uma integração de anúncios no mês, já somado nos custos; escondida (painel interno, sem a permissão da integração), vem sem o valor. */
 export interface IntegrationLine {
   integration: CostIntegration
-  amount: string
+  amount: string | null
+  hidden: boolean
 }
 
 export interface MonthResult {

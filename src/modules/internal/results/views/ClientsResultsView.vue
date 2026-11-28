@@ -6,6 +6,7 @@ import { RouterLink } from 'vue-router'
 import LoadError from '@/components/LoadError.vue'
 import PageBody from '@/components/PageBody.vue'
 import PageHeader from '@/components/PageHeader.vue'
+import Card from '@/components/ui/Card.vue'
 import DataTable from '@/components/ui/DataTable.vue'
 import Select from '@/components/ui/Select.vue'
 import Pagination from '@/components/ui/Pagination.vue'
@@ -21,6 +22,7 @@ import { cn } from '@/lib/utils'
 import type { CompanyResults, ResultTotals } from '@/modules/results/types'
 import { useSession } from '@/stores/session'
 import { resultService } from '@/modules/results/service'
+import CostLinesList from '@/modules/results/components/CostLinesList.vue'
 import { localToday } from '@/modules/internal/commissions/rules'
 import ColumnsMenu from '@/modules/views/components/ColumnsMenu.vue'
 import SavedViewsBar from '@/modules/views/components/SavedViewsBar.vue'
@@ -85,6 +87,13 @@ const monthOptions = computed(() => monthChoices.map((value) => ({ value, label:
 const currency = computed(() => clients.value?.[0]?.currency ?? session.displayCurrency)
 // A API já devolve do maior resultado para o menor.
 const rows = computed(() => (clients.value ?? []).map((client) => ({ client, month: client.months[0] ?? null })))
+const selectedId = ref<string | null>(null)
+const selected = computed(() => rows.value.find((row) => row.client.company.id === selectedId.value && row.month) ?? null)
+
+/** Abre (ou fecha) o card com os custos do cliente no mês. */
+function toggleCosts(companyId: string) {
+  selectedId.value = selectedId.value === companyId ? null : companyId
+}
 
 /** Carrega uma página do ranking das Empresas cliente pelo resultado do mês. */
 async function load() {
@@ -92,6 +101,7 @@ async function load() {
   loadError.value = null
   clients.value = null
   totals.value = null
+  selectedId.value = null
   try {
     const found = await resultService.clients({ start: month.value, end: month.value, currency: session.displayCurrency, page: page.value })
     if (current !== latestLoad) return
@@ -170,7 +180,15 @@ const tiles = computed(() => {
             </td>
             <td v-if="shown('revenue')" :class="[td, 'text-right']"><span :class="valueClass(row.month.revenue)">{{ money(row.month.revenue) }}</span></td>
             <td v-if="shown('groone')" :class="[td, 'text-right']"><span :class="valueClass(row.month.groone_revenue ?? 0)">{{ money(row.month.groone_revenue ?? 0) }}</span></td>
-            <td v-if="shown('costs')" :class="[td, 'text-right']"><span :class="valueClass(negative(row.month.costs))">{{ money(negative(row.month.costs)) }}</span></td>
+            <td v-if="shown('costs')" :class="[td, 'text-right']">
+              <button
+                type="button"
+                :class="cn(valueClass(negative(row.month.costs)), 'hover:underline')"
+                :aria-expanded="selectedId === row.client.company.id"
+                :aria-label="t('res.showCostsOf', { name: row.client.company.name })"
+                @click="toggleCosts(row.client.company.id)"
+              >{{ money(negative(row.month.costs)) }}</button>
+            </td>
             <td v-if="shown('result')" :class="[td, 'text-right']"><span :class="valueClass(row.month.result, true)">{{ money(row.month.result) }}</span></td>
           </template>
           <td v-else-if="valueColumns" :class="[td, 'text-muted-foreground']" :colspan="valueColumns">–</td>
@@ -178,5 +196,12 @@ const tiles = computed(() => {
       </tbody>
     </DataTable>
     <Pagination v-if="!loadError" v-model:page="page" :total="total" :pages="pages" />
+    <Card
+      v-if="selected?.month"
+      :title="t('res.costsOfClient', { name: selected.client.company.name, month: formatMonth(selected.month.month, locale) })"
+      :desc="t('res.costsDesc')"
+    >
+      <CostLinesList :month="selected.month" :money="money" />
+    </Card>
   </PageBody>
 </template>
